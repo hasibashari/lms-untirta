@@ -1,0 +1,100 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Enum untuk Role
+// Why? Mengunci nilai agar tidak ada typo seperti "admin", "Admin", "ADMIN".
+enum Role {
+  ADMIN
+  DOSEN
+  MAHASISWA
+}
+
+// 2. Model User
+model User {
+  id        String   @id @default(uuid()) // Gunakan UUID agar tidak mudah ditebak
+  email     String   @unique
+  password  String // Akan di-hash (bcrypt)
+  name      String
+  role      Role     @default(MAHASISWA)
+  createdAt DateTime @default(now())
+
+  // Relasi
+  coursesTeaching Course[]     @relation("TeacherCourses") // Dosen mengajar banyak kelas
+  enrollments     Enrollment[] // Mahasiswa bisa ambil banyak kelas
+}
+
+// 3. Model Course (Kelas)
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  code        String   @unique // Misal: IF-101
+  teacherId   String
+  createdAt   DateTime @default(now())
+
+  // Relasi @relation
+  // Why? Menghubungkan field 'teacherId' di sini dengan 'id' di model User.
+  teacher User @relation("TeacherCourses", fields: [teacherId], references: [id])
+
+  students    Enrollment[]
+  materials   Material[]
+  assignments Assignment[]
+}
+
+// Tabel Pivot (Join Table)
+// Why? Relasi Mahasiswa <-> Kelas adalah Many-to-Many.
+// Kita butuh tabel tengah untuk mencatat kapan mahasiswa masuk, nilai akhir, dsb.
+model Enrollment {
+  id         String   @id @default(uuid())
+  userId     String
+  courseId   String
+  enrolledAt DateTime @default(now())
+
+  student User   @relation(fields: [userId], references: [id])
+  course  Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId]) // Mencegah mahasiswa masuk kelas yang sama 2x
+}
+
+// 4. Model Material (Materi Kuliah)
+model Material {
+  id    String @id @default(uuid())
+  title String
+
+  // 1. KONTEN UTAMA (Artikel/Dokumentasi)
+  // Gunakan @db.Text agar bisa menampung tulisan sangat panjang (Rich Text/Markdown)
+  content String? @db.Text
+
+  // 2. SUPLEMEN (Opsional)
+  fileUrl  String? // Link download PDF/Doc
+  videoUrl String? // Link streaming (YouTube/Drive)
+
+  // 3. URUTAN MATERI
+  // Agar materi muncul berurutan: Pertemuan 1, Pertemuan 2, dst.
+  order Int @default(1)
+
+  // 4. STATUS (Opsional tapi bagus)
+  // Dosen bisa bikin draft dulu sebelum dirilis ke mahasiswa
+  isPublished Boolean @default(true)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 5. Model Assignment (Tugas)
+model Assignment {
+  id       String   @id @default(uuid())
+  title    String
+  dueDate  DateTime
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id])
+}
