@@ -35,6 +35,17 @@ const createMaterial = async (courseId, teacherId, data) => {
       order: newOrder, // Hasil perhitungan kita
       courseId: courseId,
     },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      fileUrl: true,
+      videoUrl: true,
+      order: true,
+      isPublished: true,
+      courseId: true,
+      createdAt: true,
+    },
   });
 };
 
@@ -49,9 +60,9 @@ const getMaterials = async (courseId, userId, userRole) => {
         },
       },
     });
-  }
-  if (!enrollment) {
-    throw new Error('Anda belum terdaftar di kelas ini');
+    if (!enrollment) {
+      throw new Error('Anda belum terdaftar di kelas ini');
+    }
   }
   // 2. Ambil Materi (Urutkan berdasarkan 'order')
   return await prisma.material.findMany({
