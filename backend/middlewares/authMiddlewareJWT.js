@@ -41,7 +41,7 @@ const authenticateToken = async (req, res, next) => {
 };
 
 // Authorization
-const authorizeRoles = (...allowedRoles) => {
+const authorizeRole = (...allowedRoles) => {
   return (req, res, next) => {
     // 1. Cek apakah user ada (Defensive programming)
     if (!req.user) {
@@ -59,4 +59,4 @@ const authorizeRoles = (...allowedRoles) => {
   };
 };
 
-export { authenticateToken, authorizeRoles };
+export { authenticateToken, authorizeRole };
