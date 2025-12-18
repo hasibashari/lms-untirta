@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './router/authRoutes.js';
 import courseRoutes from './router/courseRoutes.js';
 import userRoutes from './router/userRoutes.js';
+import assignmentRoutes from './router/assignmentRoutes.js';
 
 dotenv.config();
 
@@ -27,9 +28,10 @@ app.get('/', (req, res) => {
 });
 
 // -- MOUNT ROUTES --
-app.use('/api/auth', authRoutes);       // Login/Register
-app.use('/api/courses', courseRoutes);  // Kelas
-app.use('/api/users', userRoutes);      // User Management (Admin Only)
+app.use('/api/auth', authRoutes); // Login/Register
+app.use('/api/courses', courseRoutes); // Kelas
+app.use('/api/users', userRoutes); // User Management (Admin Only)
+app.use('/api/assignments', assignmentRoutes); // Assignment Routes
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
