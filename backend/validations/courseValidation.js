@@ -11,7 +11,7 @@ const createCourseSchema = z.object({
 // Schema baru untuk Enrollment
 const enrollStudentSchema = z.object({
   body: z.object({
-    email: z.string().email('Format email tidak valid').min(1, 'Email wajib diisi'),
+    email: z.email('Format email tidak valid').min(1, 'Email wajib diisi'),
   }),
 });
 
