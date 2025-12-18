@@ -31,7 +31,7 @@ const createMaterial = async (req, res) => {
 const getMaterials = async (req, res) => {
   try {
     const { courseId } = req.params; // ID Course dari URL
-    const result = await materialService.getMaterialsByCourse(courseId, req.user.id, req.user.role);
+    const result = await materialService.getMaterials(courseId, req.user.id, req.user.role);
 
     res.status(200).json({
       message: 'Daftar materi berhasil diambil',
@@ -41,6 +41,7 @@ const getMaterials = async (req, res) => {
     if (error.message.includes('Anda belum terdaftar')) {
       return res.status(403).json({ message: error.message });
     }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 };
 
