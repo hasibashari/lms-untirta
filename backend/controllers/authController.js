@@ -42,4 +42,18 @@ const login = async (req, res) => {
   }
 };
 
-export { register, login };
+// getMe Controller
+const getMe = async (req, res) => {
+  try {
+    const userId = req.user.id; // Dari middleware JWT
+    const userData = await authService.getUserById(userId);
+    res.status(200).json({
+      message: 'Berhasil mengambil data user',
+      data: userData,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { register, login, getMe };

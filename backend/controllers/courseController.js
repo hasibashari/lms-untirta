@@ -80,4 +80,25 @@ const getMyCourses = async (req, res) => {
   }
 };
 
-export { createCourse, getCourses, enrollStudent, getMyCourses };
+// --- Get Students by Course ---
+const getStudentsByCourse = async (req, res) => {
+  try {
+    const { id: courseId } = req.params;
+    const students = await courseService.getStudentsByCourse(courseId, req.user.id, req.user.role);
+
+    res.status(200).json({
+      message: 'Daftar mahasiswa berhasil diambil',
+      data: students,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+export { createCourse, getCourses, enrollStudent, getMyCourses, getStudentsByCourse };

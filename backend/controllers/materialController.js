@@ -45,4 +45,24 @@ const getMaterials = async (req, res) => {
   }
 };
 
-export { createMaterial, getMaterials };
+const getMaterialById = async (req, res) => {
+  try {
+    const { materialId } = req.params; // ID Material dari URL
+    const result = await materialService.getMaterialById(materialId, req.user.id, req.user.role);
+
+    res.status(200).json({
+      message: 'Detail materi berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Anda belum terdaftar') || error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+export { createMaterial, getMaterials, getMaterialById };

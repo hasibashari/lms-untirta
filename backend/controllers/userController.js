@@ -13,4 +13,26 @@ const createUser = async (req, res) => {
   }
 };
 
-export { createUser };
+const getAllUsers = async (req, res) => {
+  try {
+    const { role } = req.query;
+
+    // Validasi role jika ada
+    if (role && !['DOSEN', 'MAHASISWA', 'ADMIN'].includes(role)) {
+      return res.status(400).json({
+        message: 'Invalid role. Use DOSEN, MAHASISWA, or ADMIN',
+      });
+    }
+
+    const users = await userService.getAllUsers(role);
+    res.json({
+      message: 'Success',
+      data: users,
+      count: users.length,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export { createUser, getAllUsers };
