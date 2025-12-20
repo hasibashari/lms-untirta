@@ -22,11 +22,32 @@ const createUserByAdmin = async data => {
     },
     select: {
       id: true,
-      email: true,
       name: true,
+      email: true,
       role: true,
     }, // Jangan return password
   });
 };
 
-export { createUserByAdmin };
+const getAllUsers = async roleFilter => {
+  const whereClause = roleFilter ? { role: roleFilter } : {};
+
+  const users = await prisma.user.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      // password: false (JANGAN return password!)
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  return users;
+};
+
+export { createUserByAdmin, getAllUsers };

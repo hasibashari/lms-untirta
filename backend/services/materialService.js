@@ -71,4 +71,50 @@ const getMaterials = async (courseId, userId, userRole) => {
   });
 };
 
-export { createMaterial, getMaterials };
+const getMaterialById = async (materialId, userId, userRole) => {
+  // 1. Cari Material berdasarkan ID
+  const material = await prisma.material.findUnique({
+    where: { id: materialId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          teacherId: true,
+        },
+      },
+    },
+  });
+
+  if (!material) {
+    throw new Error('Materi tidak ditemukan');
+  }
+
+  // 2. Authorization Check:
+  // - Jika user adalah Dosen pemilik kelas → Allow
+  // - Jika user adalah Admin → Allow
+  // - Jika user adalah Mahasiswa → Harus terdaftar di kelas
+  if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan materi dari kelas Anda');
+  }
+
+  if (userRole === 'MAHASISWA') {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: userId,
+          courseId: material.courseId,
+        },
+      },
+    });
+
+    if (!enrollment) {
+      throw new Error('Anda belum terdaftar di kelas ini');
+    }
+  }
+
+  // 3. Return Material Detail
+  return material;
+};
+
+export { createMaterial, getMaterials, getMaterialById };

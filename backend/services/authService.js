@@ -49,14 +49,34 @@ const loginUser = async ({ email, password }) => {
     userId: user.id,
     role: user.role,
   });
+
   return {
     token,
     user: {
       id: user.id,
       name: user.name,
+      email: user.email,
       role: user.role,
     },
   };
 };
 
-export { registerUser, loginUser };
+const getUserById = async userId => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('User tidak ditemukan');
+  }
+
+  return user;
+};
+
+export { registerUser, loginUser, getUserById };

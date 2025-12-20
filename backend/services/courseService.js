@@ -142,4 +142,46 @@ const getEnrolledCourses = async studentId => {
   });
 };
 
-export { createCourse, getAllCourses, addStudentToCourse, getEnrolledCourses };
+// --- Get Students by Course ---
+const getStudentsByCourse = async (courseId, userId, userRole) => {
+  // 1. Validasi: Pastikan Kelas tersebut ada
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error('Kelas tidak ditemukan');
+  }
+
+  // 2. Authorization: Hanya Dosen pemilik kelas atau Admin yang bisa akses
+  if (userRole === 'DOSEN' && course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+  }
+
+  // 3. Ambil daftar Enrollment dengan data student
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseId },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          nim: true,
+        },
+      },
+    },
+    orderBy: {
+      enrolledAt: 'asc', // Urutkan dari yang pertama mendaftar
+    },
+  });
+
+  // 4. Transform data untuk response yang lebih bersih
+  return enrollments.map(enrollment => ({
+    enrollmentId: enrollment.id,
+    enrolledAt: enrollment.enrolledAt,
+    student: enrollment.student,
+  }));
+};
+
+export { createCourse, getAllCourses, addStudentToCourse, getEnrolledCourses, getStudentsByCourse };
