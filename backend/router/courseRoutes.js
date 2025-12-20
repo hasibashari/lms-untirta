@@ -7,6 +7,7 @@ import {
   enrollStudent,
   getCourses,
   getMyCourses,
+  getStudentsByCourse,
 } from '../controllers/courseController.js';
 
 import { createMaterial, getMaterials } from '../controllers/materialController.js';
@@ -27,7 +28,15 @@ router.get('/me', authenticateToken, authorizeRole('MAHASISWA'), getMyCourses);
 // 2. Route Get All Courses (umum)
 router.get('/', authenticateToken, getCourses);
 
-// 3. Protected Route - Create Course (Hanya Dosen & Admin)
+// 3. GET /api/courses/:id/students - Get Students in a Course (Dosen Only)
+router.get(
+  '/:id/students',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  getStudentsByCourse
+);
+
+// 4. Protected Route - Create Course (Hanya Dosen & Admin)
 router.post(
   '/',
   authenticateToken,

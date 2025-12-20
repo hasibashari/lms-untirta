@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken, authorizeRole } from '../middlewares/authMiddlewareJWT.js';
-import { createUser } from '../controllers/userController.js';
+import { createUser, getAllUsers } from '../controllers/userController.js';
+
 
 const router = express.Router();
 
@@ -12,5 +13,8 @@ router.use(authorizeRole('ADMIN'));
 // POST /api/users
 // Digunakan Admin untuk membuat Dosen/Admin baru
 router.post('/', createUser);
+
+// GET /api/users
+router.get('/', getAllUsers);
 
 export default router;
