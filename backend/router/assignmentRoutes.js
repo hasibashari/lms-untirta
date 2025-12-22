@@ -5,9 +5,20 @@ import {
   submitAssignmentSchema,
   gradeSubmissionSchema,
 } from '../validations/assignmentValidation.js';
-import { create, submit, getSubmissions, grade } from '../controllers/assignmentController.js';
+import {
+  create,
+  submit,
+  getSubmissions,
+  grade,
+  getMyAssignment,
+} from '../controllers/assignmentController.js';
 
 const router = express.Router();
+
+// GET ASSIGNMENT DETAIL with MY SUBMISSION (Mahasiswa)
+// URL: GET /api/assignments/:assignmentId/me
+// Endpoint untuk mahasiswa melihat detail tugas + status submission mereka
+router.get('/:assignmentId/me', authenticateToken, authorizeRole('MAHASISWA'), getMyAssignment);
 
 // Route untuk SUBMIT TUGAS (Student)
 // URL: POST /api/assignments/:assignmentId/submit

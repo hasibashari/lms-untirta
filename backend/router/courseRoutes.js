@@ -12,7 +12,7 @@ import {
 
 import { createMaterial, getMaterials } from '../controllers/materialController.js';
 import { createMaterialSchema } from '../validations/materialValidation.js';
-import { create } from '../controllers/assignmentController.js';
+import { create, getAssignments } from '../controllers/assignmentController.js';
 import { createAssignmentSchema } from '../validations/assignmentValidation.js';
 
 // --- Router Setup ---
@@ -22,8 +22,11 @@ const router = express.Router();
 // --- API Routes ---
 // PENTING: Route spesifik (/me) harus di atas route umum (/) untuk menghindari konflik
 
-// 1. Route Dashboard Mahasiswa (Spesifik) - Harus di atas route GET /
-router.get('/me', authenticateToken, authorizeRole('MAHASISWA'), getMyCourses);
+// 1. Route My Courses (Dynamic based on role) - Harus di atas route GET /
+// - MAHASISWA: Return kelas yang diikuti (enrolled courses)
+// - DOSEN: Return kelas yang diajar (teaching courses)
+// - ADMIN: Return semua kelas
+router.get('/me', authenticateToken, getMyCourses);
 
 // 2. Route Get All Courses (umum)
 router.get('/', authenticateToken, getCourses);
@@ -75,13 +78,23 @@ router.get(
   getMaterials // Middleware auth sudah handle di dalam service
 );
 
-// POST /api/courses/:courseId/assignments (Dosen Only)
+// --- ASSIGNMENT ROUTES ---
+// 1. Create Assignment (Dosen Only)
+// URL: POST /api/courses/:courseId/assignments
 router.post(
   '/:courseId/assignments',
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
   validate(createAssignmentSchema),
   create
+);
+
+// 2. Get Assignments (Mahasiswa Enrolled & Dosen)
+// URL: GET /api/courses/:courseId/assignments
+router.get(
+  '/:courseId/assignments',
+  authenticateToken,
+  getAssignments // Middleware auth sudah handle di dalam service
 );
 
 export default router;

@@ -1,7 +1,6 @@
 import express from 'express';
 import { authenticateToken, authorizeRole } from '../middlewares/authMiddlewareJWT.js';
-import { createUser, getAllUsers } from '../controllers/userController.js';
-
+import { createUser, getAllUsers, getUserById } from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -16,5 +15,9 @@ router.post('/', createUser);
 
 // GET /api/users
 router.get('/', getAllUsers);
+
+// GET /api/users/:id
+// Digunakan Admin untuk melihat detail user berdasarkan ID
+router.get('/:id', getUserById);
 
 export default router;
