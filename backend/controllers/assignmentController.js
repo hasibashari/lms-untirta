@@ -49,7 +49,7 @@ const getSubmissions = async (req, res) => {
   }
 };
 
-const grade = async (req, res) => { 
+const grade = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const result = await assignmentService.gradeSubmission(
@@ -57,17 +57,60 @@ const grade = async (req, res) => {
       req.user.id, // ID Dosen dari token
       req.body
     );
-    res.status(200).json({ message: 'Nilai berhasil disimpan', data: result }
-    )
+    res.status(200).json({ message: 'Nilai berhasil disimpan', data: result });
   } catch (error) {
-    if (error.message.includes('Akses ditolak')) { 
+    if (error.message.includes('Akses ditolak')) {
       return res.status(403).json({ message: error.message });
     }
-    if (error.message.includes('tidak ditemukan')) { 
+    if (error.message.includes('tidak ditemukan')) {
       return res.status(404).json({ message: error.message });
     }
     res.status(500).json({ message: error.message });
   }
-}
+};
 
-export { create, submit, getSubmissions, grade };
+// Get Assignments by Course (Mahasiswa & Dosen)
+const getAssignments = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const result = await assignmentService.getAssignmentsByCourse(
+      courseId,
+      req.user.id,
+      req.user.role
+    );
+    res.status(200).json({
+      message: 'Daftar tugas berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('belum terdaftar')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get Assignment Detail with My Submission (Mahasiswa)
+const getMyAssignment = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const result = await assignmentService.getAssignmentWithMySubmission(assignmentId, req.user.id);
+    res.status(200).json({
+      message: 'Status tugas berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('belum terdaftar')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { create, submit, getSubmissions, grade, getAssignments, getMyAssignment };

@@ -25,8 +25,17 @@ const getAllUsers = async (req, res) => {
     }
 
     const users = await userService.getAllUsers(role);
+
+    const roleMessages = {
+      DOSEN: 'Daftar dosen berhasil diambil',
+      MAHASISWA: 'Daftar mahasiswa berhasil diambil',
+      ADMIN: 'Daftar admin berhasil diambil',
+    };
+
+    const message = role ? roleMessages[role] : 'Daftar seluruh user berhasil diambil';
+
     res.json({
-      message: 'Success',
+      message,
       data: users,
       count: users.length,
     });
@@ -35,4 +44,22 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-export { createUser, getAllUsers };
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await userService.getUserById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    res.status(200).json({
+      message: 'Berhasil mengambil detail user',
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+export { createUser, getAllUsers, getUserById };

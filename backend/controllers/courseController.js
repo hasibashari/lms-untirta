@@ -68,11 +68,30 @@ const enrollStudent = async (req, res) => {
 
 const getMyCourses = async (req, res) => {
   try {
-    const studentId = req.user.id;
-    const courses = await courseService.getEnrolledCourses(studentId);
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    let courses;
+    let message;
+
+    // Role-aware: Berbeda logic berdasarkan role user
+    if (userRole === 'MAHASISWA') {
+      // Mahasiswa: Ambil kelas yang diikuti (enrolled)
+      courses = await courseService.getEnrolledCourses(userId);
+      message = 'Berhasil mengambil daftar kelas yang diikuti';
+    } else if (userRole === 'DOSEN') {
+      // Dosen: Ambil kelas yang diajar (teaching)
+      courses = await courseService.getTeachingCourses(userId);
+      message = 'Berhasil mengambil daftar kelas yang diajar';
+    } else if (userRole === 'ADMIN') {
+      // Admin: Ambil semua kelas
+      courses = await courseService.getAllCourses();
+      message = 'Berhasil mengambil semua daftar kelas';
+    } else {
+      return res.status(403).json({ message: 'Role tidak dikenali' });
+    }
 
     res.status(200).json({
-      message: 'Berhasil mengambil daftar kelas saya',
+      message,
       data: courses,
     });
   } catch (error) {
