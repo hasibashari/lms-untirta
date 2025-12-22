@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 
 // -- API --
 app.get('/', (req, res) => {
-  res.send('Welcome to the LMS Informatika API');
+  res.send('Welcome to the server LMS Informatika API');
 });
 
 // -- MOUNT ROUTES --
