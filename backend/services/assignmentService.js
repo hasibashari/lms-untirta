@@ -1,4 +1,6 @@
+import { id } from 'zod/v4/locales';
 import { prisma } from '../config/prisma.js';
+import { grade } from '../controllers/assignmentController.js';
 
 // 1. Dosen Membuat Tugas
 const createAssignment = async (courseId, teacherId, data) => {
@@ -60,20 +62,28 @@ const submitAssignment = async (assignmentId, studentId, data) => {
     throw new Error('Anda sudah mengumpulkan tugas ini');
   }
 
-  return prisma.submission.create({
+  const submission = await prisma.submission.create({
     data: {
       assignmentId,
       studentId,
       fileUrl: data.fileUrl,
       note: data.note,
     },
-    // SAFE PROJECTION ✅
     select: {
       id: true,
+      assignmentId: true,
       submittedAt: true,
       fileUrl: true,
     },
   });
+
+  return {
+    id: submission.id,
+    assignmentId: submission.assignmentId,
+    submittedAt: submission.submittedAt,
+    fileUrl: submission.fileUrl,
+    status: 'Submitted',
+  };
 };
 
 // 3. Get Assignment Detail (Dosen & Mahasiswa)
@@ -88,6 +98,141 @@ const getAssignmentDetail = async assignmentId => {
       // Kita tidak load submissions di sini agar ringan
     },
   });
+};
+
+// 3.1 Get Assignments by Course (Mahasiswa & Dosen)
+const getAssignmentsByCourse = async (courseId, userId, userRole) => {
+  // 1. Validasi: Pastikan Course exists
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error('Kelas tidak ditemukan');
+  }
+
+  // 2. Authorization: Mahasiswa harus terdaftar di kelas
+  if (userRole === 'MAHASISWA') {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: userId,
+          courseId: courseId,
+        },
+      },
+    });
+
+    if (!enrollment) {
+      throw new Error('Anda belum terdaftar di kelas ini');
+    }
+  }
+
+  // 3. Ambil daftar assignments
+  const assignments = await prisma.assignment.findMany({
+    where: { courseId },
+    select: {
+      id: true,
+      title: true,
+      dueDate: true,
+      submissions: {
+        where: {
+          studentId: userId, // Cek submission milik mahasiswa ini
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: {
+      dueDate: 'asc', // Urutkan dari deadline paling dekat
+    },
+  });
+
+  // 4. Transform data untuk menambahkan status deadline
+  const now = new Date();
+
+  return assignments.map(assignment => {
+    const mySubmission = assignment.submissions[0] || null;
+
+    return {
+      id: assignment.id,
+      title: assignment.title,
+      dueDate: assignment.dueDate,
+      status: mySubmission ? 'submitted' : now > assignment.dueDate ? 'overdue' : 'pending',
+    };
+  });
+};
+
+// 3.2 Get Assignment Detail with Student Submission Status
+const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
+  // 1. Ambil detail assignment
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          code: true,
+        },
+      },
+    },
+  });
+
+  if (!assignment) {
+    throw new Error('Tugas tidak ditemukan');
+  }
+
+  // 2. Cek apakah mahasiswa terdaftar di kelas
+  const enrollment = await prisma.enrollment.findUnique({
+    where: {
+      userId_courseId: {
+        userId: studentId,
+        courseId: assignment.courseId,
+      },
+    },
+  });
+
+  if (!enrollment) {
+    throw new Error('Anda belum terdaftar di kelas ini');
+  }
+
+  // 3. Cari submission mahasiswa ini (jika ada)
+  const mySubmission = await prisma.submission.findUnique({
+    where: {
+      assignmentId_studentId: {
+        assignmentId,
+        studentId,
+      },
+    },
+    select: {
+      id: true,
+      fileUrl: true,
+      note: true,
+      submittedAt: true,
+      grade: true,
+      feedback: true,
+    },
+  });
+
+  // 4. Return data lengkap
+  const now = new Date();
+
+  return {
+    id: assignment.id,
+    title: assignment.title,
+    dueDate: assignment.dueDate,
+    isOverdue: now > assignment.dueDate,
+    status: mySubmission
+      ? mySubmission.grade !== null
+        ? 'graded'
+        : 'submitted'
+      : now > assignment.dueDate
+      ? 'overdue'
+      : 'pending',
+    grade: mySubmission ? mySubmission.grade : null,
+    feedback: mySubmission ? mySubmission.feedback : null,
+  };
 };
 
 // 4. Dosen melihat daftar pengumpulan tugas
@@ -108,17 +253,15 @@ const getSubmissionsByAssignment = async (assignmentId, teacherId) => {
     where: { assignmentId },
     select: {
       id: true,
+      submittedAt: true,
       fileUrl: true,
       note: true,
-      submittedAt: true,
       grade: true, // Biar dosen tau mana yang belum dinilai
-      feedback: true,
       student: {
         // JOIN ke tabel User
         select: {
           id: true,
           name: true,
-          email: true,
         },
       },
     },
@@ -162,4 +305,12 @@ const gradeSubmission = async (submissionId, teacherId, data) => {
   });
 };
 
-export { createAssignment, submitAssignment, getAssignmentDetail, getSubmissionsByAssignment, gradeSubmission };
+export {
+  createAssignment,
+  submitAssignment,
+  getAssignmentDetail,
+  getAssignmentsByCourse,
+  getAssignmentWithMySubmission,
+  getSubmissionsByAssignment,
+  gradeSubmission,
+};

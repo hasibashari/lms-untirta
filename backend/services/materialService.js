@@ -67,7 +67,14 @@ const getMaterials = async (courseId, userId, userRole) => {
   // 2. Ambil Materi (Urutkan berdasarkan 'order')
   return await prisma.material.findMany({
     where: { courseId },
-    orderBy: { order: 'asc' }, // Penting! Agar urut 1, 2, 3...
+    select: {
+      id: true,
+      title: true,
+      order: true,
+    },
+    orderBy: {
+      order: 'asc',
+    }, // Penting! Agar urut 1, 2, 3...
   });
 };
 
@@ -75,7 +82,12 @@ const getMaterialById = async (materialId, userId, userRole) => {
   // 1. Cari Material berdasarkan ID
   const material = await prisma.material.findUnique({
     where: { id: materialId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      fileUrl: true,
+      videoUrl: true,
       course: {
         select: {
           id: true,
@@ -103,7 +115,7 @@ const getMaterialById = async (materialId, userId, userRole) => {
       where: {
         userId_courseId: {
           userId: userId,
-          courseId: material.courseId,
+          courseId: material.course.id,
         },
       },
     });
@@ -113,8 +125,23 @@ const getMaterialById = async (materialId, userId, userRole) => {
     }
   }
 
+  const attachments = [];
+
+  if (material.fileUrl) {
+    attachments.push({ type: 'pdf', url: material.fileUrl });
+  }
+
+  if (material.videoUrl) {
+    attachments.push({ type: 'video', url: material.videoUrl });
+  }
+
   // 3. Return Material Detail
-  return material;
+  return {
+    id: material.id,
+    title: material.title,
+    content: material.content,
+    attachments,
+  };
 };
 
 export { createMaterial, getMaterials, getMaterialById };

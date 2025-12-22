@@ -25,6 +25,7 @@ const createUserByAdmin = async data => {
       name: true,
       email: true,
       role: true,
+      createdAt: true,
     }, // Jangan return password
   });
 };
@@ -39,7 +40,6 @@ const getAllUsers = async roleFilter => {
       name: true,
       email: true,
       role: true,
-      createdAt: true,
       // password: false (JANGAN return password!)
     },
     orderBy: {
@@ -50,4 +50,18 @@ const getAllUsers = async roleFilter => {
   return users;
 };
 
-export { createUserByAdmin, getAllUsers };
+const getUserById = async userId => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  return user;
+};
+
+export { createUserByAdmin, getAllUsers, getUserById };

@@ -18,6 +18,21 @@ const createCourse = async (data, teacherId) => {
       ...data, // title, description, code
       teacherId, // Foreign Key ke User
     },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      code: true,
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      createdAt: true,
+    },
   });
 };
 
@@ -95,8 +110,10 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
     },
     // Include data student supaya nanti return response-nya cantik (ada nama & email)
     include: {
+      enrollmentId: true,
       student: {
         select: {
+          id: true,
           name: true,
           email: true,
         },
@@ -106,40 +123,58 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
 };
 
 const getEnrolledCourses = async studentId => {
-  // Kita cari data Enrollment milik studentId ini
   const enrollments = await prisma.enrollment.findMany({
     where: { userId: studentId },
-    include: {
-      // Joinkan dengan tabel Course
+    select: {
+      id: true,
+      enrolledAt: true,
       course: {
-        include: {
-          // Joinkan lagi Course dengan tabel User (sebagai Teacher)
+        select: {
+          id: true,
+          title: true,
+          code: true,
           teacher: {
             select: {
+              id: true,
               name: true,
-              email: true,
             },
           },
         },
       },
     },
     orderBy: {
-      enrolledAt: 'desc', // Urutkan dari yang paling baru diambil
+      enrolledAt: 'desc',
     },
   });
 
-  // Data Transformation (PENTING!)
-  // Prisma akan mengembalikan array of Enrollment object:
-  // [ { id: 1, course: { ... } }, { id: 2, course: { ... } } ]
-  // Frontend biasanya lebih suka langsung dapat list Course-nya saja.
-  // Jadi kita "map" (ratakan) datanya.
-  return enrollments.map(enrollment => {
-    return {
-      enrollmentId: enrollment.id, // ID record pendaftaran
-      joinedAt: enrollment.enrolledAt, // Kapan masuk
-      ...enrollment.course, // Data course (title, code, teacher, dll)
-    };
+  return enrollments.map(enrollment => ({
+    enrollmentId: enrollment.id,
+    joinedAt: enrollment.enrolledAt,
+    course: {
+      id: enrollment.course.id,
+      title: enrollment.course.title,
+      code: enrollment.course.code,
+      teacher: {
+        id: enrollment.course.teacher.id,
+        name: enrollment.course.teacher.name,
+      },
+    },
+  }));
+};
+
+// --- Get Teaching Courses (For Dosen) ---
+const getTeachingCourses = async teacherId => {
+  // Ambil semua kelas yang diajar oleh Dosen ini
+  const courses = await prisma.course.findMany({
+    where: { teacherId },
+    select: {
+      id: true,
+      title: true,
+      code: true,
+    }
   });
+
+  return courses;
 };
 
 // --- Get Students by Course ---
@@ -167,7 +202,6 @@ const getStudentsByCourse = async (courseId, userId, userRole) => {
           id: true,
           name: true,
           email: true,
-          nim: true,
         },
       },
     },
@@ -184,4 +218,11 @@ const getStudentsByCourse = async (courseId, userId, userRole) => {
   }));
 };
 
-export { createCourse, getAllCourses, addStudentToCourse, getEnrolledCourses, getStudentsByCourse };
+export {
+  createCourse,
+  getAllCourses,
+  addStudentToCourse,
+  getEnrolledCourses,
+  getTeachingCourses,
+  getStudentsByCourse,
+};

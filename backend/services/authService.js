@@ -25,8 +25,8 @@ const registerUser = async ({ email, name, password }) => {
 
   return {
     id: newUser.id,
-    email: newUser.email,
     name: newUser.name,
+    email: newUser.email,
     role: newUser.role,
   };
 };
