@@ -106,7 +106,7 @@ export default function Students() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder='Email mahasiswa'
-            className='border p-2 flex-1 rounded min-w-[220px]'
+            className='border p-2 flex-1 rounded min-w-55'
           />
           <Button onClick={handleEnroll} disabled={enrolling}>
             {enrolling ? 'Menambah...' : 'Tambah'}
