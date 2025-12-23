@@ -1,57 +1,153 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
+import { useEffect, useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { Mail, Lock, BookOpen } from 'lucide-react';
 
-const Login = () => {
+import { useAuth } from '../../contexts/AuthContext';
+
+// UI components live under src/components/ui
+import FormInput from '../../components/ui/FormInput';
+import SocialLoginButtons from '../../components/ui/SocialLoginButtons';
+import Divider from '../../components/ui/Divider';
+import PrimaryButton from '../../components/ui/PrimaryButton';
+import Checkbox from '../../components/ui/Checkbox';
+import AuthLink from '../../components/ui/AuthLink';
+
+export default function Login() {
+  const { setAuthLayoutBranding } = useOutletContext();
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    setAuthLayoutBranding({
+      variant: 'login',
+      stats: {
+        icon: BookOpen,
+        label: 'Total Modul Tersedia',
+        value: '12,450+',
+      },
+    });
+  }, [setAuthLayoutBranding]);
 
-  const handleSubmit = async e => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e, field) => {
+    setFormData({ ...formData, [field]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setIsLoading(true);
 
     try {
-      const user = await login(email, password);
+      const user = await login(formData.email, formData.password);
 
-      // Redirect berdasarkan role
-      if (user.role === 'ADMIN') navigate('/admin/dashboard');
-      if (user.role === 'DOSEN') navigate('/dosen/dashboard');
-      if (user.role === 'MAHASISWA') navigate('/mahasiswa/dashboard');
+      if (rememberMe) {
+        // token sudah tersimpan di localStorage oleh AuthContext
+      }
+
+      if (user?.role === 'ADMIN') navigate('/admin/dashboard');
+      else if (user?.role === 'DOSEN') navigate('/dosen/dashboard');
+      else if (user?.role === 'MAHASISWA') navigate('/mahasiswa/dashboard');
+      else navigate('/');
     } catch (err) {
-      setError(err);
+      setError(err?.response?.data?.message || err?.message || 'Login gagal.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const handleGoogleLogin = () => {
+    console.log('Google Login clicked');
+  };
+
+  const handleFacebookLogin = () => {
+    console.log('Facebook Login clicked');
+  };
+
   return (
-    <form onSubmit={handleSubmit} className='space-y-4'>
-      <h1 className='text-xl font-bold'>Login</h1>
+    <>
+      {/* Header */}
+      <div className="mb-8 text-center md:text-left">
+        <h2 className="text-2xl font-bold text-gray-900">Masuk ke Akun</h2>
+        <p className="text-gray-500 mt-2 text-sm">
+          Silakan masukkan email dan password yang terdaftar.
+        </p>
+      </div>
 
-      {error && <p className='text-red-600'>{error}</p>}
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
 
-      <Input label='Email' value={email} onChange={e => setEmail(e.target.value)} />
+        <FormInput
+          label="Email Institusi / Pribadi"
+          type="email"
+          placeholder="nama@email.com"
+          icon={Mail}
+          value={formData.email}
+          onChange={(e) => handleChange(e, 'email')}
+        />
 
-      <Input
-        label='Password'
-        type='password'
-        value={password}
-        onChange={e => setPassword(e.target.value)}
+        <div>
+          <FormInput
+            label="Password"
+            isPassword={true}
+            placeholder="Masukkan password Anda"
+            icon={Lock}
+            value={formData.password}
+            onChange={(e) => handleChange(e, 'password')}
+          />
+
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between mt-4">
+            <Checkbox
+              id="remember-me"
+              label="Ingat saya"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+
+            <div className="text-sm">
+              <a
+                href="#"
+                className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
+              >
+                Lupa password?
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <PrimaryButton type="submit" loading={isLoading} showArrow={true}>
+          Masuk Sekarang
+        </PrimaryButton>
+      </form>
+
+      {/* Divider */}
+      <Divider text="Atau masuk dengan" className="my-8" />
+
+      {/* Social Login */}
+      <SocialLoginButtons
+        onGoogleClick={handleGoogleLogin}
+        onFacebookClick={handleFacebookLogin}
+        disabled={isLoading}
       />
 
-      <Button type='submit' disabled={loading}>
-        {loading ? 'Masuk...' : 'Login'}
-      </Button>
-    </form>
+      {/* Register Link */}
+      <div className="mt-8">
+        <AuthLink text="Belum memiliki akun?" linkText="Daftar sekarang" href="/register" />
+      </div>
+    </>
   );
-};
-
-export default Login;
+}
