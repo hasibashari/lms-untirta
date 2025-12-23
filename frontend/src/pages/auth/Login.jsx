@@ -1,41 +1,56 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLoginAsAdmin = () => {
-    // Simulate login as Admin
-    login({ id: 1, name: 'Admin', role: 'ADMIN' }, 'fake-admin-token');
-    navigate('/admin/dashboard');
-  };
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLoginAsDosen = () => {
-    login({ id: 2, name: 'Dosen', role: 'DOSEN' }, 'fake-dosen-token');
-    navigate('/dosen/dashboard');
-  };
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-  const handleLoginAsMahasiswa = () => {
-    login({ id: 3, name: 'Mahasiswa', role: 'MAHASISWA' }, 'fake-mahasiswa-token');
-    navigate('/mahasiswa/dashboard');
+    try {
+      const user = await login(email, password);
+
+      // Redirect berdasarkan role
+      if (user.role === 'ADMIN') navigate('/admin/dashboard');
+      if (user.role === 'DOSEN') navigate('/dosen/dashboard');
+      if (user.role === 'MAHASISWA') navigate('/mahasiswa/dashboard');
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className='space-y-4'>
-      <h1 className='text-xl font-bold'>Login (Simulasi)</h1>
+    <form onSubmit={handleSubmit} className='space-y-4'>
+      <h1 className='text-xl font-bold'>Login</h1>
 
-      <Button onClick={handleLoginAsAdmin}>Login sebagai Admin</Button>
+      {error && <p className='text-red-600'>{error}</p>}
 
-      <Button variant='secondary' onClick={handleLoginAsDosen}>
-        Login sebagai Dosen
+      <Input label='Email' value={email} onChange={e => setEmail(e.target.value)} />
+
+      <Input
+        label='Password'
+        type='password'
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+      />
+
+      <Button type='submit' disabled={loading}>
+        {loading ? 'Masuk...' : 'Login'}
       </Button>
-
-      <Button variant='danger' onClick={handleLoginAsMahasiswa}>
-        Login sebagai Mahasiswa
-      </Button>
-    </div>
+    </form>
   );
 };
 
