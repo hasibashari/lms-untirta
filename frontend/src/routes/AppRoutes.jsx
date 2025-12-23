@@ -62,6 +62,14 @@ function AppRoutes() {
             <Route path='/dosen/courses/:courseId/students' element={<Students />} />
             <Route path='/dosen/courses/:courseId/assignments' element={<Assignments />} />
             <Route path='/dosen/courses/:courseId/assignments/new' element={<CreateAssignment />} />
+            <Route
+              path='/dosen/courses/:courseId/assignments/:assignmentId/submissions'
+              element={<Submissions />}
+            />
+            <Route
+              path='/dosen/courses/:courseId/submissions'
+              element={<Submissions />}
+            />
             <Route path='/dosen/assignments/:assignmentId/submissions' element={<Submissions />} />
           </Route>
         </Route>
