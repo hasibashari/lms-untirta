@@ -14,6 +14,8 @@ import MahasiswaRoute from './MahasiswaRoute';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import AdminDashboard from '../pages/admin/Dashboard';
+import AdminUsers from '../pages/admin/Users';
+import AdminCreateUser from '../pages/admin/CreateUser';
 
 // Dosen Pages
 import DosenDashboard from '../pages/dosen/Dashboard';
@@ -47,6 +49,8 @@ function AppRoutes() {
         <Route element={<RoleRoute allowedRoles={['ADMIN']} />}>
           <Route element={<AdminLayout />}>
             <Route path='/admin/dashboard' element={<AdminDashboard />} />
+            <Route path='/admin/users' element={<AdminUsers />} />
+            <Route path='/admin/users/new' element={<AdminCreateUser />} />
           </Route>
         </Route>
       </Route>
