@@ -41,19 +41,38 @@ export default function Assignments() {
 
       <h1 className='text-xl font-bold'>Tugas</h1>
 
-      {assignments.map(assignment => (
-        <Link
-          key={assignment.id}
-          to={`/mahasiswa/courses/${courseId}/assignments/${assignment.id}`}
-          className='block bg-white p-4 rounded shadow hover:bg-gray-50'
-        >
-          <h2 className='font-semibold'>{assignment.title}</h2>
-          <p className='text-sm text-gray-600'>
-            Deadline: {new Date(assignment.dueDate).toLocaleString()}
-          </p>
-          <p className='text-xs text-blue-600'>Status: {assignment.status}</p>
-        </Link>
-      ))}
+      {assignments.map(assignment => {
+        const isLate =
+          new Date(assignment.dueDate) < new Date() &&
+          assignment.status !== 'Submitted';
+
+        return (
+          <Link
+            key={assignment.id}
+            to={`/mahasiswa/courses/${courseId}/assignments/${assignment.id}`}
+            className='block bg-white p-4 rounded shadow hover:bg-gray-50'
+          >
+            <h2 className='font-semibold'>{assignment.title}</h2>
+            <p className='text-sm text-gray-600'>
+              Deadline: {new Date(assignment.dueDate).toLocaleString()}
+            </p>
+
+            <div className='flex gap-2 mt-2'>
+              <span
+                className={`badge ${assignment.status === 'Submitted'
+                  ? 'badge-green'
+                  : 'badge-gray'
+                  }`}
+              >
+                {assignment.status}
+              </span>
+              {isLate && (
+                <span className="badge badge-red">Terlambat</span>
+              )}
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

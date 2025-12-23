@@ -19,15 +19,13 @@ const CourseMaterials = () => {
         setMaterials(materialsRes.data);
 
         const foundCourse = coursesRes.data.find(
-          item => item.course.id === courseId // 🔧 FIX #2
+          item => item.course.id === parseInt(courseId)
         );
         setCourse(foundCourse?.course);
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, [courseId]);
-
-  console.log('CourseMaterials MOUNTED', { courseId });
 
   if (!courseId) {
     return <p className='text-gray-500'>Memuat data kelas...</p>;
@@ -55,12 +53,16 @@ const CourseMaterials = () => {
 
       <ol className='space-y-2'>
         {materials.map(material => (
-          <li key={material.id} className='bg-white p-3 rounded shadow'>
+          <li key={material.id} className="flex items-center gap-4 bg-white p-4 rounded shadow hover:bg-gray-50 transition">
+            <div className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-600 font-semibold rounded-full">
+              {material.order}
+            </div>
+
             <Link
               to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
-              className='text-blue-600 hover:underline'
+              className="font-medium text-gray-800 hover:underline"
             >
-              {material.order}. {material.title}
+              {material.title}
             </Link>
           </li>
         ))}

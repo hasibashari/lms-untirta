@@ -33,24 +33,33 @@ const MaterialDetail = () => {
 
       <BackButton fallback={`/mahasiswa/courses/${courseId}/materials`} />
 
-      <h1 className='text-xl font-bold'>{material.title}</h1>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h1 className="text-2xl font-bold mb-4">
+          {material.title}
+        </h1>
 
-      <div className='prose max-w-none' dangerouslySetInnerHTML={{ __html: material.content }} />
+        <div
+          className="prose max-w-none"
+          dangerouslySetInnerHTML={{ __html: material.content }}
+        />
+      </div>
 
-      {material.attachments?.length > 0 && (
-        <div>
-          <h2 className='font-semibold mb-2'>Lampiran</h2>
-          {material.attachments.map((file, i) => (
-            <a
-              key={i}
-              href={file.url}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-blue-600 underline block'
-            >
-              {file.type.toUpperCase()}
-            </a>
-          ))}
+      {material.attachments && material.attachments.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="font-semibold text-lg mb-4">Lampiran</h2>
+          <div className="space-y-2">
+            {material.attachments.map((file, i) => (
+              <a
+                key={i}
+                href={file.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-blue-600 hover:underline p-2 hover:bg-blue-50 rounded transition"
+              >
+                📎 {file.type.toUpperCase()} - {file.url.split('/').pop() || 'Lihat File'}
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -40,14 +40,6 @@ export default function AssignmentDetail() {
   if (loading) return <p>Memuat tugas...</p>;
   if (!status) return <p>Data tugas tidak ditemukan.</p>;
 
-  const assignmentTitle = status?.assignment?.title;
-  const courseTitle = status?.assignment?.course?.title;
-
-  console.log('DEBUG breadcrumb source', {
-    status,
-    courseId,
-  });
-
   return (
     <div className='space-y-4'>
       <Breadcrumb
@@ -63,23 +55,32 @@ export default function AssignmentDetail() {
 
       <h1 className='text-xl font-bold'>Detail Tugas</h1>
 
-      <p>
-        Status: <strong>{status.status}</strong>
-      </p>
-
-      {status.grade !== null && (
-        <p>
-          Nilai: <strong>{status.grade}</strong>
+      <div className='bg-white p-4 rounded shadow space-y-2'>
+        <h2 className='font-semibold text-lg'>{status.title}</h2>
+        <p className='text-gray-600'>{status.description}</p>
+        <p className='text-sm text-gray-500'>
+          Deadline: {new Date(status.dueDate).toLocaleString()}
         </p>
-      )}
-
-      {status.feedback && <p className='text-gray-600'>Feedback: {status.feedback}</p>}
+        <p>
+          Status: <strong>{status.status}</strong>
+        </p>
+        {status.grade !== null && (
+          <p>
+            Nilai: <strong>{status.grade}</strong>
+          </p>
+        )}
+        {status.feedback && <p className='text-gray-600'>Feedback: {status.feedback}</p>}
+      </div>
 
       {status.status === 'Submitted' ? (
         <p className='text-green-600'>Tugas sudah dikumpulkan.</p>
       ) : (
-        <form onSubmit={handleSubmit} className='space-y-3'>
-          {error && <p className='text-red-600'>{error}</p>}
+        <form onSubmit={handleSubmit} className='bg-white p-4 rounded shadow space-y-3'>
+          {error && (
+            <p className='text-red-600 bg-red-50 p-3 rounded'>
+              {error.response?.data?.message || error.message || 'Terjadi kesalahan'}
+            </p>
+          )}
 
           <input
             type='url'
@@ -95,12 +96,13 @@ export default function AssignmentDetail() {
             value={note}
             onChange={e => setNote(e.target.value)}
             className='w-full border p-2 rounded'
+            rows={4}
           />
 
           <button
-            type='submit'
+            type="submit"
             disabled={submitting}
-            className='px-4 py-2 bg-blue-600 text-white rounded'
+            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {submitting ? 'Mengirim...' : 'Kumpulkan Tugas'}
           </button>
