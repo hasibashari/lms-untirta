@@ -1,7 +1,7 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) return <p>Memeriksa sesi...</p>;
@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to='/login' replace />;
   }
 
-  return children;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
