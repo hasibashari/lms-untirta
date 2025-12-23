@@ -2,10 +2,12 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
-  if (!isAuthenticated) { 
-    return <Navigate to="/login" replace />;
+  if (loading) return <p>Memeriksa sesi...</p>;
+
+  if (!isAuthenticated) {
+    return <Navigate to='/login' replace />;
   }
 
   return children;

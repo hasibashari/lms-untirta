@@ -14,6 +14,12 @@ import Register from '../pages/auth/Register';
 import AdminDashboard from '../pages/admin/Dashboard';
 import DosenDashboard from '../pages/dosen/Dashboard';
 import MahasiswaDashboard from '../pages/mahasiswa/Dashboard';
+import CourseHome from '../pages/mahasiswa/CourseHome';
+import CourseMaterials from '../pages/mahasiswa/CourseMaterials';
+import MaterialDetail from '../pages/mahasiswa/MaterialDetail';
+
+import Assignments from '../pages/mahasiswa/Assignments';
+import AssignmentDetail from '../pages/mahasiswa/AssignmentDetail';
 
 function AppRoutes() {
   return (
@@ -61,6 +67,11 @@ function AppRoutes() {
         }
       >
         <Route path='/mahasiswa/dashboard' element={<MahasiswaDashboard />} />
+        <Route path='/mahasiswa/courses/:courseId' element={<CourseHome />} />
+        <Route path='/mahasiswa/courses/:courseId/materials' element={<CourseMaterials />} />
+        <Route path='/mahasiswa/courses/:courseId/materials/:materialId' element={<MaterialDetail />} />
+        <Route path='/mahasiswa/courses/:courseId/assignments' element={<Assignments />} />
+        <Route path='/mahasiswa/courses/:courseId/assignments/:assignmentId' element={<AssignmentDetail />} />
       </Route>
     </Routes>
   );
