@@ -11,3 +11,9 @@ export const getDosen = async () => {
 export const getMahasiswa = async () => {
   return api.get('/users?role=MAHASISWA');
 };
+
+export const getUsers = () => {
+  return api.get('/users');
+};
+
+
