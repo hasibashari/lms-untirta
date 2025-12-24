@@ -1,13 +1,15 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Route } from 'react-router-dom';
 
-const AdminRoute = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
+import AdminDashboard from '../pages/admin/Dashboard';
+import AdminUsers from '../pages/admin/Users';
+import AdminCreateUser from '../pages/admin/CreateUser';
 
-  if (!user || user.role !== "ADMIN") {
-    return <Navigate to="/login" replace />;
-  }
+export const AdminRoute = (
+  <>
+    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+    <Route path="/admin/users" element={<AdminUsers />} />
+    <Route path="/admin/users/new" element={<AdminCreateUser />} />
+  </>
+);
 
-  return <Outlet />;
-};
 
-export default AdminRoute;
