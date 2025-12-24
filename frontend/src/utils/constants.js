@@ -124,12 +124,11 @@ export const TESTIMONIALS = [
  */
 export const PARTNERS = [
   { name: "Kemendikbud Ristek", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/400px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png" },
-  { name: "Universitas Indonesia", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Makara_of_Universitas_Indonesia.svg/1200px-Makara_of_Universitas_Indonesia.svg.png" },
-  { name: "Institut Teknologi Bandung", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/9/95/Logo_Institut_Teknologi_Bandung.svg/1200px-Logo_Institut_Teknologi_Bandung.svg.png" },
-  { name: "Universitas Gadjah Mada", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/4/4d/Logo_UGM.png/300px-Logo_UGM.png" },
-  { name: "Institut Pertanian Bogor", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Logo_IPB.svg/1200px-Logo_IPB.svg.png" },
-  { name: "Universitas Airlangga", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/e/e0/Logo_Universitas_Airlangga.svg/1200px-Logo_Universitas_Airlangga.svg.png" },
-  { name: "Universitas Diponegoro", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/2/2d/Undip.png/300px-Undip.png" },
+  { name: "Universitas Indonesia", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/0/0f/Makara_of_Universitas_Indonesia.svg/1108px-Makara_of_Universitas_Indonesia.svg.png" },
+  { name: "Institut Teknologi Bandung", logo: "https://upload.wikimedia.org/wikipedia/id/9/95/Logo_Institut_Teknologi_Bandung.png" },
+  { name: "Universitas Gadjah Mada", logo: "https://upload.wikimedia.org/wikipedia/commons/6/6a/UNIVERSITAS_GADJAH_MADA%2C_YOGYAKARTA.png" },
+  { name: "Institut Pertanian Bogor", logo: "https://upload.wikimedia.org/wikipedia/id/0/0f/Logo_IPB.png" },
+  { name: "Universitas Sultan Ageng Tirtayasa", logo: "https://upload.wikimedia.org/wikipedia/id/7/76/Logo_UNTIRTA.png" },
   { name: "Universitas Brawijaya", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Logo_Universitas_Brawijaya.svg/1200px-Logo_Universitas_Brawijaya.svg.png" }
 ];
 
@@ -181,7 +180,7 @@ export const COURSES_DATA = [
     modules: 20,
     duration: "10 Jam",
     price: "Rp 299.000",
-    thumbnail: "https://images.unsplash.com/photo-1586717791821-3f44a5638d48?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    thumbnail: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
   },
   {
     id: 4,
