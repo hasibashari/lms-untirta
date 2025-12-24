@@ -3,11 +3,11 @@
  * Digunakan untuk menu navigasi di Navbar
  */
 export const NAV_LINKS = [
-  { name: 'Home', href: '#', active: true },
-  { name: 'About US', href: '#', active: false },
-  { name: 'Course', href: '#', active: false },
-  { name: 'Website Untirta', href: '#', active: false },
-  { name: 'Siakang', href: '#', active: false },
+  { name: 'Home', to: '/' },
+  { name: 'About Us', to: '/about' },
+  { name: 'Course', to: '/login' },
+  { name: 'Website Untirta', to: 'https://untirta.ac.id', external: true },
+  { name: 'Siakang', to: 'https://siakang.untirta.ac.id', external: true },
 ];
 
 /**
