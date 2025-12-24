@@ -71,3 +71,132 @@ export const ROLES = {
   MAHASISWA: 'mahasiswa',
 };
 
+/**
+ * Testimonials Data
+ * Data testimoni untuk landing page
+ */
+export const TESTIMONIALS = [
+  {
+    id: 1,
+    name: "Sarah Amalia",
+    role: "Mahasiswa Informatika, ITB",
+    content: "SPADA sangat membantu saya mengakses materi lintas kampus. Modul React-nya sangat terstruktur dan mudah dipahami bahkan untuk pemula. Sertifikatnya juga valid untuk portofolio!",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d"
+  },
+  {
+    id: 2,
+    name: "Dr. Hendra Gunawan",
+    role: "Dosen Manajemen, UI",
+    content: "Sebagai pengajar, platform ini memudahkan saya mendistribusikan materi ke jangkauan yang lebih luas. Fitur tracking progress mahasiswa sangat detail dan membantu evaluasi.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
+  },
+  {
+    id: 3,
+    name: "Rudi Hartono",
+    role: "Alumni / Web Developer",
+    content: "Dulu saya kesulitan mencari kursus berkualitas yang gratis. Berkat SPADA, saya bisa belajar skill baru yang relevan dengan industri saat ini. Sekarang saya sudah bekerja di Startup Unicorn.",
+    rating: 4,
+    avatar: "https://i.pravatar.cc/150?u=a04258114e29026302d"
+  },
+  {
+    id: 4,
+    name: "Putri Indah",
+    role: "Mahasiswa Sastra Inggris, UGM",
+    content: "Tampilan antarmukanya sangat user-friendly. Saya suka fitur forum diskusinya, bisa berinteraksi dengan mahasiswa dari universitas lain di seluruh Indonesia.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=a048581f4e29026701d"
+  },
+  {
+    id: 5,
+    name: "Dimas Anggara",
+    role: "Praktisi Data Science",
+    content: "Materi yang disajikan sangat daging! Tidak hanya teori, tapi banyak studi kasus nyata yang relevan dengan kebutuhan industri saat ini.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=25"
+  }
+];
+
+/**
+ * Partners Data
+ * Data mitra/universitas untuk landing page
+ */
+export const PARTNERS = [
+  { name: "Kemendikbud Ristek", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/400px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png" },
+  { name: "Universitas Indonesia", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Makara_of_Universitas_Indonesia.svg/1200px-Makara_of_Universitas_Indonesia.svg.png" },
+  { name: "Institut Teknologi Bandung", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/9/95/Logo_Institut_Teknologi_Bandung.svg/1200px-Logo_Institut_Teknologi_Bandung.svg.png" },
+  { name: "Universitas Gadjah Mada", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/4/4d/Logo_UGM.png/300px-Logo_UGM.png" },
+  { name: "Institut Pertanian Bogor", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Logo_IPB.svg/1200px-Logo_IPB.svg.png" },
+  { name: "Universitas Airlangga", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/e/e0/Logo_Universitas_Airlangga.svg/1200px-Logo_Universitas_Airlangga.svg.png" },
+  { name: "Universitas Diponegoro", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/2/2d/Undip.png/300px-Undip.png" },
+  { name: "Universitas Brawijaya", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Logo_Universitas_Brawijaya.svg/1200px-Logo_Universitas_Brawijaya.svg.png" }
+];
+
+/**
+ * Courses Sample Data
+ * Data kursus untuk landing page
+ */
+export const COURSES_DATA = [
+  {
+    id: 1,
+    title: "Dasar Pemrograman Web Modern dengan React & Tailwind",
+    category: "Teknologi",
+    instructor: {
+      name: "Dr. Budi Santoso",
+      avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d"
+    },
+    rating: 4.8,
+    students: 1250,
+    modules: 12,
+    duration: "6 Jam",
+    price: "Gratis",
+    thumbnail: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 2,
+    title: "Manajemen Bisnis Digital untuk UMKM",
+    category: "Bisnis",
+    instructor: {
+      name: "Siti Aminah, M.B.A",
+      avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
+    },
+    rating: 4.5,
+    students: 850,
+    modules: 8,
+    duration: "4 Jam",
+    price: "Rp 150.000",
+    thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 3,
+    title: "Desain UI/UX: Dari Konsep hingga Prototyping",
+    category: "Desain",
+    instructor: {
+      name: "Rizky Ramadhan",
+      avatar: "https://i.pravatar.cc/150?u=a04258114e29026302d"
+    },
+    rating: 4.9,
+    students: 2100,
+    modules: 20,
+    duration: "10 Jam",
+    price: "Rp 299.000",
+    thumbnail: "https://images.unsplash.com/photo-1586717791821-3f44a5638d48?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 4,
+    title: "Public Speaking & Komunikasi Efektif",
+    category: "Soft Skill",
+    instructor: {
+      name: "Chandra W.",
+      avatar: "https://i.pravatar.cc/150?u=a048581f4e29026701d"
+    },
+    rating: 4.7,
+    students: 540,
+    modules: 5,
+    duration: "3 Jam",
+    price: "Gratis",
+    thumbnail: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+  }
+];
+
