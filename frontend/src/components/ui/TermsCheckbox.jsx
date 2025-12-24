@@ -1,14 +1,11 @@
 /**
- * TermsCheckbox Component
- * Checkbox khusus untuk persetujuan syarat & ketentuan dan kebijakan privasi.
- * Digunakan di halaman Register.
+ * TermsCheckbox - DEPRECATED
+ * This component is kept for backward compatibility.
+ * Consider using `Checkbox` component with custom label instead.
  * 
- * @param {boolean} checked - Checked state
- * @param {function} onChange - Handler untuk perubahan value
- * @param {boolean} required - Apakah wajib dicentang
- * @param {string} termsUrl - URL untuk halaman syarat & ketentuan
- * @param {string} privacyUrl - URL untuk halaman kebijakan privasi
+ * @deprecated Use `import Checkbox from './Checkbox'` with custom JSX label
  */
+
 const TermsCheckbox = ({
   checked,
   onChange,
