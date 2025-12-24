@@ -4,13 +4,13 @@ import { User, Mail, Lock } from 'lucide-react';
 
 import { register as registerAPI } from '../../services/auth.service';
 
-// UI components live under src/components/ui
-import FormInput from '../../components/ui/FormInput';
+// UI components - using new unified components
+import Input from '../../components/ui/Input';
 import SocialLoginButtons from '../../components/ui/SocialLoginButtons';
 import Divider from '../../components/ui/Divider';
-import PrimaryButton from '../../components/ui/PrimaryButton';
+import Button from '../../components/ui/Button';
 import TermsCheckbox from '../../components/ui/TermsCheckbox';
-import AuthLink from '../../components/ui/AuthLink';
+import { NavLink } from '../../components/ui';
 
 export default function Register() {
   const { setAuthLayoutBranding } = useOutletContext();
@@ -94,7 +94,7 @@ export default function Register() {
           </p>
         )}
 
-        <FormInput
+        <Input
           label="Nama Lengkap"
           type="text"
           placeholder="Contoh: Budi Santoso"
@@ -103,7 +103,7 @@ export default function Register() {
           onChange={(e) => handleChange(e, 'fullName')}
         />
 
-        <FormInput
+        <Input
           label="Alamat Email"
           type="email"
           placeholder="nama@universitas.ac.id"
@@ -113,7 +113,7 @@ export default function Register() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormInput
+          <Input
             label="Password"
             isPassword={true}
             placeholder="Minimal 8 karakter"
@@ -122,7 +122,7 @@ export default function Register() {
             onChange={(e) => handleChange(e, 'password')}
           />
 
-          <FormInput
+          <Input
             label="Konfirmasi Password"
             isPassword={true}
             placeholder="Ulangi password"
@@ -140,9 +140,9 @@ export default function Register() {
         />
 
         {/* Submit Button */}
-        <PrimaryButton type="submit" loading={isLoading} showArrow={true} className="mt-6">
+        <Button type="submit" loading={isLoading} showArrow fullWidth className="mt-6 py-3">
           Daftar Sekarang
-        </PrimaryButton>
+        </Button>
       </form>
 
       {/* Divider */}
@@ -157,7 +157,7 @@ export default function Register() {
 
       {/* Login Link */}
       <div className="mt-8">
-        <AuthLink text="Sudah memiliki akun?" linkText="Masuk disini" href="/login" />
+        <NavLink text="Sudah memiliki akun?" linkText="Masuk disini" href="/login" />
       </div>
     </>
   );

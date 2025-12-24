@@ -4,13 +4,13 @@ import { Mail, Lock, BookOpen } from 'lucide-react';
 
 import { useAuth } from '../../contexts/AuthContext';
 
-// UI components live under src/components/ui
-import FormInput from '../../components/ui/FormInput';
+// UI components - using new unified components
+import Input from '../../components/ui/Input';
 import SocialLoginButtons from '../../components/ui/SocialLoginButtons';
 import Divider from '../../components/ui/Divider';
-import PrimaryButton from '../../components/ui/PrimaryButton';
+import Button from '../../components/ui/Button';
 import Checkbox from '../../components/ui/Checkbox';
-import AuthLink from '../../components/ui/AuthLink';
+import { NavLink } from '../../components/ui';
 
 export default function Login() {
   const { setAuthLayoutBranding } = useOutletContext();
@@ -89,7 +89,7 @@ export default function Login() {
           </p>
         )}
 
-        <FormInput
+        <Input
           label="Email Institusi / Pribadi"
           type="email"
           placeholder="nama@email.com"
@@ -99,7 +99,7 @@ export default function Login() {
         />
 
         <div>
-          <FormInput
+          <Input
             label="Password"
             isPassword={true}
             placeholder="Masukkan password Anda"
@@ -129,9 +129,9 @@ export default function Login() {
         </div>
 
         {/* Submit Button */}
-        <PrimaryButton type="submit" loading={isLoading} showArrow={true}>
+        <Button type="submit" loading={isLoading} showArrow fullWidth className="py-3">
           Masuk Sekarang
-        </PrimaryButton>
+        </Button>
       </form>
 
       {/* Divider */}
@@ -146,7 +146,7 @@ export default function Login() {
 
       {/* Register Link */}
       <div className="mt-8">
-        <AuthLink text="Belum memiliki akun?" linkText="Daftar sekarang" href="/register" />
+        <NavLink text="Belum memiliki akun?" linkText="Daftar sekarang" href="/register" />
       </div>
     </>
   );
