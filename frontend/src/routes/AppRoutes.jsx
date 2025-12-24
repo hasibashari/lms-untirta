@@ -4,6 +4,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import DosenLayout from '../layouts/DosenLayout';
 import MahasiswaLayout from '../layouts/MahasiswaLayout';
+import HomeLayout from '../layouts/HomeLayout';
 
 import ProtectedRoute from './ProtectedRoute';
 import RoleRoute from './RoleRoute';
@@ -16,6 +17,7 @@ import Register from '../pages/auth/Register';
 import AdminDashboard from '../pages/admin/Dashboard';
 import AdminUsers from '../pages/admin/Users';
 import AdminCreateUser from '../pages/admin/CreateUser';
+import Home from '../pages/Home';
 
 // Dosen Pages
 import DosenDashboard from '../pages/dosen/Dashboard';
@@ -38,6 +40,12 @@ import AssignmentDetail from '../pages/mahasiswa/AssignmentDetail';
 function AppRoutes() {
   return (
     <Routes>
+
+      {/* Home */}
+      <Route element={<HomeLayout />}>
+        <Route path='/' element={<Home />} />
+      </Route>
+
       {/* Auth */}
       <Route element={<AuthLayout />}>
         <Route path='/login' element={<Login />} />
