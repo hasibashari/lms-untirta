@@ -1,12 +1,9 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
-// Import Child Components dari folder ui
-import FooterColumn from './ui/FooterColumn';
-import FooterLinkItem from './ui/FooterLinkItem';
-import FooterBrand from './ui/FooterBrand';
-import FooterContact from './ui/FooterContact';
-import FooterBottom from './ui/FooterBottom';
+// Import Child Components
+import { Link } from './ui';
+import { FooterColumn, FooterBrand, FooterContact, FooterBottom } from './footer';
 
 // Import Configuration Data
 import { FOOTER_LINKS, SOCIAL_LINKS, CONTACT_INFO } from '../utils/constants';
@@ -55,18 +52,18 @@ const Footer = () => {
           {/* Kolom 2: Link Layanan */}
           <FooterColumn title={FOOTER_LINKS.layanan.title}>
             {FOOTER_LINKS.layanan.items.map((link, idx) => (
-              <FooterLinkItem key={idx} href={link.href}>
+              <Link key={idx} href={link.href}>
                 {link.label}
-              </FooterLinkItem>
+              </Link>
             ))}
           </FooterColumn>
 
           {/* Kolom 3: Link Tentang Kami */}
           <FooterColumn title={FOOTER_LINKS.tentang.title}>
             {FOOTER_LINKS.tentang.items.map((link, idx) => (
-              <FooterLinkItem key={idx} href={link.href}>
+              <Link key={idx} href={link.href}>
                 {link.label}
-              </FooterLinkItem>
+              </Link>
             ))}
           </FooterColumn>
 

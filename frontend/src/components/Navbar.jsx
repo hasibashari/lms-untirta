@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
-// Import Child Components dari folder ui
+// Import Child Components
 import Logo from './ui/Logo';
-import DesktopNav from './ui/DesktopNav';
-import MobileMenu from './ui/MobileMenu';
-import LoginButton from './ui/LoginButton';
+import { Button } from './ui';
+import DesktopNav from './navigation/DesktopNav';
+import MobileMenu from './navigation/MobileMenu';
 
 // Import Configuration Data
 import { NAV_LINKS } from '../utils/constants';
@@ -48,7 +48,15 @@ const Navbar = () => {
 
           {/* Right Section: Action Button (Desktop) & Hamburger (Mobile) */}
           <div className="flex items-center gap-4">
-            <LoginButton />
+            <Button 
+              variant="primary" 
+              size="md"
+              showArrow
+              className="hidden md:flex"
+              onClick={() => window.location.href = '/login'}
+            >
+              Masuk
+            </Button>
 
             {/* Hamburger Button (Mobile Only) */}
             <button

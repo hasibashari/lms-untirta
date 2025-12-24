@@ -1,11 +1,8 @@
 import { Users } from 'lucide-react';
 
 // Import Child Components
-import RatingStars from './ui/RatingStars';
-import CourseThumbnail from './ui/CourseThumbnail';
-import CourseInstructor from './ui/CourseInstructor';
-import CourseMetaInfo from './ui/CourseMetaInfo';
-import CourseFooter from './ui/CourseFooter';
+import { Rating } from './ui';
+import { CourseThumbnail, CourseInstructor, CourseMetaInfo, CourseFooter } from './course';
 
 /**
  * CourseCard Component
@@ -40,7 +37,7 @@ const CourseCard = ({ course }) => {
 
         {/* Meta Header: Rating & Students */}
         <div className="flex items-center justify-between mb-3 text-xs text-slate-500">
-          <RatingStars rating={course.rating} />
+          <Rating rating={course.rating} />
           <div className="flex items-center gap-1">
             <Users size={14} />
             <span>{course.students.toLocaleString()} Siswa</span>

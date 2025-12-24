@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Sparkles, CheckCircle, Users } from 'lucide-react';
 
-// Import Child Components dari folder ui
-import PillBadge from './ui/PillBadge';
-import SearchBar from './ui/SearchBar';
-import StatsGrid from './ui/StatsGrid';
-import UserAvatars from './ui/UserAvatars';
-import HeroVisual from './ui/HeroVisual';
+// Import Child Components
+import { Badge, SearchBar } from './ui';
+import StatsGrid from './StatsGrid';
+import UserAvatars from './UserAvatars';
+import { HeroVisual } from './hero';
 
 // --- HeroSection Component (Parent) ---
 /**
@@ -74,7 +73,7 @@ const HeroSection = () => {
           <div className="relative z-10 max-w-2xl">
 
             {/* Badge */}
-            <PillBadge
+            <Badge
               icon={Sparkles}
               text="Platform Pembelajaran Digital #1"
               variant="blue"
