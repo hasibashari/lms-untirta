@@ -1,4 +1,3 @@
-import React from 'react';
 import { Globe, ArrowRight } from 'lucide-react';
 
 /**
