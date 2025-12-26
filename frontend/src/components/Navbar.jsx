@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // Import Child Components
 import Logo from './ui/Logo';
@@ -48,20 +49,18 @@ const Navbar = () => {
 
           {/* Right Section: Action Button (Desktop) & Hamburger (Mobile) */}
           <div className="flex items-center gap-4">
-            <Button 
-              variant="primary" 
-              size="md"
-              showArrow
-              className="hidden md:flex"
-              onClick={() => window.location.href = '/login'}
-            >
-              Masuk
-            </Button>
+            <div className="hidden md:block">
+              <Link to="/login">
+                <Button variant="primary" size="md" showArrow>
+                  Masuk
+                </Button>
+              </Link>
+            </div>
 
             {/* Hamburger Button (Mobile Only) */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600 transition-colors focus:outline-none focus:ring-0 focus:ring-blue-500"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
