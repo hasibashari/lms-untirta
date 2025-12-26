@@ -7,6 +7,10 @@ import Logo from './ui/Logo';
 import { Button } from './ui';
 import DesktopNav from './navigation/DesktopNav';
 import MobileMenu from './navigation/MobileMenu';
+import ProfileDropdown from './navigation/ProfileDropdown';
+
+// Import Auth Context
+import { useAuth } from '../contexts/AuthContext';
 
 // Import Configuration Data
 import { NAV_LINKS } from '../utils/constants';
@@ -20,17 +24,21 @@ import { NAV_LINKS } from '../utils/constants';
  * - Mengelola state mobile menu (open/close)
  * - Menyusun layout struktur navbar (logo, nav, actions)
  * - Mengkoordinasikan komunikasi antar child components
+ * - Menampilkan Profile Dropdown jika user sudah login
  * 
  * Architecture:
  * - Logo: Brand identity (static)
  * - DesktopNav: Navigation links untuk desktop view
- * - LoginButton: CTA button di desktop
+ * - LoginButton / ProfileDropdown: Berdasarkan status login
  * - MobileMenu: Dropdown menu untuk mobile view
  */
 
 const Navbar = () => {
   // State Management untuk Mobile Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Auth state
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 shadow-sm">
@@ -49,12 +57,17 @@ const Navbar = () => {
 
           {/* Right Section: Action Button (Desktop) & Hamburger (Mobile) */}
           <div className="flex items-center gap-4">
+            {/* Desktop: Profile Dropdown atau Login Button */}
             <div className="hidden md:block">
-              <Link to="/login">
-                <Button variant="primary" size="md" showArrow>
-                  Masuk
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <ProfileDropdown />
+              ) : (
+                <Link to="/login">
+                  <Button variant="primary" size="md" showArrow>
+                    Masuk
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Hamburger Button (Mobile Only) */}
@@ -73,6 +86,7 @@ const Navbar = () => {
           isOpen={isMobileMenuOpen}
           setIsOpen={setIsMobileMenuOpen}
           navLinks={NAV_LINKS}
+          isAuthenticated={isAuthenticated}
         />
       </nav>
     </header>
