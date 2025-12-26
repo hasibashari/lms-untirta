@@ -24,12 +24,16 @@ const LearningSidebar = ({
   courseId,
   course,
   isOpen = false,
-  onClose,
+  onClose = () => { },
 }) => {
   const navigate = useNavigate();
   const currentIndex = materials.findIndex(
     m => m.id === parseInt(currentMaterialId) || m.id === currentMaterialId
   );
+
+  const safeTotal = materials.length;
+  const safeCurrent = currentIndex >= 0 ? currentIndex + 1 : 0;
+  const progressPct = safeTotal > 0 ? (safeCurrent / safeTotal) * 100 : 0;
 
   return (
     <>
@@ -44,7 +48,7 @@ const LearningSidebar = ({
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-80 bg-white border-r border-slate-200 z-50
+          fixed top-0 left-0 h-dvh w-80 bg-white border-r border-slate-200 z-50 flex flex-col
           transform transition-transform duration-300 ease-in-out
           lg:relative lg:translate-x-0 lg:shrink-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -83,13 +87,13 @@ const LearningSidebar = ({
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-slate-600">Progress</span>
             <span className="font-medium text-blue-600">
-              {currentIndex + 1} / {materials.length}
+              {safeCurrent} / {safeTotal}
             </span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-600 rounded-full transition-all duration-300"
-              style={{ width: `${((currentIndex + 1) / materials.length) * 100}%` }}
+              style={{ width: `${progressPct}%` }}
             />
           </div>
         </div>
