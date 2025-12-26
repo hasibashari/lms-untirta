@@ -1,3 +1,4 @@
+import { NavLink, Link } from 'react-router-dom';
 import { UserCircle } from 'lucide-react';
 
 /**
@@ -18,28 +19,53 @@ const MobileMenu = ({ isOpen, setIsOpen, navLinks = [] }) => (
     `}
   >
     <ul className="flex flex-col p-4 gap-4">
-      {navLinks.map((link) => (
-        <li key={link.name}>
-          <a
-            href={link.href}
-            onClick={() => setIsOpen(false)}
-            className={`
-              block px-4 py-2 rounded-md font-medium text-sm
-              ${link.active
-                ? 'bg-blue-50 text-blue-600'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
+      {navLinks.map((link) => {
+        // 🌐 External link
+        if (link.external) {
+          return (
+            <li key={link.name}>
+              <a
+                href={link.to}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-4 py-2 rounded-md font-medium text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600"
+              >
+                {link.name}
+              </a>
+            </li>
+          );
+        }
+
+        // 🔗 Internal SPA link
+        return (
+          <li key={link.name}>
+            <NavLink
+              to={link.to}
+              onClick={() => setIsOpen(false)}
+              className={({ isActive }) =>
+                `
+                block px-4 py-2 rounded-md font-medium text-sm
+                ${isActive
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
+                }
+                `
               }
-            `}
-          >
-            {link.name}
-          </a>
-        </li>
-      ))}
+            >
+              {link.name}
+            </NavLink>
+          </li>
+        );
+      })}
+
+      {/* Login Button */}
       <li className="mt-2 pt-4 border-t border-gray-100">
-        <button className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-md font-semibold hover:bg-blue-700 active:scale-95 transition-all">
-          <UserCircle size={18} />
-          Login
-        </button>
+        <Link to="/login" onClick={() => setIsOpen(false)}>
+          <button className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-md font-semibold hover:bg-blue-700 active:scale-95 transition-all">
+            <UserCircle size={18} />
+            Masuk
+          </button> 
+        </Link>
       </li>
     </ul>
   </div>
