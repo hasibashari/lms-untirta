@@ -93,9 +93,9 @@ const CourseMaterials = () => {
       </button>
 
       {/* Course Header Mini */}
-      <div className={`bg-linear-to-r ${gradientClass} rounded-2xl p-6`}>
-        <div className="relative">
-          <div className="absolute inset-0 bg-black/10 rounded-2xl"></div>
+      <div className={`bg-linear-to-r ${gradientClass} rounded-2xl overflow-hidden`}>
+        <div className="relative p-6">
+          <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10">
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium px-3 py-1 rounded-full mb-3">
               <Hash size={14} />
