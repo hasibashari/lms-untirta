@@ -27,12 +27,17 @@ const DosenLayout = () => {
             Dashboard
           </NavLink>
 
-          <p className='mt-4 text-xs uppercase tracking-wide text-white/70'>
-            Kelas
-          </p>
-          <p className='text-sm text-white/80 leading-snug'>
-            Pilih kelas dari Dashboard untuk mengelola materi, mahasiswa, tugas, dan submission.
-          </p>
+          <NavLink
+            to='/dosen/classes'
+            className={({ isActive }) =>
+              `block rounded px-3 py-2 text-sm ${isActive
+                ? 'bg-white/15 font-semibold'
+                : 'hover:bg-white/10'
+              }`
+            }
+          >
+            Kelas Saya
+          </NavLink>
         </nav>
 
         <button
