@@ -60,9 +60,7 @@ function AppRoutes() {
       {/* Mahasiswa Routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MahasiswaGuard />}>
-          <Route element={<MahasiswaLayout />}>
-            {MahasiswaRoute}
-          </Route>
+          {MahasiswaRoute}
         </Route>
       </Route>
     </Routes>
