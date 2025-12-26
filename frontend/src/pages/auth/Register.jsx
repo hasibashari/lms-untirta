@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
 
@@ -9,7 +9,7 @@ import Input from '../../components/ui/Input';
 import SocialLoginButtons from '../../components/ui/SocialLoginButtons';
 import Divider from '../../components/ui/Divider';
 import Button from '../../components/ui/Button';
-import TermsCheckbox from '../../components/ui/TermsCheckbox';
+import Checkbox from '../../components/ui/Checkbox';
 import { NavLink } from '../../components/ui';
 
 export default function Register() {
@@ -133,10 +133,19 @@ export default function Register() {
         </div>
 
         {/* Terms Checkbox */}
-        <TermsCheckbox
+        <Checkbox
           checked={agreedToTerms}
           onChange={(e) => setAgreedToTerms(e.target.checked)}
           required={true}
+          label={
+            <span className="text-sm text-gray-600">
+              Saya menyetujui{' '}
+              <a href="/terms" className="text-primary-600 hover:text-primary-700 font-medium">
+                Syarat & Ketentuan
+              </a>{' '}
+              yang berlaku
+            </span>
+          }
         />
 
         {/* Submit Button */}
