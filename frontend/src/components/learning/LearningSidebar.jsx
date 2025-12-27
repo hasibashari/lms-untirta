@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   X,
   ArrowLeft,
@@ -16,6 +16,8 @@ import {
  * @param {object} course - Data kelas
  * @param {boolean} isOpen - Status buka/tutup sidebar (mobile)
  * @param {function} onClose - Callback untuk menutup sidebar (mobile)
+ * @param {function} onBackClick - Callback untuk tombol kembali (header)
+ * @param {string} basePath - Base path untuk link navigasi (default: /mahasiswa)
  */
 const LearningSidebar = ({
   materials = [],
@@ -24,8 +26,9 @@ const LearningSidebar = ({
   course,
   isOpen = false,
   onClose = () => { },
+  onBackClick,
+  basePath = '/mahasiswa',
 }) => {
-  const navigate = useNavigate();
   const currentIndex = materials.findIndex(
     m => m.id === parseInt(currentMaterialId) || m.id === currentMaterialId
   );
@@ -52,7 +55,7 @@ const LearningSidebar = ({
         {/* Header */}
         <div className="h-16 border-b border-slate-200 flex items-center justify-between px-4">
           <button
-            onClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
+            onClick={onBackClick}
             className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition"
           >
             <ArrowLeft size={18} />
@@ -86,7 +89,7 @@ const LearningSidebar = ({
               return (
                 <li key={material.id}>
                   <Link
-                    to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
+                    to={`${basePath}/courses/${courseId}/materials/${material.id}`}
                     onClick={onClose}
                     className={`
                       flex items-center gap-3 px-3 py-3 rounded-xl transition-all
@@ -118,7 +121,7 @@ const LearningSidebar = ({
         {/* Back to Course Home */}
         <div className="p-4 border-t border-slate-100">
           <Link
-            to={`/mahasiswa/courses/${courseId}`}
+            to={`${basePath}/courses/${courseId}`}
             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition"
           >
             <Home size={18} />
