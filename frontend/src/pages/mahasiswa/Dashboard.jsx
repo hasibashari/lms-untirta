@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, GraduationCap, TrendingUp, ArrowRight, Clock, ClipboardList } from 'lucide-react';
+import { BookOpen, GraduationCap, ArrowRight, ClipboardList } from 'lucide-react';
 import { getMyCourses } from '../../services/mahasiswa.service';
 import { StudentCourseCard } from '../../components/course';
 
@@ -22,7 +22,7 @@ const MahasiswaDashboard = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Stats cards
+  // Stats cards - hanya menampilkan informasi dasar
   const stats = [
     {
       label: 'Total Kelas',
@@ -36,18 +36,11 @@ const MahasiswaDashboard = () => {
       icon: GraduationCap,
       color: 'emerald',
     },
-    {
-      label: 'Progress',
-      value: '0%',
-      icon: TrendingUp,
-      color: 'violet',
-    },
   ];
 
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600',
     emerald: 'bg-emerald-50 text-emerald-600',
-    violet: 'bg-violet-50 text-violet-600',
   };
 
   // Preview hanya 3 kelas terbaru
@@ -66,7 +59,7 @@ const MahasiswaDashboard = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (

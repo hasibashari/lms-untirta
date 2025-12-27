@@ -8,12 +8,12 @@ import {
   ExternalLink,
   Download,
   BookOpen,
-  Clock,
   ArrowLeft,
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials } from '../../services/dosen.service';
 import { getMyCourses } from '../../services/mahasiswa.service';
 import { LearningSidebar } from '../../components/learning';
+import MarkdownPreview from '../../components/ui/MarkdownPreview';
 
 /**
  * MaterialDetail - Halaman Detail Materi / Content View
@@ -131,14 +131,11 @@ const MaterialDetail = () => {
               <span className="font-medium">Daftar Materi</span>
             </button>
 
-            {/* Progress indicator */}
-            <div className="text-sm text-slate-500">
-              <span className="font-medium text-blue-600">{currentIndex + 1}</span>
-              <span> / {materials.length}</span>
-            </div>
-
             {/* Placeholder for alignment */}
             <div className="w-10 lg:hidden"></div>
+
+            {/* Placeholder for alignment (desktop) */}
+            <div className="hidden lg:block w-24" />
           </div>
         </header>
 
@@ -146,11 +143,6 @@ const MaterialDetail = () => {
         <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
           {/* Material Header */}
           <header className="mb-8">
-            <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
-              <BookOpen size={16} />
-              <span>Materi {currentIndex + 1} dari {materials.length}</span>
-            </div>
-
             <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 leading-tight">
               {material.title}
             </h1>
@@ -159,27 +151,10 @@ const MaterialDetail = () => {
           {/* Content - Markdown/HTML rendered */}
           <article className="bg-white rounded-2xl border border-slate-200 p-6 lg:p-10 shadow-sm">
             {/* 
-              Prose styling untuk konten Markdown
-              Menggunakan Tailwind Typography atau custom styling
+              Menggunakan komponen MarkdownPreview yang sama dengan dosen
+              untuk konsistensi tampilan
             */}
-            <div
-              className="prose prose-slate max-w-none
-                prose-headings:font-bold prose-headings:text-slate-900
-                prose-h1:text-2xl prose-h1:mt-8 prose-h1:mb-4
-                prose-h2:text-xl prose-h2:mt-6 prose-h2:mb-3
-                prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2
-                prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-4
-                prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-slate-900 prose-strong:font-semibold
-                prose-ul:my-4 prose-li:text-slate-700
-                prose-ol:my-4
-                prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:rounded-xl prose-pre:p-4 prose-pre:overflow-x-auto
-                prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-[''] prose-code:after:content-['']
-                prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-lg prose-blockquote:italic
-                prose-img:rounded-xl prose-img:shadow-md
-              "
-              dangerouslySetInnerHTML={{ __html: material.content }}
-            />
+            <MarkdownPreview content={material.content} />
           </article>
 
           {/* Attachments */}
@@ -266,7 +241,7 @@ const MaterialDetail = () => {
                 to={`/mahasiswa/courses/${courseId}`}
                 className="flex-1 flex items-center justify-center gap-2 p-5 bg-emerald-600 rounded-2xl hover:bg-emerald-700 transition text-white shadow-lg shadow-emerald-200"
               >
-                <span className="font-medium">🎉 Selesai! Kembali ke Kelas</span>
+                <span className="font-medium">Kembali ke Kelas</span>
               </Link>
             )}
           </nav>

@@ -5,9 +5,6 @@ import {
   FileText,
   ArrowRight,
   ChevronLeft,
-  Clock,
-  CheckCircle,
-  Circle,
   Hash,
 } from 'lucide-react';
 import { getMaterials } from '../../services/dosen.service';

@@ -8,8 +8,6 @@ import {
   ArrowRight,
   Clock,
   FileText,
-  CheckCircle,
-  Circle,
 } from 'lucide-react';
 import { getAssignments, getMyCourses } from '../../services/mahasiswa.service';
 import { getMaterials } from '../../services/dosen.service';
@@ -252,8 +250,8 @@ const CourseHome = () => {
 
                 {/* Status Badge */}
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${assignment.status === 'submitted'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-amber-100 text-amber-700'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-amber-100 text-amber-700'
                   }`}>
                   {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
                 </span>
