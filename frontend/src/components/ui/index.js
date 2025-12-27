@@ -30,5 +30,9 @@ export { default as MarqueeTrack } from './MarqueeTrack';
 export { default as SocialIcons } from './SocialIcons';
 export { default as SocialLoginButtons } from './SocialLoginButtons';
 
+// Markdown
+export { default as MarkdownEditor } from './MarkdownEditor';
+export { default as MarkdownPreview } from './MarkdownPreview';
+
 // Form (deprecated wrapper kept for compatibility)
 export { default as TermsCheckbox } from './TermsCheckbox';
