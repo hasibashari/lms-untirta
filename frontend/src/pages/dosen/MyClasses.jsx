@@ -14,6 +14,8 @@ const MyClasses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  // State untuk menyimpan jumlah siswa dan materi per kelas
+  const [courseStats, setCourseStats] = useState({});
 
   // Create course state
   const [showCreate, setShowCreate] = useState(false);
@@ -31,7 +33,28 @@ const MyClasses = () => {
   const fetchCourses = () => {
     setLoading(true);
     getMyCourses()
-      .then(res => setCourses(res.data))
+      .then(async res => {
+        setCourses(res.data);
+        // Fetch jumlah siswa dan materi untuk setiap course
+        const stats = {};
+        await Promise.all(
+          res.data.map(async (course) => {
+            try {
+              const [studentsRes, materialsRes] = await Promise.all([
+                (await import('../../services/dosen.service')).getCourseStudents(course.id),
+                (await import('../../services/dosen.service')).getMaterials(course.id),
+              ]);
+              stats[course.id] = {
+                students: Array.isArray(studentsRes.data) ? studentsRes.data.length : 0,
+                materials: Array.isArray(materialsRes.data) ? materialsRes.data.length : 0,
+              };
+            } catch {
+              stats[course.id] = { students: 0, materials: 0 };
+            }
+          })
+        );
+        setCourseStats(stats);
+      })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
   };
@@ -271,14 +294,14 @@ const MyClasses = () => {
                 </h3>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-sm text-slate-500">
-                  <div className="flex items-center gap-1">
-                    <Users size={14} />
-                    <span>{course._count?.enrollments || 0} siswa</span>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 text-blue-800 font-semibold">
+                    <Users size={14} className="text-blue-500" />
+                    <span>{courseStats[course.id]?.students ?? '-'} siswa</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <FileText size={14} />
-                    <span>{course._count?.materials || 0} materi</span>
+                  <div className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-1 text-violet-800 font-semibold">
+                    <FileText size={14} className="text-violet-500" />
+                    <span>{courseStats[course.id]?.materials ?? '-'} materi</span>
                   </div>
                 </div>
               </div>

@@ -57,13 +57,6 @@ export default function Dashboard() {
       to: '/dosen/classes',
     },
     {
-      label: 'Total Materi',
-      value: stats?.totalMaterials || 0,
-      icon: FileText,
-      color: 'violet',
-      to: '/dosen/classes',
-    },
-    {
       label: 'Perlu Dinilai',
       value: stats?.pendingGrading || 0,
       icon: ClipboardList,
@@ -81,7 +74,6 @@ export default function Dashboard() {
   };
 
   // Preview hanya 3 kelas terbaru
-  const previewCourses = courses.slice(0, 3);
 
   // Format relative time
   const formatRelativeTime = (date) => {
@@ -112,7 +104,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Overview - Actionable */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {statsCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -161,13 +153,13 @@ export default function Dashboard() {
         <Link
           to="/dosen/submissions"
           className={`group flex items-center gap-4 p-5 rounded-2xl border transition-all ${(stats?.pendingGrading || 0) > 0
-              ? 'bg-amber-50 border-amber-200 hover:border-amber-300 hover:shadow-lg'
-              : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'
+            ? 'bg-amber-50 border-amber-200 hover:border-amber-300 hover:shadow-lg'
+            : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'
             }`}
         >
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${(stats?.pendingGrading || 0) > 0
-              ? 'bg-amber-100 group-hover:bg-amber-200'
-              : 'bg-emerald-50 group-hover:bg-emerald-100'
+            ? 'bg-amber-100 group-hover:bg-amber-200'
+            : 'bg-emerald-50 group-hover:bg-emerald-100'
             }`}>
             <Inbox size={24} className={(stats?.pendingGrading || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'} />
           </div>
@@ -270,111 +262,6 @@ export default function Dashboard() {
           </div>
         </section>
       )}
-
-      {/* Course Preview Section */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">Kelas Terbaru</h2>
-            <p className="text-sm text-slate-500">Preview kelas yang Anda ampu</p>
-          </div>
-          {courses.length > 3 && (
-            <Link
-              to="/dosen/classes"
-              className="flex items-center gap-1 text-blue-600 font-medium hover:underline"
-            >
-              Lihat Semua
-              <ArrowRight size={16} />
-            </Link>
-          )}
-        </div>
-
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
-                <div className="h-24 bg-slate-200"></div>
-                <div className="p-5 space-y-3">
-                  <div className="h-5 bg-slate-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                  <div className="h-10 bg-slate-200 rounded mt-4"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-600 font-medium">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-3 text-sm text-red-600 hover:underline"
-            >
-              Coba lagi
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && courses.length === 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-              <BookOpen size={32} className="text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              Belum Ada Kelas
-            </h3>
-            <p className="text-slate-500 max-w-sm mx-auto mb-4">
-              Anda belum memiliki kelas. Buat kelas pertama Anda sekarang.
-            </p>
-            <Link
-              to="/dosen/classes"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Buat Kelas
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        )}
-
-        {!loading && !error && previewCourses.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {previewCourses.map((course) => (
-              <Link
-                key={course.id}
-                to={`/dosen/courses/${course.id}`}
-                className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all"
-              >
-                {/* Course Header */}
-                <div className="h-24 bg-linear-to-br from-blue-500 to-blue-600 p-4 flex items-end">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1">
-                    <span className="text-white text-sm font-medium">{course.code}</span>
-                  </div>
-                </div>
-
-                {/* Course Body */}
-                <div className="p-5">
-                  <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition mb-2 line-clamp-2">
-                    {course.title}
-                  </h3>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <div className="flex items-center gap-1">
-                      <Users size={14} />
-                      <span>{course._count?.enrollments || 0} siswa</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <FileText size={14} />
-                      <span>{course._count?.materials || 0} materi</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   );
 }

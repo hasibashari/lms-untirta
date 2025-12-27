@@ -20,7 +20,6 @@ import Breadcrumb from '../../components/navigation/Breadcrumb';
  */
 export default function CourseHome() {
   const { courseId } = useParams();
-  const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
@@ -189,7 +188,7 @@ export default function CourseHome() {
       {/* Course Header Card */}
       <div className={`bg-linear-to-r ${gradientClass} rounded-2xl overflow-hidden`}>
         <div className="relative p-6 lg:p-8">
-          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="absolute inset-0 bg-black/20"></div>
           <div className="relative z-10">
             {/* Course Code Badge */}
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium px-3 py-1 rounded-full mb-4">

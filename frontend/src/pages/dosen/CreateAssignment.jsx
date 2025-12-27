@@ -211,52 +211,6 @@ export default function CreateAssignment() {
             </button>
           </div>
         </div>
-
-        {/* Tips Card */}
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
-          <div className="flex items-start gap-3">
-            <Lightbulb size={20} className="text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-amber-900 mb-2">Tips Menulis Instruksi yang Baik</h4>
-              <ul className="text-sm text-amber-800 space-y-1.5">
-                <li>• <strong>Jelaskan tujuan</strong> - Apa yang akan dipelajari mahasiswa dari tugas ini?</li>
-                <li>• <strong>Langkah-langkah</strong> - Berikan langkah yang jelas dan terstruktur</li>
-                <li>• <strong>Format pengumpulan</strong> - File apa yang harus dikumpulkan? (PDF, ZIP, link repo)</li>
-                <li>• <strong>Kriteria penilaian</strong> - Bagaimana tugas akan dinilai?</li>
-                <li>• <strong>Referensi</strong> - Sertakan link atau sumber yang membantu</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Example Template */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
-          <h4 className="font-semibold text-slate-900 mb-3">📝 Contoh Template Instruksi</h4>
-          <div className="bg-white rounded-lg p-4 font-mono text-sm text-slate-700 overflow-x-auto">
-            <pre className="whitespace-pre-wrap">{`## Tujuan
-Mahasiswa dapat mengimplementasikan algoritma sorting dan menganalisis kompleksitasnya.
-
-## Instruksi
-1. Implementasikan 3 algoritma sorting: Bubble Sort, Quick Sort, dan Merge Sort
-2. Buat analisis kompleksitas waktu dan ruang untuk masing-masing algoritma
-3. Bandingkan performa ketiga algoritma dengan dataset yang berbeda
-
-## Format Pengumpulan
-- File ZIP berisi source code dan laporan PDF
-- Nama file: \`NIM_Nama_Tugas1.zip\`
-
-## Kriteria Penilaian
-| Aspek | Bobot |
-|-------|-------|
-| Implementasi benar | 40% |
-| Analisis kompleksitas | 30% |
-| Laporan & dokumentasi | 30% |
-
-## Referensi
-- [Visualgo - Sorting](https://visualgo.net/en/sorting)
-- Slide pertemuan ke-5`}</pre>
-          </div>
-        </div>
       </form>
     </div>
   );
