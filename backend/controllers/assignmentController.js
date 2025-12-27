@@ -113,4 +113,68 @@ const getMyAssignment = async (req, res) => {
   }
 };
 
-export { create, submit, getSubmissions, grade, getAssignments, getMyAssignment };
+// Get All My Grades (Mahasiswa) - Nilai terpusat
+const getAllMyGrades = async (req, res) => {
+  try {
+    const result = await assignmentService.getAllMyGrades(req.user.id);
+    res.status(200).json({
+      message: 'Daftar nilai berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get Dashboard Stats (Mahasiswa)
+const getMyDashboardStats = async (req, res) => {
+  try {
+    const result = await assignmentService.getMyDashboardStats(req.user.id);
+    res.status(200).json({
+      message: 'Statistik berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get Dashboard Stats (Dosen)
+const getTeacherDashboardStats = async (req, res) => {
+  try {
+    const result = await assignmentService.getTeacherDashboardStats(req.user.id);
+    res.status(200).json({
+      message: 'Statistik dosen berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get Recent Submissions (Dosen) - untuk notifikasi
+const getRecentSubmissions = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const result = await assignmentService.getRecentSubmissionsForTeacher(req.user.id, limit);
+    res.status(200).json({
+      message: 'Submissions terbaru berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export {
+  create,
+  submit,
+  getSubmissions,
+  grade,
+  getAssignments,
+  getMyAssignment,
+  getAllMyGrades,
+  getMyDashboardStats,
+  getTeacherDashboardStats,
+  getRecentSubmissions,
+};
