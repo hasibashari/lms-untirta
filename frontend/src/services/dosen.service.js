@@ -43,3 +43,13 @@ export const getSubmissions = assignmentId => {
 export const gradeSubmission = (submissionId, payload) => {
   return api.patch(`/assignments/submissions/${submissionId}`, payload);
 };
+
+// Dashboard stats untuk dosen
+export const getTeacherDashboardStats = () => {
+  return api.get('/assignments/teacher-stats');
+};
+
+// Recent submissions untuk notifikasi
+export const getRecentSubmissions = (limit = 10) => {
+  return api.get(`/assignments/recent-submissions?limit=${limit}`);
+};
