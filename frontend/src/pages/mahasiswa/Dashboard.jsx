@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, GraduationCap, ArrowRight, ClipboardList } from 'lucide-react';
-import { getMyCourses } from '../../services/mahasiswa.service';
+import { BookOpen, ClipboardList, ArrowRight, Award, Clock } from 'lucide-react';
+import { getMyCourses, getMyDashboardStats } from '../../services/mahasiswa.service';
 import { StudentCourseCard } from '../../components/course';
 
 /**
@@ -12,28 +12,39 @@ import { StudentCourseCard } from '../../components/course';
  */
 const MahasiswaDashboard = () => {
   const [courses, setCourses] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    getMyCourses()
-      .then(res => setCourses(res.data))
+    Promise.all([getMyCourses(), getMyDashboardStats()])
+      .then(([coursesRes, statsRes]) => {
+        setCourses(coursesRes.data);
+        setStats(statsRes.data);
+      })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
   }, []);
 
-  // Stats cards - hanya menampilkan informasi dasar
-  const stats = [
+  // Stats cards - menampilkan informasi yang lebih bermakna
+  const statsCards = [
     {
       label: 'Total Kelas',
-      value: courses.length,
+      value: stats?.totalCourses || courses.length,
       icon: BookOpen,
       color: 'blue',
     },
     {
-      label: 'Kelas Aktif',
-      value: courses.length,
-      icon: GraduationCap,
+      label: 'Tugas Pending',
+      value: stats?.pendingAssignments || 0,
+      icon: Clock,
+      color: 'amber',
+      highlight: (stats?.pendingAssignments || 0) > 0,
+    },
+    {
+      label: 'Tugas Dinilai',
+      value: stats?.gradedAssignments || 0,
+      icon: Award,
       color: 'emerald',
     },
   ];
@@ -41,6 +52,7 @@ const MahasiswaDashboard = () => {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600',
     emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
   };
 
   // Preview hanya 3 kelas terbaru
@@ -59,20 +71,21 @@ const MahasiswaDashboard = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {stats.map((stat) => {
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {statsCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <div
               key={stat.label}
-              className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md transition"
+              className={`bg-white rounded-2xl border p-5 hover:shadow-md transition ${stat.highlight ? 'border-amber-300 ring-1 ring-amber-100' : 'border-slate-200'
+                }`}
             >
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClasses[stat.color]}`}>
                   <Icon size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                  <p className="text-2xl font-bold text-slate-900">{loading ? '-' : stat.value}</p>
                   <p className="text-sm text-slate-500">{stat.label}</p>
                 </div>
               </div>
@@ -82,7 +95,7 @@ const MahasiswaDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link
           to="/mahasiswa/classes"
           className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all"
@@ -97,15 +110,45 @@ const MahasiswaDashboard = () => {
           <ArrowRight size={20} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
         </Link>
 
-        <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
-            <ClipboardList size={24} className="text-slate-400" />
+        <Link
+          to="/mahasiswa/grades"
+          className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all"
+        >
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition">
+            <Award size={24} className="text-emerald-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-500">Tugas Saya</h3>
-            <p className="text-sm text-slate-400">Segera hadir</p>
+            <h3 className="font-semibold text-slate-900">Nilai Saya</h3>
+            <p className="text-sm text-slate-500">{stats?.gradedAssignments || 0} tugas dinilai</p>
           </div>
-        </div>
+          <ArrowRight size={20} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
+        </Link>
+
+        {stats?.pendingAssignments > 0 ? (
+          <Link
+            to="/mahasiswa/grades"
+            className="group flex items-center gap-4 p-5 bg-amber-50 rounded-2xl border border-amber-200 hover:border-amber-300 hover:shadow-lg transition-all"
+          >
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition">
+              <ClipboardList size={24} className="text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900">Tugas Pending</h3>
+              <p className="text-sm text-amber-700">{stats.pendingAssignments} tugas menunggu</p>
+            </div>
+            <ArrowRight size={20} className="text-amber-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+          </Link>
+        ) : (
+          <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
+              <ClipboardList size={24} className="text-slate-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-slate-500">Tidak Ada Tugas</h3>
+              <p className="text-sm text-slate-400">Semua tugas selesai</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Course Preview Section */}
