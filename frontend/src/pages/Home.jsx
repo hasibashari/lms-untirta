@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 
 // Import Components (Sections)
-import HeroSection from '../components/HeroSection';
-import CourseSection from '../components/CourseSection';
-import TestimonialSection from '../components/TestimonialSection';
-import PoweredBySection from '../components/PoweredBySection';
+import {
+  HeroSection,
+  CourseSection,
+  TestimonialSection,
+  PoweredBySection
+} from '../components/landing';
 
 // Import Data from constants
 import { COURSES_DATA, TESTIMONIALS, PARTNERS } from '../utils/constants';
