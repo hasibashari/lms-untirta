@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { login as loginAPI, getMe } from '../services/auth.service';
 
 const AuthContext = createContext(null);
@@ -9,28 +9,30 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // ===== LOGIN REAL =====
-  const login = async (email, password) => {
+  // Memoized dengan useCallback agar reference stabil
+  const login = useCallback(async (email, password) => {
     const res = await loginAPI({ email, password });
 
-    const { token, user } = res.data;
+    const { token: newToken, user: newUser } = res.data;
 
-    localStorage.setItem('token', token);
+    localStorage.setItem('token', newToken);
 
-    setToken(token);
-    setUser(user);
+    setToken(newToken);
+    setUser(newUser);
 
-    return user; // penting untuk redirect berdasarkan role
-  };
+    return newUser; // penting untuk redirect berdasarkan role
+  }, []);
 
   // ===== LOGOUT =====
-  const logout = () => {
+  // Memoized dengan useCallback agar reference stabil
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
     setToken(null);
-  };
+  }, []);
 
   // ===== RESTORE AUTH (AUTO LOGIN) =====
-  const restoreAuth = async () => {
+  const restoreAuth = useCallback(async () => {
     const storedToken = localStorage.getItem('token');
 
     if (!storedToken) {
@@ -49,28 +51,35 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     restoreAuth();
-  }, []);
+  }, [restoreAuth]);
+
+  // ===== MEMOIZED CONTEXT VALUE =====
+  // Mencegah re-render semua consumers ketika AuthProvider re-render
+  // Value hanya berubah ketika user, token, atau loading berubah
+  const value = useMemo(() => ({
+    user,
+    token,
+    loading,
+    isAuthenticated: !!user,
+    login,
+    logout,
+  }), [user, token, loading, login, logout]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        loading,
-        isAuthenticated: !!user,
-        login,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
