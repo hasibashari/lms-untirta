@@ -228,8 +228,8 @@ const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
         ? 'graded'
         : 'submitted'
       : now > assignment.dueDate
-      ? 'overdue'
-      : 'pending',
+        ? 'overdue'
+        : 'pending',
     grade: mySubmission ? mySubmission.grade : null,
     feedback: mySubmission ? mySubmission.feedback : null,
   };
@@ -269,7 +269,130 @@ const getSubmissionsByAssignment = async (assignmentId, teacherId) => {
   });
 };
 
-// 5. Dosen memberi nilai
+// 5. Get All Grades for Student (Mahasiswa melihat semua nilai)
+const getAllMyGrades = async (studentId) => {
+  // Ambil semua enrollment mahasiswa
+  const enrollments = await prisma.enrollment.findMany({
+    where: { userId: studentId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          code: true,
+          teacher: {
+            select: {
+              name: true,
+            },
+          },
+          assignments: {
+            select: {
+              id: true,
+              title: true,
+              dueDate: true,
+              submissions: {
+                where: { studentId },
+                select: {
+                  id: true,
+                  grade: true,
+                  feedback: true,
+                  submittedAt: true,
+                },
+              },
+            },
+            orderBy: { dueDate: 'desc' },
+          },
+        },
+      },
+    },
+  });
+
+  // Transform data
+  const result = [];
+
+  for (const enrollment of enrollments) {
+    const course = enrollment.course;
+
+    for (const assignment of course.assignments) {
+      const submission = assignment.submissions[0] || null;
+      const now = new Date();
+
+      result.push({
+        courseId: course.id,
+        courseName: course.title,
+        courseCode: course.code,
+        teacherName: course.teacher?.name || 'Unknown',
+        assignmentId: assignment.id,
+        assignmentTitle: assignment.title,
+        dueDate: assignment.dueDate,
+        status: submission
+          ? submission.grade !== null
+            ? 'graded'
+            : 'submitted'
+          : now > assignment.dueDate
+            ? 'overdue'
+            : 'pending',
+        grade: submission?.grade || null,
+        feedback: submission?.feedback || null,
+        submittedAt: submission?.submittedAt || null,
+      });
+    }
+  }
+
+  return result;
+};
+
+// 6. Get Dashboard Stats for Student
+const getMyDashboardStats = async (studentId) => {
+  // Ambil semua enrollment dengan assignments
+  const enrollments = await prisma.enrollment.findMany({
+    where: { userId: studentId },
+    include: {
+      course: {
+        include: {
+          assignments: {
+            include: {
+              submissions: {
+                where: { studentId },
+                select: { id: true, grade: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  let totalAssignments = 0;
+  let pendingAssignments = 0;
+  let gradedAssignments = 0;
+  const now = new Date();
+
+  for (const enrollment of enrollments) {
+    for (const assignment of enrollment.course.assignments) {
+      totalAssignments++;
+      const submission = assignment.submissions[0];
+
+      if (!submission) {
+        // Belum dikumpulkan
+        if (now <= assignment.dueDate) {
+          pendingAssignments++;
+        }
+      } else if (submission.grade !== null) {
+        gradedAssignments++;
+      }
+    }
+  }
+
+  return {
+    totalCourses: enrollments.length,
+    totalAssignments,
+    pendingAssignments,
+    gradedAssignments,
+  };
+};
+
+// 7. Dosen memberi nilai
 const gradeSubmission = async (submissionId, teacherId, data) => {
   // Validasi Kepemilikan (Sedikit kompleks karena harus naik 2 level: Submission -> Assignment -> Course -> Teacher)
   const submission = await prisma.submission.findUnique({
@@ -305,6 +428,124 @@ const gradeSubmission = async (submissionId, teacherId, data) => {
   });
 };
 
+// 8. Get Dashboard Stats for Teacher (Dosen)
+const getTeacherDashboardStats = async (teacherId) => {
+  // Ambil semua courses milik dosen
+  const courses = await prisma.course.findMany({
+    where: { teacherId },
+    include: {
+      students: {
+        select: { id: true },
+      },
+      materials: {
+        select: { id: true },
+      },
+      assignments: {
+        include: {
+          submissions: {
+            select: {
+              id: true,
+              grade: true,
+              submittedAt: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  let totalStudents = 0;
+  let totalMaterials = 0;
+  let totalAssignments = 0;
+  let pendingGrading = 0; // Submissions yang belum dinilai
+  let recentSubmissions = 0; // Submissions dalam 7 hari terakhir
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  for (const course of courses) {
+    totalStudents += course.students.length;
+    totalMaterials += course.materials.length;
+    totalAssignments += course.assignments.length;
+
+    for (const assignment of course.assignments) {
+      for (const submission of assignment.submissions) {
+        // Hitung yang belum dinilai
+        if (submission.grade === null) {
+          pendingGrading++;
+        }
+        // Hitung submissions terbaru (7 hari terakhir)
+        if (new Date(submission.submittedAt) > sevenDaysAgo) {
+          recentSubmissions++;
+        }
+      }
+    }
+  }
+
+  return {
+    totalCourses: courses.length,
+    totalStudents,
+    totalMaterials,
+    totalAssignments,
+    pendingGrading,
+    recentSubmissions,
+  };
+};
+
+// 9. Get Recent Submissions for Teacher (untuk notifikasi)
+const getRecentSubmissionsForTeacher = async (teacherId, limit = 10) => {
+  // Ambil submissions terbaru dari semua kelas dosen
+  const submissions = await prisma.submission.findMany({
+    where: {
+      assignment: {
+        course: {
+          teacherId,
+        },
+      },
+    },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      assignment: {
+        select: {
+          id: true,
+          title: true,
+          course: {
+            select: {
+              id: true,
+              title: true,
+              code: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      submittedAt: 'desc',
+    },
+    take: limit,
+  });
+
+  return submissions.map(sub => ({
+    id: sub.id,
+    studentName: sub.student.name,
+    studentEmail: sub.student.email,
+    assignmentId: sub.assignment.id,
+    assignmentTitle: sub.assignment.title,
+    courseId: sub.assignment.course.id,
+    courseName: sub.assignment.course.title,
+    courseCode: sub.assignment.course.code,
+    submittedAt: sub.submittedAt,
+    isGraded: sub.grade !== null,
+    grade: sub.grade,
+  }));
+};
+
 export {
   createAssignment,
   submitAssignment,
@@ -312,5 +553,9 @@ export {
   getAssignmentsByCourse,
   getAssignmentWithMySubmission,
   getSubmissionsByAssignment,
+  getAllMyGrades,
+  getMyDashboardStats,
+  getTeacherDashboardStats,
+  getRecentSubmissionsForTeacher,
   gradeSubmission,
 };
