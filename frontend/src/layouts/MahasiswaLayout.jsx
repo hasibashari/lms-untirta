@@ -3,6 +3,8 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   BookOpen,
+  Award,
+  ClipboardList,
   Menu,
   X,
 } from 'lucide-react';
@@ -30,9 +32,20 @@ const MahasiswaLayout = () => {
       to: '/mahasiswa/classes',
       icon: BookOpen,
     },
+    {
+      label: 'Nilai Saya',
+      to: '/mahasiswa/grades',
+      icon: Award,
+    },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  // Check if current path starts with the nav item path (for nested routes)
+  const isActive = (path) => {
+    if (path === '/mahasiswa/dashboard') {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
