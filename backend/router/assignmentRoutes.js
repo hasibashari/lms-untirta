@@ -11,9 +11,29 @@ import {
   getSubmissions,
   grade,
   getMyAssignment,
+  getAllMyGrades,
+  getMyDashboardStats,
+  getTeacherDashboardStats,
+  getRecentSubmissions,
 } from '../controllers/assignmentController.js';
 
 const router = express.Router();
+
+// GET ALL MY GRADES (Mahasiswa) - Nilai terpusat dari semua kelas
+// URL: GET /api/assignments/my-grades
+router.get('/my-grades', authenticateToken, authorizeRole('MAHASISWA'), getAllMyGrades);
+
+// GET DASHBOARD STATS (Mahasiswa) - Statistik untuk dashboard
+// URL: GET /api/assignments/my-stats
+router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
+
+// GET DASHBOARD STATS (Dosen) - Statistik untuk dashboard dosen
+// URL: GET /api/assignments/teacher-stats
+router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
+
+// GET RECENT SUBMISSIONS (Dosen) - Submissions terbaru untuk notifikasi
+// URL: GET /api/assignments/recent-submissions
+router.get('/recent-submissions', authenticateToken, authorizeRole('DOSEN'), getRecentSubmissions);
 
 // GET ASSIGNMENT DETAIL with MY SUBMISSION (Mahasiswa)
 // URL: GET /api/assignments/:assignmentId/me
