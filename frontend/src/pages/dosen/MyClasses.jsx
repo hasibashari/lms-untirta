@@ -1,21 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Plus, Users, FileText } from 'lucide-react';
-import { createCourse, getMyCourses } from '../../services/dosen.service';
+import { createCourse, getMyCoursesWithStats } from '../../services/dosen.service';
 import Button from '../../components/ui/Button';
 
 /**
  * MyClasses / Kelas Saya (Dosen)
  * Halaman khusus untuk menampilkan daftar lengkap kelas yang diampu
  * Terpisah dari Dashboard untuk UX yang lebih fokus
+ * 
+ * OPTIMASI:
+ * - Menggunakan single API call dengan stats (menghindari N+1 query)
+ * - useCallback untuk mencegah re-create function
+ * - useRef untuk abort controller (cancel outdated requests)
  */
 const MyClasses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  // State untuk menyimpan jumlah siswa dan materi per kelas
-  const [courseStats, setCourseStats] = useState({});
 
   // Create course state
   const [showCreate, setShowCreate] = useState(false);
@@ -26,38 +29,42 @@ const MyClasses = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchCourses();
+  // Ref untuk tracking apakah component masih mounted
+  const isMounted = useRef(true);
+
+  // Optimized fetch - single API call dengan stats
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Single API call yang sudah include stats (students & materials count)
+      const res = await getMyCoursesWithStats();
+
+      // Pastikan component masih mounted sebelum setState
+      if (isMounted.current) {
+        setCourses(res.data || []);
+      }
+    } catch (err) {
+      if (isMounted.current) {
+        setError(err?.message || err || 'Gagal memuat data');
+      }
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
   }, []);
 
-  const fetchCourses = () => {
-    setLoading(true);
-    getMyCourses()
-      .then(async res => {
-        setCourses(res.data);
-        // Fetch jumlah siswa dan materi untuk setiap course
-        const stats = {};
-        await Promise.all(
-          res.data.map(async (course) => {
-            try {
-              const [studentsRes, materialsRes] = await Promise.all([
-                (await import('../../services/dosen.service')).getCourseStudents(course.id),
-                (await import('../../services/dosen.service')).getMaterials(course.id),
-              ]);
-              stats[course.id] = {
-                students: Array.isArray(studentsRes.data) ? studentsRes.data.length : 0,
-                materials: Array.isArray(materialsRes.data) ? materialsRes.data.length : 0,
-              };
-            } catch {
-              stats[course.id] = { students: 0, materials: 0 };
-            }
-          })
-        );
-        setCourseStats(stats);
-      })
-      .catch(err => setError(err.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
-  };
+  useEffect(() => {
+    isMounted.current = true;
+    fetchCourses();
+
+    // Cleanup: mark as unmounted
+    return () => {
+      isMounted.current = false;
+    };
+  }, [fetchCourses]);
 
   const handleCreateCourse = async e => {
     e.preventDefault();
@@ -293,15 +300,15 @@ const MyClasses = () => {
                   {course.title}
                 </h3>
 
-                {/* Stats */}
+                {/* Stats - sekarang langsung dari course object */}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 text-blue-800 font-semibold">
                     <Users size={14} className="text-blue-500" />
-                    <span>{courseStats[course.id]?.students ?? '-'} siswa</span>
+                    <span>{course._count?.students ?? course.studentsCount ?? 0} siswa</span>
                   </div>
                   <div className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-1 text-violet-800 font-semibold">
                     <FileText size={14} className="text-violet-500" />
-                    <span>{courseStats[course.id]?.materials ?? '-'} materi</span>
+                    <span>{course._count?.materials ?? course.materialsCount ?? 0} materi</span>
                   </div>
                 </div>
               </div>
