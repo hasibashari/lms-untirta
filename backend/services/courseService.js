@@ -103,14 +103,13 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
   }
 
   // 5. Eksekusi Create Enrollment
-  return await prisma.enrollment.create({
+  const enrollment = await prisma.enrollment.create({
     data: {
       userId: student.id,
       courseId: courseId,
     },
     // Include data student supaya nanti return response-nya cantik (ada nama & email)
     include: {
-      enrollmentId: true,
       student: {
         select: {
           id: true,
@@ -120,6 +119,13 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
       },
     },
   });
+
+  // Transform response to match expected format
+  return {
+    enrollmentId: enrollment.id,
+    enrolledAt: enrollment.enrolledAt,
+    student: enrollment.student,
+  };
 };
 
 const getEnrolledCourses = async studentId => {
