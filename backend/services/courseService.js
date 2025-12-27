@@ -23,15 +23,13 @@ const createCourse = async (data, teacherId) => {
       title: true,
       description: true,
       code: true,
-      include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-          },
+      createdAt: true,
+      teacher: {
+        select: {
+          id: true,
+          name: true,
         },
       },
-      createdAt: true,
     },
   });
 };
@@ -183,6 +181,31 @@ const getTeachingCourses = async teacherId => {
   return courses;
 };
 
+// --- Get Teaching Courses WITH Stats (Optimized - Single Query) ---
+// Menghindari N+1 query dengan menggunakan _count Prisma
+const getTeachingCoursesWithStats = async teacherId => {
+  const courses = await prisma.course.findMany({
+    where: { teacherId },
+    select: {
+      id: true,
+      title: true,
+      code: true,
+      createdAt: true,
+      _count: {
+        select: {
+          students: true,   // Jumlah mahasiswa (nama relation di schema: students)
+          materials: true,  // Jumlah materi
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return courses;
+};
+
 // --- Get Students by Course ---
 const getStudentsByCourse = async (courseId, userId, userRole) => {
   // 1. Validasi: Pastikan Kelas tersebut ada
@@ -230,5 +253,6 @@ export {
   addStudentToCourse,
   getEnrolledCourses,
   getTeachingCourses,
+  getTeachingCoursesWithStats,
   getStudentsByCourse,
 };
