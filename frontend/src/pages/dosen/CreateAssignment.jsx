@@ -6,7 +6,6 @@ import {
   Save,
   X,
   AlertCircle,
-  Lightbulb,
 } from 'lucide-react';
 import { createAssignment } from '../../services/dosen.service';
 import { MarkdownEditor } from '../../components/ui';
