@@ -4,6 +4,12 @@ export const getMyCourses = async () => {
   return api.get('/courses/me');
 };
 
+// Optimized: Single API call dengan stats (menghindari N+1 query)
+// Endpoint ini mengembalikan courses dengan _count atau stats langsung
+export const getMyCoursesWithStats = async () => {
+  return api.get('/courses/me?includeStats=true');
+};
+
 export const createCourse = async payload => {
   return api.post('/courses', payload);
 };
