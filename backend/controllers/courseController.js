@@ -70,6 +70,8 @@ const getMyCourses = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
+    const includeStats = req.query.includeStats === 'true';
+
     let courses;
     let message;
 
@@ -80,7 +82,12 @@ const getMyCourses = async (req, res) => {
       message = 'Berhasil mengambil daftar kelas yang diikuti';
     } else if (userRole === 'DOSEN') {
       // Dosen: Ambil kelas yang diajar (teaching)
-      courses = await courseService.getTeachingCourses(userId);
+      // Optimasi: gunakan WithStats jika diminta untuk menghindari N+1 query
+      if (includeStats) {
+        courses = await courseService.getTeachingCoursesWithStats(userId);
+      } else {
+        courses = await courseService.getTeachingCourses(userId);
+      }
       message = 'Berhasil mengambil daftar kelas yang diajar';
     } else if (userRole === 'ADMIN') {
       // Admin: Ambil semua kelas
