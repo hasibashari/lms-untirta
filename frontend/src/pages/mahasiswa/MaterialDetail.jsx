@@ -107,6 +107,8 @@ const MaterialDetail = () => {
         course={course}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        onBackClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
+        basePath="/mahasiswa"
       />
 
       {/* Main Content */}

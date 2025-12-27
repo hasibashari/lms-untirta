@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Filter } from 'lucide-react';
 import { getMyCourses } from '../../services/mahasiswa.service';
 import { StudentCourseCard } from '../../components/course';
@@ -9,6 +10,7 @@ import { StudentCourseCard } from '../../components/course';
  * Terpisah dari Dashboard untuk UX yang lebih fokus
  */
 const MyClasses = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -136,6 +138,7 @@ const MyClasses = () => {
             <StudentCourseCard
               key={enrollment.enrollmentId}
               enrollment={enrollment}
+              onClick={(courseId) => navigate(`/mahasiswa/courses/${courseId}`)}
             />
           ))}
         </div>

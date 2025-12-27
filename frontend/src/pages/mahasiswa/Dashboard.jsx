@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, ClipboardList, ArrowRight, Award, Clock } from 'lucide-react';
 import { getMyCourses, getMyDashboardStats } from '../../services/mahasiswa.service';
 import { StudentCourseCard } from '../../components/course';
@@ -11,6 +11,7 @@ import { StudentCourseCard } from '../../components/course';
  * Berbeda dari MyClasses yang menampilkan daftar lengkap
  */
 const MahasiswaDashboard = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -216,6 +217,7 @@ const MahasiswaDashboard = () => {
               <StudentCourseCard
                 key={enrollment.enrollmentId}
                 enrollment={enrollment}
+                onClick={(courseId) => navigate(`/mahasiswa/courses/${courseId}`)}
               />
             ))}
           </div>
