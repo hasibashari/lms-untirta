@@ -1,206 +1,696 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Users,
+  Search,
+  FileText,
+  Link as LinkIcon,
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+  Download,
+  ExternalLink,
+  Filter,
+  Star,
+  MessageSquare,
+  Save,
+  Check,
+  AlertCircle,
+} from 'lucide-react';
 import {
   getSubmissions,
-  gradeSubmission,
   getAssignments,
+  gradeSubmission,
 } from '../../services/dosen.service';
-import SubmissionItem from '../../components/SubmissionItem';
-import BackButton from '../../components/navigation/BackButton';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 
+/**
+ * Submissions - Daftar Submission Mahasiswa (Dosen)
+ * Mode A: Pilih assignment (jika tidak ada assignmentId)
+ * Mode B: Lihat submissions untuk assignment tertentu
+ */
 export default function Submissions() {
   const { courseId, assignmentId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
+  // Data state
   const [assignments, setAssignments] = useState([]);
-
   const [submissions, setSubmissions] = useState([]);
+  const [currentAssignment, setCurrentAssignment] = useState(null);
+
+  // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'submitted' | 'not-submitted'
 
+  // Fetch data based on mode
   useEffect(() => {
-    // Mode A: course-level submissions page -> show assignment picker/list
-    if (courseId && !assignmentId) {
-      setLoading(true);
-      setError(null);
+    if (!courseId || courseId === 'undefined') return;
+
+    setLoading(true);
+    setError(null);
+
+    // Mode A: Course-level - fetch assignments to pick
+    if (!assignmentId) {
       getAssignments(courseId)
-        .then(res => setAssignments(res.data))
-        .catch(err => setError(err))
+        .then(res => setAssignments(res.data || []))
+        .catch(err => setError(err?.message || 'Gagal memuat data'))
         .finally(() => setLoading(false));
       return;
     }
 
-    // Mode B: assignment submissions
-    if (!assignmentId) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    getSubmissions(assignmentId)
-      .then(res => setSubmissions(res.data))
-      .catch(err => setError(err))
+    // Mode B: Assignment-level - fetch submissions
+    Promise.all([
+      getSubmissions(assignmentId),
+      getAssignments(courseId),
+    ])
+      .then(([subRes, assignRes]) => {
+        setSubmissions(subRes.data || []);
+        // Find current assignment info
+        const current = (assignRes.data || []).find(a => a.id === assignmentId);
+        setCurrentAssignment(current);
+      })
+      .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
-  }, [assignmentId, courseId]);
+  }, [courseId, assignmentId]);
 
+  // Handle grade submission
   const handleGrade = async (submissionId, grade, feedback) => {
     try {
-      const res = await gradeSubmission(submissionId, {
-        grade,
-        feedback,
-      });
-
-      // Update local state (UX cepat, tanpa refetch)
+      const res = await gradeSubmission(submissionId, { grade, feedback });
+      // Update local state for instant UX
       setSubmissions(prev =>
         prev.map(s =>
           s.id === submissionId
-            ? { ...s, ...res.data }
+            ? { ...s, grade: res.data?.grade ?? grade, feedback: res.data?.feedback ?? feedback }
             : s
         )
       );
+      return { success: true };
     } catch (err) {
-      alert('Gagal menyimpan nilai');
+      return { success: false, error: err?.response?.data?.message || 'Gagal menyimpan nilai' };
     }
   };
 
-  const tabClass = ({ isActive }) =>
-    `text-sm px-3 py-2 rounded ${isActive ? 'bg-white shadow font-semibold' : 'hover:bg-white/60'
-    }`;
+  // Filter submissions
+  const filteredSubmissions = submissions.filter(sub => {
+    // Search filter
+    const matchSearch =
+      sub.student?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.student?.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const isSubmissionTabActive = location.pathname.includes('/submissions');
-  const submissionTabClass = `text-sm px-3 py-2 rounded ${isSubmissionTabActive
-      ? 'bg-white shadow font-semibold'
-      : 'hover:bg-white/60'
-    }`;
+    // Status filter
+    const hasGrade = sub.grade !== null && sub.grade !== undefined;
+    const matchStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'submitted' && sub.submittedAt) ||
+      (filterStatus === 'not-submitted' && !sub.submittedAt) ||
+      (filterStatus === 'graded' && hasGrade) ||
+      (filterStatus === 'not-graded' && sub.submittedAt && !hasGrade);
 
-  const errorMessage = err =>
-    err?.response?.data?.message || err?.message || 'Terjadi kesalahan.';
+    return matchSearch && matchStatus;
+  });
 
-  if (loading) return <p className='text-gray-600'>Memuat submission...</p>;
-  if (error) return <p className='text-red-600'>{errorMessage(error)}</p>;
+  // Calculate stats
+  const stats = {
+    total: submissions.length,
+    submitted: submissions.filter(s => s.submittedAt).length,
+    notSubmitted: submissions.filter(s => !s.submittedAt).length,
+    graded: submissions.filter(s => s.grade !== null && s.grade !== undefined).length,
+  };
+
+  // Format date
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Check if submission is late
+  const isLate = (submittedAt, dueDate) => {
+    if (!submittedAt || !dueDate) return false;
+    return new Date(submittedAt) > new Date(dueDate);
+  };
+
+  if (!courseId || courseId === 'undefined') {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <p className="text-slate-500">Memuat data kelas...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className='space-y-4'>
-      <div className='space-y-2'>
-        <BackButton fallback={courseId ? `/dosen/courses/${courseId}` : '/dosen/dashboard'} />
-        <Breadcrumb
-          items={[
-            { label: 'Dashboard', to: '/dosen/dashboard' },
-            ...(courseId
-              ? [{ label: 'Kelas', to: `/dosen/courses/${courseId}` }]
-              : []),
-            ...(assignmentId
-              ? [{ label: 'Tugas', to: courseId ? `/dosen/courses/${courseId}/assignments` : '/dosen/dashboard' }]
-              : []),
-            { label: 'Submission' },
-          ]}
-        />
-      </div>
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Dashboard', to: '/dosen/dashboard' },
+          { label: 'Kelas Saya', to: '/dosen/classes' },
+          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
+          { label: 'Tugas', to: `/dosen/courses/${courseId}/assignments` },
+          { label: assignmentId ? 'Submissions' : 'Pilih Tugas' },
+        ]}
+      />
 
-      {courseId && (
-        <div className='bg-gray-50 rounded p-2 flex gap-2 flex-wrap'>
-          <NavLink to={`/dosen/courses/${courseId}/materials`} className={tabClass}>
-            Materi
-          </NavLink>
-          <NavLink to={`/dosen/courses/${courseId}/students`} className={tabClass}>
-            Mahasiswa
-          </NavLink>
-          <NavLink to={`/dosen/courses/${courseId}/assignments`} className={tabClass}>
-            Tugas
-          </NavLink>
-          <NavLink
-            to={`/dosen/courses/${courseId}/submissions`}
-            className={() => submissionTabClass}
-          >
-            Submission
-          </NavLink>
-        </div>
-      )}
+      {/* Mode A: Assignment Picker */}
+      {!assignmentId && (
+        <>
+          {/* Header */}
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
+              Lihat Submissions
+            </h1>
+            <p className="text-slate-500 mt-1">
+              Pilih tugas untuk melihat daftar pengumpulan mahasiswa
+            </p>
+          </div>
 
-      <div>
-        <h1 className='text-xl font-bold'>Submission</h1>
-        <p className='text-sm text-gray-600'>Review dan nilai pengumpulan mahasiswa.</p>
-      </div>
-
-      {/* Course-level view: pick an assignment */}
-      {courseId && !assignmentId && (
-        <div className='space-y-3'>
-          {assignments.length === 0 ? (
-            <div className='bg-white p-4 rounded shadow'>
-              <p className='text-gray-600'>Belum ada tugas di kelas ini.</p>
-              <button
-                onClick={() => navigate(`/dosen/courses/${courseId}/assignments/new`)}
-                className='text-blue-600 hover:underline text-sm mt-2'
-              >
-                Buat tugas dulu →
-              </button>
-            </div>
-          ) : (
-            <div className='space-y-2'>
-              {assignments.map(task => (
-                <div
-                  key={task.id}
-                  className='bg-white p-4 rounded shadow flex items-center justify-between gap-4'
-                >
-                  <div>
-                    <p className='font-semibold'>{task.title}</p>
-                    <p className='text-sm text-gray-600'>
-                      Deadline: {new Date(task.dueDate).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      navigate(`/dosen/courses/${courseId}/assignments/${task.id}/submissions`)
-                    }
-                    className='text-blue-600 hover:underline text-sm'
-                  >
-                    Lihat Submission →
-                  </button>
+          {/* Loading */}
+          {loading && (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
+                  <div className="h-5 bg-slate-200 rounded w-1/3 mb-2"></div>
+                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Assignment view */}
-      {assignmentId && submissions.length === 0 && (
-        <div className='bg-white p-4 rounded shadow'>
-          <p className='text-gray-600'>Belum ada mahasiswa yang mengumpulkan tugas.</p>
-          {courseId && (
-            <button
-              onClick={() => navigate(`/dosen/courses/${courseId}/assignments`)}
-              className='text-blue-600 hover:underline text-sm mt-2'
-            >
-              Kembali ke daftar tugas →
-            </button>
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+              <p className="text-red-600">{error}</p>
+            </div>
           )}
-        </div>
+
+          {/* Empty State */}
+          {!loading && !error && assignments.length === 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                <FileText size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Belum Ada Tugas
+              </h3>
+              <p className="text-slate-500 mb-6">
+                Buat tugas terlebih dahulu untuk melihat submissions
+              </p>
+              <button
+                onClick={() => navigate(`/dosen/courses/${courseId}/assignments/new`)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Buat Tugas
+              </button>
+            </div>
+          )}
+
+          {/* Assignment List */}
+          {!loading && !error && assignments.length > 0 && (
+            <div className="space-y-3">
+              {assignments.map(assignment => (
+                <button
+                  key={assignment.id}
+                  onClick={() => navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/submissions`)}
+                  className="w-full text-left bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg p-5 transition-all group"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition">
+                        {assignment.title}
+                      </h3>
+                      <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          Deadline: {formatDate(assignment.dueDate)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Users size={18} />
+                      <span className="text-sm font-medium">Lihat Submissions</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
-      {assignmentId && submissions.map(sub => (
-        <SubmissionItem
-          key={sub.id}
-          submission={sub}
-          onGrade={handleGrade}
-        />
-      ))}
+      {/* Mode B: Submission List */}
+      {assignmentId && (
+        <>
+          {/* Header with Back Button */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <button
+                onClick={() => navigate(`/dosen/courses/${courseId}/assignments`)}
+                className="shrink-0 p-2 hover:bg-slate-100 rounded-lg transition"
+              >
+                <ArrowLeft size={20} className="text-slate-600" />
+              </button>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
+                  {currentAssignment?.title || 'Submissions'}
+                </h1>
+                {currentAssignment && (
+                  <p className="text-slate-500 mt-1 flex items-center gap-2">
+                    <Calendar size={14} />
+                    Deadline: {formatDate(currentAssignment.dueDate)}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
-      {!courseId && !assignmentId && (
-        <div className='bg-white p-4 rounded shadow'>
-          <p className='text-gray-600'>Pilih kelas terlebih dahulu.</p>
-          <button
-            onClick={() => navigate('/dosen/dashboard')}
-            className='text-blue-600 hover:underline text-sm mt-2'
-          >
-            Kembali ke Dashboard →
-          </button>
+          {/* Stats Cards */}
+          {!loading && !error && (
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
+                <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
+                <div className="text-sm text-slate-500">Total Mahasiswa</div>
+              </div>
+              <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-600">{stats.submitted}</div>
+                <div className="text-sm text-emerald-600">Sudah Submit</div>
+              </div>
+              <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">{stats.graded}</div>
+                <div className="text-sm text-blue-600">Sudah Dinilai</div>
+              </div>
+            </div>
+          )}
+
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari nama atau email mahasiswa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              />
+            </div>
+
+            {/* Filter */}
+            <div className="relative">
+              <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="appearance-none pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer"
+              >
+                <option value="all">Semua Status</option>
+                <option value="submitted">Sudah Submit</option>
+                <option value="not-submitted">Belum Submit</option>
+                <option value="graded">Sudah Dinilai</option>
+                <option value="not-graded">Belum Dinilai</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Loading */}
+          {loading && (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 bg-slate-200 rounded w-1/3"></div>
+                      <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && submissions.length === 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                <Users size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Belum Ada Data
+              </h3>
+              <p className="text-slate-500">
+                Belum ada mahasiswa yang terdaftar atau mengumpulkan tugas
+              </p>
+            </div>
+          )}
+
+          {/* Submission List */}
+          {!loading && !error && filteredSubmissions.length > 0 && (
+            <div className="space-y-3">
+              {filteredSubmissions.map((submission) => (
+                <SubmissionCard
+                  key={submission.id}
+                  submission={submission}
+                  dueDate={currentAssignment?.dueDate}
+                  formatDate={formatDate}
+                  isLate={isLate}
+                  onGrade={handleGrade}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* No Search Results */}
+          {!loading && !error && submissions.length > 0 && filteredSubmissions.length === 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                <Search size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Tidak Ditemukan
+              </h3>
+              <p className="text-slate-500">
+                Tidak ada hasil yang cocok dengan filter Anda
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * SubmissionCard - Card untuk setiap submission dengan penilaian inline
+ */
+function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
+  const hasSubmitted = !!submission.submittedAt;
+  const late = isLate(submission.submittedAt, dueDate);
+  const hasGrade = submission.grade !== null && submission.grade !== undefined;
+
+  // Local state for inline grading
+  const [grade, setGrade] = useState(submission.grade ?? '');
+  const [feedback, setFeedback] = useState(submission.feedback ?? '');
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Track if values changed
+  const hasChanges =
+    String(grade) !== String(submission.grade ?? '') ||
+    feedback !== (submission.feedback ?? '');
+
+  // Generate avatar color based on name
+  const colors = [
+    'bg-blue-500',
+    'bg-emerald-500',
+    'bg-violet-500',
+    'bg-orange-500',
+    'bg-pink-500',
+    'bg-cyan-500',
+  ];
+  const colorIndex = submission.student?.name
+    ? submission.student.name.charCodeAt(0) % colors.length
+    : 0;
+  const avatarColor = colors[colorIndex];
+
+  // Get initials
+  const initials = submission.student?.name
+    ? submission.student.name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
+    : '??';
+
+  // Detect file type
+  const getFileType = (url) => {
+    if (!url) return null;
+    if (url.includes('drive.google.com') || url.includes('docs.google.com')) return 'google';
+    if (url.includes('github.com')) return 'github';
+    if (url.endsWith('.pdf')) return 'pdf';
+    if (url.endsWith('.zip') || url.endsWith('.rar')) return 'archive';
+    return 'link';
+  };
+
+  const fileType = getFileType(submission.fileUrl);
+
+  // Handle save grade
+  const handleSave = async () => {
+    if (!hasChanges) return;
+
+    setSaving(true);
+    setSaveStatus(null);
+
+    const result = await onGrade(submission.id, grade, feedback);
+
+    if (result.success) {
+      setSaveStatus('success');
+      setIsEditing(false);
+      // Clear success message after 2s
+      setTimeout(() => setSaveStatus(null), 2000);
+    } else {
+      setSaveStatus('error');
+    }
+
+    setSaving(false);
+  };
+
+  // Quick grade buttons
+  const quickGrades = [100, 90, 85, 80, 75, 70, 60, 50];
+
+  return (
+    <div className={`bg-white rounded-xl border ${hasSubmitted
+      ? hasGrade
+        ? 'border-blue-200'
+        : late
+          ? 'border-amber-200'
+          : 'border-slate-200'
+      : 'border-red-200 bg-red-50/30'
+      } overflow-hidden transition-all hover:shadow-md`}>
+      <div className="p-5">
+        <div className="flex items-start gap-4">
+          {/* Avatar */}
+          <div className={`shrink-0 w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold`}>
+            {initials}
+          </div>
+
+          {/* Student Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  {submission.student?.name || 'Nama tidak tersedia'}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {submission.student?.email}
+                </p>
+              </div>
+
+              {/* Status Badges */}
+              <div className="shrink-0 flex items-center gap-2">
+                {/* Grade Badge */}
+                {hasGrade && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                    <Star size={14} />
+                    {submission.grade}
+                  </span>
+                )}
+
+                {/* Submit Status Badge */}
+                {hasSubmitted ? (
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${late
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                    <CheckCircle size={14} />
+                    {late ? 'Terlambat' : 'Submitted'}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                    <XCircle size={14} />
+                    Belum Submit
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Submission Details */}
+            {hasSubmitted && (
+              <div className="mt-3 space-y-3">
+                {/* Submitted Time & File */}
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="flex items-center gap-1.5 text-slate-500">
+                    <Clock size={14} />
+                    {formatDate(submission.submittedAt)}
+                    {late && (
+                      <span className="text-amber-600 font-medium">(Terlambat)</span>
+                    )}
+                  </span>
+
+                  {/* File Link */}
+                  {submission.fileUrl && (
+                    <a
+                      href={submission.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition"
+                    >
+                      {fileType === 'google' && <FileText size={14} />}
+                      {fileType === 'github' && <LinkIcon size={14} />}
+                      {fileType === 'pdf' && <FileText size={14} />}
+                      {fileType === 'archive' && <Download size={14} />}
+                      {fileType === 'link' && <ExternalLink size={14} />}
+                      Lihat File
+                    </a>
+                  )}
+                </div>
+
+                {/* Existing Feedback Display (when not editing) */}
+                {hasGrade && !isEditing && submission.feedback && (
+                  <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg">
+                    <MessageSquare size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                    <p className="text-sm text-slate-600">{submission.feedback}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Grading Section - Only for submitted */}
+      {hasSubmitted && (
+        <div className={`px-5 py-4 border-t ${isEditing || !hasGrade ? 'bg-slate-50' : 'bg-white'} border-slate-100`}>
+          {/* Compact View (Already Graded & Not Editing) */}
+          {hasGrade && !isEditing && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-slate-600">
+                  Nilai: <span className="font-bold text-blue-600">{submission.grade}</span>
+                </span>
+              </div>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Edit Nilai
+              </button>
+            </div>
+          )}
+
+          {/* Grading Form (Not Graded OR Editing) */}
+          {(!hasGrade || isEditing) && (
+            <div className="space-y-3">
+              {/* Quick Grade Buttons */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs text-slate-500 mr-1 self-center">Quick:</span>
+                {quickGrades.map(q => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setGrade(q)}
+                    className={`px-2.5 py-1 text-xs rounded-lg font-medium transition ${grade === q
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+
+              {/* Grade & Feedback Inputs */}
+              <div className="flex gap-3">
+                {/* Grade Input */}
+                <div className="relative w-24">
+                  <Star size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    placeholder="Nilai"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm font-medium"
+                  />
+                </div>
+
+                {/* Feedback Input */}
+                <div className="relative flex-1">
+                  <MessageSquare size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    placeholder="Feedback singkat (opsional)..."
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
+                  />
+                </div>
+
+                {/* Save Button */}
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !grade || !hasChanges}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition ${hasChanges && grade
+                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    } disabled:opacity-50`}
+                >
+                  {saving ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : saveStatus === 'success' ? (
+                    <Check size={16} />
+                  ) : (
+                    <Save size={16} />
+                  )}
+                  {saving ? 'Saving...' : saveStatus === 'success' ? 'Tersimpan!' : 'Simpan'}
+                </button>
+
+                {/* Cancel Button (when editing) */}
+                {isEditing && (
+                  <button
+                    onClick={() => {
+                      setGrade(submission.grade ?? '');
+                      setFeedback(submission.feedback ?? '');
+                      setIsEditing(false);
+                    }}
+                    className="px-3 py-2.5 text-slate-500 hover:text-slate-700 text-sm font-medium"
+                  >
+                    Batal
+                  </button>
+                )}
+              </div>
+
+              {/* Error Message */}
+              {saveStatus === 'error' && (
+                <div className="flex items-center gap-2 text-sm text-red-600">
+                  <AlertCircle size={14} />
+                  Gagal menyimpan nilai. Coba lagi.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
