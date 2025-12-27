@@ -1,5 +1,5 @@
 import { MoreHorizontal } from 'lucide-react';
-import CourseCard from './CourseCard';
+import { CourseCard } from './course';
 
 /**
  * CourseSection Component
