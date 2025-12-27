@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
   X,
-  CheckCircle,
   ArrowLeft,
   Home,
 } from 'lucide-react';
@@ -30,10 +29,6 @@ const LearningSidebar = ({
   const currentIndex = materials.findIndex(
     m => m.id === parseInt(currentMaterialId) || m.id === currentMaterialId
   );
-
-  const safeTotal = materials.length;
-  const safeCurrent = currentIndex >= 0 ? currentIndex + 1 : 0;
-  const progressPct = safeTotal > 0 ? (safeCurrent / safeTotal) * 100 : 0;
 
   return (
     <>
@@ -82,28 +77,11 @@ const LearningSidebar = ({
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="px-4 py-3 border-b border-slate-100">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-slate-600">Progress</span>
-            <span className="font-medium text-blue-600">
-              {safeCurrent} / {safeTotal}
-            </span>
-          </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-600 rounded-full transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-
         {/* Materials List */}
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-1">
             {materials.map((material, index) => {
               const isActive = material.id === parseInt(currentMaterialId) || material.id === currentMaterialId;
-              const isPast = index < currentIndex;
 
               return (
                 <li key={material.id}>
@@ -118,21 +96,12 @@ const LearningSidebar = ({
                       }
                     `}
                   >
-                    {/* Number/Status */}
+                    {/* Number */}
                     <div className={`
                       shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                      ${isActive
-                        ? 'bg-blue-600 text-white'
-                        : isPast
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : 'bg-slate-100 text-slate-500'
-                      }
+                      ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}
                     `}>
-                      {isPast ? (
-                        <CheckCircle size={16} />
-                      ) : (
-                        material.order || index + 1
-                      )}
+                      {material.order || index + 1}
                     </div>
 
                     {/* Title */}
