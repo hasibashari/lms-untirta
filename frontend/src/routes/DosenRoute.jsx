@@ -9,12 +9,14 @@ import Students from '../pages/dosen/Students';
 import Assignments from '../pages/dosen/Assignments';
 import CreateAssignment from '../pages/dosen/CreateAssignment';
 import Submissions from '../pages/dosen/Submissions';
+import AllSubmissions from '../pages/dosen/AllSubmissions';
 
 
 export const DosenRoute = (
   <>
     <Route path='/dosen/dashboard' element={<DosenDashboard />} />
     <Route path='/dosen/classes' element={<MyClasses />} />
+    <Route path='/dosen/submissions' element={<AllSubmissions />} />
     <Route path='/dosen/courses/:courseId' element={<CourseHome />} />
     <Route path='/dosen/courses/:courseId/materials' element={<Materials />} />
     <Route path='/dosen/courses/:courseId/materials/new' element={<CreateMaterial />} />
