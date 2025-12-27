@@ -1,6 +1,7 @@
 import { Route } from 'react-router-dom';
 
 import DosenDashboard from '../pages/dosen/Dashboard';
+import MyClasses from '../pages/dosen/MyClasses';
 import CourseHome from '../pages/dosen/CourseHome';
 import Materials from '../pages/dosen/Materials';
 import CreateMaterial from '../pages/dosen/CreateMaterial';
@@ -13,6 +14,7 @@ import Submissions from '../pages/dosen/Submissions';
 export const DosenRoute = (
   <>
     <Route path='/dosen/dashboard' element={<DosenDashboard />} />
+    <Route path='/dosen/classes' element={<MyClasses />} />
     <Route path='/dosen/courses/:courseId' element={<CourseHome />} />
     <Route path='/dosen/courses/:courseId/materials' element={<Materials />} />
     <Route path='/dosen/courses/:courseId/materials/new' element={<CreateMaterial />} />
