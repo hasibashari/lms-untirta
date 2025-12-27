@@ -1,9 +1,8 @@
-import { useNavigate } from 'react-router-dom';
 import { BookOpen, User, Hash, ArrowRight } from 'lucide-react';
 
 /**
  * StudentCourseCard Component
- * Card component untuk menampilkan kelas mahasiswa dari endpoint /courses/me
+ * Presentational card untuk menampilkan kelas mahasiswa.
  * 
  * Props dari backend:
  * - course.title (nama kelas)
@@ -12,13 +11,13 @@ import { BookOpen, User, Hash, ArrowRight } from 'lucide-react';
  * - course.description (deskripsi opsional)
  * 
  * @param {object} enrollment - Data enrollment dari API
+ * @param {function} onClick - Handler saat card diklik (menerima courseId)
  */
-const StudentCourseCard = ({ enrollment }) => {
-  const navigate = useNavigate();
+const StudentCourseCard = ({ enrollment, onClick }) => {
   const course = enrollment.course;
 
   const handleClick = () => {
-    navigate(`/mahasiswa/courses/${course.id}`);
+    onClick?.(course.id);
   };
 
   // Generate warna gradient berdasarkan course id untuk variasi visual
