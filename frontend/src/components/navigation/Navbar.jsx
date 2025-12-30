@@ -37,8 +37,8 @@ const Navbar = () => {
   // State Management untuk Mobile Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Auth state
-  const { isAuthenticated } = useAuth();
+  // Auth state - ambil isAuthenticated dan user untuk routing
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 shadow-sm">
@@ -47,12 +47,18 @@ const Navbar = () => {
 
           {/* Left Section: Logo */}
           <div className="shrink-0">
-            <Logo />
+            <Link to="/">
+              <Logo />
+            </Link>
           </div>
 
           {/* Middle Section: Navigation Links (Desktop) */}
           <div className="flex-1 flex justify-center">
-            <DesktopNav navLinks={NAV_LINKS} />
+            <DesktopNav
+              navLinks={NAV_LINKS}
+              isAuthenticated={isAuthenticated}
+              user={user}
+            />
           </div>
 
           {/* Right Section: Action Button (Desktop) & Hamburger (Mobile) */}

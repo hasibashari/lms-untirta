@@ -2,6 +2,7 @@ import { NavLink, Link } from 'react-router-dom';
 import { UserCircle, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getCoursePath } from '../../utils/role';
 
 /**
  * MobileMenu Component
@@ -16,6 +17,16 @@ import { useNavigate } from 'react-router-dom';
 const MobileMenu = ({ isOpen, setIsOpen, navLinks = [], isAuthenticated = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  /**
+   * Resolve path berdasarkan tipe link
+   */
+  const resolvePath = (link) => {
+    if (link.requiresAuth) {
+      return getCoursePath(isAuthenticated, user);
+    }
+    return link.to;
+  };
 
   const handleLogout = () => {
     logout();
@@ -49,11 +60,13 @@ const MobileMenu = ({ isOpen, setIsOpen, navLinks = [], isAuthenticated = false 
             );
           }
 
-          // 🔗 Internal SPA link
+          // 🔗 Internal SPA link (dengan dynamic path resolution)
+          const targetPath = resolvePath(link);
+
           return (
             <li key={link.name}>
               <NavLink
-                to={link.to}
+                to={targetPath}
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   `
