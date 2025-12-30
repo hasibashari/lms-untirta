@@ -1,11 +1,17 @@
 /**
  * Navigation Links Configuration
  * Digunakan untuk menu navigasi di Navbar
+ * 
+ * Properti:
+ * - name: Label yang ditampilkan
+ * - to: Path tujuan (static)
+ * - external: Buka di tab baru (optional)
+ * - requiresAuth: Link yang behavior-nya berbeda berdasarkan auth state (optional)
  */
 export const NAV_LINKS = [
   { name: 'Home', to: '/' },
   { name: 'About Us', to: '/about' },
-  { name: 'Course', to: '/login' },
+  { name: 'Course', to: '/login', requiresAuth: true },
   { name: 'Website Untirta', to: 'https://untirta.ac.id', external: true },
   { name: 'Siakang', to: 'https://siakang.untirta.ac.id', external: true },
 ];
@@ -64,11 +70,12 @@ export const CONTACT_INFO = {
 /**
  * Roles Configuration
  * Dapat digunakan untuk role-based access control
+ * IMPORTANT: Harus sesuai dengan enum Role di database (UPPERCASE)
  */
 export const ROLES = {
-  ADMIN: 'admin',
-  DOSEN: 'dosen',
-  MAHASISWA: 'mahasiswa',
+  ADMIN: 'ADMIN',
+  DOSEN: 'DOSEN',
+  MAHASISWA: 'MAHASISWA',
 };
 
 /**
