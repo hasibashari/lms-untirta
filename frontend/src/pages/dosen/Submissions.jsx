@@ -18,13 +18,229 @@ import {
   Save,
   Check,
   AlertCircle,
+  Copy,
+  Eye,
+  File,
+  Image,
+  Archive,
+  Github,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getSubmissions,
   getAssignments,
   gradeSubmission,
 } from '../../services/dosen.service';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
+
+/**
+ * FilePreviewCard - Component untuk menampilkan file yang dikumpulkan dengan UX yang lebih baik
+ */
+function FilePreviewCard({ url }) {
+  const [showPreview, setShowPreview] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Detect file type dari URL
+  const getFileInfo = (fileUrl) => {
+    if (!fileUrl) return { type: 'unknown', name: 'File', icon: File, color: 'slate' };
+
+    const urlLower = fileUrl.toLowerCase();
+
+    // Google Drive
+    if (urlLower.includes('drive.google.com') || urlLower.includes('docs.google.com')) {
+      // Extract file ID untuk preview
+      const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      const fileId = fileIdMatch ? fileIdMatch[1] : null;
+      return {
+        type: 'google',
+        name: 'Google Drive File',
+        icon: FileText,
+        color: 'blue',
+        fileId,
+        previewUrl: fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null
+      };
+    }
+
+    // GitHub
+    if (urlLower.includes('github.com')) {
+      const repoMatch = fileUrl.match(/github\.com\/([^\/]+\/[^\/]+)/);
+      return {
+        type: 'github',
+        name: repoMatch ? repoMatch[1] : 'GitHub Repository',
+        icon: Github,
+        color: 'gray'
+      };
+    }
+
+    // PDF
+    if (urlLower.endsWith('.pdf')) {
+      const fileName = fileUrl.split('/').pop() || 'Document.pdf';
+      return {
+        type: 'pdf',
+        name: fileName,
+        icon: FileText,
+        color: 'red',
+        previewUrl: fileUrl
+      };
+    }
+
+    // Images
+    if (urlLower.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      const fileName = fileUrl.split('/').pop() || 'Image';
+      return {
+        type: 'image',
+        name: fileName,
+        icon: Image,
+        color: 'green',
+        previewUrl: fileUrl
+      };
+    }
+
+    // Archives
+    if (urlLower.match(/\.(zip|rar|7z|tar|gz)$/)) {
+      const fileName = fileUrl.split('/').pop() || 'Archive';
+      return { type: 'archive', name: fileName, icon: Archive, color: 'amber' };
+    }
+
+    // Word documents
+    if (urlLower.match(/\.(doc|docx)$/)) {
+      const fileName = fileUrl.split('/').pop() || 'Document';
+      return { type: 'word', name: fileName, icon: FileText, color: 'blue' };
+    }
+
+    // PowerPoint
+    if (urlLower.match(/\.(ppt|pptx)$/)) {
+      const fileName = fileUrl.split('/').pop() || 'Presentation';
+      return { type: 'ppt', name: fileName, icon: FileText, color: 'orange' };
+    }
+
+    // Default link
+    try {
+      const urlObj = new URL(fileUrl);
+      return { type: 'link', name: urlObj.hostname, icon: ExternalLink, color: 'violet' };
+    } catch {
+      return { type: 'link', name: 'External Link', icon: ExternalLink, color: 'violet' };
+    }
+  };
+
+  const fileInfo = getFileInfo(url);
+  const IconComponent = fileInfo.icon;
+
+  const colorClasses = {
+    blue: 'bg-blue-50 border-blue-200 text-blue-700',
+    red: 'bg-red-50 border-red-200 text-red-700',
+    green: 'bg-green-50 border-green-200 text-green-700',
+    amber: 'bg-amber-50 border-amber-200 text-amber-700',
+    orange: 'bg-orange-50 border-orange-200 text-orange-700',
+    violet: 'bg-violet-50 border-violet-200 text-violet-700',
+    gray: 'bg-slate-50 border-slate-200 text-slate-700',
+    slate: 'bg-slate-50 border-slate-200 text-slate-700',
+  };
+
+  const iconBgClasses = {
+    blue: 'bg-blue-100 text-blue-600',
+    red: 'bg-red-100 text-red-600',
+    green: 'bg-green-100 text-green-600',
+    amber: 'bg-amber-100 text-amber-600',
+    orange: 'bg-orange-100 text-orange-600',
+    violet: 'bg-violet-100 text-violet-600',
+    gray: 'bg-slate-100 text-slate-600',
+    slate: 'bg-slate-100 text-slate-600',
+  };
+
+  // Copy URL to clipboard
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success('Link berhasil disalin!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Gagal menyalin link');
+    }
+  };
+
+  return (
+    <div className={`rounded-lg border ${colorClasses[fileInfo.color]} overflow-hidden`}>
+      {/* File Info Header */}
+      <div className="p-3 flex items-center gap-3">
+        {/* Icon */}
+        <div className={`shrink-0 w-10 h-10 rounded-lg ${iconBgClasses[fileInfo.color]} flex items-center justify-center`}>
+          <IconComponent size={20} />
+        </div>
+
+        {/* File Name & Type */}
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{fileInfo.name}</p>
+          <p className="text-xs opacity-70 capitalize">{fileInfo.type === 'google' ? 'Google Drive' : fileInfo.type}</p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="shrink-0 flex items-center gap-1">
+          {/* Preview Button (if available) */}
+          {fileInfo.previewUrl && (
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              className={`p-2 rounded-lg hover:bg-white/50 transition ${showPreview ? 'bg-white/50' : ''}`}
+              title={showPreview ? 'Tutup Preview' : 'Lihat Preview'}
+            >
+              <Eye size={16} />
+            </button>
+          )}
+
+          {/* Copy Link Button */}
+          <button
+            onClick={handleCopy}
+            className="p-2 rounded-lg hover:bg-white/50 transition"
+            title="Salin Link"
+          >
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+          </button>
+
+          {/* Open in New Tab Button */}
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-lg hover:bg-white/50 transition"
+            title="Buka di Tab Baru"
+          >
+            <ExternalLink size={16} />
+          </a>
+        </div>
+      </div>
+
+      {/* Preview Section */}
+      {showPreview && fileInfo.previewUrl && (
+        <div className="border-t border-current/10">
+          {fileInfo.type === 'image' ? (
+            <div className="p-3 bg-white/50">
+              <img
+                src={fileInfo.previewUrl}
+                alt={fileInfo.name}
+                className="max-h-64 w-auto mx-auto rounded-lg shadow-sm"
+              />
+            </div>
+          ) : (
+            <div className="aspect-video bg-white">
+              <iframe
+                src={fileInfo.previewUrl}
+                className="w-full h-full"
+                allow="autoplay"
+                title="File Preview"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* URL Display (truncated) */}
+      <div className="px-3 pb-3">
+        <p className="text-xs opacity-60 truncate font-mono">{url}</p>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Submissions - Daftar Submission Mahasiswa (Dosen)
@@ -440,18 +656,6 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
       .toUpperCase()
     : '??';
 
-  // Detect file type
-  const getFileType = (url) => {
-    if (!url) return null;
-    if (url.includes('drive.google.com') || url.includes('docs.google.com')) return 'google';
-    if (url.includes('github.com')) return 'github';
-    if (url.endsWith('.pdf')) return 'pdf';
-    if (url.endsWith('.zip') || url.endsWith('.rar')) return 'archive';
-    return 'link';
-  };
-
-  const fileType = getFileType(submission.fileUrl);
-
   // Handle save grade
   const handleSave = async () => {
     if (!hasChanges) return;
@@ -535,7 +739,7 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
             {/* Submission Details */}
             {hasSubmitted && (
               <div className="mt-3 space-y-3">
-                {/* Submitted Time & File */}
+                {/* Submitted Time */}
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <span className="flex items-center gap-1.5 text-slate-500">
                     <Clock size={14} />
@@ -544,24 +748,23 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
                       <span className="text-amber-600 font-medium">(Terlambat)</span>
                     )}
                   </span>
-
-                  {/* File Link */}
-                  {submission.fileUrl && (
-                    <a
-                      href={submission.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition"
-                    >
-                      {fileType === 'google' && <FileText size={14} />}
-                      {fileType === 'github' && <LinkIcon size={14} />}
-                      {fileType === 'pdf' && <FileText size={14} />}
-                      {fileType === 'archive' && <Download size={14} />}
-                      {fileType === 'link' && <ExternalLink size={14} />}
-                      Lihat File
-                    </a>
-                  )}
                 </div>
+
+                {/* File Card - Improved UX */}
+                {submission.fileUrl && (
+                  <FilePreviewCard url={submission.fileUrl} />
+                )}
+
+                {/* Student Note - Now displayed */}
+                {submission.note && (
+                  <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <MessageSquare size={14} className="text-yellow-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-yellow-700 mb-1">Catatan Mahasiswa:</p>
+                      <p className="text-sm text-yellow-800">{submission.note}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Existing Feedback Display (when not editing) */}
                 {hasGrade && !isEditing && submission.feedback && (
