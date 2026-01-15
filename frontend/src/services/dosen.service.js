@@ -26,6 +26,11 @@ export const getCourseStudents = async courseId => {
   return api.get(`/courses/${courseId}/students`);
 }
 
+// Get available students for enrollment (mahasiswa yang belum terdaftar di kelas)
+export const getAvailableStudents = async courseId => {
+  return api.get(`/courses/${courseId}/available-students`);
+}
+
 export const getMaterials = async courseId => {
   return api.get(`/courses/${courseId}/materials`);
 }
