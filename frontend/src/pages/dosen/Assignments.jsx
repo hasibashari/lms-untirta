@@ -10,8 +10,10 @@ import {
   ChevronRight,
   FileText,
   AlertCircle,
+  Edit,
+  Trash2,
 } from 'lucide-react';
-import { getAssignments } from '../../services/dosen.service';
+import { getAssignments, deleteAssignment } from '../../services/dosen.service';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 
 /**
@@ -36,6 +38,18 @@ export default function Assignments() {
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
   }, [courseId]);
+
+  // Handler untuk menghapus tugas
+  const handleDelete = async (assignmentId) => {
+    if (!confirm('Yakin ingin menghapus tugas ini? Semua submission mahasiswa juga akan terhapus.')) return;
+
+    try {
+      await deleteAssignment(assignmentId);
+      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || 'Gagal menghapus tugas');
+    }
+  };
 
   // Filter assignments by search
   const filteredAssignments = assignments.filter(assignment =>
@@ -229,6 +243,10 @@ export default function Assignments() {
               onViewSubmissions={() =>
                 navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/submissions`)
               }
+              onEdit={() =>
+                navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/edit`)
+              }
+              onDelete={() => handleDelete(assignment.id)}
             />
           ))}
         </div>
@@ -259,6 +277,8 @@ function AssignmentCard({
   formatDate,
   getRelativeTime,
   onViewSubmissions,
+  onEdit,
+  onDelete,
 }) {
   return (
     <div className="group bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all overflow-hidden">
@@ -283,10 +303,10 @@ function AssignmentCard({
             <div className="flex flex-wrap items-center gap-4 text-sm">
               {/* Deadline */}
               <div className={`flex items-center gap-1.5 ${isDeadlinePassed
-                  ? 'text-red-600'
-                  : isDeadlineNear
-                    ? 'text-amber-600'
-                    : 'text-slate-500'
+                ? 'text-red-600'
+                : isDeadlineNear
+                  ? 'text-amber-600'
+                  : 'text-slate-500'
                 }`}>
                 <Calendar size={14} />
                 <span>{formatDate(assignment.dueDate)}</span>
@@ -294,10 +314,10 @@ function AssignmentCard({
 
               {/* Time Remaining */}
               <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${isDeadlinePassed
-                  ? 'bg-red-100 text-red-700'
-                  : isDeadlineNear
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-emerald-100 text-emerald-700'
+                ? 'bg-red-100 text-red-700'
+                : isDeadlineNear
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-emerald-100 text-emerald-700'
                 }`}>
                 <Clock size={12} />
                 {getRelativeTime(assignment.dueDate)}
@@ -305,24 +325,47 @@ function AssignmentCard({
             </div>
           </div>
 
-          {/* View Submissions Button */}
-          <button
-            onClick={onViewSubmissions}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 rounded-xl font-medium hover:bg-blue-100 transition group-hover:bg-blue-600 group-hover:text-white"
-          >
-            <Users size={18} />
-            <span className="hidden sm:inline">Lihat Submission</span>
-            <ChevronRight size={16} />
-          </button>
+          {/* Action Buttons */}
+          <div className="shrink-0 flex items-center gap-2">
+            {/* View Submissions Button */}
+            <button
+              onClick={onViewSubmissions}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+              title="Lihat Submission"
+            >
+              <Users size={16} />
+              <span className="hidden sm:inline">Submission</span>
+            </button>
+
+            {/* Edit Button */}
+            <button
+              onClick={onEdit}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition"
+              title="Edit Tugas"
+            >
+              <Edit size={16} />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+
+            {/* Delete Button */}
+            <button
+              onClick={onDelete}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+              title="Hapus Tugas"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">Hapus</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Status Bar */}
       <div className={`px-6 py-3 border-t ${isDeadlinePassed
-          ? 'bg-red-50 border-red-100'
-          : isDeadlineNear
-            ? 'bg-amber-50 border-amber-100'
-            : 'bg-slate-50 border-slate-100'
+        ? 'bg-red-50 border-red-100'
+        : isDeadlineNear
+          ? 'bg-amber-50 border-amber-100'
+          : 'bg-slate-50 border-slate-100'
         }`}>
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
