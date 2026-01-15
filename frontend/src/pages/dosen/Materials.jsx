@@ -16,7 +16,7 @@ import {
   ExternalLink,
   File,
 } from 'lucide-react';
-import { getMaterialDetail, getMaterials } from '../../services/dosen.service';
+import { getMaterialDetail, getMaterials, deleteMaterial } from '../../services/dosen.service';
 import { MarkdownPreview } from '../../components/ui';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 
@@ -421,7 +421,7 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
           </div>
         </button>
 
-        {/* Actions */}
+        {/* Actions - Semua tombol langsung terlihat */}
         <div className="shrink-0 flex items-center gap-2">
           {/* Preview Button */}
           <button
@@ -433,7 +433,27 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
             <span className="hidden sm:inline">Preview</span>
           </button>
 
-          {/* More Options */}
+          {/* Edit Button */}
+          <button
+            onClick={() => onEdit?.()}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition"
+            title="Edit Materi"
+          >
+            <Edit size={16} />
+            <span className="hidden sm:inline">Edit</span>
+          </button>
+
+          {/* Delete Button - Langsung terlihat dengan styling merah */}
+          <button
+            onClick={() => onDelete?.()}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+            title="Hapus Materi"
+          >
+            <Trash2 size={16} />
+            <span className="hidden sm:inline">Hapus</span>
+          </button>
+
+          {/* More Options - Opsional, untuk aksi tambahan di masa depan */}
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -448,27 +468,8 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-20 py-2">
-                  <button
-                    onClick={() => {
-                      onEdit?.();
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <Edit size={16} />
-                    Edit Materi
-                  </button>
-                  <button
-                    onClick={() => {
-                      onDelete?.();
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 size={16} />
-                    Hapus Materi
-                  </button>
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-30 py-2">
+                  {/* Dropdown bisa kosong atau untuk aksi lain */}
                 </div>
               </>
             )}
