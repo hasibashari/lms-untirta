@@ -12,15 +12,23 @@ const createAssignmentSchema = z.object({
   }),
 });
 
+// Schema untuk Dosen mengupdate tugas
+const updateAssignmentSchema = z.object({
+  body: z.object({
+    title: z.string().min(3, 'Judul tugas minimal 3 karakter').optional(),
+    description: z.string().optional(),
+    dueDate: z.coerce.date({
+      message: 'Format tanggal tidak valid (Gunakan ISO 8601)',
+    }).optional(),
+  }),
+});
+
 // Schema untuk Mahasiswa mengumpul tugas
 const submitAssignmentSchema = z.object({
   body: z
     .object({
-      fileUrl: z.url().optional().or(z.literal('')),
+      fileUrl: z.string().url('URL tidak valid').min(1, 'URL harus diisi'),
       note: z.string().optional(),
-    })
-    .refine(data => data.fileUrl || data.note, {
-      message: 'Harus menyertakan file atau catatan', // Minimal kirim salah satu
     }),
 });
 
@@ -32,4 +40,4 @@ const gradeSubmissionSchema = z.object({
   }),
 });
 
-export { createAssignmentSchema, submitAssignmentSchema, gradeSubmissionSchema };
+export { createAssignmentSchema, updateAssignmentSchema, submitAssignmentSchema, gradeSubmissionSchema };
