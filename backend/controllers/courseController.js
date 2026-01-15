@@ -36,15 +36,30 @@ const getCourses = async (req, res) => {
 const enrollStudent = async (req, res) => {
   try {
     const { id: courseId } = req.params; // Ambil ID dari URL (/api/courses/:id/enroll)
-    const { email } = req.body; // Ambil email dari body request
+    const { email, studentId } = req.body; // Support both email and studentId
 
-    // req.user didapat dari Token (Auth Middleware)
-    const result = await courseService.addStudentToCourse(
-      courseId,
-      email,
-      req.user.id,
-      req.user.role
-    );
+    let result;
+
+    // Cek apakah menggunakan studentId (cara baru) atau email (cara lama)
+    if (studentId) {
+      // Enroll berdasarkan studentId (lebih aman, dari dropdown)
+      result = await courseService.addStudentToCourseById(
+        courseId,
+        studentId,
+        req.user.id,
+        req.user.role
+      );
+    } else if (email) {
+      // Enroll berdasarkan email (cara lama, backward compatible)
+      result = await courseService.addStudentToCourse(
+        courseId,
+        email,
+        req.user.id,
+        req.user.role
+      );
+    } else {
+      return res.status(400).json({ message: 'studentId atau email wajib diisi' });
+    }
 
     res.status(201).json({
       message: 'Mahasiswa berhasil ditambahkan ke kelas',
@@ -127,4 +142,30 @@ const getStudentsByCourse = async (req, res) => {
   }
 };
 
-export { createCourse, getCourses, enrollStudent, getMyCourses, getStudentsByCourse };
+// --- Get Available Students for Enrollment ---
+// Mengambil daftar mahasiswa yang belum terdaftar di kelas tertentu
+const getAvailableStudents = async (req, res) => {
+  try {
+    const { id: courseId } = req.params;
+    const students = await courseService.getAvailableStudentsForCourse(
+      courseId,
+      req.user.id,
+      req.user.role
+    );
+
+    res.status(200).json({
+      message: 'Daftar mahasiswa tersedia berhasil diambil',
+      data: students,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+export { createCourse, getCourses, enrollStudent, getMyCourses, getStudentsByCourse, getAvailableStudents };
