@@ -65,4 +65,61 @@ const getMaterialById = async (req, res) => {
   }
 };
 
-export { createMaterial, getMaterials, getMaterialById };
+/**
+ * Update Material - Controller untuk mengupdate materi
+ */
+const updateMaterial = async (req, res) => {
+  try {
+    const { materialId } = req.params;
+    const { title, content, fileUrl, videoUrl, order } = req.body;
+
+    const result = await materialService.updateMaterial(
+      materialId,
+      req.user.id,
+      req.user.role,
+      { title, content, fileUrl, videoUrl, order }
+    );
+
+    res.status(200).json({
+      message: 'Materi berhasil diperbarui',
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+/**
+ * Delete Material - Controller untuk menghapus materi
+ */
+const deleteMaterial = async (req, res) => {
+  try {
+    const { materialId } = req.params;
+
+    const result = await materialService.deleteMaterial(
+      materialId,
+      req.user.id,
+      req.user.role
+    );
+
+    res.status(200).json({
+      message: result.message,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+export { createMaterial, getMaterials, getMaterialById, updateMaterial, deleteMaterial };

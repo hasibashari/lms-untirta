@@ -166,6 +166,85 @@ const getRecentSubmissions = async (req, res) => {
   }
 };
 
+/**
+ * Get Assignment Detail - Untuk edit form
+ */
+const getAssignmentDetail = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const result = await assignmentService.getAssignmentDetail(assignmentId);
+
+    if (!result) {
+      return res.status(404).json({ message: 'Tugas tidak ditemukan' });
+    }
+
+    res.status(200).json({
+      message: 'Detail tugas berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Update Assignment - Controller untuk mengupdate tugas
+ */
+const updateAssignment = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const { title, description, dueDate } = req.body;
+
+    const result = await assignmentService.updateAssignment(
+      assignmentId,
+      req.user.id,
+      req.user.role,
+      { title, description, dueDate }
+    );
+
+    res.status(200).json({
+      message: 'Tugas berhasil diperbarui',
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Delete Assignment - Controller untuk menghapus tugas
+ */
+const deleteAssignment = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+
+    const result = await assignmentService.deleteAssignment(
+      assignmentId,
+      req.user.id,
+      req.user.role
+    );
+
+    res.status(200).json({
+      message: result.message,
+      deletedSubmissions: result.deletedSubmissions,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('Akses ditolak')) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   create,
   submit,
@@ -177,4 +256,7 @@ export {
   getMyDashboardStats,
   getTeacherDashboardStats,
   getRecentSubmissions,
+  getAssignmentDetail,
+  updateAssignment,
+  deleteAssignment,
 };
