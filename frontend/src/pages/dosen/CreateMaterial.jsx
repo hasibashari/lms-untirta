@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Save,
@@ -19,14 +19,18 @@ import {
   Calendar,
   Hash,
 } from 'lucide-react';
-import { createMaterial } from '../../services/dosen.service';
+import { createMaterial, getMaterialDetail, updateMaterial } from '../../services/dosen.service';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 import MarkdownEditor from '../../components/ui/MarkdownEditor';
 import MarkdownPreview from '../../components/ui/MarkdownPreview';
 
 /**
- * CreateMaterial - Form Pembuatan Materi Baru
+ * CreateMaterial - Form Pembuatan & Edit Materi
  * Menggunakan Markdown Editor dengan Live Preview
+ * 
+ * Mode:
+ * - Create: Jika tidak ada materialId di URL params
+ * - Edit: Jika ada materialId di URL params
  * 
  * Alur UX:
  * 1. Dosen mengisi judul materi
@@ -36,20 +40,64 @@ import MarkdownPreview from '../../components/ui/MarkdownPreview';
  * 5. Simpan materi
  */
 export default function CreateMaterial() {
-  const { courseId } = useParams();
+  const { courseId, materialId } = useParams();
   const navigate = useNavigate();
+
+  // Mode edit jika ada materialId
+  const isEditMode = Boolean(materialId);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [order, setOrder] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Multiple attachments dengan nama dan tipe
   const [attachments, setAttachments] = useState([]);
 
   // Tab untuk switch antara Edit dan Preview
   const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'preview'
+
+  // Fetch data materi jika mode edit
+  useEffect(() => {
+    if (isEditMode && materialId) {
+      setLoading(true);
+      getMaterialDetail(materialId)
+        .then(res => {
+          const data = res.data;
+          setTitle(data.title || '');
+          setContent(data.content || '');
+          setOrder(data.order?.toString() || '');
+
+          // Konversi attachments dari response ke format form
+          const loadedAttachments = [];
+          if (data.attachments && Array.isArray(data.attachments)) {
+            data.attachments.forEach(att => {
+              loadedAttachments.push({
+                name: att.label || '',
+                url: att.url || '',
+                type: att.type === 'video' ? 'video' : 'file',
+              });
+            });
+          }
+          // Backward compatibility: jika tidak ada attachments array, cek fileUrl dan videoUrl
+          if (loadedAttachments.length === 0) {
+            if (data.fileUrl) {
+              loadedAttachments.push({ name: 'File', url: data.fileUrl, type: 'file' });
+            }
+            if (data.videoUrl) {
+              loadedAttachments.push({ name: 'Video', url: data.videoUrl, type: 'video' });
+            }
+          }
+          setAttachments(loadedAttachments);
+        })
+        .catch(err => {
+          setError(err?.response?.data?.message || err?.message || 'Gagal memuat data materi');
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [isEditMode, materialId]);
 
   // Fungsi untuk menambah attachment baru
   const addAttachment = () => {
@@ -62,7 +110,7 @@ export default function CreateMaterial() {
   };
 
   // Fungsi untuk update attachment
-  const updateAttachment = (index, field, value) => {
+  const updateAttachmentField = (index, field, value) => {
     const newAttachments = [...attachments];
     newAttachments[index][field] = value;
     setAttachments(newAttachments);
@@ -102,7 +150,7 @@ export default function CreateMaterial() {
       const fileAttachment = validAttachments.find(a => a.type === 'file');
       const videoAttachment = validAttachments.find(a => a.type === 'video');
 
-      await createMaterial(courseId, {
+      const payload = {
         title: title.trim(),
         content: content,
         order: order ? parseInt(order) : undefined,
@@ -110,7 +158,16 @@ export default function CreateMaterial() {
         videoUrl: videoAttachment?.url || undefined,
         // Kirim semua attachments untuk future use
         attachments: validAttachments.length > 0 ? validAttachments : undefined,
-      });
+      };
+
+      if (isEditMode) {
+        // Mode Edit: Update materi yang sudah ada
+        await updateMaterial(materialId, payload);
+      } else {
+        // Mode Create: Buat materi baru
+        await createMaterial(courseId, payload);
+      }
+
       navigate(`/dosen/courses/${courseId}/materials`);
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Gagal menyimpan materi');
@@ -134,6 +191,18 @@ export default function CreateMaterial() {
     );
   }
 
+  // Loading state saat fetch data untuk edit
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-slate-500">Memuat data materi...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -143,7 +212,7 @@ export default function CreateMaterial() {
           { label: 'Kelas Saya', to: '/dosen/classes' },
           { label: 'Kelas', to: `/dosen/courses/${courseId}` },
           { label: 'Materi', to: `/dosen/courses/${courseId}/materials` },
-          { label: 'Tambah Materi' },
+          { label: isEditMode ? 'Edit Materi' : 'Tambah Materi' },
         ]}
       />
 
@@ -158,10 +227,10 @@ export default function CreateMaterial() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
-              Tambah Materi Baru
+              {isEditMode ? 'Edit Materi' : 'Tambah Materi Baru'}
             </h1>
             <p className="text-slate-500 text-sm mt-0.5">
-              Buat materi pembelajaran dengan format Markdown
+              {isEditMode ? 'Perbarui materi pembelajaran' : 'Buat materi pembelajaran dengan format Markdown'}
             </p>
           </div>
         </div>
@@ -172,8 +241,8 @@ export default function CreateMaterial() {
             type="button"
             onClick={() => setActiveTab('edit')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'edit'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             <Edit3 size={16} />
@@ -183,8 +252,8 @@ export default function CreateMaterial() {
             type="button"
             onClick={() => setActiveTab('preview')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'preview'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             <Eye size={16} />
@@ -320,7 +389,7 @@ console.log('Hello World');
                       <input
                         type="text"
                         value={attachment.name}
-                        onChange={(e) => updateAttachment(index, 'name', e.target.value)}
+                        onChange={(e) => updateAttachmentField(index, 'name', e.target.value)}
                         placeholder="contoh: Slide Pertemuan 1"
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       />
@@ -335,10 +404,10 @@ console.log('Hello World');
                         type="url"
                         value={attachment.url}
                         onChange={(e) => {
-                          updateAttachment(index, 'url', e.target.value);
+                          updateAttachmentField(index, 'url', e.target.value);
                           // Auto-detect type berdasarkan URL
                           if (isVideoUrl(e.target.value)) {
-                            updateAttachment(index, 'type', 'video');
+                            updateAttachmentField(index, 'type', 'video');
                           }
                         }}
                         placeholder="https://drive.google.com/... atau https://youtube.com/..."
@@ -353,7 +422,7 @@ console.log('Hello World');
                       </label>
                       <select
                         value={attachment.type}
-                        onChange={(e) => updateAttachment(index, 'type', e.target.value)}
+                        onChange={(e) => updateAttachmentField(index, 'type', e.target.value)}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       >
                         <option value="file">📄 File</option>
@@ -398,7 +467,7 @@ console.log('Hello World');
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-blue-200"
               >
                 <Save size={18} />
-                {saving ? 'Menyimpan...' : 'Simpan Materi'}
+                {saving ? 'Menyimpan...' : isEditMode ? 'Simpan Perubahan' : 'Simpan Materi'}
               </button>
             </div>
           </div>
@@ -516,8 +585,8 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
                       <div className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${attachment.type === 'video'
-                              ? 'bg-red-100 text-red-600'
-                              : 'bg-emerald-100 text-emerald-600'
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-emerald-100 text-emerald-600'
                             }`}>
                             {attachment.type === 'video' ? (
                               videoId ? <Youtube size={20} /> : <Video size={20} />
@@ -540,8 +609,8 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${attachment.type === 'video'
-                              ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
                             }`}
                         >
                           {attachment.type === 'video' ? (
