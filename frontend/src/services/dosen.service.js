@@ -39,12 +39,32 @@ export const getMaterialDetail = async materialId => {
   return api.get(`/materials/${materialId}`);
 }
 
+export const updateMaterial = async (materialId, payload) => {
+  return api.put(`/materials/${materialId}`, payload);
+}
+
+export const deleteMaterial = async materialId => {
+  return api.delete(`/materials/${materialId}`);
+}
+
 export const getAssignments = courseId => {
   return api.get(`/courses/${courseId}/assignments`);
 };
 
 export const createAssignment = (courseId, payload) => {
   return api.post(`/courses/${courseId}/assignments`, payload);
+};
+
+export const getAssignmentDetail = assignmentId => {
+  return api.get(`/assignments/${assignmentId}`);
+};
+
+export const updateAssignment = (assignmentId, payload) => {
+  return api.put(`/assignments/${assignmentId}`, payload);
+};
+
+export const deleteAssignment = assignmentId => {
+  return api.delete(`/assignments/${assignmentId}`);
 };
 
 export const getSubmissions = assignmentId => {
