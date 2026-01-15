@@ -4,6 +4,7 @@ import { authenticateToken, authorizeRole } from '../middlewares/authMiddlewareJ
 import {
   submitAssignmentSchema,
   gradeSubmissionSchema,
+  updateAssignmentSchema,
 } from '../validations/assignmentValidation.js';
 import {
   create,
@@ -15,6 +16,9 @@ import {
   getMyDashboardStats,
   getTeacherDashboardStats,
   getRecentSubmissions,
+  getAssignmentDetail,
+  updateAssignment,
+  deleteAssignment,
 } from '../controllers/assignmentController.js';
 
 const router = express.Router();
@@ -68,6 +72,34 @@ router.patch(
   authorizeRole('DOSEN', 'ADMIN'),
   validate(gradeSubmissionSchema),
   grade
+);
+
+// --- ASSIGNMENT CRUD ROUTES ---
+
+// GET /api/assignments/:assignmentId - Get Assignment Detail (untuk edit form & mahasiswa view)
+router.get(
+  '/:assignmentId',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN', 'MAHASISWA'),
+  getAssignmentDetail
+);
+
+// PUT /api/assignments/:assignmentId - Update Assignment (Dosen Only)
+router.put(
+  '/:assignmentId',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  validate(updateAssignmentSchema),
+  updateAssignment
+);
+
+// DELETE /api/assignments/:assignmentId - Delete Assignment (Dosen Only)
+// CATATAN: Ini juga akan menghapus semua submission terkait
+router.delete(
+  '/:assignmentId',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  deleteAssignment
 );
 
 export default router;
