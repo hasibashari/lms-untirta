@@ -8,6 +8,7 @@ import {
   getCourses,
   getMyCourses,
   getStudentsByCourse,
+  getAvailableStudents,
 } from '../controllers/courseController.js';
 
 import { createMaterial, getMaterials } from '../controllers/materialController.js';
@@ -39,7 +40,16 @@ router.get(
   getStudentsByCourse
 );
 
-// 4. Protected Route - Create Course (Hanya Dosen & Admin)
+// 4. GET /api/courses/:id/available-students - Get Available Students for Enrollment
+// Mengambil daftar mahasiswa yang belum terdaftar di kelas (untuk dropdown)
+router.get(
+  '/:id/available-students',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  getAvailableStudents
+);
+
+// 5. Protected Route - Create Course (Hanya Dosen & Admin)
 router.post(
   '/',
   authenticateToken,
