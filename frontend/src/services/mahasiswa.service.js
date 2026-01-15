@@ -8,6 +8,11 @@ export const getAssignments = courseId => {
   return api.get(`/courses/${courseId}/assignments`);
 };
 
+// Ambil detail assignment (title, description, dueDate)
+export const getAssignmentDetail = assignmentId => {
+  return api.get(`/assignments/${assignmentId}`);
+};
+
 export const getMyAssignmentStatus = assignmentId => {
   return api.get(`/assignments/${assignmentId}/me`);
 };
