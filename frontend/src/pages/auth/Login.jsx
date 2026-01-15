@@ -54,7 +54,7 @@ export default function Login() {
 
       if (user?.role === 'ADMIN') navigate('/admin/dashboard');
       else if (user?.role === 'DOSEN') navigate('/dosen/dashboard');
-      else if (user?.role === 'MAHASISWA') navigate('/mahasiswa/dashboard');
+      else if (user?.role === 'MAHASISWA') navigate('/mahasiswa/classes');
       else navigate('/');
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Login gagal.');
