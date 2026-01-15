@@ -247,12 +247,126 @@ const getStudentsByCourse = async (courseId, userId, userRole) => {
   }));
 };
 
+// --- Get Available Students for Enrollment ---
+// Mengambil daftar mahasiswa yang belum terdaftar di kelas tertentu
+const getAvailableStudentsForCourse = async (courseId, userId, userRole) => {
+  // 1. Validasi: Pastikan Kelas tersebut ada
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error('Kelas tidak ditemukan');
+  }
+
+  // 2. Authorization: Hanya Dosen pemilik kelas atau Admin yang bisa akses
+  if (userRole === 'DOSEN' && course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+  }
+
+  // 3. Ambil ID mahasiswa yang sudah enrolled di course ini
+  const enrolledStudents = await prisma.enrollment.findMany({
+    where: { courseId },
+    select: { userId: true },
+  });
+  const enrolledIds = enrolledStudents.map(e => e.userId);
+
+  // 4. Ambil semua mahasiswa yang BELUM terdaftar di kelas ini
+  const availableStudents = await prisma.user.findMany({
+    where: {
+      role: 'MAHASISWA',
+      id: { notIn: enrolledIds.length > 0 ? enrolledIds : [''] }, // Handle empty array
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  return availableStudents;
+};
+
+// --- Add Student to Course by ID ---
+// Versi baru: enroll berdasarkan studentId (bukan email)
+const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRole) => {
+  // 1. Validasi: Pastikan Kelas itu milik Dosen yang sedang login
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!course) {
+    throw new Error('Kelas tidak ditemukan');
+  }
+
+  // 2. Cek Kepemilikan (Authorization Logic)
+  if (teacherRole === 'DOSEN' && course.teacherId !== teacherId) {
+    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+  }
+
+  // 3. Cari Mahasiswa by ID
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+  });
+
+  if (!student) {
+    throw new Error('Mahasiswa tidak ditemukan');
+  }
+
+  // Validasi: Pastikan yang dipilih adalah MAHASISWA
+  if (student.role !== 'MAHASISWA') {
+    throw new Error('User tersebut bukan mahasiswa');
+  }
+
+  // 4. Cek Duplikasi
+  const existingEnrollment = await prisma.enrollment.findUnique({
+    where: {
+      userId_courseId: {
+        userId: student.id,
+        courseId: courseId,
+      },
+    },
+  });
+
+  if (existingEnrollment) {
+    throw new Error('Mahasiswa sudah terdaftar di kelas ini');
+  }
+
+  // 5. Eksekusi Create Enrollment
+  const enrollment = await prisma.enrollment.create({
+    data: {
+      userId: student.id,
+      courseId: courseId,
+    },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  return {
+    enrollmentId: enrollment.id,
+    enrolledAt: enrollment.enrolledAt,
+    student: enrollment.student,
+  };
+};
+
 export {
   createCourse,
   getAllCourses,
   addStudentToCourse,
+  addStudentToCourseById,
   getEnrolledCourses,
   getTeachingCourses,
   getTeachingCoursesWithStats,
   getStudentsByCourse,
+  getAvailableStudentsForCourse,
 };
