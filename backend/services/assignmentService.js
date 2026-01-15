@@ -43,10 +43,8 @@ const submitAssignment = async (assignmentId, studentId, data) => {
 
   // TODO Cek apakah mahasiswa terdaftar di kelas tsb? (Skip dulu biar ringkas, tapi idealnya dicek)
 
-  // * Cek Deadline (Logic Bisnis Penting!)
-  if (new Date() > assignment.dueDate) {
-    throw new Error('Maaf, batas waktu pengumpulan sudah habis');
-  }
+  // * Cek Deadline - Tetap izinkan submit tapi tandai sebagai terlambat
+  const isLate = new Date() > assignment.dueDate;
 
   // Cek apakah sudah pernah submit?
   const existingSubmission = await prisma.submission.findUnique({
@@ -83,6 +81,7 @@ const submitAssignment = async (assignmentId, studentId, data) => {
     submittedAt: submission.submittedAt,
     fileUrl: submission.fileUrl,
     status: 'Submitted',
+    isLate, // Informasi apakah terlambat
   };
 };
 
@@ -546,6 +545,104 @@ const getRecentSubmissionsForTeacher = async (teacherId, limit = 10) => {
   }));
 };
 
+/**
+ * Update Assignment - Memperbarui data tugas yang sudah ada
+ * Hanya Dosen pemilik kelas yang bisa mengupdate
+ */
+const updateAssignment = async (assignmentId, userId, userRole, data) => {
+  // 1. Cari assignment beserta informasi course-nya
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          teacherId: true,
+        },
+      },
+    },
+  });
+
+  if (!assignment) {
+    throw new Error('Tugas tidak ditemukan');
+  }
+
+  // 2. Authorization: Hanya Dosen pemilik atau Admin
+  if (userRole === 'DOSEN' && assignment.course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan tugas dari kelas Anda');
+  }
+
+  if (userRole === 'MAHASISWA') {
+    throw new Error('Akses ditolak: Mahasiswa tidak dapat mengedit tugas');
+  }
+
+  // 3. Update Assignment
+  return await prisma.assignment.update({
+    where: { id: assignmentId },
+    data: {
+      title: data.title,
+      description: data.description,
+      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      dueDate: true,
+      courseId: true,
+      updatedAt: true,
+    },
+  });
+};
+
+/**
+ * Delete Assignment - Menghapus tugas dari database
+ * Hanya Dosen pemilik kelas yang bisa menghapus
+ * CATATAN: Ini juga akan menghapus semua submission terkait (cascade)
+ */
+const deleteAssignment = async (assignmentId, userId, userRole) => {
+  // 1. Cari assignment beserta informasi course-nya
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          teacherId: true,
+        },
+      },
+      _count: {
+        select: {
+          submissions: true,
+        },
+      },
+    },
+  });
+
+  if (!assignment) {
+    throw new Error('Tugas tidak ditemukan');
+  }
+
+  // 2. Authorization: Hanya Dosen pemilik atau Admin
+  if (userRole === 'DOSEN' && assignment.course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan tugas dari kelas Anda');
+  }
+
+  if (userRole === 'MAHASISWA') {
+    throw new Error('Akses ditolak: Mahasiswa tidak dapat menghapus tugas');
+  }
+
+  // 3. Delete Assignment (submissions akan cascade delete)
+  await prisma.assignment.delete({
+    where: { id: assignmentId },
+  });
+
+  return {
+    message: 'Tugas berhasil dihapus',
+    deletedSubmissions: assignment._count.submissions,
+  };
+};
+
 export {
   createAssignment,
   submitAssignment,
@@ -558,4 +655,6 @@ export {
   getTeacherDashboardStats,
   getRecentSubmissionsForTeacher,
   gradeSubmission,
+  updateAssignment,
+  deleteAssignment,
 };

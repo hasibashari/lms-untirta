@@ -144,4 +144,98 @@ const getMaterialById = async (materialId, userId, userRole) => {
   };
 };
 
-export { createMaterial, getMaterials, getMaterialById };
+/**
+ * Update Material - Memperbarui data materi yang sudah ada
+ * Hanya Dosen pemilik kelas yang bisa mengupdate
+ */
+const updateMaterial = async (materialId, userId, userRole, data) => {
+  // 1. Cari material beserta informasi course-nya
+  const material = await prisma.material.findUnique({
+    where: { id: materialId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          teacherId: true,
+        },
+      },
+    },
+  });
+
+  if (!material) {
+    throw new Error('Materi tidak ditemukan');
+  }
+
+  // 2. Authorization: Hanya Dosen pemilik atau Admin
+  if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan materi dari kelas Anda');
+  }
+
+  if (userRole === 'MAHASISWA') {
+    throw new Error('Akses ditolak: Mahasiswa tidak dapat mengedit materi');
+  }
+
+  // 3. Update Material
+  return await prisma.material.update({
+    where: { id: materialId },
+    data: {
+      title: data.title,
+      content: data.content,
+      fileUrl: data.fileUrl,
+      videoUrl: data.videoUrl,
+      order: data.order,
+    },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      fileUrl: true,
+      videoUrl: true,
+      order: true,
+      isPublished: true,
+      courseId: true,
+      updatedAt: true,
+    },
+  });
+};
+
+/**
+ * Delete Material - Menghapus materi dari database
+ * Hanya Dosen pemilik kelas yang bisa menghapus
+ */
+const deleteMaterial = async (materialId, userId, userRole) => {
+  // 1. Cari material beserta informasi course-nya
+  const material = await prisma.material.findUnique({
+    where: { id: materialId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          teacherId: true,
+        },
+      },
+    },
+  });
+
+  if (!material) {
+    throw new Error('Materi tidak ditemukan');
+  }
+
+  // 2. Authorization: Hanya Dosen pemilik atau Admin
+  if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
+    throw new Error('Akses ditolak: Ini bukan materi dari kelas Anda');
+  }
+
+  if (userRole === 'MAHASISWA') {
+    throw new Error('Akses ditolak: Mahasiswa tidak dapat menghapus materi');
+  }
+
+  // 3. Delete Material
+  await prisma.material.delete({
+    where: { id: materialId },
+  });
+
+  return { message: 'Materi berhasil dihapus' };
+};
+
+export { createMaterial, getMaterials, getMaterialById, updateMaterial, deleteMaterial };
