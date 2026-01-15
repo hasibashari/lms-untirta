@@ -106,7 +106,7 @@ export default function Register() {
         <Input
           label="Alamat Email"
           type="email"
-          placeholder="nama@universitas.ac.id"
+          placeholder="nama@untirta.ac.id"
           icon={Mail}
           value={formData.email}
           onChange={(e) => handleChange(e, 'email')}

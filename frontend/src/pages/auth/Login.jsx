@@ -92,7 +92,7 @@ export default function Login() {
         <Input
           label="Email Institusi / Pribadi"
           type="email"
-          placeholder="nama@email.com"
+          placeholder="nama@untirta.ac.id"
           icon={Mail}
           value={formData.email}
           onChange={(e) => handleChange(e, 'email')}
