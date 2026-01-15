@@ -10,8 +10,9 @@ import {
   CheckCircle,
   AlertCircle,
   User,
+  ChevronDown,
 } from 'lucide-react';
-import { getCourseStudents, enrollStudent } from '../../services/dosen.service';
+import { getCourseStudents, enrollStudent, getAvailableStudents } from '../../services/dosen.service';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 
 /**
@@ -29,7 +30,9 @@ export default function Students() {
 
   // State untuk modal tambah
   const [showAddModal, setShowAddModal] = useState(false);
-  const [email, setEmail] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [availableStudents, setAvailableStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [enrollError, setEnrollError] = useState(null);
   const [enrollSuccess, setEnrollSuccess] = useState(null);
@@ -63,12 +66,33 @@ export default function Students() {
     student.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Fetch available students saat modal dibuka
+  const fetchAvailableStudents = async () => {
+    if (!courseId || courseId === 'undefined') return;
+    setLoadingStudents(true);
+    try {
+      const res = await getAvailableStudents(courseId);
+      setAvailableStudents(res.data || []);
+    } catch (err) {
+      setEnrollError('Gagal memuat daftar mahasiswa');
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  // Fetch available students saat modal dibuka
+  useEffect(() => {
+    if (showAddModal) {
+      fetchAvailableStudents();
+    }
+  }, [showAddModal, courseId]);
+
   // Handle enroll student
   const handleEnroll = async (e) => {
     e.preventDefault();
 
-    if (!email.trim()) {
-      setEnrollError('Email tidak boleh kosong');
+    if (!selectedStudentId) {
+      setEnrollError('Pilih mahasiswa terlebih dahulu');
       return;
     }
 
@@ -79,7 +103,8 @@ export default function Students() {
     setEnrollSuccess(null);
 
     try {
-      const res = await enrollStudent(courseId, { email: email.trim() });
+      // Kirim studentId ke backend (bukan email)
+      const res = await enrollStudent(courseId, { studentId: selectedStudentId });
       // Response structure from API: { enrollmentId, enrolledAt, student: { id, name, email } }
       const enrollmentData = res.data;
 
@@ -94,8 +119,11 @@ export default function Students() {
         };
 
         setStudents(prev => [...prev, newStudent]);
-        setEnrollSuccess(`${newStudent.name || email} berhasil ditambahkan!`);
-        setEmail('');
+        setEnrollSuccess(`${newStudent.name} berhasil ditambahkan!`);
+        setSelectedStudentId('');
+
+        // Refresh available students (hapus yang sudah enrolled)
+        setAvailableStudents(prev => prev.filter(s => s.id !== newStudent.id));
 
         // Auto close modal after 2 seconds on success
         setTimeout(() => {
@@ -115,7 +143,8 @@ export default function Students() {
   // Reset modal state when closing
   const closeModal = () => {
     setShowAddModal(false);
-    setEmail('');
+    setSelectedStudentId('');
+    setAvailableStudents([]);
     setEnrollError(null);
     setEnrollSuccess(null);
   };
@@ -277,7 +306,7 @@ export default function Students() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Tambah Mahasiswa</h2>
-                  <p className="text-sm text-slate-500">Masukkan email mahasiswa</p>
+                  <p className="text-sm text-slate-500">Pilih mahasiswa dari daftar</p>
                 </div>
               </div>
               <button
@@ -306,30 +335,46 @@ export default function Students() {
                 </div>
               )}
 
-              {/* Email Input */}
+              {/* Student Select Dropdown */}
               {!enrollSuccess && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Email Mahasiswa <span className="text-red-500">*</span>
+                      Pilih Mahasiswa <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          setEnrollError(null);
-                        }}
-                        placeholder="contoh: mahasiswa@student.untirta.ac.id"
-                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        autoFocus
-                        required
-                      />
-                    </div>
+                    {loadingStudents ? (
+                      <div className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                        Memuat daftar mahasiswa...
+                      </div>
+                    ) : availableStudents.length === 0 ? (
+                      <div className="w-full px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm">
+                        Semua mahasiswa sudah terdaftar di kelas ini
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <select
+                          value={selectedStudentId}
+                          onChange={(e) => {
+                            setSelectedStudentId(e.target.value);
+                            setEnrollError(null);
+                          }}
+                          className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none cursor-pointer"
+                          required
+                        >
+                          <option value="">-- Pilih Mahasiswa --</option>
+                          {availableStudents.map(student => (
+                            <option key={student.id} value={student.id}>
+                              {student.name} ({student.email})
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
+                    )}
                     <p className="text-xs text-slate-500 mt-1.5">
-                      Mahasiswa harus sudah terdaftar di sistem dengan email ini
+                      Hanya mahasiswa yang belum terdaftar di kelas ini yang ditampilkan
                     </p>
                   </div>
 
@@ -344,7 +389,7 @@ export default function Students() {
                     </button>
                     <button
                       type="submit"
-                      disabled={enrolling || !email.trim()}
+                      disabled={enrolling || !selectedStudentId || loadingStudents}
                       className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
                       {enrolling ? (
