@@ -29,9 +29,11 @@ export const DosenRoute = (
     <Route path='/dosen/courses/:courseId' element={<LazyPage component={CourseHome} />} />
     <Route path='/dosen/courses/:courseId/materials' element={<LazyPage component={Materials} />} />
     <Route path='/dosen/courses/:courseId/materials/new' element={<LazyPage component={CreateMaterial} />} />
+    <Route path='/dosen/courses/:courseId/materials/:materialId/edit' element={<LazyPage component={CreateMaterial} />} />
     <Route path='/dosen/courses/:courseId/students' element={<LazyPage component={Students} />} />
     <Route path='/dosen/courses/:courseId/assignments' element={<LazyPage component={Assignments} />} />
     <Route path='/dosen/courses/:courseId/assignments/new' element={<LazyPage component={CreateAssignment} />} />
+    <Route path='/dosen/courses/:courseId/assignments/:assignmentId/edit' element={<LazyPage component={CreateAssignment} />} />
     <Route
       path='/dosen/courses/:courseId/assignments/:assignmentId/submissions'
       element={<LazyPage component={Submissions} />}
