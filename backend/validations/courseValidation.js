@@ -8,10 +8,13 @@ const createCourseSchema = z.object({
   }),
 });
 
-// Schema baru untuk Enrollment
+// Schema untuk Enrollment - support studentId (baru) dan email (legacy)
 const enrollStudentSchema = z.object({
   body: z.object({
-    email: z.email('Format email tidak valid').min(1, 'Email wajib diisi'),
+    studentId: z.string().uuid('Student ID tidak valid').optional(),
+    email: z.string().email('Format email tidak valid').optional(),
+  }).refine(data => data.studentId || data.email, {
+    message: 'studentId atau email wajib diisi',
   }),
 });
 
