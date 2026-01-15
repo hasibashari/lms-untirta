@@ -18,6 +18,7 @@ import MahasiswaGuard from '../guard/MahasiswaGuard';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import Home from '../pages/Home';
+import TestProse from '../pages/TestProse';
 
 // Route
 import { AdminRoute } from './AdminRoute';
@@ -31,6 +32,7 @@ function AppRoutes() {
       {/* Home */}
       <Route element={<HomeLayout />}>
         <Route path='/' element={<Home />} />
+        <Route path='/test-prose' element={<TestProse />} />
       </Route>
 
       {/* Auth */}
