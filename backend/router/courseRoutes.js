@@ -1,7 +1,7 @@
 import express from 'express';
 import validate from '../middlewares/validate.js';
 import { authenticateToken, authorizeRole } from '../middlewares/authMiddlewareJWT.js';
-import { createCourseSchema, enrollStudentSchema } from '../validations/courseValidation.js';
+import { createCourseSchema, enrollStudentSchema, updateCourseSchema, assignTeacherSchema } from '../validations/courseValidation.js';
 import {
   createCourse,
   enrollStudent,
@@ -9,6 +9,17 @@ import {
   getMyCourses,
   getStudentsByCourse,
   getAvailableStudents,
+  // Admin Course Management
+  adminGetAllCourses,
+  adminCreateCourse,
+  adminUpdateCourse,
+  adminDeleteCourse,
+  adminAssignTeacher,
+  // KRS (Self Enrollment)
+  getAvailableCoursesForKRS,
+  selfEnrollCourse,
+  getMyKRS,
+  getStudyResults,
 } from '../controllers/courseController.js';
 
 import { createMaterial, getMaterials } from '../controllers/materialController.js';
@@ -21,16 +32,88 @@ import { createAssignmentSchema } from '../validations/assignmentValidation.js';
 const router = express.Router();
 
 // --- API Routes ---
-// PENTING: Route spesifik (/me) harus di atas route umum (/) untuk menghindari konflik
+// PENTING: Route spesifik harus di atas route dengan parameter (/:id) untuk menghindari konflik
 
-// 1. Route My Courses (Dynamic based on role) - Harus di atas route GET /
-// - MAHASISWA: Return kelas yang diikuti (enrolled courses)
-// - DOSEN: Return kelas yang diajar (teaching courses)
-// - ADMIN: Return semua kelas
+// ========== SPECIFIC ROUTES (tanpa parameter) ==========
+
+// 1. Route My Courses (Dynamic based on role)
 router.get('/me', authenticateToken, getMyCourses);
 
-// 2. Route Get All Courses (umum)
+// 2. Route Get All Courses
 router.get('/', authenticateToken, getCourses);
+
+// ========== KRS ROUTES (Mahasiswa) - HARUS DI ATAS /:id ==========
+
+// GET /api/courses/available - Get Available Courses for Enrollment
+router.get(
+  '/available',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  getAvailableCoursesForKRS
+);
+
+// GET /api/courses/my-krs - Get My KRS (Enrolled Courses)
+router.get(
+  '/my-krs',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  getMyKRS
+);
+
+// GET /api/courses/study-results - Get Study Results (Hasil Studi)
+router.get(
+  '/study-results',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  getStudyResults
+);
+
+// ========== ADMIN ROUTES ==========
+
+// GET /api/courses/admin/all - Get All Courses (Admin Only)
+router.get(
+  '/admin/all',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  adminGetAllCourses
+);
+
+// POST /api/courses/admin - Create Course (Admin Only)
+router.post(
+  '/admin',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  validate(createCourseSchema),
+  adminCreateCourse
+);
+
+// PUT /api/courses/admin/:id - Update Course (Admin Only)
+router.put(
+  '/admin/:id',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  validate(updateCourseSchema),
+  adminUpdateCourse
+);
+
+// DELETE /api/courses/admin/:id - Delete Course (Admin Only)
+router.delete(
+  '/admin/:id',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  adminDeleteCourse
+);
+
+// PATCH /api/courses/admin/:id/assign-teacher - Assign Teacher (Admin Only)
+router.patch(
+  '/admin/:id/assign-teacher',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  validate(assignTeacherSchema),
+  adminAssignTeacher
+);
+
+// ========== PARAMETERIZED ROUTES (/:id) ==========
 
 // 3. GET /api/courses/:id/students - Get Students in a Course (Dosen Only)
 router.get(
@@ -41,7 +124,6 @@ router.get(
 );
 
 // 4. GET /api/courses/:id/available-students - Get Available Students for Enrollment
-// Mengambil daftar mahasiswa yang belum terdaftar di kelas (untuk dropdown)
 router.get(
   '/:id/available-students',
   authenticateToken,
@@ -54,24 +136,28 @@ router.post(
   '/',
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
-  validate(createCourseSchema), // Validasi input body
+  validate(createCourseSchema),
   createCourse
 );
 
-// POST /api/courses/:id/enroll
-// Artinya: Tambahkan mahasiswa ke course dengan ID tertentu
+// POST /api/courses/:id/enroll - Tambahkan mahasiswa ke course (Dosen/Admin)
 router.post(
   '/:id/enroll',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'), // Hanya Dosen & Admin yg boleh nambahin murid
-  validate(enrollStudentSchema), // Cek format email
+  authorizeRole('DOSEN', 'ADMIN'),
+  validate(enrollStudentSchema),
   enrollStudent
 );
 
-// --- MATERIAL ROUTES ---
-// 1. Create Material (Dosen Only)
-// URL: POST /api/courses/:courseId/materials
+// POST /api/courses/:id/enroll-self - Self Enroll to Course (Mahasiswa)
+router.post(
+  '/:id/enroll-self',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  selfEnrollCourse
+);
 
+// --- MATERIAL ROUTES ---
 router.post(
   '/:courseId/materials',
   authenticateToken,
@@ -80,17 +166,13 @@ router.post(
   createMaterial
 );
 
-// 2. Get Materials (Mahasiswa Enrolled & Dosen)
-// URL: GET /api/courses/:courseId/materials
 router.get(
   '/:courseId/materials',
   authenticateToken,
-  getMaterials // Middleware auth sudah handle di dalam service
+  getMaterials
 );
 
 // --- ASSIGNMENT ROUTES ---
-// 1. Create Assignment (Dosen Only)
-// URL: POST /api/courses/:courseId/assignments
 router.post(
   '/:courseId/assignments',
   authenticateToken,
@@ -99,12 +181,10 @@ router.post(
   create
 );
 
-// 2. Get Assignments (Mahasiswa Enrolled & Dosen)
-// URL: GET /api/courses/:courseId/assignments
 router.get(
   '/:courseId/assignments',
   authenticateToken,
-  getAssignments // Middleware auth sudah handle di dalam service
+  getAssignments
 );
 
 export default router;
