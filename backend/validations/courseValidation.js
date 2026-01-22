@@ -5,6 +5,28 @@ const createCourseSchema = z.object({
     title: z.string().min(3, 'Judul kelas minimal 3 karakter'),
     description: z.string().optional(), // Boleh kosong
     code: z.string().min(3, 'Kode mata kuliah minimal 3 karakter'), // Misal: IF-101
+    semester: z.number().int().min(1).max(8).optional(), // Semester 1-8
+    sks: z.number().int().min(1).max(6).optional(), // SKS 1-6
+    teacherId: z.string().uuid('Teacher ID tidak valid').optional(), // For Admin create
+  }),
+});
+
+// Schema untuk Update Course (Admin)
+const updateCourseSchema = z.object({
+  body: z.object({
+    title: z.string().min(3, 'Judul kelas minimal 3 karakter').optional(),
+    description: z.string().optional(),
+    code: z.string().min(3, 'Kode mata kuliah minimal 3 karakter').optional(),
+    semester: z.number().int().min(1).max(8).optional(),
+    sks: z.number().int().min(1).max(6).optional(),
+    teacherId: z.string().uuid('Teacher ID tidak valid').optional().nullable(),
+  }),
+});
+
+// Schema untuk Assign Teacher (Admin)
+const assignTeacherSchema = z.object({
+  body: z.object({
+    teacherId: z.string().uuid('Teacher ID tidak valid'),
   }),
 });
 
@@ -18,4 +40,4 @@ const enrollStudentSchema = z.object({
   }),
 });
 
-export { createCourseSchema, enrollStudentSchema };
+export { createCourseSchema, updateCourseSchema, assignTeacherSchema, enrollStudentSchema };
