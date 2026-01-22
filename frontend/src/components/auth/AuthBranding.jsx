@@ -1,4 +1,5 @@
-import { Globe, BookOpen, CheckCircle } from 'lucide-react';
+import { BookOpen, CheckCircle } from 'lucide-react';
+import Logo from '../ui/Logo';
 
 /**
  * AuthBranding Component
@@ -49,12 +50,9 @@ const AuthBranding = ({
         </>
       )}
 
-      {/* Logo */}
-      <div className="relative z-10 flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
-          <Globe className="w-6 h-6 text-white" />
-        </div>
-        <span className="text-xl font-bold tracking-wide">SPADA INDONESIA</span>
+      {/* Logo (reused component) */}
+      <div className="relative z-10">
+        <Logo variant="auth" />
       </div>
 
       {/* Hero Content */}
