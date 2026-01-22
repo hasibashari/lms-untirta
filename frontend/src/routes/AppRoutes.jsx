@@ -4,12 +4,10 @@ import { Routes, Route } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import DosenLayout from '../layouts/DosenLayout';
-import MahasiswaLayout from '../layouts/MahasiswaLayout';
 import HomeLayout from '../layouts/HomeLayout';
 
 // Guards
 import ProtectedRoute from './ProtectedRoute';
-import RoleRoute from './RoleRoute';
 import AdminGuard from '../guard/AdminGuard';
 import DosenGuard from '../guard/DosenGuard';
 import MahasiswaGuard from '../guard/MahasiswaGuard';
@@ -18,7 +16,6 @@ import MahasiswaGuard from '../guard/MahasiswaGuard';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import Home from '../pages/Home';
-import TestProse from '../pages/TestProse';
 
 // Route
 import { AdminRoute } from './AdminRoute';
@@ -32,7 +29,6 @@ function AppRoutes() {
       {/* Home */}
       <Route element={<HomeLayout />}>
         <Route path='/' element={<Home />} />
-        <Route path='/test-prose' element={<TestProse />} />
       </Route>
 
       {/* Auth */}
