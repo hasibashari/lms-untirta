@@ -1,6 +1,6 @@
 // middlewares/authMiddlewareJWT.js
 import jwt from 'jsonwebtoken';
-import { prisma } from '../config/prisma.js'; // Pastikan prisma sudah dikonfigurasi dengan benar
+import prisma from '../config/prisma.js'; // Pastikan prisma sudah dikonfigurasi dengan benar
 
 const authenticateToken = async (req, res, next) => {
   // 1. Ambil token dari header Authorization: Bearer <token>
