@@ -104,9 +104,16 @@ const MyClasses = () => {
           <h3 className="text-lg font-semibold text-slate-900 mb-2">
             Belum Ada Kelas
           </h3>
-          <p className="text-slate-500 max-w-sm mx-auto">
-            Anda belum terdaftar di kelas manapun. Hubungi dosen atau admin untuk didaftarkan.
+          <p className="text-slate-500 max-w-sm mx-auto mb-4">
+            Anda belum terdaftar di kelas manapun. Silakan ambil mata kuliah melalui menu KRS.
           </p>
+          <a
+            href="/mahasiswa/krs"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            <BookOpen size={18} />
+            Buka KRS
+          </a>
         </div>
       )}
 
