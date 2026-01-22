@@ -3,7 +3,10 @@ import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
 // Import Child Components
 import { Link } from '../ui';
-import { FooterColumn, FooterBrand, FooterContact, FooterBottom } from './';
+import FooterColumn from './FooterColumn';
+import FooterBrand from './FooterBrand';
+import FooterContact from './FooterContact';
+import FooterBottom from './FooterBottom';
 
 // Import Configuration Data
 import { FOOTER_LINKS, SOCIAL_LINKS, CONTACT_INFO } from '../../utils/constants';

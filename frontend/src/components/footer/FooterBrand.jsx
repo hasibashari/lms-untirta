@@ -1,22 +1,15 @@
-import { Globe, ArrowRight } from 'lucide-react';
+import Logo from '../ui/Logo';
+import { ArrowRight } from 'lucide-react';
 
 /**
  * FooterBrand Component
  * Section brand dengan logo, deskripsi, dan newsletter subscription form.
- * Menampilkan identitas SPADA Indonesia di footer.
+ * Menampilkan identitas SPADA UNTIRTA di footer.
  */
 const FooterBrand = () => (
   <div className="space-y-6">
-    {/* Logo Section */}
-    <div className="flex items-center gap-3">
-      <div className="relative flex items-center justify-center w-10 h-10">
-        <Globe className="w-8 h-8 text-blue-500" />
-        <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-slate-900"></span>
-      </div>
-      <h2 className="text-xl font-extrabold text-white tracking-tight uppercase">
-        SPADA <span className="text-blue-500">INDONESIA</span>
-      </h2>
-    </div>
+    {/* Logo Section (reused) */}
+    <Logo variant="footer" />
 
     {/* Description */}
     <p className="text-sm leading-relaxed text-slate-400">
