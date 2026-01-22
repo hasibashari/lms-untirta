@@ -1,5 +1,5 @@
 import { id } from 'zod/v4/locales';
-import { prisma } from '../config/prisma.js';
+import prisma from '../config/prisma.js';
 import { grade } from '../controllers/assignmentController.js';
 
 // 1. Dosen Membuat Tugas

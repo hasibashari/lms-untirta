@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import prisma from '../config/prisma.js';
 import { hashPassword } from '../utils/password.js';
 
 const createUserByAdmin = async data => {

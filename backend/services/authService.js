@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import prisma from '../config/prisma.js';
 import { generateToken } from '../utils/jwt.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
 

@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import prisma from '../config/prisma.js';
 
 // --- Create a new course ---
 const createCourse = async (data, teacherId) => {

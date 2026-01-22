@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import prisma from '../config/prisma.js';
 
 const createMaterial = async (courseId, teacherId, data) => {
   // 1. Cek Permission: Apakah course ini milik Dosen tersebut?
