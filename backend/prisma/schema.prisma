@@ -37,6 +37,8 @@ model Course {
   title       String
   description String?
   code        String   @unique // Misal: IF-101
+  semester    Int? // Semester 1-8
+  sks         Int      @default(3) // Satuan Kredit Semester
   teacherId   String
   createdAt   DateTime @default(now())
 
@@ -58,8 +60,8 @@ model Enrollment {
   courseId   String
   enrolledAt DateTime @default(now())
 
-  student User   @relation(fields: [userId], references: [id])
-  course  Course @relation(fields: [courseId], references: [id])
+  student User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId]) // Mencegah mahasiswa masuk kelas yang sama 2x
 }
@@ -86,7 +88,7 @@ model Material {
   isPublished Boolean @default(true)
 
   courseId String
-  course   Course @relation(fields: [courseId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,7 +102,7 @@ model Assignment {
   dueDate     DateTime // Batas waktu pengumpulan
 
   courseId String
-  course   Course @relation(fields: [courseId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   submissions Submission[] // Relasi ke jawaban siswa
 
@@ -123,10 +125,10 @@ model Submission {
 
   // Relasi
   assignmentId String
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
   studentId String
-  student   User   @relation(fields: [studentId], references: [id])
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   // Constraint: Satu siswa cuma bisa submit 1x per tugas
   @@unique([assignmentId, studentId])
