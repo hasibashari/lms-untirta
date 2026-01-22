@@ -22,11 +22,34 @@ export const submitAssignment = (assignmentId, payload) => {
 };
 
 // Nilai terpusat - semua nilai dari semua kelas
-export const getAllMyGrades = () => {
-  return api.get('/assignments/my-grades');
-};
 
 // Dashboard stats - statistik untuk dashboard
 export const getMyDashboardStats = () => {
   return api.get('/assignments/my-stats');
+};
+
+// ========== KRS (Kartu Rencana Studi) ==========
+
+// Get available courses for a specific semester (courses not yet enrolled)
+export const getAvailableCourses = (semester) => {
+  const params = semester ? `?semester=${semester}` : '';
+  return api.get(`/courses/available${params}`);
+};
+
+// Get my KRS (enrolled courses list)
+export const getMyKRS = () => {
+  return api.get('/courses/my-krs');
+};
+
+// Enroll to a course
+export const enrollCourse = (courseId) => {
+  return api.post(`/courses/${courseId}/enroll-self`);
+};
+
+// ========== Hasil Studi ==========
+
+// Get study results (grades per semester)
+export const getStudyResults = (semester) => {
+  const params = semester ? `?semester=${semester}` : '';
+  return api.get(`/courses/study-results${params}`);
 };

@@ -10,13 +10,9 @@ export const getMyCoursesWithStats = async () => {
   return api.get('/courses/me?includeStats=true');
 };
 
-export const createCourse = async payload => {
-  return api.post('/courses', payload);
-};
-
-export const enrollStudent = async (courseId, payload) => {
-  return api.post(`/courses/${courseId}/enroll`, payload);
-};
+// NOTE: createCourse dihapus - kelas dibuat oleh Admin
+// NOTE: enrollStudent dihapus - mahasiswa mendaftar sendiri melalui KRS
+// NOTE: getAvailableStudents dihapus - tidak diperlukan lagi
 
 export const createMaterial = async (courseId, payload) => {
   return api.post(`/courses/${courseId}/materials`, payload);
@@ -24,11 +20,6 @@ export const createMaterial = async (courseId, payload) => {
 
 export const getCourseStudents = async courseId => {
   return api.get(`/courses/${courseId}/students`);
-}
-
-// Get available students for enrollment (mahasiswa yang belum terdaftar di kelas)
-export const getAvailableStudents = async courseId => {
-  return api.get(`/courses/${courseId}/available-students`);
 }
 
 export const getMaterials = async courseId => {

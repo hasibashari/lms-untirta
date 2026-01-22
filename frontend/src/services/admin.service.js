@@ -16,4 +16,36 @@ export const getUsers = () => {
   return api.get('/users');
 };
 
+// ========== Course Management (Admin) ==========
+
+// Get all courses with stats
+export const getAllCourses = () => {
+  return api.get('/courses/admin/all');
+};
+
+// Create new course
+export const createCourse = (payload) => {
+  return api.post('/courses/admin', payload);
+};
+
+// Update course
+export const updateCourse = (courseId, payload) => {
+  return api.put(`/courses/admin/${courseId}`, payload);
+};
+
+// Delete course
+export const deleteCourse = (courseId) => {
+  return api.delete(`/courses/admin/${courseId}`);
+};
+
+// Assign teacher to course
+export const assignTeacher = (courseId, teacherId) => {
+  return api.post(`/courses/admin/${courseId}/assign-teacher`, { teacherId });
+};
+
+// Get course students (for admin view)
+export const getCourseStudents = (courseId) => {
+  return api.get(`/courses/${courseId}/students`);
+};
+
 
