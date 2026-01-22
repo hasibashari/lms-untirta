@@ -1,13 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Search, Plus, Users, FileText } from 'lucide-react';
-import { createCourse, getMyCoursesWithStats } from '../../services/dosen.service';
-import Button from '../../components/ui/Button';
+import { BookOpen, Search, Users, FileText, Info } from 'lucide-react';
+import { getMyCoursesWithStats } from '../../services/dosen.service';
 
 /**
  * MyClasses / Kelas Saya (Dosen)
- * Halaman khusus untuk menampilkan daftar lengkap kelas yang diampu
- * Terpisah dari Dashboard untuk UX yang lebih fokus
+ * Halaman untuk menampilkan daftar kelas yang diampu dosen (READ-ONLY)
+ * Kelas dibuat oleh Admin, dosen hanya mengelola kelas yang sudah ditugaskan
  * 
  * OPTIMASI:
  * - Menggunakan single API call dengan stats (menghindari N+1 query)
@@ -19,13 +18,6 @@ const MyClasses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Create course state
-  const [showCreate, setShowCreate] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newCode, setNewCode] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -66,32 +58,6 @@ const MyClasses = () => {
     };
   }, [fetchCourses]);
 
-  const handleCreateCourse = async e => {
-    e.preventDefault();
-    setCreating(true);
-    setCreateError(null);
-
-    try {
-      const res = await createCourse({ title: newTitle, code: newCode });
-      const createdCourse = res?.data;
-
-      // Refresh list
-      await fetchCourses();
-
-      setNewTitle('');
-      setNewCode('');
-      setShowCreate(false);
-
-      if (createdCourse?.id) {
-        navigate(`/dosen/courses/${createdCourse.id}`);
-      }
-    } catch (err) {
-      setCreateError(err?.response?.data?.message || err?.message || 'Terjadi kesalahan.');
-    } finally {
-      setCreating(false);
-    }
-  };
-
   // Filter courses based on search query
   const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -101,84 +67,26 @@ const MyClasses = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
-            Kelas Saya
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Daftar lengkap kelas yang Anda ampu
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setShowCreate(v => !v)}
-          className="flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Tambah Kelas
-        </Button>
+      <div>
+        <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
+          Kelas Saya
+        </h1>
+        <p className="text-slate-500 mt-1">
+          Daftar kelas yang Anda ampu
+        </p>
       </div>
 
-      {/* Create Course Form */}
-      {showCreate && (
-        <form
-          onSubmit={handleCreateCourse}
-          className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4"
-        >
-          <h3 className="font-semibold text-slate-900">Buat Kelas Baru</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Nama Kelas
-              </label>
-              <input
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="contoh: Pemrograman Web"
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Kode Kelas
-              </label>
-              <input
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="contoh: WEB-01"
-                value={newCode}
-                onChange={e => setNewCode(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          {createError && (
-            <p className="text-sm text-red-600">{createError}</p>
-          )}
-
-          <div className="flex gap-3">
-            <Button type="submit" variant="primary" disabled={creating}>
-              {creating ? 'Menyimpan...' : 'Simpan Kelas'}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setShowCreate(false);
-                setCreateError(null);
-                setNewTitle('');
-                setNewCode('');
-              }}
-            >
-              Batal
-            </Button>
-          </div>
-        </form>
-      )}
+      {/* Info Box */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+        <Info size={20} className="text-blue-600 shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-700">
+          <p className="font-medium mb-1">Informasi</p>
+          <p>
+            Kelas dibuat dan dikelola oleh Admin. Anda dapat mengelola materi, tugas,
+            dan nilai untuk kelas yang sudah ditugaskan kepada Anda.
+          </p>
+        </div>
+      </div>
 
       {/* Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -242,17 +150,10 @@ const MyClasses = () => {
           <h3 className="text-lg font-semibold text-slate-900 mb-2">
             Belum Ada Kelas
           </h3>
-          <p className="text-slate-500 max-w-sm mx-auto mb-4">
-            Anda belum memiliki kelas. Klik tombol "Tambah Kelas" untuk membuat kelas baru.
+          <p className="text-slate-500 max-w-sm mx-auto">
+            Anda belum ditugaskan untuk mengampu kelas.
+            Hubungi admin untuk penugasan kelas.
           </p>
-          <Button
-            variant="primary"
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2"
-          >
-            <Plus size={18} />
-            Tambah Kelas Pertama
-          </Button>
         </div>
       )}
 
@@ -268,6 +169,12 @@ const MyClasses = () => {
           <p className="text-slate-500">
             Tidak ada kelas yang cocok dengan "{searchQuery}"
           </p>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="mt-4 text-blue-600 hover:underline font-medium"
+          >
+            Reset Pencarian
+          </button>
         </div>
       )}
 
@@ -299,6 +206,13 @@ const MyClasses = () => {
                 <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition mb-2 line-clamp-2">
                   {course.title}
                 </h3>
+
+                {/* Semester badge (if available) */}
+                {course.semester && (
+                  <p className="text-sm text-slate-500 mb-2">
+                    Semester {course.semester}
+                  </p>
+                )}
 
                 {/* Stats - sekarang langsung dari course object */}
                 <div className="flex items-center gap-4 text-sm">
