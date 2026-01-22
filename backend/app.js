@@ -13,7 +13,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // -- MIDDLEWARE --
-app.use(cors());
+// Konfigurasi CORS untuk mengizinkan request dari frontend (Vite dev server)
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 app.use(express.json()); // Wajib! Agar bisa baca JSON body
 
 // Logging sederhana (Middleware)
