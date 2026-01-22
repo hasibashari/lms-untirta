@@ -168,4 +168,177 @@ const getAvailableStudents = async (req, res) => {
   }
 };
 
-export { createCourse, getCourses, enrollStudent, getMyCourses, getStudentsByCourse, getAvailableStudents };
+// ========== ADMIN COURSE MANAGEMENT ==========
+
+// --- Admin: Get All Courses ---
+const adminGetAllCourses = async (req, res) => {
+  try {
+    const courses = await courseService.adminGetAllCourses();
+    res.status(200).json({
+      message: 'Daftar semua kelas berhasil diambil',
+      data: courses,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Admin: Create Course ---
+const adminCreateCourse = async (req, res) => {
+  try {
+    const newCourse = await courseService.adminCreateCourse(req.body);
+    res.status(201).json({
+      message: 'Kelas berhasil dibuat',
+      data: newCourse,
+    });
+  } catch (error) {
+    if (error.message === 'Kode kelas sudah digunakan') {
+      return res.status(409).json({ message: error.message });
+    }
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Admin: Update Course ---
+const adminUpdateCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedCourse = await courseService.adminUpdateCourse(id, req.body);
+    res.status(200).json({
+      message: 'Kelas berhasil diperbarui',
+      data: updatedCourse,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Kode kelas sudah digunakan') {
+      return res.status(409).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Admin: Delete Course ---
+const adminDeleteCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await courseService.adminDeleteCourse(id);
+    res.status(200).json({
+      message: result.message,
+      deletedEnrollments: result.deletedEnrollments,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Admin: Assign Teacher to Course ---
+const adminAssignTeacher = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { teacherId } = req.body;
+    const updatedCourse = await courseService.adminAssignTeacher(id, teacherId);
+    res.status(200).json({
+      message: 'Dosen berhasil ditetapkan ke kelas',
+      data: updatedCourse,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('bukan dosen')) {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// ========== KRS (KARTU RENCANA STUDI) ==========
+
+// --- Get Available Courses for KRS ---
+const getAvailableCoursesForKRS = async (req, res) => {
+  try {
+    const semester = req.query.semester;
+    const courses = await courseService.getAvailableCoursesForKRS(req.user.id, semester);
+    res.status(200).json({
+      message: 'Daftar mata kuliah tersedia berhasil diambil',
+      data: courses,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Self Enroll to Course (KRS) ---
+const selfEnrollCourse = async (req, res) => {
+  try {
+    const { id: courseId } = req.params;
+    const result = await courseService.selfEnrollCourse(courseId, req.user.id);
+    res.status(201).json({
+      message: 'Berhasil mengambil mata kuliah',
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message.includes('sudah terdaftar')) {
+      return res.status(409).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Get My KRS ---
+const getMyKRS = async (req, res) => {
+  try {
+    const semester = req.query.semester;
+    const krs = await courseService.getMyKRS(req.user.id, semester);
+    res.status(200).json({
+      message: 'KRS berhasil diambil',
+      data: krs,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+// --- Get Study Results (Hasil Studi) ---
+const getStudyResults = async (req, res) => {
+  try {
+    const result = await courseService.getStudyResults(req.user.id);
+    res.status(200).json({
+      message: 'Hasil studi berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
+export {
+  createCourse,
+  getCourses,
+  enrollStudent,
+  getMyCourses,
+  getStudentsByCourse,
+  getAvailableStudents,
+  // Admin Course Management
+  adminGetAllCourses,
+  adminCreateCourse,
+  adminUpdateCourse,
+  adminDeleteCourse,
+  adminAssignTeacher,
+  // KRS
+  getAvailableCoursesForKRS,
+  selfEnrollCourse,
+  getMyKRS,
+  getStudyResults,
+};
