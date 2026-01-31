@@ -9,8 +9,8 @@ import LearningLayout from '../layouts/LearningLayout';
 const MahasiswaDashboard = lazy(() => import('../pages/mahasiswa/Dashboard'));
 const MyClasses = lazy(() => import('../pages/mahasiswa/MyClasses'));
 
-const KRS = lazy(() => import('../pages/mahasiswa/KRS'));
-const HasilStudi = lazy(() => import('../pages/mahasiswa/HasilStudi'));
+const StudyPlan = lazy(() => import('../pages/mahasiswa/StudyPlan'));
+const StudyResult = lazy(() => import('../pages/mahasiswa/StudyResult'));
 const MahasiswaCourseHome = lazy(() => import('../pages/mahasiswa/CourseHome'));
 const CourseMaterials = lazy(() => import('../pages/mahasiswa/CourseMaterials'));
 const MaterialDetail = lazy(() => import('../pages/mahasiswa/MaterialDetail'));
@@ -31,8 +31,8 @@ const LazyPage = ({ component: Component }) => (
  * - /mahasiswa/dashboard - Dashboard (overview/ringkasan)
  * - /mahasiswa/classes - Kelas Saya (daftar lengkap)
 
- * - /mahasiswa/krs - KRS (Kartu Rencana Studi)
- * - /mahasiswa/hasil-studi - Hasil Studi (transkrip nilai per semester)
+ * - /mahasiswa/study-plan - Study Plan (Kartu Rencana Studi)
+ * - /mahasiswa/study-result - Study Result (transkrip nilai per semester)
  * - /mahasiswa/courses/:courseId - Detail kelas
  * - /mahasiswa/courses/:courseId/materials - Daftar materi
  * - /mahasiswa/courses/:courseId/materials/:materialId - Detail materi (learning mode)
@@ -46,8 +46,8 @@ export const MahasiswaRoute = (
       <Route path='/mahasiswa/dashboard' element={<LazyPage component={MahasiswaDashboard} />} />
       <Route path='/mahasiswa/classes' element={<LazyPage component={MyClasses} />} />
 
-      <Route path='/mahasiswa/krs' element={<LazyPage component={KRS} />} />
-      <Route path='/mahasiswa/hasil-studi' element={<LazyPage component={HasilStudi} />} />
+      <Route path='/mahasiswa/study-plan' element={<LazyPage component={StudyPlan} />} />
+      <Route path='/mahasiswa/study-result' element={<LazyPage component={StudyResult} />} />
       <Route path='/mahasiswa/courses/:courseId' element={<LazyPage component={MahasiswaCourseHome} />} />
       <Route path='/mahasiswa/courses/:courseId/materials' element={<LazyPage component={CourseMaterials} />} />
       <Route path='/mahasiswa/courses/:courseId/assignments' element={<LazyPage component={MahasiswaAssignments} />} />
