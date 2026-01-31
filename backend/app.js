@@ -1,16 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import authRoutes from './router/authRoutes.js';
-import courseRoutes from './router/courseRoutes.js';
-import userRoutes from './router/userRoutes.js';
-import assignmentRoutes from './router/assignmentRoutes.js';
-import materialRoutes from './router/materialRoutes.js';
+import authRoutes from './src/router/auth.routes.js';
+import courseRoutes from './src/router/course.routes.js';
+import userRoutes from './src/router/user.routes.js';
+import assignmentRoutes from './src/router/assignment.routes.js';
+import materialRoutes from './src/router/material.routes.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // -- MIDDLEWARE --
 // Konfigurasi CORS untuk mengizinkan request dari frontend (Vite dev server)
@@ -20,7 +19,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
-app.use(express.json()); // Wajib! Agar bisa baca JSON body
+
+// Body parser untuk JSON
+app.use(express.json());
 
 // Logging sederhana (Middleware)
 // Setiap request yang masuk akan dicatat di console
@@ -29,10 +30,6 @@ app.use((req, res, next) => {
   next(); // Lanjut ke proses berikutnya (Route Handler)
 });
 
-// -- API --
-app.get('/', (req, res) => {
-  res.send('Welcome to the server LMS Informatika API');
-});
 
 // -- MOUNT ROUTES --
 app.use('/api/auth', authRoutes); // Login/Register
@@ -41,6 +38,4 @@ app.use('/api/users', userRoutes); // User Management (Admin Only)
 app.use('/api/assignments', assignmentRoutes); // Assignment Routes
 app.use('/api/materials', materialRoutes); // Material Routes (Detail)
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+export default app;
