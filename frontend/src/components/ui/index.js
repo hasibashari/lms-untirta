@@ -11,9 +11,13 @@ export { default as SearchBar } from './SearchBar';
 // Display Components
 export { default as Badge } from './Badge';
 export { default as Card } from './Card';
+export { default as CourseBadge } from './CourseBadge';
 export { default as Divider } from './Divider';
 export { default as FloatingCard } from './FloatingCard';
+export { default as InfoBanner } from './InfoBanner';
 export { default as Rating } from './Rating';
+export { default as SectionHeader } from './SectionHeader';
+export { default as StatCard } from './StatCard';
 export { default as StatItem } from './StatItem';
 
 // Navigation & Links
