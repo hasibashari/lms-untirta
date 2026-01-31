@@ -680,6 +680,47 @@ const selfEnrollCourse = async (courseId, studentId) => {
   };
 };
 
+// --- Self Unenroll from Course (Drop KRS) ---
+const selfUnenrollCourse = async (courseId, studentId) => {
+  // Cari enrollment
+  const enrollment = await prisma.enrollment.findUnique({
+    where: {
+      userId_courseId: {
+        userId: studentId,
+        courseId: courseId,
+      },
+    },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          code: true,
+        },
+      },
+    },
+  });
+
+  if (!enrollment) {
+    throw new Error('Anda tidak terdaftar di mata kuliah ini');
+  }
+
+  // Delete enrollment
+  await prisma.enrollment.delete({
+    where: {
+      userId_courseId: {
+        userId: studentId,
+        courseId: courseId,
+      },
+    },
+  });
+
+  return {
+    message: 'Berhasil menghapus mata kuliah dari KRS',
+    course: enrollment.course,
+  };
+};
+
 // --- Get My KRS ---
 const getMyKRS = async (studentId, semester = null) => {
   const whereClause = { userId: studentId };
@@ -863,6 +904,7 @@ export {
   // KRS
   getAvailableCoursesForKRS,
   selfEnrollCourse,
+  selfUnenrollCourse,
   getMyKRS,
   getStudyResults,
 };
