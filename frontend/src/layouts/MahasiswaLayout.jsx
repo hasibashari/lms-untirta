@@ -29,19 +29,19 @@ const MahasiswaLayout = () => {
       icon: LayoutDashboard,
     },
     {
-      label: 'KRS',
-      to: '/mahasiswa/krs',
-      icon: FileText,
-      description: 'Kartu Rencana Studi',
-    },
-    {
       label: 'Kelas Saya',
       to: '/mahasiswa/classes',
       icon: BookOpen,
     },
     {
+      label: 'Rencana Studi',
+      to: '/mahasiswa/study-plan',
+      icon: FileText,
+      description: 'Kartu Rencana Studi',
+    },
+    {
       label: 'Hasil Studi',
-      to: '/mahasiswa/hasil-studi',
+      to: '/mahasiswa/study-result',
       icon: GraduationCap,
       description: 'Transkrip Nilai',
     },
