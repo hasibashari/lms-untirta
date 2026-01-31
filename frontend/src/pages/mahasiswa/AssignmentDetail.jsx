@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Info,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AssignmentDetail() {
   const { courseId, assignmentId } = useParams();
@@ -325,28 +326,30 @@ export default function AssignmentDetail() {
 
             {/* Tab Switcher - Fix: Gunakan handleSubmitTypeChange */}
             <div className="flex border-b border-gray-200 mb-6">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => handleSubmitTypeChange('url')}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${submitType === 'url'
+                className={`flex items-center gap-2 px-4 py-3 rounded-none border-b-2 ${submitType === 'url'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-transparent'
                   }`}
               >
                 <LinkIcon className="w-4 h-4" />
                 Link URL
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => handleSubmitTypeChange('file')}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${submitType === 'file'
+                className={`flex items-center gap-2 px-4 py-3 rounded-none border-b-2 ${submitType === 'file'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-transparent'
                   }`}
               >
                 <Upload className="w-4 h-4" />
                 Upload File
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -395,14 +398,15 @@ export default function AssignmentDetail() {
                             {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
-                        <button
-                          type="button" // Fix: Eksplisit type button
+                        <Button
+                          type="button"
+                          variant="ghost"
                           onClick={() => setSelectedFile(null)}
-                          className="ml-4 text-red-500 hover:text-red-700"
+                          className="ml-4 text-red-500 hover:text-red-700 hover:bg-red-50"
                           aria-label="Hapus file"
                         >
                           Hapus
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <>
@@ -451,10 +455,10 @@ export default function AssignmentDetail() {
               </div>
 
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
                 disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 h-auto"
               >
                 {submitting ? (
                   <>
@@ -467,7 +471,7 @@ export default function AssignmentDetail() {
                     Kumpulkan Tugas
                   </>
                 )}
-              </button>
+              </Button>
             </form>
           </div>
         </div>

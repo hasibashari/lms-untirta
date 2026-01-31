@@ -94,7 +94,7 @@ const MahasiswaDashboard = () => {
       {/* Quick Actions (penting saja) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
-          to="/mahasiswa/krs"
+          to="/mahasiswa/study-plan"
           className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-violet-300 hover:shadow-lg transition-all"
         >
           <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition">

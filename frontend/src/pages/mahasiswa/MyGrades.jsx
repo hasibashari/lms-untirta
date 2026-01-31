@@ -12,6 +12,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { getAllMyGrades } from '../../services/mahasiswa.service';
+import { Button } from '@/components/ui/button';
 
 /**
  * MyGrades - Halaman Nilai Terpusat
@@ -117,12 +118,13 @@ const MyGrades = () => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{error}</p>
-        <button
+        <Button
           onClick={() => window.location.reload()}
-          className="mt-3 text-sm text-red-600 hover:underline"
+          variant="link"
+          className="mt-3 text-sm text-red-600"
         >
           Coba lagi
-        </button>
+        </Button>
       </div>
     );
   }
@@ -206,17 +208,15 @@ const MyGrades = () => {
           </div>
 
           {/* Filter Toggle */}
-          <button
+          <Button
+            variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl border transition ${showFilters
-              ? 'bg-blue-50 border-blue-200 text-blue-600'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
+            className="inline-flex items-center gap-2"
           >
             <Filter size={18} />
             <span className="font-medium">Filter</span>
             <ChevronDown size={16} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
+          </Button>
         </div>
 
         {/* Filter Options */}
@@ -286,16 +286,17 @@ const MyGrades = () => {
           <p className="text-slate-500">
             Tidak ada tugas yang sesuai dengan filter Anda.
           </p>
-          <button
+          <Button
+            variant="link"
             onClick={() => {
               setSearchQuery('');
               setFilterStatus('all');
               setFilterCourse('all');
             }}
-            className="mt-4 text-blue-600 hover:underline font-medium"
+            className="mt-4 text-blue-600 font-medium"
           >
             Reset Filter
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-4">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Filter } from 'lucide-react';
 import { getMyCourses } from '../../services/mahasiswa.service';
 import { StudentCourseCard } from '../../components/course';
+import { Button } from '@/components/ui/button';
 
 /**
  * MyClasses / Kelas Saya
@@ -86,12 +87,13 @@ const MyClasses = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
-          <button
+          <Button
             onClick={() => window.location.reload()}
-            className="mt-3 text-sm text-red-600 hover:underline"
+            variant="link"
+            className="mt-3 text-sm text-red-600"
           >
             Coba lagi
-          </button>
+          </Button>
         </div>
       )}
 
@@ -105,14 +107,14 @@ const MyClasses = () => {
             Belum Ada Kelas
           </h3>
           <p className="text-slate-500 max-w-sm mx-auto mb-4">
-            Anda belum terdaftar di kelas manapun. Silakan ambil mata kuliah melalui menu KRS.
+            Anda belum terdaftar di kelas manapun. Silakan ambil mata kuliah melalui menu Study Plan.
           </p>
           <a
-            href="/mahasiswa/krs"
+            href="/mahasiswa/study-plan"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             <BookOpen size={18} />
-            Buka KRS
+            Buka Study Plan
           </a>
         </div>
       )}
@@ -129,12 +131,13 @@ const MyClasses = () => {
           <p className="text-slate-500 max-w-sm mx-auto">
             Tidak ada kelas yang cocok dengan pencarian "{searchQuery}"
           </p>
-          <button
+          <Button
             onClick={() => setSearchQuery('')}
-            className="mt-4 text-blue-600 hover:underline font-medium"
+            variant="link"
+            className="mt-4 text-blue-600 font-medium"
           >
             Reset Pencarian
-          </button>
+          </Button>
         </div>
       )}
 

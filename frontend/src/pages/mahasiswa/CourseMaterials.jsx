@@ -10,6 +10,7 @@ import {
 import { getMaterials } from '../../services/dosen.service';
 import { getMyCourses } from '../../services/mahasiswa.service';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
+import { Button } from '@/components/ui/button';
 
 /**
  * CourseMaterials - Halaman Daftar Materi / Silabus
@@ -81,13 +82,14 @@ const CourseMaterials = () => {
       />
 
       {/* Back Button */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
-        className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition font-medium"
+        className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 font-medium -ml-2"
       >
         <ChevronLeft size={20} />
         Kembali ke Kelas
-      </button>
+      </Button>
 
       {/* Course Header Mini */}
       <div className={`bg-linear-to-r ${gradientClass} rounded-2xl overflow-hidden`}>

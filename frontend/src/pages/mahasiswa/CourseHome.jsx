@@ -12,6 +12,7 @@ import {
 import { getAssignments, getMyCourses } from '../../services/mahasiswa.service';
 import { getMaterials } from '../../services/dosen.service';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
+import { Button } from '@/components/ui/button';
 
 /**
  * CourseHome - Halaman Detail Kelas
@@ -124,9 +125,10 @@ const CourseHome = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
+        <Button
+          variant="outline"
           onClick={() => navigate(`/mahasiswa/courses/${courseId}/materials`)}
-          className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all"
+          className="group flex items-center gap-4 p-5 h-auto justify-start hover:border-blue-300 hover:shadow-lg"
         >
           <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
             <BookOpen size={28} className="text-blue-600" />
@@ -136,11 +138,12 @@ const CourseHome = () => {
             <p className="text-sm text-slate-500">{materials.length} materi tersedia</p>
           </div>
           <ArrowRight size={20} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="outline"
           onClick={() => navigate(`/mahasiswa/courses/${courseId}/assignments`)}
-          className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-green-300 hover:shadow-lg transition-all"
+          className="group flex items-center gap-4 p-5 h-auto justify-start hover:border-green-300 hover:shadow-lg"
         >
           <div className="w-14 h-14 rounded-xl bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition">
             <ClipboardList size={28} className="text-green-600" />
@@ -150,7 +153,7 @@ const CourseHome = () => {
             <p className="text-sm text-slate-500">{assignments.length} tugas tersedia</p>
           </div>
           <ArrowRight size={20} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-        </button>
+        </Button>
       </div>
 
       {/* Silabus Section */}
@@ -261,13 +264,14 @@ const CourseHome = () => {
 
           {assignments.length > 3 && (
             <div className="p-4 bg-slate-50 border-t border-slate-100">
-              <button
+              <Button
+                variant="link"
                 onClick={() => navigate(`/mahasiswa/courses/${courseId}/assignments`)}
-                className="flex items-center justify-center gap-2 w-full text-green-600 font-medium hover:underline"
+                className="flex items-center justify-center gap-2 w-full text-green-600 font-medium"
               >
                 Lihat Semua Tugas ({assignments.length})
                 <ArrowRight size={16} />
-              </button>
+              </Button>
             </div>
           )}
         </section>

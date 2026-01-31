@@ -14,6 +14,7 @@ import { getMaterialDetail, getMaterials } from '../../services/dosen.service';
 import { getMyCourses } from '../../services/mahasiswa.service';
 import { LearningSidebar } from '../../components/learning';
 import MarkdownPreview from '../../components/ui/MarkdownPreview';
+import { Button } from '@/components/ui/button';
 
 /**
  * MaterialDetail - Halaman Detail Materi / Content View
@@ -156,23 +157,26 @@ const MaterialDetail = () => {
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200">
           <div className="flex items-center justify-between h-16 px-4 lg:px-8">
             {/* Mobile Menu Button */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition"
+              className="lg:hidden"
             >
               <Menu size={24} className="text-slate-700" />
-            </button>
+            </Button>
 
             {/* Desktop Toggle Collapse Button */}
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex items-center gap-2 text-slate-600 hover:text-blue-600 transition p-2 hover:bg-slate-100 rounded-lg"
+              className="hidden lg:flex items-center gap-2 text-slate-600 hover:text-blue-600"
             >
               <Menu size={18} />
               <span className="font-medium">
                 {sidebarCollapsed ? 'Tampilkan Sidebar' : 'Sembunyikan Sidebar'}
               </span>
-            </button>
+            </Button>
 
             {/* Spacer untuk balance */}
             <div className="w-10 lg:w-24" />
