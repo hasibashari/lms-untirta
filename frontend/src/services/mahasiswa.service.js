@@ -1,4 +1,4 @@
-import api from './api';
+import api from './api.service';
 
 export const getMyCourses = () => {
   return api.get('/courses/me');
@@ -44,6 +44,11 @@ export const getMyKRS = () => {
 // Enroll to a course
 export const enrollCourse = (courseId) => {
   return api.post(`/courses/${courseId}/enroll-self`);
+};
+
+// Unenroll from a course (Drop KRS)
+export const unenrollCourse = (courseId) => {
+  return api.delete(`/courses/${courseId}/unenroll-self`);
 };
 
 // ========== Hasil Studi ==========

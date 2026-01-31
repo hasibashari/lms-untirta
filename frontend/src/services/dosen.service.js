@@ -1,4 +1,4 @@
-import api from './api';
+import api from './api.service';
 
 export const getMyCourses = async () => {
   return api.get('/courses/me');
