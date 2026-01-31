@@ -18,6 +18,7 @@ import {
   // KRS (Self Enrollment)
   getAvailableCoursesForKRS,
   selfEnrollCourse,
+  selfUnenrollCourse,
   getMyKRS,
   getStudyResults,
 } from '../controllers/course.controller.js';
@@ -155,6 +156,14 @@ router.post(
   authenticateToken,
   authorizeRole('MAHASISWA'),
   selfEnrollCourse
+);
+
+// DELETE /api/courses/:id/unenroll-self - Self Unenroll from Course (Mahasiswa)
+router.delete(
+  '/:id/unenroll-self',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  selfUnenrollCourse
 );
 
 // --- MATERIAL ROUTES ---
