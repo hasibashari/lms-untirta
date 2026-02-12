@@ -1,11 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import authRoutes from './src/router/auth.routes.js';
-import courseRoutes from './src/router/course.routes.js';
-import userRoutes from './src/router/user.routes.js';
-import assignmentRoutes from './src/router/assignment.routes.js';
-import materialRoutes from './src/router/material.routes.js';
+import authRoutes from './modules/auth/auth.routes.js';
+import courseRoutes from './modules/course/course.routes.js';
+import userRoutes from './modules/user/user.routes.js';
+import assignmentRoutes from './modules/assignment/assignment.routes.js';
+import materialRoutes from './modules/material/material.routes.js';
 
 dotenv.config();
 
