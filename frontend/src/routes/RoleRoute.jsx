@@ -1,12 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { PageLoader } from '../components/shared';
 
-const RoleRoute = ({ allowedRoles }) => {
-  const { user } = useAuth();
+const RoleRoute = ({ roles }) => {
+  const { user, loading } = useAuth();
 
-  if (!user || !allowedRoles.includes(user.role)) {
-    return <Navigate to='/login' replace />;
-  }
+  if (loading) return <PageLoader />;
+  if (!user || !roles.includes(user.role)) return <Navigate to="/login" replace />;
 
   return <Outlet />;
 };
