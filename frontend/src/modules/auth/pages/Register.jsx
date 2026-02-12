@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
 
-import { register as registerAPI } from '../../services/auth.service';
+import { register as registerAPI } from '@/services/auth.service';
 
-// UI components - using new unified components
-import Input from '../../components/ui/Input';
-import SocialLoginButtons from '../../components/ui/SocialLoginButtons';
-import Divider from '../../components/ui/Divider';
-import Button from '../../components/ui/Button';
-import Checkbox from '../../components/ui/Checkbox';
-import { NavLink } from '../../components/ui';
+// UI components
+import Input from '@/components/ui/Input';
+import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
+import Divider from '@/components/ui/Divider';
+import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
+import { NavLink } from '@/components/ui';
 
 export default function Register() {
   const { setAuthLayoutBranding } = useOutletContext();

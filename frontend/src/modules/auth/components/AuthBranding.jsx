@@ -1,11 +1,11 @@
 import { BookOpen, CheckCircle } from 'lucide-react';
-import Logo from '../ui/Logo';
+import Logo from '@/components/ui/Logo';
 
 /**
  * AuthBranding Component
  * Panel kiri untuk halaman auth (Login/Register) dengan branding dan hero content.
  * Dapat dikustomisasi untuk konteks berbeda (login vs register).
- * 
+ *
  * @param {string} variant - 'login' atau 'register' untuk konteks berbeda
  * @param {object} stats - Object dengan icon, label, dan value untuk stats decoration (untuk login)
  * @param {Array} features - Array of feature strings untuk ditampilkan (untuk register)
@@ -15,20 +15,21 @@ const AuthBranding = ({
   stats = {
     icon: BookOpen,
     label: 'Total Modul Tersedia',
-    value: '12,450+'
+    value: '12,450+',
   },
-  features = ['Akses Ribuan Materi', 'Sertifikat Digital', 'Forum Diskusi Interaktif']
+  features = ['Akses Ribuan Materi', 'Sertifikat Digital', 'Forum Diskusi Interaktif'],
 }) => {
-  // Content berdasarkan variant
   const content = {
     login: {
       title: 'Selamat Datang Kembali!',
-      description: 'Lanjutkan progres belajar Anda. Akses materi terbaru dan terhubung kembali dengan dosen Anda.'
+      description:
+        'Lanjutkan progres belajar Anda. Akses materi terbaru dan terhubung kembali dengan dosen Anda.',
     },
     register: {
       title: 'Mulai Perjalanan Belajar Anda.',
-      description: 'Bergabunglah dengan ribuan mahasiswa dan dosen di seluruh Indonesia dalam satu platform pembelajaran terintegrasi.'
-    }
+      description:
+        'Bergabunglah dengan ribuan mahasiswa dan dosen di seluruh Indonesia dalam satu platform pembelajaran terintegrasi.',
+    },
   };
 
   const { title, description } = content[variant] || content.login;
@@ -37,7 +38,7 @@ const AuthBranding = ({
 
   return (
     <div className="relative w-full md:w-5/12 bg-linear-to-br from-blue-700 to-blue-900 p-8 text-white flex flex-col justify-between overflow-hidden">
-      {/* Abstract Shapes - different positioning for register */}
+      {/* Abstract Shapes */}
       {isRegister ? (
         <>
           <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
@@ -50,14 +51,13 @@ const AuthBranding = ({
         </>
       )}
 
-      {/* Logo (reused component) */}
+      {/* Logo */}
       <div className="relative z-10">
         <Logo variant="auth" />
       </div>
 
       {/* Hero Content */}
       <div className="relative z-10 my-10 md:my-0">
-        {/* Online Badge - only for login */}
         {!isRegister && (
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-100 text-xs font-medium mb-6">
             <span className="relative flex h-2 w-2">
@@ -68,14 +68,9 @@ const AuthBranding = ({
           </div>
         )}
 
-        <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-4">
-          {title}
-        </h2>
-        <p className="text-blue-100 text-lg leading-relaxed mb-8">
-          {description}
-        </p>
+        <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-4">{title}</h2>
+        <p className="text-blue-100 text-lg leading-relaxed mb-8">{description}</p>
 
-        {/* Conditional: Stats for Login, Features for Register */}
         {isRegister ? (
           <div className="space-y-3">
             {features.map((item, idx) => (

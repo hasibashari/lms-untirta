@@ -1,50 +1,28 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  BookOpen,
-  Inbox,
-  Menu,
-} from 'lucide-react';
+import { Menu } from 'lucide-react';
+
+import { useAuth } from '../contexts/AuthContext';
 import { Footer } from '../components/footer';
 import { Navbar } from '../components/navigation';
 import SidebarNav from '../components/SidebarNav';
+import { getDashboardNavItems } from '../utils/navigation';
 
-/**
- * DosenLayout
- * Layout utama untuk role Dosen dengan sidebar navigasi modern
- * Desain konsisten dengan MahasiswaLayout
- */
-const DosenLayout = () => {
+const DashboardLayout = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navItems = [
-    {
-      label: 'Dashboard',
-      to: '/dosen/dashboard',
-      icon: LayoutDashboard,
-    },
-    {
-      label: 'Kelas Saya',
-      to: '/dosen/classes',
-      icon: BookOpen,
-    },
-    {
-      label: 'Submissions',
-      to: '/dosen/submissions',
-      icon: Inbox,
-    },
-  ];
+  const navItems = getDashboardNavItems(user?.role);
 
-  // Check if current path starts with the nav item path (for nested routes)
   const isActive = (path) => {
-    if (path === '/dosen/dashboard') {
-      return location.pathname === path;
-    }
-    // Special handling for courses routes - they belong to "Kelas Saya"
-    if (path === '/dosen/classes' && location.pathname.startsWith('/dosen/courses')) {
-      return true;
+    const item = navItems.find((i) => i.to === path);
+    if (item?.exact) return location.pathname === path;
+    if (item?.aliases) {
+      return (
+        item.aliases.some((alias) => location.pathname.startsWith(alias)) ||
+        location.pathname.startsWith(path)
+      );
     }
     return location.pathname.startsWith(path);
   };
@@ -52,23 +30,22 @@ const DosenLayout = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
-      {/* Mobile Sidebar Overlay */}
+
       {sidebarOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      {/* Content Wrapper - Sidebar + Main */}
+
       <div className="flex flex-1">
-        {/* Sidebar (Reusable) */}
         <SidebarNav
           navItems={navItems}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           isActive={isActive}
         />
-        {/* Main Content */}
+
         <main className="flex-1 min-h-screen">
           <div className="p-6 lg:p-8">
             <div className="lg:hidden mb-4">
@@ -85,10 +62,10 @@ const DosenLayout = () => {
           </div>
         </main>
       </div>
-      {/* Footer */}
+
       <Footer />
     </div>
   );
 };
 
-export default DosenLayout;
+export default DashboardLayout;

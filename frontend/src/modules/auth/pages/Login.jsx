@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Mail, Lock, BookOpen } from 'lucide-react';
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
-// UI components - using new unified components
-import Input from '../../components/ui/Input';
-import SocialLoginButtons from '../../components/ui/SocialLoginButtons';
-import Divider from '../../components/ui/Divider';
-import Button from '../../components/ui/Button';
-import Checkbox from '../../components/ui/Checkbox';
-import { NavLink } from '../../components/ui';
+// UI components
+import Input from '@/components/ui/Input';
+import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
+import Divider from '@/components/ui/Divider';
+import Button from '@/components/ui/Button';
+import Checkbox from '@/components/ui/Checkbox';
+import { NavLink } from '@/components/ui';
 
 export default function Login() {
   const { setAuthLayoutBranding } = useOutletContext();
