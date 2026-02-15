@@ -82,7 +82,7 @@ const CourseHome = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: 'Dashboard', to: '/mahasiswa/dashboard' },
+          { label: 'Kelas Saya', to: '/mahasiswa/classes' },
           { label: course?.title || 'Kelas' },
         ]}
       />

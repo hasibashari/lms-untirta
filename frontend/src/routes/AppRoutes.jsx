@@ -35,12 +35,14 @@ const AdminCreateUser = lazy(() => import('../features/user/pages/AdminCreatePag
 
 // Course module
 const AdminCourses = lazy(() => import('../features/course/pages/AdminPage'));
-const DosenMyClasses = lazy(() => import('../features/course/pages/DosenClassesPage'));
 const DosenCourseHome = lazy(() => import('../features/course/pages/DosenHomePage'));
 const DosenStudents = lazy(() => import('../features/course/pages/MahasiswaPage'));
-const MahasiswaMyClasses = lazy(() => import('../features/course/pages/MahasiswaClassesPage'));
 const MahasiswaCourseHome = lazy(() => import('../features/course/pages/MahasiswaHomePage'));
 const MahasiswaCourseMaterials = lazy(() => import('../features/course/pages/MaterialMahasiswaPage'));
+
+// Class module
+const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassesPage'));
+const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassesPage'));
 // KRS module
 const MahasiswaStudyPlan = lazy(() => import('../features/krs/pages/MahasiswaPage'));
 

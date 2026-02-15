@@ -201,7 +201,7 @@ export default function AssignmentDetail() {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: 'Dashboard', to: '/mahasiswa/dashboard' },
+          { label: 'Kelas Saya', to: '/mahasiswa/classes' },
           { label: 'Kelas', to: `/mahasiswa/courses/${courseId}` },
           { label: 'Tugas', to: `/mahasiswa/courses/${courseId}/assignments` },
           { label: assignment.title }, // Gunakan assignment.title

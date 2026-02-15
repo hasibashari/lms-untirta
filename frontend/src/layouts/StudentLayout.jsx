@@ -21,6 +21,7 @@ import SidebarNav from '../components/navigation/SidebarNav';
 const MahasiswaLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile sidebar
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Desktop collapse - default collapsed
 
   const navItems = [
     {
@@ -73,6 +74,7 @@ const MahasiswaLayout = () => {
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           isActive={isActive}
+          collapsed={sidebarCollapsed}
         />
         {/* Main Content */}
         <main className="flex-1 min-h-screen">
@@ -85,6 +87,23 @@ const MahasiswaLayout = () => {
               >
                 <Menu size={18} />
                 <span className="font-medium">Menu</span>
+              </button>
+            </div>
+            {/* Desktop sidebar toggle */}
+            <div className="hidden lg:flex mb-4">
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  {sidebarCollapsed ? (
+                    <path d="M3 12h18M3 6h18M3 18h18" />
+                  ) : (
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  )}
+                </svg>
               </button>
             </div>
             <Outlet />

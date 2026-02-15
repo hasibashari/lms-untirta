@@ -9,15 +9,17 @@ import { Link, useLocation } from 'react-router-dom';
  * - setSidebarOpen: fn (untuk mobile)
  * - isActive: fn (path) => bool
  * - header (optional): node
+ * - collapsed: bool (untuk desktop collapse)
  */
-const SidebarNav = ({ navItems, sidebarOpen, setSidebarOpen, isActive, header }) => {
+const SidebarNav = ({ navItems, sidebarOpen, setSidebarOpen, isActive, header, collapsed = false }) => {
   return (
     <aside
       className={`
         fixed top-20 left-0 h-[calc(100vh-5rem)] bg-white border-r border-slate-200 z-50 lg:z-30
         transform transition-all duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72'}
-        lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:translate-x-0 lg:w-72 lg:shrink-0
+        lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:translate-x-0 lg:shrink-0
+        ${collapsed ? 'lg:w-16' : 'lg:w-72'}
       `}
     >
       {/* Mobile close button */}
@@ -42,13 +44,13 @@ const SidebarNav = ({ navItems, sidebarOpen, setSidebarOpen, isActive, header })
                 to={item.to}
                 onClick={() => setSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all
+                  flex items-center ${collapsed ? 'justify-center p-3 gap-0' : 'gap-3 px-4'} py-3 rounded-xl font-medium transition-all
                   ${active ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
                 `}
-                title={item.description || item.label}
+                title={collapsed ? item.label : (item.description || item.label)}
               >
-                {Icon && <Icon size={20} />}
-                <span>{item.label}</span>
+                {Icon && <Icon size={20} className="flex-shrink-0" />}
+                <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
               </Link>
             );
           })}

@@ -34,5 +34,5 @@ export const deleteCourse = (courseId) => {
 };
 
 export const assignTeacher = (courseId, teacherId) => {
-  return api.post(`/courses/admin/${courseId}/assign-teacher`, { teacherId });
+  return api.patch(`/courses/admin/${courseId}/assign-teacher`, { teacherId });
 };
