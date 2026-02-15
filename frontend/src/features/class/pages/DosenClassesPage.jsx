@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Users, FileText, Info } from 'lucide-react';
-import { getMyCoursesWithStats } from '../courseService';
+import { getMyCoursesWithStats } from '../classService';
 
 /**
  * MyClasses / Kelas Saya (Dosen)
