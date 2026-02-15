@@ -16,6 +16,20 @@ enum Role {
   MAHASISWA
 }
 
+// Enum untuk Tipe Semester (Ganjil/Genap)
+enum SemesterType {
+  GANJIL
+  GENAP
+}
+
+// Enum untuk Status KRS
+enum KrsStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
 // 2. Model User
 model User {
   id        String   @id @default(uuid()) // Gunakan UUID agar tidak mudah ditebak
@@ -26,8 +40,10 @@ model User {
   createdAt DateTime @default(now())
 
   // Relasi
-  coursesTeaching Course[]     @relation("TeacherCourses") // Dosen mengajar banyak kelas
-  enrollments     Enrollment[] // Mahasiswa bisa ambil banyak kelas
+  coursesTeaching Course[]        @relation("TeacherCourses") // Dosen mengajar banyak kelas
+  classesTeaching Class[]         @relation("LecturerClasses") // Dosen mengajar banyak kelas offering
+  enrollments     Enrollment[] // Mahasiswa bisa ambil banyak kelas (legacy)
+  krsEnrollments  KrsEnrollment[] // KRS: Mahasiswa mendaftar ke kelas offering
   submissions     Submission[] // Mahasiswa bisa submit banyak tugas
 }
 
@@ -49,6 +65,7 @@ model Course {
   students    Enrollment[]
   materials   Material[]
   assignments Assignment[]
+  classes     Class[] // Satu mata kuliah bisa punya banyak kelas offering
 }
 
 // Tabel Pivot (Join Table)
@@ -132,4 +149,68 @@ model Submission {
 
   // Constraint: Satu siswa cuma bisa submit 1x per tugas
   @@unique([assignmentId, studentId])
+}
+
+// 7. Model Class (Kelas Offering)
+// Representasi penawaran mata kuliah di semester tertentu.
+// Satu Course bisa punya banyak Class (Kelas A, B, C di semester berbeda).
+model Class {
+  id String @id @default(uuid())
+
+  // Relasi ke Mata Kuliah (Katalog)
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // Dosen Pengampu
+  lecturerId String
+  lecturer   User   @relation("LecturerClasses", fields: [lecturerId], references: [id])
+
+  // Informasi Akademik
+  academicYear String // Tahun Akademik: "2025/2026"
+  semesterType SemesterType // GANJIL atau GENAP
+  section      String // Kelas: "A", "B", "C"
+
+  // Jadwal & Kapasitas
+  schedule String? // Contoh: "Senin, 08:00-10:00, Ruang A1.01"
+  room     String? // Ruang kelas: "A1.01"
+  capacity Int     @default(40)
+
+  // Status Pendaftaran
+  isEnrollmentOpen Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi KRS
+  krsEnrollments KrsEnrollment[]
+
+  // Constraint: Satu course hanya bisa punya satu kelas per section per semester
+  @@unique([courseId, academicYear, semesterType, section])
+}
+
+// 8. Model KrsEnrollment (Pendaftaran KRS)
+// Mencatat mahasiswa mendaftar ke kelas offering tertentu.
+// Memiliki status workflow: DRAFT → SUBMITTED → APPROVED / REJECTED
+model KrsEnrollment {
+  id String @id @default(uuid())
+
+  // Relasi ke Mahasiswa
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Relasi ke Kelas Offering
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  // Status KRS
+  status KrsStatus @default(DRAFT)
+
+  // Catatan (opsional, misal alasan reject)
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Constraint: Satu mahasiswa hanya bisa mendaftar ke satu kelas offering 1x
+  @@unique([studentId, classId])
 }
