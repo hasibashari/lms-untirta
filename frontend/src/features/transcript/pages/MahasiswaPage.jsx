@@ -7,7 +7,7 @@ import {
   Loader2,
   FileText,
 } from 'lucide-react';
-import { getStudyResults } from '../courseService';
+import { getStudyResults } from '../transcriptService';
 import { Button } from '@/components/ui/button';
 import CourseBadge from '@/components/ui/CourseBadge';
 import SectionHeader from '@/components/ui/SectionHeader';

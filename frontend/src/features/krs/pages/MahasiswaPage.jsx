@@ -12,7 +12,7 @@ import {
   Printer,
   Trash2,
 } from 'lucide-react';
-import { getAvailableCourses, enrollCourse, unenrollCourse, getMyKRS } from '../courseService';
+import { getAvailableCourses, enrollCourse, unenrollCourse, getMyKRS } from '../krsService';
 import { Button } from '@/components/ui/button';
 import StatCard from '@/components/ui/StatCard';
 import InfoBanner from '@/components/ui/InfoBanner';
