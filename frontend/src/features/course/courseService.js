@@ -36,29 +36,3 @@ export const deleteCourse = (courseId) => {
 export const assignTeacher = (courseId, teacherId) => {
   return api.post(`/courses/admin/${courseId}/assign-teacher`, { teacherId });
 };
-
-// ========== KRS - Mahasiswa ==========
-
-export const getAvailableCourses = (semester) => {
-  const params = semester ? `?semester=${semester}` : '';
-  return api.get(`/courses/available${params}`);
-};
-
-export const getMyKRS = () => {
-  return api.get('/courses/my-krs');
-};
-
-export const enrollCourse = (courseId) => {
-  return api.post(`/courses/${courseId}/enroll-self`);
-};
-
-export const unenrollCourse = (courseId) => {
-  return api.delete(`/courses/${courseId}/unenroll-self`);
-};
-
-// ========== Hasil Studi - Mahasiswa ==========
-
-export const getStudyResults = (semester) => {
-  const params = semester ? `?semester=${semester}` : '';
-  return api.get(`/courses/study-results${params}`);
-};
