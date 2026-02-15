@@ -6,6 +6,9 @@ import courseRoutes from './modules/course/course.routes.js';
 import userRoutes from './modules/user/user.routes.js';
 import assignmentRoutes from './modules/assignment/assignment.routes.js';
 import materialRoutes from './modules/material/material.routes.js';
+import classRoutes from './modules/class/class.routes.js';
+import krsRoutes from './modules/krs/krs.routes.js';
+import transcriptRoutes from './modules/transcript/transcript.routes.js';
 
 dotenv.config();
 
@@ -37,5 +40,8 @@ app.use('/api/courses', courseRoutes); // Kelas
 app.use('/api/users', userRoutes); // User Management (Admin Only)
 app.use('/api/assignments', assignmentRoutes); // Assignment Routes
 app.use('/api/materials', materialRoutes); // Material Routes (Detail)
+app.use('/api/classes', classRoutes); // Class Offering Routes
+app.use('/api/krs', krsRoutes); // KRS (Kartu Rencana Studi)
+app.use('/api/transcript', transcriptRoutes); // Transcript (Hasil Studi)
 
 export default app;
