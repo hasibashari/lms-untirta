@@ -3,9 +3,9 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
-import { Footer } from '../components/footer';
-import { Navbar } from '../components/navigation';
-import SidebarNav from '../components/SidebarNav';
+import Footer from '../components/shared/footer/Footer';
+import Navbar from '../components/navigation/Navbar';
+import SidebarNav from '../components/navigation/SidebarNav';
 import { getDashboardNavItems } from '../utils/navigation';
 
 const DashboardLayout = () => {

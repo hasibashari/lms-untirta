@@ -2,9 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 
-import AuthBranding from '../modules/auth/components/AuthBranding';
-import { Navbar } from '../components/navigation';
-import { Footer } from '../components/footer';
+import AuthBranding from '../features/auth/components/AuthBranding';
+import Navbar from '../components/navigation/Navbar';
+import Footer from '../components/shared/footer/Footer';
 
 const DEFAULT_BRANDING = {
   variant: 'login',

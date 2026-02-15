@@ -8,9 +8,9 @@ import {
   FileText,
   GraduationCap,
 } from 'lucide-react';
-import { Footer } from '../components/footer';
-import { Navbar } from '../components/navigation';
-import SidebarNav from '../components/SidebarNav';
+import Footer from '../components/shared/footer/Footer';
+import Navbar from '../components/navigation/Navbar';
+import SidebarNav from '../components/navigation/SidebarNav';
 
 
 /**
