@@ -49,7 +49,7 @@ const SidebarNav = ({ navItems, sidebarOpen, setSidebarOpen, isActive, header, c
                 `}
                 title={collapsed ? item.label : (item.description || item.label)}
               >
-                {Icon && <Icon size={20} className="flex-shrink-0" />}
+                {Icon && <Icon size={20} className="shrink-0" />}
                 <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
               </Link>
             );

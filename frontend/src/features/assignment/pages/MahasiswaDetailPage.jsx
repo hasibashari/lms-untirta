@@ -176,7 +176,7 @@ export default function AssignmentDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         <span className="ml-2 text-gray-600">Memuat detail tugas...</span>
       </div>
@@ -281,7 +281,7 @@ export default function AssignmentDetail() {
               {/* Feedback */}
               {status.feedback && (
                 <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
-                  <MessageSquare className="w-6 h-6 text-green-600 flex-shrink-0" />
+                  <MessageSquare className="w-6 h-6 text-green-600 shrink-0" />
                   <div>
                     <p className="text-sm text-green-600">Feedback Dosen</p>
                     <p className="text-gray-700">{status.feedback}</p>
@@ -314,7 +314,7 @@ export default function AssignmentDetail() {
             {/* Warning jika terlambat */}
             {isLate && (
               <div className="flex items-start gap-3 p-4 mb-4 bg-red-50 border border-red-200 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-red-800">Deadline sudah lewat</p>
                   <p className="text-sm text-red-600">
@@ -371,7 +371,7 @@ export default function AssignmentDetail() {
                     />
                   </div>
                   <p className="mt-2 text-sm text-gray-500 flex items-start gap-1">
-                    <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
                     Upload file ke Google Drive, lalu paste linknya di sini. Pastikan link bisa diakses.
                   </p>
                 </div>
@@ -431,7 +431,7 @@ export default function AssignmentDetail() {
                   </div>
                   {/* Info bahwa fitur belum tersedia */}
                   <div className="mt-3 flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <Info className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <Info className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
                     <p className="text-sm text-yellow-700">
                       Fitur upload file sedang dalam pengembangan. Untuk sementara, gunakan <strong>Link URL</strong> untuk mengumpulkan tugas.
                     </p>
