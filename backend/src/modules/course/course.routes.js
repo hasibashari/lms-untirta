@@ -16,13 +16,18 @@ import {
   adminUpdateCourse,
   adminDeleteCourse,
   adminAssignTeacher,
-  // KRS (Self Enrollment)
+} from './course.controller.js';
+
+// KRS legacy routes — delegated to krs module controllers
+import {
   getAvailableCoursesForKRS,
   selfEnrollCourse,
   selfUnenrollCourse,
-  getMyKRS,
-  getStudyResults,
-} from './course.controller.js';
+  getMyKRSLegacy,
+} from '../krs/krs.controller.js';
+
+// Transcript legacy route — delegated to transcript module controller
+import { getStudyResults } from '../transcript/transcript.controller.js';
 
 import { createMaterial, getMaterials } from '../material/material.controller.js';
 import { createMaterialSchema } from '../material/material.validation.js';
@@ -44,7 +49,8 @@ router.get('/me', authenticateToken, getMyCourses);
 // 2. Route Get All Courses
 router.get('/', authenticateToken, getCourses);
 
-// ========== KRS ROUTES (Mahasiswa) - HARUS DI ATAS /:id ==========
+// ========== KRS ROUTES (Legacy — delegated to krs module) ==========
+// Tetap di-mount di /api/courses/* agar frontend lama tidak rusak.
 
 // GET /api/courses/available - Get Available Courses for Enrollment
 router.get(
@@ -59,10 +65,10 @@ router.get(
   '/my-krs',
   authenticateToken,
   authorizeRole('MAHASISWA'),
-  getMyKRS
+  getMyKRSLegacy
 );
 
-// GET /api/courses/study-results - Get Study Results (Hasil Studi)
+// GET /api/courses/study-results - Get Study Results (delegated to transcript)
 router.get(
   '/study-results',
   authenticateToken,
