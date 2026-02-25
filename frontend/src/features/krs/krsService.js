@@ -44,6 +44,22 @@ export const submitKRS = (payload) => {
   return api.post('/krs/submit', payload);
 };
 
+/**
+ * [MAHASISWA] Revise a rejected KRS enrollment (REJECTED → DRAFT)
+ * @param {string} enrollmentId - UUID of the KRS enrollment
+ */
+export const reviseEnrollment = (enrollmentId) => {
+  return api.patch(`/krs/${enrollmentId}/revise`);
+};
+
+/**
+ * [ALL] Get approval history for a KRS enrollment
+ * @param {string} enrollmentId - UUID of the KRS enrollment
+ */
+export const getApprovalHistory = (enrollmentId) => {
+  return api.get(`/krs/${enrollmentId}/history`);
+};
+
 // ========== Dospem Advisory Endpoints ==========
 
 /**
@@ -106,29 +122,4 @@ export const getPendingKRS = (params = {}) => {
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
   const qs = query.toString();
   return api.get(`/krs/pending${qs ? `?${qs}` : ''}`);
-};
-
-// ========== Legacy Endpoints (/api/courses) ==========
-// Kept for backward compatibility with existing pages.
-// These will be removed once all pages migrate to the new KRS endpoints above.
-
-/** @deprecated Use getAvailableClasses instead */
-export const getAvailableCourses = (semester) => {
-  const params = semester ? `?semester=${semester}` : '';
-  return api.get(`/courses/available${params}`);
-};
-
-/** @deprecated Use getMyKRS instead */
-export const getMyKRSLegacy = () => {
-  return api.get('/courses/my-krs');
-};
-
-/** @deprecated Use enrollClass instead */
-export const enrollCourse = (courseId) => {
-  return api.post(`/courses/${courseId}/enroll-self`);
-};
-
-/** @deprecated Use dropClass instead */
-export const unenrollCourse = (courseId) => {
-  return api.delete(`/courses/${courseId}/unenroll-self`);
 };

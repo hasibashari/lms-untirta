@@ -7,6 +7,7 @@ import {
   submitKrsSchema,
   updateStatusSchema,
   bulkUpdateStatusSchema,
+  reviseEnrollmentSchema,
 } from './krs.validation.js';
 import {
   // New KRS (Class-based)
@@ -20,11 +21,9 @@ import {
   getPendingKRS,
   getAdvisoryStudents,
   getKrsMonitoring,
-  // Legacy compat
-  getAvailableCoursesForKRS,
-  selfEnrollCourse,
-  selfUnenrollCourse,
-  getMyKRSLegacy,
+  // Revise & History
+  reviseEnrollment,
+  getApprovalHistory,
 } from './krs.controller.js';
 
 const router = express.Router();
@@ -77,6 +76,22 @@ router.post(
   submitKRS
 );
 
+// PATCH /api/krs/:id/revise — Revisi KRS yang ditolak (REJECTED → DRAFT)
+router.patch(
+  '/:id/revise',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  validate(reviseEnrollmentSchema),
+  reviseEnrollment
+);
+
+// GET /api/krs/:id/history — Riwayat approval KRS
+router.get(
+  '/:id/history',
+  authenticateToken,
+  getApprovalHistory
+);
+
 // ========== DOSEN PEMBIMBING (DOSPEM) ROUTES ==========
 
 // GET /api/krs/advisory/students — Daftar mahasiswa bimbingan Dospem
@@ -95,11 +110,11 @@ router.get(
   getPendingKRS
 );
 
-// PATCH /api/krs/advisory/bulk-status — Bulk approve/reject KRS (Dospem)
+// PATCH /api/krs/advisory/bulk-status — Bulk approve/reject KRS (Dospem/Admin)
 router.patch(
   '/advisory/bulk-status',
   authenticateToken,
-  authorizeRole('DOSEN'),
+  authorizeRole('DOSEN', 'ADMIN'),
   validate(bulkUpdateStatusSchema),
   bulkUpdateEnrollmentStatus
 );
@@ -114,7 +129,7 @@ router.get(
   getKrsMonitoring
 );
 
-// GET /api/krs/pending — KRS yang menunggu persetujuan (Admin monitoring)
+// GET /api/krs/pending — KRS yang menunggu persetujuan (Admin/Dospem)
 router.get(
   '/pending',
   authenticateToken,
@@ -122,51 +137,13 @@ router.get(
   getPendingKRS
 );
 
-// PATCH /api/krs/:id/status — Approve/reject satu KRS enrollment (Dospem only)
+// PATCH /api/krs/:id/status — Approve/reject satu KRS enrollment (Dospem/Admin)
 router.patch(
   '/:id/status',
   authenticateToken,
-  authorizeRole('DOSEN'),
+  authorizeRole('DOSEN', 'ADMIN'),
   validate(updateStatusSchema),
   updateEnrollmentStatus
-);
-
-// ========================================================================
-// LEGACY ROUTES — /api/krs/legacy/*
-// Menjaga kompatibilitas dengan frontend lama yang masih pakai /courses/*
-// Route ini juga di-mount di course.routes.js
-// ========================================================================
-
-// GET /api/krs/legacy/available
-router.get(
-  '/legacy/available',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  getAvailableCoursesForKRS
-);
-
-// GET /api/krs/legacy/my-krs
-router.get(
-  '/legacy/my-krs',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  getMyKRSLegacy
-);
-
-// POST /api/krs/legacy/:id/enroll-self
-router.post(
-  '/legacy/:id/enroll-self',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  selfEnrollCourse
-);
-
-// DELETE /api/krs/legacy/:id/unenroll-self
-router.delete(
-  '/legacy/:id/unenroll-self',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  selfUnenrollCourse
 );
 
 export default router;

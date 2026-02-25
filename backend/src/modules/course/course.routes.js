@@ -18,14 +18,6 @@ import {
   adminAssignTeacher,
 } from './course.controller.js';
 
-// KRS legacy routes — delegated to krs module controllers
-import {
-  getAvailableCoursesForKRS,
-  selfEnrollCourse,
-  selfUnenrollCourse,
-  getMyKRSLegacy,
-} from '../krs/krs.controller.js';
-
 // Transcript legacy route — delegated to transcript module controller
 import { getStudyResults } from '../transcript/transcript.controller.js';
 
@@ -48,25 +40,6 @@ router.get('/me', authenticateToken, getMyCourses);
 
 // 2. Route Get All Courses
 router.get('/', authenticateToken, getCourses);
-
-// ========== KRS ROUTES (Legacy — delegated to krs module) ==========
-// Tetap di-mount di /api/courses/* agar frontend lama tidak rusak.
-
-// GET /api/courses/available - Get Available Courses for Enrollment
-router.get(
-  '/available',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  getAvailableCoursesForKRS
-);
-
-// GET /api/courses/my-krs - Get My KRS (Enrolled Courses)
-router.get(
-  '/my-krs',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  getMyKRSLegacy
-);
 
 // GET /api/courses/study-results - Get Study Results (delegated to transcript)
 router.get(
@@ -155,22 +128,6 @@ router.post(
   authorizeRole('DOSEN', 'ADMIN'),
   validate(enrollStudentSchema),
   enrollStudent
-);
-
-// POST /api/courses/:id/enroll-self - Self Enroll to Course (Mahasiswa)
-router.post(
-  '/:id/enroll-self',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  selfEnrollCourse
-);
-
-// DELETE /api/courses/:id/unenroll-self - Self Unenroll from Course (Mahasiswa)
-router.delete(
-  '/:id/unenroll-self',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  selfUnenrollCourse
 );
 
 // --- MATERIAL ROUTES ---

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   BookOpen,
   Loader2,
@@ -6,16 +6,25 @@ import {
   CheckCircle,
   Info,
   Plus,
-  FileText,
   X,
   ArrowDownUp,
   Printer,
   Trash2,
   UserCheck,
+  Send,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAvailableCourses, enrollCourse, unenrollCourse, getMyKRS } from '../krsService';
+import {
+  getAvailableClasses,
+  getMyKRS,
+  enrollClass,
+  dropClass,
+  submitKRS,
+  reviseEnrollment,
+} from '../krsService';
 import { getActiveSemester } from '@/features/academic/academicService';
+import KrsStatusBadge from '@/components/shared/KrsStatusBadge';
 import { Button } from '@/components/ui/button';
 import StatCard from '@/components/ui/StatCard';
 import InfoBanner from '@/components/ui/InfoBanner';
@@ -47,212 +56,197 @@ import {
 } from '@/components/ui/pagination';
 
 /**
- * KRS (Kartu Rencana Studi) - SIAKAD Style
- * 
- * Layout:
- * 1. Summary Stats (4 cards): Total SKS Kurikulum, Total SKS Ditempuh, IP Semester Lalu, Jatah SKS
- * 2. Info Banner: Masa pengambilan rencana studi
- * 3. Section: MATA KULIAH DITAWARKAN - dengan filter dan tabel
- * 4. Separator
- * 5. Section: DAFTAR RENCANA STUDI - kelas yang sudah diambil
+ * KRS (Kartu Rencana Studi) — Full Approval Workflow
+ *
+ * Workflow:
+ * 1. Student enrolls classes → status DRAFT
+ * 2. Student submits KRS → status SUBMITTED (pending Dospem approval)
+ * 3. Dospem approves/rejects each enrollment
+ * 4. If rejected → student can revise (REJECTED → DRAFT) and resubmit
  */
 const StudyPlan = () => {
   const { user } = useAuth();
 
-  // State untuk data
-  const [availableCourses, setAvailableCourses] = useState([]);
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  // Data state
+  const [availableClasses, setAvailableClasses] = useState([]);
+  const [krsData, setKrsData] = useState(null);
   const [activeSemester, setActiveSemester] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // State untuk enrollment
+  // Action states
   const [enrolling, setEnrolling] = useState(null);
-  const [unenrolling, setUnenrolling] = useState(null);
-  const [enrollSuccess, setEnrollSuccess] = useState(null);
-  const [enrollError, setEnrollError] = useState(null);
+  const [dropping, setDropping] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [revising, setRevising] = useState(null);
+  const [actionSuccess, setActionSuccess] = useState(null);
+  const [actionError, setActionError] = useState(null);
 
   // Filter states
   const [selectedSemester, setSelectedSemester] = useState('all');
-  const [selectedMode, setSelectedMode] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  // Mock data untuk student info (seharusnya dari context/API)
-  const studentInfo = {
-    name: 'MAHASISWA',
-    nim: '1234567890',
-  };
+  // Derived data
+  const enrollments = krsData?.enrollments || [];
+  const summary = krsData?.summary || {};
 
-  // Mock data untuk stats (seharusnya dari API)
-  const statsData = {
-    totalSKSKurikulum: 144,
-    ipSemesterLalu: 3.75,
-    jatahSKS: 24,
-  };
+  // Fetch all data
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [semesterRes] = await Promise.all([getActiveSemester()]);
+      const semester = semesterRes?.data?.data || semesterRes?.data || null;
+      setActiveSemester(semester);
 
-  // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+      const params = {};
+      if (semester?.id) params.academicSemesterId = semester.id;
 
-      try {
-        const [availableRes, enrolledRes, semesterRes] = await Promise.all([
-          getAvailableCourses(),
-          getMyKRS(),
-          getActiveSemester(),
-        ]);
+      const [availableRes, krsRes] = await Promise.all([
+        getAvailableClasses(params),
+        getMyKRS(),
+      ]);
 
-        setAvailableCourses(Array.isArray(availableRes?.data) ? availableRes.data : []);
-        setEnrolledCourses(Array.isArray(enrolledRes?.data) ? enrolledRes.data : []);
-        setActiveSemester(semesterRes?.data?.data || semesterRes?.data || null);
-      } catch (err) {
-        setError(err?.message || 'Gagal memuat data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+      setAvailableClasses(Array.isArray(availableRes?.data) ? availableRes.data : []);
+      setKrsData(krsRes?.data || null);
+    } catch (err) {
+      setError(err?.message || 'Gagal memuat data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // IDs of enrolled courses
-  const enrolledCourseIds = useMemo(() => {
-    const courses = Array.isArray(enrolledCourses) ? enrolledCourses : [];
-    return new Set(courses.map(e => e.courseId || e.course?.id));
-  }, [enrolledCourses]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Filter available courses
-  const availableCoursesFiltered = useMemo(() =>
-    availableCourses.filter(course => {
-      // Exclude already enrolled
-      if (enrolledCourseIds.has(course.id)) return false;
+  // Enrolled class IDs
+  const enrolledClassIds = useMemo(() => {
+    return new Set(enrollments.map(e => e.class?.id));
+  }, [enrollments]);
 
-      // Search filter
+  // Filter available classes
+  const availableFiltered = useMemo(() =>
+    availableClasses.filter(cls => {
+      if (enrolledClassIds.has(cls.id)) return false;
       if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch =
-          course.title?.toLowerCase().includes(query) ||
-          course.code?.toLowerCase().includes(query) ||
-          course.teacher?.name?.toLowerCase().includes(query);
-        if (!matchesSearch) return false;
+        const q = searchQuery.toLowerCase();
+        const matches =
+          cls.course?.title?.toLowerCase().includes(q) ||
+          cls.course?.code?.toLowerCase().includes(q) ||
+          cls.lecturer?.name?.toLowerCase().includes(q);
+        if (!matches) return false;
       }
-
-      // Semester filter
-      if (selectedSemester !== 'all' && course.semester !== parseInt(selectedSemester)) {
-        return false;
-      }
-
+      if (selectedSemester !== 'all' && cls.course?.semester !== parseInt(selectedSemester)) return false;
       return true;
     }),
-    [availableCourses, enrolledCourseIds, searchQuery, selectedSemester]
+    [availableClasses, enrolledClassIds, searchQuery, selectedSemester]
   );
 
-  // Paginated available courses
-  const paginatedCourses = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return availableCoursesFiltered.slice(startIndex, startIndex + itemsPerPage);
-  }, [availableCoursesFiltered, currentPage, itemsPerPage]);
+  // Paginated available classes
+  const paginatedClasses = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return availableFiltered.slice(start, start + itemsPerPage);
+  }, [availableFiltered, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(availableCoursesFiltered.length / itemsPerPage);
+  const totalPages = Math.ceil(availableFiltered.length / itemsPerPage);
 
-  // Handle enroll
-  const handleEnroll = async (courseId) => {
-    setEnrolling(courseId);
-    setEnrollError(null);
-    setEnrollSuccess(null);
-
-    try {
-      const res = await enrollCourse(courseId);
-      const enrollment = res.data;
-
-      setEnrolledCourses(prev => [...prev, enrollment]);
-      setEnrollSuccess(`Berhasil menambahkan kelas ke KRS!`);
-
-      setTimeout(() => setEnrollSuccess(null), 3000);
-    } catch (err) {
-      setEnrollError(err?.response?.data?.message || err?.message || 'Gagal menambahkan kelas');
-      setTimeout(() => setEnrollError(null), 5000);
-    } finally {
-      setEnrolling(null);
+  // Enrollment stats
+  const enrollmentStats = useMemo(() => {
+    const stats = { draft: 0, submitted: 0, approved: 0, rejected: 0, autoApproved: 0 };
+    for (const e of enrollments) {
+      if (e.status === 'DRAFT') stats.draft++;
+      else if (e.status === 'SUBMITTED') stats.submitted++;
+      else if (e.status === 'APPROVED') stats.approved++;
+      else if (e.status === 'REJECTED') stats.rejected++;
+      else if (e.status === 'AUTO_APPROVED') stats.autoApproved++;
     }
+    return stats;
+  }, [enrollments]);
+
+  const hasDraftEnrollments = enrollmentStats.draft > 0;
+
+  // Total SKS (exclude rejected)
+  const totalSKS = useMemo(() => {
+    return enrollments
+      .filter(e => e.status !== 'REJECTED')
+      .reduce((sum, e) => sum + (e.class?.course?.sks || 3), 0);
+  }, [enrollments]);
+
+  // Toast helpers
+  const showSuccess = (msg) => { setActionSuccess(msg); setTimeout(() => setActionSuccess(null), 4000); };
+  const showError = (msg) => { setActionError(msg); setTimeout(() => setActionError(null), 6000); };
+
+  // ===== ACTIONS =====
+  const handleEnroll = async (classId) => {
+    setEnrolling(classId);
+    setActionError(null);
+    try {
+      await enrollClass(classId);
+      showSuccess('Berhasil menambahkan kelas ke KRS (Draft)');
+      await fetchData();
+    } catch (err) {
+      showError(err?.response?.data?.message || err?.message || 'Gagal menambahkan kelas');
+    } finally { setEnrolling(null); }
   };
 
-  // Handle unenroll (drop course from KRS)
-  const handleUnenroll = async (courseId) => {
-    setUnenrolling(courseId);
-    setEnrollError(null);
-    setEnrollSuccess(null);
-
+  const handleDrop = async (classId) => {
+    setDropping(classId);
+    setActionError(null);
     try {
-      await unenrollCourse(courseId);
-
-      // Remove from enrolled courses
-      setEnrolledCourses(prev => prev.filter(e => (e.courseId || e.course?.id) !== courseId));
-      setEnrollSuccess(`Berhasil menghapus kelas dari KRS!`);
-
-      setTimeout(() => setEnrollSuccess(null), 3000);
+      await dropClass(classId);
+      showSuccess('Berhasil menghapus kelas dari KRS');
+      await fetchData();
     } catch (err) {
-      setEnrollError(err?.response?.data?.message || err?.message || 'Gagal menghapus kelas');
-      setTimeout(() => setEnrollError(null), 5000);
-    } finally {
-      setUnenrolling(null);
-    }
+      showError(err?.response?.data?.message || err?.message || 'Gagal menghapus kelas');
+    } finally { setDropping(null); }
   };
 
-  // Calculate total SKS
-  const totalSKSDitempuh = useMemo(() => {
-    const courses = Array.isArray(enrolledCourses) ? enrolledCourses : [];
-    return courses.reduce((sum, e) => sum + (e.course?.sks || 3), 0);
-  }, [enrolledCourses]);
+  const handleSubmitKRS = async () => {
+    if (!activeSemester?.id) { showError('Tidak ada semester aktif'); return; }
+    setSubmitting(true);
+    setActionError(null);
+    try {
+      const res = await submitKRS({ academicSemesterId: activeSemester.id });
+      showSuccess(res?.data?.message || 'KRS berhasil disubmit untuk persetujuan Dosen PA');
+      await fetchData();
+    } catch (err) {
+      showError(err?.response?.data?.message || err?.message || 'Gagal mensubmit KRS');
+    } finally { setSubmitting(false); }
+  };
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedSemester, selectedMode, selectedType]);
+  const handleRevise = async (enrollmentId) => {
+    setRevising(enrollmentId);
+    setActionError(null);
+    try {
+      const res = await reviseEnrollment(enrollmentId);
+      showSuccess(res?.data?.message || 'KRS berhasil direvisi ke Draft. Silakan submit ulang.');
+      await fetchData();
+    } catch (err) {
+      showError(err?.response?.data?.message || err?.message || 'Gagal merevisi KRS');
+    } finally { setRevising(null); }
+  };
 
-  // Generate page numbers for pagination
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedSemester]);
+
   const getPageNumbers = () => {
     const pages = [];
-    const maxVisiblePages = 10;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+    if (totalPages <= 10) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      // Always show first page
       pages.push(1);
-
-      if (currentPage > 4) {
-        pages.push('ellipsis-start');
-      }
-
-      // Show pages around current page
-      const start = Math.max(2, currentPage - 2);
-      const end = Math.min(totalPages - 1, currentPage + 2);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (currentPage < totalPages - 3) {
-        pages.push('ellipsis-end');
-      }
-
-      // Always show last page
-      if (totalPages > 1) {
-        pages.push(totalPages);
-      }
+      if (currentPage > 4) pages.push('ellipsis-start');
+      for (let i = Math.max(2, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) pages.push(i);
+      if (currentPage < totalPages - 3) pages.push('ellipsis-end');
+      if (totalPages > 1) pages.push(totalPages);
     }
-
     return pages;
   };
+
+  const canDrop = (status) => status === 'DRAFT' || status === 'REJECTED';
+  const canRevise = (status) => status === 'REJECTED';
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -271,23 +265,23 @@ const StudyPlan = () => {
       {/* Summary Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard
-          value={statsData.totalSKSKurikulum}
-          label="Total SKS Kurikulum"
+          value={summary.totalCourses || enrollments.length}
+          label="Total Mata Kuliah"
           variant="warning"
         />
         <StatCard
-          value={totalSKSDitempuh}
-          label="Total SKS Ditempuh"
+          value={totalSKS}
+          label="Total SKS"
           variant="warning"
         />
         <StatCard
-          value={statsData.ipSemesterLalu.toFixed(2)}
-          label="IP Semester Lalu"
-          variant="warning"
-        />
-        <StatCard
-          value={statsData.jatahSKS}
+          value={summary.maxSKS || 20}
           label="Jatah SKS Semester Ini"
+          variant="warning"
+        />
+        <StatCard
+          value={enrollmentStats.approved + enrollmentStats.autoApproved}
+          label="Disetujui"
           variant="warning"
         />
       </div>
@@ -311,6 +305,8 @@ const StudyPlan = () => {
       )}
 
       {/* Info Banner - Masa Pengambilan KRS */}
+
+      {/* Info Banner - Masa Pengambilan KRS */}
       <InfoBanner variant="info">
         {activeSemester
           ? `Masa pengambilan Rencana Studi semester ${activeSemester.academicYear} ${activeSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'} sedang berlangsung.`
@@ -318,23 +314,55 @@ const StudyPlan = () => {
       </InfoBanner>
 
       {/* Alert Messages */}
-      {enrollSuccess && (
+      {actionSuccess && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
           <CheckCircle size={20} className="text-green-600 shrink-0" />
-          <p className="text-green-700 flex-1">{enrollSuccess}</p>
-          <Button variant="ghost" size="icon-sm" onClick={() => setEnrollSuccess(null)} className="text-green-600 hover:text-green-800 hover:bg-green-100">
+          <p className="text-green-700 flex-1">{actionSuccess}</p>
+          <Button variant="ghost" size="icon-sm" onClick={() => setActionSuccess(null)} className="text-green-600 hover:text-green-800 hover:bg-green-100">
             <X size={18} />
           </Button>
         </div>
       )}
 
-      {enrollError && (
+      {actionError && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
           <AlertCircle size={20} className="text-red-600 shrink-0" />
-          <p className="text-red-700 flex-1">{enrollError}</p>
-          <Button variant="ghost" size="icon-sm" onClick={() => setEnrollError(null)} className="text-red-600 hover:text-red-800 hover:bg-red-100">
+          <p className="text-red-700 flex-1">{actionError}</p>
+          <Button variant="ghost" size="icon-sm" onClick={() => setActionError(null)} className="text-red-600 hover:text-red-800 hover:bg-red-100">
             <X size={18} />
           </Button>
+        </div>
+      )}
+
+      {/* Submit KRS Banner */}
+      {hasDraftEnrollments && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Send size={20} className="text-indigo-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-indigo-800">Ada {enrollmentStats.draft} mata kuliah berstatus Draft</p>
+              <p className="text-xs text-indigo-600">Submit KRS untuk disetujui oleh Dosen PA Anda</p>
+            </div>
+          </div>
+          <Button
+            onClick={handleSubmitKRS}
+            disabled={submitting}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shrink-0"
+          >
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            Submit KRS
+          </Button>
+        </div>
+      )}
+
+      {/* Rejected Warning */}
+      {enrollmentStats.rejected > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle size={20} className="text-red-600 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-800">{enrollmentStats.rejected} mata kuliah ditolak oleh Dosen PA</p>
+            <p className="text-xs text-red-600">Klik tombol revisi untuk mengembalikan ke Draft, lalu submit ulang atau hapus dari KRS.</p>
+          </div>
         </div>
       )}
 
@@ -342,28 +370,12 @@ const StudyPlan = () => {
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <SectionHeader
           title="MATA KULIAH DITAWARKAN"
-          subtitle={`${studentInfo.name} (${studentInfo.nim})`}
+          subtitle={`${user?.name || ''} (${user?.nim || ''})`}
         />
 
         {/* Filter Bar */}
         <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 border-b border-slate-200 bg-slate-50/50">
-          {/* Filter Dropdowns Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Mode Jadwal</label>
-              <Select value={selectedMode} onValueChange={setSelectedMode}>
-                <SelectTrigger className="w-full bg-white">
-                  <SelectValue placeholder="Semua Mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Mode</SelectItem>
-                  <SelectItem value="online">Online</SelectItem>
-                  <SelectItem value="offline">Offline</SelectItem>
-                  <SelectItem value="hybrid">Hybrid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Tingkat Mata Kuliah</label>
               <Select value={selectedSemester} onValueChange={setSelectedSemester}>
@@ -383,51 +395,13 @@ const StudyPlan = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Jenis Mata Kuliah</label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full bg-white">
-                  <SelectValue placeholder="Semua Jenis" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Jenis</SelectItem>
-                  <SelectItem value="wajib">Wajib</SelectItem>
-                  <SelectItem value="pilihan">Pilihan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Status Non-Pertemuan</label>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-full bg-white">
-                  <SelectValue placeholder="Semua" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Lintas Prodi</label>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-full bg-white">
-                  <SelectValue placeholder="Semua" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* Search Input */}
           <div className="relative">
             <input
               type="text"
-              placeholder="Cari Mata Kuliah"
+              placeholder="Cari Mata Kuliah atau Dosen"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
@@ -435,7 +409,7 @@ const StudyPlan = () => {
           </div>
         </div>
 
-        {/* Available Courses - Loading/Error/Empty States */}
+        {/* Available Classes - Loading/Error/Empty States */}
         {loading ? (
           <div className="p-8 sm:p-12 text-center">
             <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-3" />
@@ -447,13 +421,13 @@ const StudyPlan = () => {
             <p className="text-red-600 font-medium">{error}</p>
             <Button
               variant="link"
-              onClick={() => window.location.reload()}
+              onClick={() => fetchData()}
               className="mt-3 text-sm text-red-600"
             >
               Coba lagi
             </Button>
           </div>
-        ) : availableCoursesFiltered.length === 0 ? (
+        ) : availableFiltered.length === 0 ? (
           <div className="p-8 sm:p-12 text-center">
             <BookOpen size={32} className="text-slate-400 mx-auto mb-3" />
             <p className="text-slate-600 font-medium">
@@ -464,36 +438,36 @@ const StudyPlan = () => {
           <>
             {/* Mobile Card View */}
             <div className="lg:hidden divide-y divide-slate-100">
-              {paginatedCourses.map((course, index) => {
-                const isEnrollingThis = enrolling === course.id;
+              {paginatedClasses.map((cls, index) => {
+                const isEnrollingThis = enrolling === cls.id;
                 const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
 
                 return (
-                  <div key={course.id} className="p-4 hover:bg-slate-50">
+                  <div key={cls.id} className="p-4 hover:bg-slate-50">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-blue-600 font-medium text-sm">#{rowNumber}</span>
                           <span className="text-slate-400">•</span>
-                          <span className="text-slate-500 text-sm font-mono">{course.code}</span>
+                          <span className="text-slate-500 text-sm font-mono">{cls.course?.code}</span>
                         </div>
-                        <h4 className="font-semibold text-slate-900 mb-2">{course.title}</h4>
+                        <h4 className="font-semibold text-slate-900 mb-2">{cls.course?.title}</h4>
                         <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          <CourseBadge variant="success">{course.sks || 3} SKS</CourseBadge>
-                          <CourseBadge variant="teal">Teori/Praktek</CourseBadge>
-                          <CourseBadge variant="success">Online</CourseBadge>
+                          <CourseBadge variant="success">{cls.course?.sks || 3} SKS</CourseBadge>
+                          <CourseBadge variant="purple">{cls.name || 'Kelas'}</CourseBadge>
+                          <CourseBadge variant="teal">{cls.scheduleMode || 'Online'}</CourseBadge>
                         </div>
-                        {course.teacher && (
-                          <p className="text-sm text-slate-600">Dosen: {course.teacher.name}</p>
+                        {cls.lecturer && (
+                          <p className="text-sm text-slate-600">Dosen: {cls.lecturer.name}</p>
                         )}
                         <p className="text-sm text-slate-500 mt-1">
-                          {course.schedule || 'Jadwal menyusul'}
+                          Kapasitas: {cls.currentEnrollment || 0}/{cls.capacity || '∞'}
                         </p>
                       </div>
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleEnroll(course.id)}
+                        onClick={() => handleEnroll(cls.id)}
                         disabled={isEnrollingThis}
                         className="border-blue-200 text-blue-600 hover:bg-blue-50 shrink-0"
                         title="Ambil Kelas"
@@ -516,59 +490,53 @@ const StudyPlan = () => {
                 <TableHeader>
                   <TableRow className="bg-slate-50">
                     <TableHead className="w-16 text-center">No.</TableHead>
-                    <TableHead>Nama Mata Kuliah</TableHead>
+                    <TableHead>Mata Kuliah</TableHead>
                     <TableHead>Kelas</TableHead>
-                    <TableHead>Waktu</TableHead>
                     <TableHead>Dosen</TableHead>
+                    <TableHead className="text-center">Kapasitas</TableHead>
                     <TableHead className="w-20 text-center">Opsi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedCourses.map((course, index) => {
-                    const isEnrollingThis = enrolling === course.id;
+                  {paginatedClasses.map((cls, index) => {
+                    const isEnrollingThis = enrolling === cls.id;
                     const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
 
                     return (
-                      <TableRow key={course.id} className="hover:bg-slate-50">
+                      <TableRow key={cls.id} className="hover:bg-slate-50">
                         <TableCell className="text-center text-blue-600 font-medium">
                           {rowNumber}
                         </TableCell>
                         <TableCell>
                           <div className="space-y-2">
                             <div>
-                              <span className="font-semibold text-slate-900">{course.title}</span>
-                              <span className="text-slate-500 ml-1">({course.code})</span>
+                              <span className="font-semibold text-slate-900">{cls.course?.title}</span>
+                              <span className="text-slate-500 ml-1">({cls.course?.code})</span>
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <CourseBadge variant="success">{course.sks || 3} SKS</CourseBadge>
-                              <CourseBadge variant="teal">Mata Kuliah Teori/Praktek</CourseBadge>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <CourseBadge variant="success">Online</CourseBadge>
-                              <span className="text-slate-500 text-sm">Kelas A</span>
+                              <CourseBadge variant="success">{cls.course?.sks || 3} SKS</CourseBadge>
+                              <CourseBadge variant="teal">{cls.scheduleMode || 'Online'}</CourseBadge>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <CourseBadge variant="purple" className="whitespace-normal text-center">
-                            {course.title?.toUpperCase().substring(0, 20) || 'KELAS'}
+                          <CourseBadge variant="purple">
+                            {cls.name || 'Kelas'}
                           </CourseBadge>
                         </TableCell>
-                        <TableCell className="text-slate-600 text-sm">
-                          {course.schedule || 'Jadwal menyusul'}
-                        </TableCell>
                         <TableCell>
-                          {course.teacher && (
-                            <CourseBadge variant="teal">
-                              1. {course.teacher.name}
-                            </CourseBadge>
-                          )}
+                          {cls.lecturer ? (
+                            <span className="text-slate-600 text-sm">{cls.lecturer.name}</span>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-slate-600">
+                          {cls.currentEnrollment || 0}/{cls.capacity || '∞'}
                         </TableCell>
                         <TableCell className="text-center">
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => handleEnroll(course.id)}
+                            onClick={() => handleEnroll(cls.id)}
                             disabled={isEnrollingThis}
                             className="border-blue-200 text-blue-600 hover:bg-blue-50"
                             title="Ambil Kelas"
@@ -592,7 +560,6 @@ const StudyPlan = () => {
         {/* Pagination */}
         {!loading && !error && totalPages > 1 && (
           <div className="p-3 sm:p-4 border-t border-slate-200">
-            {/* Mobile Pagination */}
             <div className="flex sm:hidden items-center justify-between">
               <Button
                 variant="outline"
@@ -615,7 +582,6 @@ const StudyPlan = () => {
               </Button>
             </div>
 
-            {/* Desktop Pagination */}
             <div className="hidden sm:block">
               <Pagination>
                 <PaginationContent>
@@ -667,8 +633,8 @@ const StudyPlan = () => {
         )}
       </div>
 
-      {/* Separator Icon - Only show when there are enrolled courses */}
-      {enrolledCourses.length > 0 && (
+      {/* Separator Icon */}
+      {enrollments.length > 0 && (
         <div className="flex justify-center py-2 sm:py-4">
           <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-blue-50 flex items-center justify-center">
             <ArrowDownUp size={24} className="sm:hidden text-blue-600" />
@@ -678,66 +644,94 @@ const StudyPlan = () => {
       )}
 
       {/* ============ SECTION: DAFTAR RENCANA STUDI ============ */}
-      {/* Only show when there are enrolled courses */}
-      {enrolledCourses.length > 0 && (
+      {enrollments.length > 0 && (
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
           <SectionHeader
             title="DAFTAR RENCANA STUDI"
-            subtitle={`${studentInfo.name} (${studentInfo.nim})`}
+            subtitle={`${user?.name || ''} (${user?.nim || ''})`}
           />
 
-          {/* Print Button */}
-          <div className="p-4 border-b border-slate-200">
+          {/* Action Bar */}
+          <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3">
             <Button variant="secondary" className="gap-2">
               <Printer size={16} />
               <span>Cetak KRS</span>
             </Button>
+            {hasDraftEnrollments && (
+              <Button
+                onClick={handleSubmitKRS}
+                disabled={submitting}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                Submit KRS ({enrollmentStats.draft} Draft)
+              </Button>
+            )}
           </div>
 
           {/* Mobile Card View */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {enrolledCourses.map((enrollment, index) => {
-              const courseId = enrollment.course?.id || enrollment.courseId;
-              const isUnenrollingThis = unenrolling === courseId;
+            {enrollments.map((enrollment, index) => {
+              const classId = enrollment.class?.id || enrollment.classId;
+              const isDroppingThis = dropping === classId;
+              const isRevisingThis = revising === enrollment.id;
 
               return (
-                <div key={enrollment.id || enrollment.courseId} className="p-4 hover:bg-slate-50">
+                <div key={enrollment.id} className="p-4 hover:bg-slate-50">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-slate-500 font-medium text-sm">#{index + 1}</span>
                         <span className="text-slate-400">•</span>
-                        <span className="text-slate-500 text-sm font-mono">{enrollment.course?.code}</span>
+                        <span className="text-slate-500 text-sm font-mono">{enrollment.class?.course?.code}</span>
                       </div>
-                      <h4 className="font-semibold text-slate-900 mb-2">{enrollment.course?.title}</h4>
+                      <h4 className="font-semibold text-slate-900 mb-2">{enrollment.class?.course?.title}</h4>
                       <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        <CourseBadge variant="success">{enrollment.course?.sks || 3} SKS</CourseBadge>
-                        <CourseBadge variant="teal">Teori</CourseBadge>
-                        <CourseBadge variant="success">Online</CourseBadge>
+                        <CourseBadge variant="success">{enrollment.class?.course?.sks || 3} SKS</CourseBadge>
+                        <CourseBadge variant="purple">{enrollment.class?.name || 'Kelas'}</CourseBadge>
+                        <KrsStatusBadge status={enrollment.status} />
                       </div>
-                      {enrollment.course?.teacher?.name && (
-                        <p className="text-sm text-slate-600">Dosen: {enrollment.course.teacher.name}</p>
+                      {enrollment.class?.lecturer?.name && (
+                        <p className="text-sm text-slate-600">Dosen: {enrollment.class.lecturer.name}</p>
                       )}
-                      <div className="mt-2">
-                        <CourseBadge variant="warning" className="text-xs">
-                          ⚠ Belum disetujui
-                        </CourseBadge>
-                      </div>
+                      {enrollment.status === 'REJECTED' && enrollment.notes && (
+                        <p className="text-xs text-red-600 mt-1">Catatan: {enrollment.notes}</p>
+                      )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleUnenroll(courseId)}
-                      disabled={isUnenrollingThis}
-                      className="border-red-200 text-red-500 hover:bg-red-50 shrink-0"
-                      title="Hapus dari KRS"
-                    >
-                      {isUnenrollingThis ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={18} />
+                    <div className="flex flex-col gap-2 shrink-0">
+                      {canRevise(enrollment.status) && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleRevise(enrollment.id)}
+                          disabled={isRevisingThis}
+                          className="border-amber-200 text-amber-600 hover:bg-amber-50"
+                          title="Revisi ke Draft"
+                        >
+                          {isRevisingThis ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <RefreshCw size={18} />
+                          )}
+                        </Button>
                       )}
-                    </Button>
+                      {canDrop(enrollment.status) && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDrop(classId)}
+                          disabled={isDroppingThis}
+                          className="border-red-200 text-red-500 hover:bg-red-50"
+                          title="Hapus dari KRS"
+                        >
+                          {isDroppingThis ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -750,68 +744,83 @@ const StudyPlan = () => {
               <TableHeader>
                 <TableRow className="bg-slate-50">
                   <TableHead className="w-16 text-center">No.</TableHead>
-                  <TableHead>Nama Mata Kuliah</TableHead>
+                  <TableHead>Mata Kuliah</TableHead>
                   <TableHead>Kelas</TableHead>
-                  <TableHead>Waktu</TableHead>
                   <TableHead>Dosen</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="w-28 text-center">Opsi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {enrolledCourses.map((enrollment, index) => {
-                  const courseId = enrollment.course?.id || enrollment.courseId;
-                  const isUnenrollingThis = unenrolling === courseId;
+                {enrollments.map((enrollment, index) => {
+                  const classId = enrollment.class?.id || enrollment.classId;
+                  const isDroppingThis = dropping === classId;
+                  const isRevisingThis = revising === enrollment.id;
 
                   return (
-                    <TableRow key={enrollment.id || enrollment.courseId} className="hover:bg-slate-50">
+                    <TableRow key={enrollment.id} className="hover:bg-slate-50">
                       <TableCell className="text-center text-slate-600 font-medium">
                         {index + 1}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-2">
                           <div>
-                            <span className="font-semibold text-slate-900">{enrollment.course?.title}</span>
-                            <span className="text-slate-500 ml-1">({enrollment.course?.code})</span>
+                            <span className="font-semibold text-slate-900">{enrollment.class?.course?.title}</span>
+                            <span className="text-slate-500 ml-1">({enrollment.class?.course?.code})</span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <CourseBadge variant="success">{enrollment.course?.sks || 3} SKS</CourseBadge>
-                            <CourseBadge variant="teal">Mata Kuliah Teori</CourseBadge>
-                            <CourseBadge variant="success">Online</CourseBadge>
+                            <CourseBadge variant="success">{enrollment.class?.course?.sks || 3} SKS</CourseBadge>
                           </div>
+                          {enrollment.status === 'REJECTED' && enrollment.notes && (
+                            <p className="text-xs text-red-600">Catatan: {enrollment.notes}</p>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-600">
-                        -
-                      </TableCell>
-                      <TableCell className="text-slate-600 text-sm">
-                        -
+                      <TableCell>
+                        <CourseBadge variant="purple">{enrollment.class?.name || 'Kelas'}</CourseBadge>
                       </TableCell>
                       <TableCell>
-                        {enrollment.course?.teacher?.name ? (
-                          <span className="text-slate-600 text-sm">{enrollment.course.teacher.name}</span>
-                        ) : (
-                          '-'
-                        )}
+                        {enrollment.class?.lecturer?.name ? (
+                          <span className="text-slate-600 text-sm">{enrollment.class.lecturer.name}</span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <KrsStatusBadge status={enrollment.status} />
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleUnenroll(courseId)}
-                            disabled={isUnenrollingThis}
-                            className="border-red-200 text-red-500 hover:bg-red-50"
-                            title="Hapus dari KRS"
-                          >
-                            {isUnenrollingThis ? (
-                              <Loader2 size={18} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={18} />
-                            )}
-                          </Button>
-                          <CourseBadge variant="warning" className="text-[10px] whitespace-nowrap">
-                            ⚠ Belum disetujui
-                          </CourseBadge>
+                        <div className="flex items-center justify-center gap-2">
+                          {canRevise(enrollment.status) && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleRevise(enrollment.id)}
+                              disabled={isRevisingThis}
+                              className="border-amber-200 text-amber-600 hover:bg-amber-50"
+                              title="Revisi ke Draft"
+                            >
+                              {isRevisingThis ? (
+                                <Loader2 size={18} className="animate-spin" />
+                              ) : (
+                                <RefreshCw size={18} />
+                              )}
+                            </Button>
+                          )}
+                          {canDrop(enrollment.status) && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDrop(classId)}
+                              disabled={isDroppingThis}
+                              className="border-red-200 text-red-500 hover:bg-red-50"
+                              title="Hapus dari KRS"
+                            >
+                              {isDroppingThis ? (
+                                <Loader2 size={18} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={18} />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -826,31 +835,41 @@ const StudyPlan = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
               <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm">
                 <span className="text-slate-600">
-                  Total: <strong className="text-slate-900">{enrolledCourses.length}</strong> MK
+                  Total: <strong className="text-slate-900">{enrollments.length}</strong> MK
                 </span>
                 <span className="text-slate-600">
-                  SKS: <strong className="text-slate-900">{totalSKSDitempuh}</strong>
+                  SKS: <strong className="text-slate-900">{totalSKS}</strong>
                 </span>
+                <span className="text-slate-600">
+                  Disetujui: <strong className="text-green-700">{enrollmentStats.approved + enrollmentStats.autoApproved}</strong>
+                </span>
+                {enrollmentStats.rejected > 0 && (
+                  <span className="text-slate-600">
+                    Ditolak: <strong className="text-red-600">{enrollmentStats.rejected}</strong>
+                  </span>
+                )}
               </div>
               <p className="text-xs sm:text-sm text-slate-500">
                 <Info size={14} className="inline mr-1" />
-                Menunggu persetujuan Dosen PA
+                {enrollmentStats.submitted > 0 ? 'Menunggu persetujuan Dosen PA' : 'Submit KRS untuk pengajuan persetujuan'}
               </p>
             </div>
           </div>
         </div>
       )}
+
       {/* Info Section */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 flex gap-2 sm:gap-3">
         <Info size={18} className="sm:hidden text-blue-600 shrink-0 mt-0.5" />
         <Info size={20} className="hidden sm:block text-blue-600 shrink-0 mt-0.5" />
         <div className="text-xs sm:text-sm text-blue-700">
-          <p className="font-medium mb-1">Informasi KRS</p>
+          <p className="font-medium mb-1">Informasi Alur KRS</p>
           <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-blue-600">
-            <li>Pilih mata kuliah dari tabel di atas</li>
-            <li>Klik tombol (+) untuk menambahkan ke KRS</li>
-            <li>KRS harus disetujui oleh Dosen PA</li>
-            <li>Pastikan total SKS tidak melebihi jatah</li>
+            <li>Pilih kelas dari daftar dan klik (+) untuk menambahkan ke KRS (Draft)</li>
+            <li>Klik &quot;Submit KRS&quot; untuk mengajukan persetujuan ke Dosen PA</li>
+            <li>Dosen PA akan menyetujui atau menolak setiap mata kuliah</li>
+            <li>Jika ditolak, klik revisi lalu submit ulang atau hapus dari KRS</li>
+            <li>Pastikan total SKS tidak melebihi jatah yang ditetapkan</li>
           </ul>
         </div>
       </div>

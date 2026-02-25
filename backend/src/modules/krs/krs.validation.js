@@ -53,6 +53,13 @@ const krsQuerySchema = z.object({
   }),
 });
 
+// --- Schema: Revise Rejected KRS ---
+const reviseEnrollmentSchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Enrollment ID tidak valid'),
+  }),
+});
+
 export {
   enrollClassSchema,
   dropClassSchema,
@@ -60,4 +67,5 @@ export {
   updateStatusSchema,
   bulkUpdateStatusSchema,
   krsQuerySchema,
+  reviseEnrollmentSchema,
 };

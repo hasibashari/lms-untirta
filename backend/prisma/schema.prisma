@@ -239,6 +239,9 @@ model KrsEnrollment {
   // Catatan (opsional, misal alasan reject)
   note String? @db.Text
 
+  // Revision tracking
+  revisionCount Int @default(0) // Berapa kali KRS direvisi setelah penolakan
+
   // Tracking approval
   submittedAt DateTime? // Kapan mahasiswa submit KRS
   approvedAt  DateTime? // Kapan KRS diapprove
