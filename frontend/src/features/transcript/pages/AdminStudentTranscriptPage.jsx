@@ -154,6 +154,9 @@ const AdminStudentTranscriptPage = () => {
             </div>
             <div>
               <h1 className="text-xl lg:text-2xl font-bold">{student.name}</h1>
+              {student.nim && (
+                <p className="text-blue-100 text-sm font-mono">{student.nim}</p>
+              )}
               <p className="text-blue-100/80 text-sm">{student.email}</p>
             </div>
           </div>

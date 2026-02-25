@@ -1,6 +1,11 @@
 import express from 'express';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
+import validate from '../../middlewares/validate.middleware.js';
+import {
+  transcriptQuerySchema,
+  studentTranscriptParamsSchema,
+} from './transcript.validation.js';
 import {
   getStudyResults,
   getTranscriptByClass,
@@ -30,6 +35,7 @@ router.get(
   '/study-results',
   authenticateToken,
   authorizeRole('MAHASISWA'),
+  validate(transcriptQuerySchema),
   getStudyResults
 );
 
@@ -38,6 +44,7 @@ router.get(
   '/by-class',
   authenticateToken,
   authorizeRole('MAHASISWA'),
+  validate(transcriptQuerySchema),
   getTranscriptByClass
 );
 
@@ -56,6 +63,7 @@ router.get(
   '/student/:studentId',
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
+  validate(studentTranscriptParamsSchema),
   getStudentTranscript
 );
 

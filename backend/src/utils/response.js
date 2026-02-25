@@ -9,10 +9,13 @@
  * @param {string}  options.message          - Human-readable message
  * @param {*}       [options.data=null]      - Response payload
  */
-export const sendSuccess = (res, { statusCode = 200, message, data = null }) => {
+export const sendSuccess = (res, { statusCode = 200, message, data = null, _meta }) => {
   const body = { success: true, message };
   if (data !== null && data !== undefined) {
     body.data = data;
+  }
+  if (_meta) {
+    body._meta = _meta;
   }
   return res.status(statusCode).json(body);
 };

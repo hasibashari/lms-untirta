@@ -1,4 +1,5 @@
 import * as semesterService from './academic-semester.service.js';
+import { getAutoApprovalStats, getAutoApprovalLogDetail } from '../../jobs/krs-auto-approval.job.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
 export const getAll = async (req, res) => {
@@ -94,8 +95,33 @@ export const updateStatus = async (req, res) => {
     if (error.message.includes('tidak ditemukan')) {
       return sendError(res, { statusCode: 404, message: error.message });
     }
+    // Structured pre-flight validation failure (e.g., incomplete grades)
+    if (error.code === 'PRECONDITION_FAILED') {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        code: 'GRADE_COMPLETION_REQUIRED',
+        details: error.details || null,
+      });
+    }
     if (error.message.includes('Tidak dapat') || error.message.includes('Alasan wajib')) {
       return sendError(res, { statusCode: 400, message: error.message });
+    }
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+export const getCompletionReadiness = async (req, res) => {
+  try {
+    const readiness = await semesterService.getCompletionReadiness(req.params.id);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Status kesiapan semester berhasil diambil',
+      data: readiness,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return sendError(res, { statusCode: 404, message: error.message });
     }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
@@ -144,6 +170,63 @@ export const getStatusLogs = async (req, res) => {
       data: logs,
     });
   } catch (error) {
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+export const getRollbackImpact = async (req, res) => {
+  try {
+    const { fromStatus, toStatus } = req.query;
+    if (!fromStatus || !toStatus) {
+      return sendError(res, {
+        statusCode: 400,
+        message: 'Parameter fromStatus dan toStatus wajib diisi',
+      });
+    }
+    const impact = await semesterService.getRollbackImpact(
+      req.params.id,
+      fromStatus,
+      toStatus
+    );
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Rollback impact preview berhasil diambil',
+      data: impact,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return sendError(res, { statusCode: 404, message: error.message });
+    }
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+export const getAutoApprovalDashboard = async (req, res) => {
+  try {
+    const { academicSemesterId } = req.query;
+    const stats = await getAutoApprovalStats(academicSemesterId || null);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Statistik auto-approval berhasil diambil',
+      data: stats,
+    });
+  } catch (error) {
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+export const getAutoApprovalLog = async (req, res) => {
+  try {
+    const log = await getAutoApprovalLogDetail(req.params.logId);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Detail log auto-approval berhasil diambil',
+      data: log,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan')) {
+      return sendError(res, { statusCode: 404, message: error.message });
+    }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };

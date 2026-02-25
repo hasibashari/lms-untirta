@@ -21,6 +21,17 @@ export const getMyKRS = () => {
 };
 
 /**
+ * [MAHASISWA] Get SKS eligibility info (IPK → max SKS)
+ * @param {Object} params - { academicSemesterId }
+ */
+export const getSksEligibility = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/krs/sks-eligibility${qs ? `?${qs}` : ''}`);
+};
+
+/**
  * [MAHASISWA] Enroll in a class offering
  * @param {string} classId - UUID of the class offering
  */

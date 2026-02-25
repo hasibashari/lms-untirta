@@ -56,6 +56,46 @@ export const getSemesterStatusLogs = (id) => {
 };
 
 /**
+ * [ADMIN] Get completion readiness check for a semester
+ * Pre-flight validation before GRADING → COMPLETED transition.
+ * Returns grade completion stats per class.
+ */
+export const getCompletionReadiness = (id) => {
+  return api.get(`/academic-semesters/${id}/completion-readiness`);
+};
+
+/**
+ * [ADMIN] Get rollback impact preview for a semester
+ * Shows counts of records that will be deleted/reset during rollback.
+ * @param {string} id - Semester ID
+ * @param {string} fromStatus - Current status
+ * @param {string} toStatus - Target rollback status
+ */
+export const getRollbackImpact = (id, fromStatus, toStatus) => {
+  return api.get(`/academic-semesters/${id}/rollback-impact`, {
+    params: { fromStatus, toStatus },
+  });
+};
+
+/**
+ * [ADMIN] Get auto-approval statistics and execution logs
+ * @param {string|null} academicSemesterId - Filter by semester (optional)
+ */
+export const getAutoApprovalStats = (academicSemesterId = null) => {
+  const params = {};
+  if (academicSemesterId) params.academicSemesterId = academicSemesterId;
+  return api.get('/academic-semesters/auto-approval/stats', { params });
+};
+
+/**
+ * [ADMIN] Get detailed auto-approval execution log
+ * @param {string} logId - CronJobLog ID
+ */
+export const getAutoApprovalLogDetail = (logId) => {
+  return api.get(`/academic-semesters/auto-approval/logs/${logId}`);
+};
+
+/**
  * [ADMIN] Set semester as active
  */
 export const setActiveSemester = (id) => {

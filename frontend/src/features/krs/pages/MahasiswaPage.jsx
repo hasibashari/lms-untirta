@@ -13,6 +13,8 @@ import {
   UserCheck,
   Send,
   RefreshCw,
+  Zap,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -22,6 +24,7 @@ import {
   dropClass,
   submitKRS,
   reviseEnrollment,
+  getSksEligibility,
 } from '../krsService';
 import { getActiveSemester } from '@/features/academic/academicService';
 import KrsStatusBadge from '@/components/shared/KrsStatusBadge';
@@ -69,6 +72,7 @@ const StudyPlan = () => {
 
   // Data state
   const [availableClasses, setAvailableClasses] = useState([]);
+  const [availableMeta, setAvailableMeta] = useState(null);
   const [krsData, setKrsData] = useState(null);
   const [activeSemester, setActiveSemester] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -112,6 +116,7 @@ const StudyPlan = () => {
       ]);
 
       setAvailableClasses(Array.isArray(availableRes?.data) ? availableRes.data : []);
+      setAvailableMeta(availableRes?._meta || null);
       setKrsData(krsRes?.data || null);
     } catch (err) {
       setError(err?.message || 'Gagal memuat data');
@@ -168,6 +173,19 @@ const StudyPlan = () => {
 
   const hasDraftEnrollments = enrollmentStats.draft > 0;
 
+  // Auto-approval countdown helper
+  const getAutoApprovalCountdown = useCallback((submittedAt) => {
+    if (!submittedAt || !summary.autoApproval?.enabled || !summary.autoApproval?.deadlineDays) return null;
+    const submitted = new Date(submittedAt);
+    const deadline = new Date(submitted);
+    deadline.setDate(deadline.getDate() + summary.autoApproval.deadlineDays);
+    const now = new Date();
+    const diffMs = deadline - now;
+    if (diffMs <= 0) return { days: 0, text: 'Akan segera disetujui otomatis' };
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return { days, text: `Auto-approval dalam ${days} hari` };
+  }, [summary.autoApproval]);
+
   // Total SKS (exclude rejected)
   const totalSKS = useMemo(() => {
     return enrollments
@@ -188,7 +206,19 @@ const StudyPlan = () => {
       showSuccess('Berhasil menambahkan kelas ke KRS (Draft)');
       await fetchData();
     } catch (err) {
-      showError(err?.response?.data?.message || err?.message || 'Gagal menambahkan kelas');
+      const responseData = err?.response?.data;
+      if (responseData?.code === 'SKS_LIMIT_EXCEEDED') {
+        const d = responseData.details;
+        showError(
+          `Total SKS melebihi batas! Saat ini ${d?.currentSKS || '?'} SKS, ` +
+          `menambah ${d?.courseSKS || '?'} SKS melebihi batas ${d?.maxSKS || '?'} SKS. ` +
+          (d?.ipk !== null && d?.ipk !== undefined
+            ? `IPK kumulatif: ${d.ipk} → maks ${d.maxSKS} SKS.`
+            : 'Mahasiswa baru: default maks 20 SKS.')
+        );
+      } else {
+        showError(responseData?.message || err?.message || 'Gagal menambahkan kelas');
+      }
     } finally { setEnrolling(null); }
   };
 
@@ -276,8 +306,11 @@ const StudyPlan = () => {
         />
         <StatCard
           value={summary.maxSKS || 20}
-          label="Jatah SKS Semester Ini"
-          variant="warning"
+          label={summary.ipk !== null && summary.ipk !== undefined
+            ? `Maks SKS (IPK ${summary.ipk})`
+            : 'Maks SKS (Semester 1)'
+          }
+          variant={totalSKS > (summary.maxSKS || 20) ? 'danger' : 'warning'}
         />
         <StatCard
           value={enrollmentStats.approved + enrollmentStats.autoApproved}
@@ -285,6 +318,45 @@ const StudyPlan = () => {
           variant="warning"
         />
       </div>
+
+      {/* Semester Status Warning */}
+      {activeSemester && activeSemester.status !== 'ENROLLMENT' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
+          <div className="text-sm text-amber-800">
+            <strong>Masa pengisian KRS belum dibuka.</strong>{' '}
+            Semester {activeSemester.academicYear} {activeSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}{' '}
+            masih dalam tahap <strong>{activeSemester.status}</strong>.
+            {activeSemester.status === 'PLANNING' && ' Admin perlu mengubah status ke ENROLLMENT terlebih dahulu.'}
+            {activeSemester.status === 'ONGOING' && ' Masa KRS sudah terlewati untuk semester ini.'}
+            {activeSemester.status === 'GRADING' && ' Semester sedang dalam masa penilaian.'}
+            {activeSemester.status === 'COMPLETED' && ' Semester ini sudah selesai.'}
+          </div>
+        </div>
+      )}
+
+      {/* SKS Limit Info Banner */}
+      {summary.ipk !== null && summary.ipk !== undefined && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3">
+          <Info size={18} className="text-blue-600 mt-0.5 shrink-0" />
+          <div className="text-sm text-blue-800">
+            <strong>Jatah SKS berdasarkan IPK:</strong> IPK kumulatif Anda <strong>{summary.ipk.toFixed(2)}</strong> {' → '}
+            maksimal <strong>{summary.maxSKS} SKS</strong> semester ini.
+            {summary.ipk >= 3.0 && ' (IPK ≥ 3.00 → 24 SKS)'}
+            {summary.ipk >= 2.5 && summary.ipk < 3.0 && ' (IPK ≥ 2.50 → 22 SKS)'}
+            {summary.ipk >= 2.0 && summary.ipk < 2.5 && ' (IPK ≥ 2.00 → 20 SKS)'}
+            {summary.ipk < 2.0 && ' (IPK < 2.00 → 18 SKS)'}
+          </div>
+        </div>
+      )}
+      {summary.isFirstSemester && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3">
+          <Info size={18} className="text-blue-600 mt-0.5 shrink-0" />
+          <p className="text-sm text-blue-800">
+            Anda belum memiliki nilai yang difinalisasi. Sebagai mahasiswa baru, jatah SKS default: <strong>20 SKS</strong>.
+          </p>
+        </div>
+      )}
 
       {/* Dosen Pembimbing Info */}
       {user?.advisor ? (
@@ -301,6 +373,18 @@ const StudyPlan = () => {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
           <AlertCircle size={20} className="text-amber-600 shrink-0" />
           <p className="text-sm text-amber-700">Dosen pembimbing akademik belum ditetapkan. Hubungi Admin untuk penugasan.</p>
+        </div>
+      )}
+
+      {/* Auto-Approval Info Banner */}
+      {summary.autoApproval?.enabled && enrollmentStats.submitted > 0 && (
+        <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-start gap-3">
+          <Zap size={18} className="text-teal-600 mt-0.5 shrink-0" />
+          <div className="text-sm text-teal-800">
+            <strong>Auto-Approval Aktif:</strong> KRS yang belum ditanggapi Dosen PA
+            akan otomatis disetujui setelah <strong>{summary.autoApproval.deadlineDays} hari</strong> sejak
+            tanggal submit.
+          </div>
         </div>
       )}
 
@@ -431,8 +515,23 @@ const StudyPlan = () => {
           <div className="p-8 sm:p-12 text-center">
             <BookOpen size={32} className="text-slate-400 mx-auto mb-3" />
             <p className="text-slate-600 font-medium">
-              {searchQuery ? 'Tidak ada mata kuliah yang ditemukan' : 'Semua mata kuliah sudah diambil'}
+              {searchQuery
+                ? 'Tidak ada mata kuliah yang ditemukan'
+                : availableMeta?.reason === 'NO_ACTIVE_SEMESTER'
+                  ? 'Tidak ada semester aktif saat ini'
+                  : availableMeta?.reason === 'SEMESTER_NOT_ENROLLMENT'
+                    ? `Semester ${availableMeta.semester?.academicYear || ''} belum memasuki masa pengisian KRS (status: ${availableMeta.semester?.status || '-'})`
+                    : availableMeta?.reason === 'NO_CLASSES_CREATED'
+                      ? 'Belum ada kelas yang dibuka untuk semester ini. Hubungi admin untuk informasi lebih lanjut.'
+                      : availableMeta?.reason === 'ALL_CLASSES_CLOSED'
+                        ? `Terdapat ${availableMeta.semester?.totalClasses || 0} kelas, tetapi pendaftaran belum dibuka oleh admin.`
+                        : 'Semua mata kuliah sudah diambil atau tidak tersedia'}
             </p>
+            {availableMeta?.reason && availableMeta.reason !== 'ALL_ENROLLED_OR_FULL' && (
+              <p className="text-sm text-slate-400 mt-2">
+                Kode: {availableMeta.reason}
+              </p>
+            )}
           </div>
         ) : (
           <>
@@ -690,6 +789,12 @@ const StudyPlan = () => {
                         <CourseBadge variant="success">{enrollment.class?.course?.sks || 3} SKS</CourseBadge>
                         <CourseBadge variant="purple">{enrollment.class?.name || 'Kelas'}</CourseBadge>
                         <KrsStatusBadge status={enrollment.status} />
+                        {enrollment.status === 'SUBMITTED' && getAutoApprovalCountdown(enrollment.submittedAt) && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-[10px] font-medium">
+                            <Clock size={10} />
+                            {getAutoApprovalCountdown(enrollment.submittedAt).text}
+                          </span>
+                        )}
                       </div>
                       {enrollment.class?.lecturer?.name && (
                         <p className="text-sm text-slate-600">Dosen: {enrollment.class.lecturer.name}</p>
@@ -785,7 +890,15 @@ const StudyPlan = () => {
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-center">
-                        <KrsStatusBadge status={enrollment.status} />
+                        <div className="flex flex-col items-center gap-1">
+                          <KrsStatusBadge status={enrollment.status} />
+                          {enrollment.status === 'SUBMITTED' && getAutoApprovalCountdown(enrollment.submittedAt) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-[10px] font-medium">
+                              <Clock size={10} />
+                              {getAutoApprovalCountdown(enrollment.submittedAt).text}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">

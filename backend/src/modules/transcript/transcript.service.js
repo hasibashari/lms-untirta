@@ -26,7 +26,7 @@ const getStudyResults = async (studentId, filters = {}) => {
   // Validasi mahasiswa ada
   const student = await prisma.user.findUnique({
     where: { id: studentId },
-    select: { id: true, name: true, role: true },
+    select: { id: true, name: true, email: true, nim: true, role: true },
   });
 
   if (!student) {
@@ -113,6 +113,12 @@ const getStudyResults = async (studentId, filters = {}) => {
   const gpaResult = calculateGPA(filteredCourses);
 
   return {
+    student: {
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      nim: student.nim,
+    },
     courses: filteredCourses,
     summary: {
       totalCourses: filteredCourses.length,
@@ -134,7 +140,7 @@ const getStudyResults = async (studentId, filters = {}) => {
 const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, email: true, nim: true },
   });
 
   if (!student) {
@@ -283,6 +289,8 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
     student: {
       id: student.id,
       name: student.name,
+      email: student.email,
+      nim: student.nim,
     },
     courses: coursesWithGrades,
     summary: {
@@ -304,7 +312,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
 const getAcademicSummary = async (studentId) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, nim: true },
   });
 
   if (!student) {
@@ -348,6 +356,7 @@ const getStudentList = async (filters = {}) => {
       id: true,
       name: true,
       email: true,
+      nim: true,
       createdAt: true,
       _count: {
         select: {
@@ -363,6 +372,7 @@ const getStudentList = async (filters = {}) => {
     id: s.id,
     name: s.name,
     email: s.email,
+    nim: s.nim,
     createdAt: s.createdAt,
     totalEnrollments: s._count.enrollments,
     totalKrsEnrollments: s._count.krsEnrollments,
@@ -376,7 +386,7 @@ const getStudentList = async (filters = {}) => {
 const getFullStudentTranscript = async (studentId) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
-    select: { id: true, name: true, email: true, createdAt: true },
+    select: { id: true, name: true, email: true, nim: true, createdAt: true },
   });
 
   if (!student) {

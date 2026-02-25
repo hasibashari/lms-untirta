@@ -41,6 +41,7 @@ const MahasiswaCourseHome = lazy(() => import('../features/course/pages/Mahasisw
 const MahasiswaCourseMaterials = lazy(() => import('../features/course/pages/MaterialMahasiswaPage'));
 
 // Class module
+const AdminClasses = lazy(() => import('../features/class/pages/AdminClassesPage'));
 const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassesPage'));
 const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassesPage'));
 // KRS module
@@ -105,6 +106,7 @@ function AppRoutes() {
             <Route path="/admin/users" element={<Lazy component={AdminUsers} />} />
             <Route path="/admin/users/new" element={<Lazy component={AdminCreateUser} />} />
             <Route path="/admin/courses" element={<Lazy component={AdminCourses} />} />
+            <Route path="/admin/classes" element={<Lazy component={AdminClasses} />} />
             <Route path="/admin/krs" element={<Lazy component={AdminKrsMonitoring} />} />
             <Route path="/admin/advisor-assignment" element={<Lazy component={AdvisorAssignment} />} />
             <Route path="/admin/academic" element={<Lazy component={AdminAcademic} />} />

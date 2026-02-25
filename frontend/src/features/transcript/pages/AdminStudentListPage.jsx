@@ -111,7 +111,7 @@ const AdminStudentListPage = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 truncate">{student.name}</p>
-                  <p className="text-sm text-slate-500 truncate">{student.email}</p>
+                  <p className="text-sm text-slate-500 truncate">{student.nim || student.email}</p>
                   <div className="flex gap-2 mt-1">
                     <span className="text-xs text-slate-400">
                       {student.totalEnrollments + student.totalKrsEnrollments} MK
@@ -130,6 +130,7 @@ const AdminStudentListPage = () => {
                 <TableRow className="bg-slate-50">
                   <TableHead className="w-12">No.</TableHead>
                   <TableHead>Nama Mahasiswa</TableHead>
+                  <TableHead>NIM</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="text-center">Enrollment</TableHead>
                   <TableHead className="text-center">KRS</TableHead>
@@ -154,6 +155,7 @@ const AdminStudentListPage = () => {
                         <span className="font-medium text-slate-900">{student.name}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-sm text-slate-600 font-mono">{student.nim || '-'}</TableCell>
                     <TableCell className="text-sm text-slate-600">{student.email}</TableCell>
                     <TableCell className="text-center text-sm">
                       <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">

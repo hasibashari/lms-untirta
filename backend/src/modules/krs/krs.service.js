@@ -8,6 +8,103 @@ import { getMaxSKS, isValidStatusTransition, KRS_STATUS } from '../../utils/acad
 // Semua akses data melalui Prisma.
 // ========================================================================
 
+// ======================== CUMULATIVE GPA (IPK) ========================
+
+/**
+ * Hitung IPK kumulatif mahasiswa dari semua FinalGrade FINALIZED
+ * di semester COMPLETED.
+ *
+ * Hanya memperhitungkan:
+ *   - FinalGrade.status = 'FINALIZED'
+ *   - AcademicSemester.status = 'COMPLETED'
+ *
+ * Jika mahasiswa belum memiliki nilai (semester pertama), return null.
+ *
+ * @param {string} studentId
+ * @returns {Promise<{ ipk: number|null, totalSKS: number, totalPoints: number, courseCount: number }>}
+ */
+const calculateCumulativeIPK = async (studentId) => {
+  const finalizedGrades = await prisma.finalGrade.findMany({
+    where: {
+      studentId,
+      status: 'FINALIZED',
+      academicSemester: {
+        status: 'COMPLETED',
+      },
+    },
+    select: {
+      gradePoint: true,
+      class: {
+        select: {
+          course: {
+            select: { sks: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (finalizedGrades.length === 0) {
+    return { ipk: null, totalSKS: 0, totalPoints: 0, courseCount: 0 };
+  }
+
+  let totalSKS = 0;
+  let totalPoints = 0;
+
+  for (const grade of finalizedGrades) {
+    const sks = grade.class.course.sks || 3;
+    totalSKS += sks;
+    totalPoints += grade.gradePoint * sks;
+  }
+
+  const ipk = totalSKS > 0
+    ? Math.round((totalPoints / totalSKS) * 100) / 100
+    : null;
+
+  return { ipk, totalSKS, totalPoints, courseCount: finalizedGrades.length };
+};
+
+/**
+ * Ambil info kelayakan SKS mahasiswa: IPK kumulatif → batas SKS.
+ * Digunakan oleh frontend untuk menampilkan info "IPK Anda X → maks Y SKS".
+ *
+ * @param {string} studentId
+ * @param {string} academicSemesterId
+ * @returns {Promise<object>}
+ */
+const getSksEligibility = async (studentId, academicSemesterId) => {
+  const { ipk, totalSKS: cumulativeSKS, courseCount } = await calculateCumulativeIPK(studentId);
+  const maxSKS = getMaxSKS(ipk);
+
+  // Current semester enrollment SKS
+  const currentEnrollments = await prisma.krsEnrollment.findMany({
+    where: {
+      studentId,
+      class: { academicSemesterId },
+      status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED', 'AUTO_APPROVED'] },
+    },
+    select: {
+      class: {
+        select: { course: { select: { sks: true } } },
+      },
+    },
+  });
+
+  const currentSKS = currentEnrollments.reduce(
+    (total, e) => total + (e.class.course.sks || 3), 0
+  );
+
+  return {
+    ipk,
+    cumulativeSKS,
+    courseCount,
+    isFirstSemester: courseCount === 0,
+    maxSKS,
+    currentSKS,
+    remainingSKS: maxSKS - currentSKS,
+  };
+};
+
 // ======================== ENROLLMENT PERIOD GUARD ========================
 
 /**
@@ -56,12 +153,45 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
 /**
  * Ambil kelas offering yang tersedia untuk KRS mahasiswa.
  * Hanya menampilkan kelas yang:
- *  1. isEnrollmentOpen = true
+ *  1. Semester dalam status ENROLLMENT (atau isEnrollmentOpen = true)
  *  2. Mahasiswa belum terdaftar
  *  3. Kapasitas belum penuh
+ *
+ * Returns _meta with diagnostics when result is empty, so frontend can
+ * display actionable messages to the student.
  */
 const getAvailableClasses = async (studentId, filters = {}) => {
-  // Ambil kelas yang sudah didaftarkan mahasiswa ini
+  // 1. Resolve the target academic semester
+  let targetSemesterId = filters.academicSemesterId;
+
+  // If no specific semester requested, auto-resolve the active ENROLLMENT semester
+  if (!targetSemesterId) {
+    const activeSemester = await prisma.academicSemester.findFirst({
+      where: { isActive: true },
+      select: { id: true, status: true },
+    });
+    if (activeSemester) {
+      targetSemesterId = activeSemester.id;
+    }
+  }
+
+  // 2. Validate semester status for diagnostics
+  let semesterDiag = null;
+  if (targetSemesterId) {
+    semesterDiag = await prisma.academicSemester.findUnique({
+      where: { id: targetSemesterId },
+      select: {
+        id: true,
+        academicYear: true,
+        semesterType: true,
+        status: true,
+        isActive: true,
+        _count: { select: { classes: true } },
+      },
+    });
+  }
+
+  // 3. Ambil kelas yang sudah didaftarkan mahasiswa ini
   const enrolledClasses = await prisma.krsEnrollment.findMany({
     where: { studentId },
     select: { classId: true },
@@ -69,7 +199,7 @@ const getAvailableClasses = async (studentId, filters = {}) => {
 
   const enrolledClassIds = enrolledClasses.map(e => e.classId);
 
-  // Build where clause
+  // 4. Build where clause
   const where = {
     isEnrollmentOpen: true,
   };
@@ -78,8 +208,8 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     where.id = { notIn: enrolledClassIds };
   }
 
-  if (filters.academicSemesterId) {
-    where.academicSemesterId = filters.academicSemesterId;
+  if (targetSemesterId) {
+    where.academicSemesterId = targetSemesterId;
   }
 
   // Filter berdasarkan semester course (jika diberikan)
@@ -133,7 +263,7 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     ],
   });
 
-  return classes.map(cls => ({
+  const result = classes.map(cls => ({
     id: cls.id,
     academicSemesterId: cls.academicSemesterId,
     academicYear: cls.academicSemester.academicYear,
@@ -154,6 +284,45 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     },
     lecturer: cls.lecturer,
   }));
+
+  // 5. Build diagnostic metadata when empty (helps frontend show useful messages)
+  let _meta = null;
+  if (result.length === 0) {
+    // Count ALL classes for this semester (including enrollment-closed ones)
+    const totalClassesInSemester = targetSemesterId
+      ? await prisma.class.count({ where: { academicSemesterId: targetSemesterId } })
+      : 0;
+
+    const closedClasses = targetSemesterId
+      ? await prisma.class.count({
+        where: { academicSemesterId: targetSemesterId, isEnrollmentOpen: false },
+      })
+      : 0;
+
+    _meta = {
+      reason: !semesterDiag
+        ? 'NO_ACTIVE_SEMESTER'
+        : semesterDiag.status !== 'ENROLLMENT'
+          ? 'SEMESTER_NOT_ENROLLMENT'
+          : totalClassesInSemester === 0
+            ? 'NO_CLASSES_CREATED'
+            : closedClasses === totalClassesInSemester
+              ? 'ALL_CLASSES_CLOSED'
+              : 'ALL_ENROLLED_OR_FULL',
+      semester: semesterDiag
+        ? {
+          id: semesterDiag.id,
+          academicYear: semesterDiag.academicYear,
+          semesterType: semesterDiag.semesterType,
+          status: semesterDiag.status,
+          totalClasses: totalClassesInSemester,
+          closedClasses,
+        }
+        : null,
+    };
+  }
+
+  return { classes: result, _meta };
 };
 
 // ======================== ENROLL ========================
@@ -272,12 +441,21 @@ const enrollClass = async (studentId, classId) => {
     0
   );
   const courseSKS = classData.course.sks || 3;
-  const maxSKS = getMaxSKS(null); // TODO: pass actual IPK when available
+
+  // Calculate real cumulative IPK for SKS limit
+  const { ipk } = await calculateCumulativeIPK(studentId);
+  const maxSKS = getMaxSKS(ipk);
 
   if (currentSKS + courseSKS > maxSKS) {
-    throw new Error(
-      `Total SKS melebihi batas (${currentSKS}+${courseSKS} > ${maxSKS} SKS)`
+    const error = new Error(
+      `Total SKS melebihi batas (${currentSKS}+${courseSKS} > ${maxSKS} SKS).` +
+      (ipk !== null
+        ? ` IPK kumulatif Anda: ${ipk} → maks ${maxSKS} SKS.`
+        : ` Mahasiswa baru: default maks ${maxSKS} SKS.`)
     );
+    error.code = 'SKS_LIMIT_EXCEEDED';
+    error.details = { currentSKS, courseSKS, maxSKS, ipk };
+    throw error;
   }
 
   // 6. Create KRS enrollment
@@ -405,6 +583,7 @@ const getMyKRS = async (studentId, filters = {}) => {
       id: true,
       status: true,
       note: true,
+      submittedAt: true,
       createdAt: true,
       updatedAt: true,
       class: {
@@ -450,11 +629,34 @@ const getMyKRS = async (studentId, filters = {}) => {
     0
   );
 
+  // Calculate real cumulative IPK for SKS limit
+  const ipkResult = await calculateCumulativeIPK(studentId);
+  const maxSKSValue = getMaxSKS(ipkResult.ipk);
+
+  // Fetch auto-approval config from the active semester
+  let autoApprovalConfig = null;
+  if (filters.academicSemesterId) {
+    const semConfig = await prisma.academicSemester.findUnique({
+      where: { id: filters.academicSemesterId },
+      select: {
+        krsAutoApprovalEnabled: true,
+        krsApprovalDeadlineDays: true,
+      },
+    });
+    if (semConfig) {
+      autoApprovalConfig = {
+        enabled: semConfig.krsAutoApprovalEnabled,
+        deadlineDays: semConfig.krsApprovalDeadlineDays,
+      };
+    }
+  }
+
   return {
     enrollments: enrollments.map(e => ({
       enrollmentId: e.id,
       status: e.status,
       note: e.note,
+      submittedAt: e.submittedAt,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
       class: e.class,
@@ -462,7 +664,10 @@ const getMyKRS = async (studentId, filters = {}) => {
     summary: {
       totalCourses: enrollments.length,
       totalSKS,
-      maxSKS: getMaxSKS(null), // TODO: pass actual IPK
+      maxSKS: maxSKSValue,
+      ipk: ipkResult.ipk,
+      isFirstSemester: ipkResult.courseCount === 0,
+      autoApproval: autoApprovalConfig,
     },
   };
 };
@@ -1172,4 +1377,6 @@ export {
   // Advisory (Dospem)
   getAdvisoryStudents,
   getKrsMonitoring,
+  // SKS Eligibility
+  getSksEligibility,
 };

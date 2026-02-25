@@ -8,6 +8,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { getStudyResults } from '../transcriptService';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import CourseBadge from '@/components/ui/CourseBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
@@ -26,16 +27,20 @@ import {
  * Layout mengikuti referensi SIAKAD
  */
 const StudyResult = () => {
+  const { user } = useAuth();
+
   // State untuk data
   const [studyResults, setStudyResults] = useState([]);
+  const [studentIdentity, setStudentIdentity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Mock data for student info (should come from context/API)
-  const studentInfo = {
-    name: 'MAHASISWA',
-    nim: '1234567890',
-  };
+  // Resolve student display info from API response + auth context
+  const studentInfo = useMemo(() => {
+    const name = studentIdentity?.name || user?.name || '-';
+    const nim = studentIdentity?.nim || user?.nim || user?.email || '-';
+    return { name, nim };
+  }, [studentIdentity, user]);
 
   // Fetch study results (using KRS data with grades)
   useEffect(() => {
@@ -45,8 +50,12 @@ const StudyResult = () => {
 
       try {
         const res = await getStudyResults();
-        // API returns { courses: [...], summary: {...} }
-        const data = res?.data?.courses || res?.data || [];
+        // API returns { student: {...}, courses: [...], summary: {...} }
+        const resData = res?.data;
+        if (resData?.student) {
+          setStudentIdentity(resData.student);
+        }
+        const data = resData?.courses || resData || [];
         setStudyResults(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err?.message || 'Gagal memuat data');
@@ -70,8 +79,12 @@ const StudyResult = () => {
     const totalSKS = resultsWithGrade.reduce((sum, r) => sum + (r.sks || 3), 0);
     const ips = totalSKS > 0 ? (totalSKSxGrade / totalSKS).toFixed(2) : '0.00';
 
-    // For IPK, we'd need cumulative data - using same as IPS for now
-    const ipk = ips;
+    // IPK kumulatif: dihitung dari seluruh mata kuliah yang ada di data
+    // (same as IPS when viewing a single semester; cumulative when showing all)
+    const allWithGrade = data.filter(r => r.averageScore !== null && r.averageScore !== undefined);
+    const cumulativeSKSxGrade = allWithGrade.reduce((sum, r) => sum + ((r.gradePoint || 0) * (r.sks || 3)), 0);
+    const cumulativeSKS = allWithGrade.reduce((sum, r) => sum + (r.sks || 3), 0);
+    const ipk = cumulativeSKS > 0 ? (cumulativeSKSxGrade / cumulativeSKS).toFixed(2) : '0.00';
 
     return {
       ips,

@@ -1,10 +1,11 @@
-import { LayoutDashboard, Users, BookOpen, Inbox, FileCheck, GraduationCap, Calendar, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Inbox, FileCheck, GraduationCap, Calendar, UserCheck, Layers } from 'lucide-react';
 import { ROLES } from './constants';
 
 const ADMIN_NAV_ITEMS = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard, exact: true },
   { label: 'Users', to: '/admin/users', icon: Users },
-  { label: 'Kelas', to: '/admin/courses', icon: BookOpen },
+  { label: 'Mata Kuliah', to: '/admin/courses', icon: BookOpen },
+  { label: 'Kelas Offering', to: '/admin/classes', icon: Layers },
   { label: 'Konfigurasi Akademik', to: '/admin/academic', icon: Calendar },
   { label: 'Dosen Pembimbing', to: '/admin/advisor-assignment', icon: UserCheck },
   { label: 'Monitoring KRS', to: '/admin/krs', icon: FileCheck },

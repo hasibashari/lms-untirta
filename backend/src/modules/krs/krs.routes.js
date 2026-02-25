@@ -24,6 +24,8 @@ import {
   // Revise & History
   reviseEnrollment,
   getApprovalHistory,
+  // SKS Eligibility
+  getSksEligibility,
 } from './krs.controller.js';
 
 const router = express.Router();
@@ -48,6 +50,14 @@ router.get(
   authenticateToken,
   authorizeRole('MAHASISWA'),
   getMyKRS
+);
+
+// GET /api/krs/sks-eligibility — Info kelayakan SKS berdasarkan IPK
+router.get(
+  '/sks-eligibility',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  getSksEligibility
 );
 
 // POST /api/krs/enroll — Tambah kelas ke KRS

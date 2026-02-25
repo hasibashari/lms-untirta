@@ -82,6 +82,7 @@ const getUserById = async userId => {
       id: true,
       name: true,
       email: true,
+      nim: true,
       role: true,
       isDospem: true,
       advisorId: true,

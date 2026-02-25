@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Loader2, AlertCircle, CheckCircle, X, Calendar, Plus,
-  ChevronRight, ChevronLeft, Trash2, Star, ArrowRight, History, Clock,
+  ChevronRight, ChevronLeft, Trash2, Star, ArrowRight, History, Clock, Zap,
 } from 'lucide-react';
 import {
   getAllSemesters,
@@ -10,6 +10,9 @@ import {
   setActiveSemester,
   deleteSemester,
   getSemesterStatusLogs,
+  getCompletionReadiness,
+  getRollbackImpact,
+  getAutoApprovalStats,
 } from '../../academic/academicService';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { Button } from '@/components/ui/button';
@@ -79,10 +82,25 @@ const AdminAcademicPage = () => {
   const [transitionReason, setTransitionReason] = useState('');
   const [transitionSubmitting, setTransitionSubmitting] = useState(false);
 
+  // Completion readiness pre-flight check
+  const [readinessData, setReadinessData] = useState(null);
+  const [readinessLoading, setReadinessLoading] = useState(false);
+  const [readinessError, setReadinessError] = useState(null);
+
+  // Rollback impact preview
+  const [rollbackImpact, setRollbackImpact] = useState(null);
+  const [rollbackImpactLoading, setRollbackImpactLoading] = useState(false);
+  const [rollbackImpactError, setRollbackImpactError] = useState(null);
+
   // Audit log viewer
   const [logModal, setLogModal] = useState(null); // { semesterId, semesterLabel }
   const [statusLogs, setStatusLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
+
+  // Auto-approval monitoring
+  const [autoApprovalStats, setAutoApprovalStats] = useState(null);
+  const [autoApprovalLoading, setAutoApprovalLoading] = useState(false);
+  const [showAutoApproval, setShowAutoApproval] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -139,6 +157,40 @@ const AdminAcademicPage = () => {
       reasonRequired: rule.reasonRequired,
     });
     setTransitionReason('');
+    setReadinessData(null);
+    setReadinessError(null);
+    setRollbackImpact(null);
+    setRollbackImpactError(null);
+
+    // Pre-flight: fetch completion readiness when targeting COMPLETED
+    if (targetStatus === 'COMPLETED') {
+      setReadinessLoading(true);
+      getCompletionReadiness(sem.id)
+        .then((res) => {
+          setReadinessData(res.data || res);
+        })
+        .catch((err) => {
+          setReadinessError(err?.response?.data?.message || err?.message || 'Gagal memuat data kesiapan');
+        })
+        .finally(() => {
+          setReadinessLoading(false);
+        });
+    }
+
+    // Pre-flight: fetch rollback impact preview for rollback transitions
+    if (rule.direction === 'ROLLBACK') {
+      setRollbackImpactLoading(true);
+      getRollbackImpact(sem.id, sem.status, targetStatus)
+        .then((res) => {
+          setRollbackImpact(res.data || res);
+        })
+        .catch((err) => {
+          setRollbackImpactError(err?.response?.data?.message || err?.message || 'Gagal memuat data dampak rollback');
+        })
+        .finally(() => {
+          setRollbackImpactLoading(false);
+        });
+    }
   };
 
   // Execute status transition
@@ -157,9 +209,24 @@ const AdminAcademicPage = () => {
       showToast(`Status semester berhasil diubah ke ${toStatus}`);
       setTransitionModal(null);
       setTransitionReason('');
+      setReadinessData(null);
       fetchData();
     } catch (err) {
-      showToast(err?.response?.data?.message || err?.message || 'Gagal mengubah status', 'error');
+      // Handle structured GRADE_COMPLETION_REQUIRED error from backend
+      const responseData = err?.response?.data;
+      if (responseData?.code === 'GRADE_COMPLETION_REQUIRED') {
+        showToast(responseData.message, 'error');
+        // Refresh readiness data to show updated state
+        if (transitionModal?.semesterId) {
+          setReadinessLoading(true);
+          getCompletionReadiness(transitionModal.semesterId)
+            .then((res) => setReadinessData(res.data || res))
+            .catch(() => { })
+            .finally(() => setReadinessLoading(false));
+        }
+      } else {
+        showToast(responseData?.message || err?.message || 'Gagal mengubah status', 'error');
+      }
     } finally {
       setTransitionSubmitting(false);
     }
@@ -208,6 +275,20 @@ const AdminAcademicPage = () => {
       setLogsLoading(false);
     }
   };
+
+  // Fetch auto-approval stats for the active semester
+  const fetchAutoApprovalStats = useCallback(async () => {
+    const activeSemester = semesters.find(s => s.isActive);
+    setAutoApprovalLoading(true);
+    try {
+      const res = await getAutoApprovalStats(activeSemester?.id || null);
+      setAutoApprovalStats(res.data || null);
+    } catch {
+      setAutoApprovalStats(null);
+    } finally {
+      setAutoApprovalLoading(false);
+    }
+  }, [semesters]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -487,6 +568,189 @@ const AdminAcademicPage = () => {
         </div>
       )}
 
+      {/* ==================== Auto-Approval Monitoring Panel ==================== */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <button
+          onClick={() => {
+            const next = !showAutoApproval;
+            setShowAutoApproval(next);
+            if (next && !autoApprovalStats) fetchAutoApprovalStats();
+          }}
+          className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-slate-50 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-teal-100 flex items-center justify-center">
+              <Zap size={18} className="text-teal-600" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold text-slate-900 text-sm sm:text-base">Auto-Approval KRS</h3>
+              <p className="text-xs text-slate-500">Monitoring eksekusi otomatis persetujuan KRS</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className={`text-slate-400 transition-transform ${showAutoApproval ? 'rotate-90' : ''}`} />
+        </button>
+
+        {showAutoApproval && (
+          <div className="border-t border-slate-200 p-4 sm:p-6 space-y-4">
+            {autoApprovalLoading && (
+              <div className="flex items-center justify-center gap-2 py-6">
+                <Loader2 size={18} className="animate-spin text-slate-400" />
+                <span className="text-sm text-slate-500">Memuat statistik...</span>
+              </div>
+            )}
+
+            {!autoApprovalLoading && !autoApprovalStats && (
+              <div className="text-center py-6">
+                <p className="text-sm text-slate-500">Belum ada data auto-approval.</p>
+              </div>
+            )}
+
+            {!autoApprovalLoading && autoApprovalStats?.summary && (
+              <>
+                {/* Summary stat cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-teal-700">{autoApprovalStats.summary.totalAutoApproved}</p>
+                    <p className="text-[11px] text-teal-600">Total Auto-Approved</p>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-slate-700">{autoApprovalStats.summary.totalExecutions}</p>
+                    <p className="text-[11px] text-slate-500">Total Eksekusi</p>
+                  </div>
+                  <div className={`border rounded-lg p-3 text-center ${autoApprovalStats.summary.failedCount > 0
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-green-50 border-green-200'
+                    }`}>
+                    <p className={`text-xl font-bold ${autoApprovalStats.summary.failedCount > 0 ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                      {autoApprovalStats.summary.failedCount > 0
+                        ? autoApprovalStats.summary.failedCount
+                        : autoApprovalStats.summary.successCount}
+                    </p>
+                    <p className={`text-[11px] ${autoApprovalStats.summary.failedCount > 0 ? 'text-red-500' : 'text-green-500'
+                      }`}>
+                      {autoApprovalStats.summary.failedCount > 0 ? 'Gagal' : 'Sukses'}
+                    </p>
+                  </div>
+                  <div className={`border rounded-lg p-3 text-center ${autoApprovalStats.summary.pendingAutoApproval > 0
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-slate-50 border-slate-200'
+                    }`}>
+                    <p className={`text-xl font-bold ${autoApprovalStats.summary.pendingAutoApproval > 0 ? 'text-amber-600' : 'text-slate-700'
+                      }`}>
+                      {autoApprovalStats.summary.pendingAutoApproval}
+                    </p>
+                    <p className="text-[11px] text-slate-500">Pending Approval</p>
+                  </div>
+                </div>
+
+                {/* Anomaly alert */}
+                {autoApprovalStats.summary.anomalyCount > 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">
+                      <strong>Peringatan:</strong> Terdeteksi {autoApprovalStats.summary.anomalyCount} eksekusi
+                      dengan volume tidak normal. Periksa log di bawah.
+                    </p>
+                  </div>
+                )}
+
+                {/* Next auto-approval info */}
+                {autoApprovalStats.summary.nextAutoApprovalDate && (
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Clock size={14} className="text-blue-500 shrink-0" />
+                    <p className="text-xs text-blue-700">
+                      Auto-approval berikutnya diperkirakan: <strong>{formatDate(autoApprovalStats.summary.nextAutoApprovalDate)}</strong>
+                    </p>
+                  </div>
+                )}
+
+                {/* Last execution info */}
+                {autoApprovalStats.summary.lastExecution && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <History size={12} />
+                    <span>
+                      Eksekusi terakhir: {formatDate(autoApprovalStats.summary.lastExecution.startedAt)}
+                      {' — '}
+                      <span className={
+                        autoApprovalStats.summary.lastExecution.status === 'SUCCESS' ? 'text-green-600 font-medium' :
+                          autoApprovalStats.summary.lastExecution.status === 'FAILED' ? 'text-red-600 font-medium' :
+                            'text-slate-600 font-medium'
+                      }>
+                        {autoApprovalStats.summary.lastExecution.status}
+                      </span>
+                      {autoApprovalStats.summary.lastExecution.processedCount > 0 &&
+                        ` (${autoApprovalStats.summary.lastExecution.processedCount} approved)`}
+                      {autoApprovalStats.summary.lastExecution.durationMs > 0 &&
+                        ` — ${autoApprovalStats.summary.lastExecution.durationMs}ms`}
+                    </span>
+                  </div>
+                )}
+
+                {/* Recent execution logs table */}
+                {autoApprovalStats.recentLogs?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Riwayat Eksekusi (Terbaru)</p>
+                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium text-slate-500">Waktu</th>
+                            <th className="px-3 py-2 text-center font-medium text-slate-500">Status</th>
+                            <th className="px-3 py-2 text-center font-medium text-slate-500">Diproses</th>
+                            <th className="px-3 py-2 text-center font-medium text-slate-500">Durasi</th>
+                            <th className="px-3 py-2 text-center font-medium text-slate-500">Flag</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {autoApprovalStats.recentLogs.map((log) => (
+                            <tr key={log.id} className={`hover:bg-slate-50 ${log.isAnomalous ? 'bg-red-50/50' : ''}`}>
+                              <td className="px-3 py-2 text-slate-600">{formatDate(log.startedAt)}</td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${log.status === 'SUCCESS' ? 'bg-green-100 text-green-700' :
+                                    log.status === 'FAILED' ? 'bg-red-100 text-red-700' :
+                                      log.status === 'SKIPPED' ? 'bg-slate-100 text-slate-600' :
+                                        'bg-amber-100 text-amber-700'
+                                  }`}>
+                                  {log.status}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-center font-medium text-slate-700">{log.processedCount}</td>
+                              <td className="px-3 py-2 text-center text-slate-500">{log.durationMs}ms</td>
+                              <td className="px-3 py-2 text-center">
+                                {log.isAnomalous && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-medium">
+                                    <AlertCircle size={10} /> Anomali
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Refresh button */}
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchAutoApprovalStats}
+                    disabled={autoApprovalLoading}
+                    className="text-xs"
+                  >
+                    {autoApprovalLoading ? <Loader2 size={12} className="animate-spin" /> : <History size={12} />}
+                    Refresh
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* ==================== Transition Confirmation Modal ==================== */}
       {transitionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -546,22 +810,216 @@ const AdminAcademicPage = () => {
 
             {/* Warning for critical transitions */}
             {transitionModal.toStatus === 'COMPLETED' && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-red-700">
-                  <strong>Perhatian:</strong> Mengubah status ke COMPLETED akan memfinalisasi
-                  semua nilai DRAFT. Tindakan ini tidak dapat di-rollback.
-                </p>
+              <div className="space-y-3">
+                {/* Static warning — always shown */}
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-700">
+                    <strong>Perhatian:</strong> Mengubah status ke COMPLETED bersifat permanen
+                    dan tidak dapat di-rollback. Pastikan semua nilai sudah benar.
+                  </p>
+                </div>
+
+                {/* Pre-flight readiness check — dynamic */}
+                {readinessLoading && (
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <Loader2 size={14} className="animate-spin text-slate-500" />
+                    <p className="text-xs text-slate-600">Memeriksa kesiapan nilai...</p>
+                  </div>
+                )}
+
+                {readinessError && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">{readinessError}</p>
+                  </div>
+                )}
+
+                {readinessData && !readinessLoading && (
+                  <div className={`p-3 border rounded-lg space-y-3 ${readinessData.summary?.isReady
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
+                    }`}>
+                    {/* Summary header */}
+                    <div className="flex items-start gap-2">
+                      {readinessData.summary?.isReady ? (
+                        <CheckCircle size={16} className="text-green-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                      )}
+                      <div className="text-xs">
+                        {readinessData.summary?.isReady ? (
+                          <p className="text-green-700 font-medium">
+                            Semua nilai sudah lengkap dan terfinalisasi.
+                            Semester siap untuk ditutup.
+                          </p>
+                        ) : (
+                          <p className="text-red-700 font-medium">
+                            Semester belum siap ditutup.
+                            {readinessData.summary?.totalMissing > 0 &&
+                              ` ${readinessData.summary.totalMissing} nilai belum diinput.`}
+                            {readinessData.summary?.totalDraft > 0 &&
+                              ` ${readinessData.summary.totalDraft} nilai masih DRAFT.`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      <div className="bg-white/60 rounded-md p-2">
+                        <p className="text-sm font-bold text-slate-800">
+                          {readinessData.summary?.readyClasses || 0}/{readinessData.summary?.totalClasses || 0}
+                        </p>
+                        <p className="text-[10px] text-slate-500">Kelas Siap</p>
+                      </div>
+                      <div className="bg-white/60 rounded-md p-2">
+                        <p className="text-sm font-bold text-green-700">
+                          {readinessData.summary?.totalFinalized || 0}
+                        </p>
+                        <p className="text-[10px] text-slate-500">Finalized</p>
+                      </div>
+                      <div className="bg-white/60 rounded-md p-2">
+                        <p className={`text-sm font-bold ${(readinessData.summary?.totalDraft || 0) > 0 ? 'text-amber-600' : 'text-slate-800'
+                          }`}>
+                          {readinessData.summary?.totalDraft || 0}
+                        </p>
+                        <p className="text-[10px] text-slate-500">Draft</p>
+                      </div>
+                      <div className="bg-white/60 rounded-md p-2">
+                        <p className={`text-sm font-bold ${(readinessData.summary?.totalMissing || 0) > 0 ? 'text-red-600' : 'text-slate-800'
+                          }`}>
+                          {readinessData.summary?.totalMissing || 0}
+                        </p>
+                        <p className="text-[10px] text-slate-500">Belum Dinilai</p>
+                      </div>
+                    </div>
+
+                    {/* Per-class breakdown — only show problematic classes */}
+                    {!readinessData.summary?.isReady && readinessData.classes?.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Kelas bermasalah:</p>
+                        <div className="max-h-32 overflow-y-auto space-y-1">
+                          {readinessData.classes
+                            .filter((c) => !c.isReady)
+                            .map((cls) => (
+                              <div
+                                key={cls.classId}
+                                className="flex items-center justify-between bg-white/80 rounded px-2 py-1.5 text-xs"
+                              >
+                                <div className="min-w-0">
+                                  <span className="font-mono text-slate-500">{cls.courseCode}</span>
+                                  <span className="text-slate-400 mx-1">&middot;</span>
+                                  <span className="text-slate-700">{cls.courseTitle}</span>
+                                  <span className="text-slate-400 mx-1">({cls.section})</span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                  {cls.missingGrades > 0 && (
+                                    <span className="text-red-600 font-medium">{cls.missingGrades} missing</span>
+                                  )}
+                                  {cls.draftCount > 0 && (
+                                    <span className="text-amber-600 font-medium">{cls.draftCount} draft</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
             {transitionModal.direction === 'ROLLBACK' && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700">
-                  <strong>Rollback:</strong> Status akan dikembalikan ke tahap sebelumnya.
-                  Side effect terkait akan di-reverse secara otomatis.
-                </p>
+              <div className="space-y-3">
+                {/* Static rollback warning */}
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    <strong>Rollback:</strong> Status akan dikembalikan ke tahap sebelumnya.
+                    Data terkait akan dibersihkan secara otomatis.
+                  </p>
+                </div>
+
+                {/* Loading state */}
+                {rollbackImpactLoading && (
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <Loader2 size={14} className="animate-spin text-slate-500" />
+                    <p className="text-xs text-slate-600">Menghitung dampak rollback...</p>
+                  </div>
+                )}
+
+                {/* Error state */}
+                {rollbackImpactError && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">{rollbackImpactError}</p>
+                  </div>
+                )}
+
+                {/* Impact preview */}
+                {rollbackImpact && !rollbackImpactLoading && (
+                  <div className="p-3 border border-amber-200 bg-amber-50/50 rounded-lg space-y-3">
+                    <p className="text-xs font-semibold text-amber-800">
+                      Dampak Rollback — {rollbackImpact.totalClasses || 0} kelas terpengaruh
+                    </p>
+
+                    {/* Impact stats grid */}
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      {(rollbackImpact.krsEnrollments?.toDelete > 0) && (
+                        <div className="bg-white/70 rounded-md p-2">
+                          <p className="text-sm font-bold text-red-600">
+                            {rollbackImpact.krsEnrollments.toDelete}
+                          </p>
+                          <p className="text-[10px] text-slate-500">KRS Dihapus</p>
+                        </div>
+                      )}
+                      {(rollbackImpact.krsEnrollments?.toReset > 0) && (
+                        <div className="bg-white/70 rounded-md p-2">
+                          <p className="text-sm font-bold text-amber-600">
+                            {rollbackImpact.krsEnrollments.toReset}
+                          </p>
+                          <p className="text-[10px] text-slate-500">KRS Di-reset ke DRAFT</p>
+                        </div>
+                      )}
+                      {(rollbackImpact.bridgeEnrollments?.toDelete > 0) && (
+                        <div className="bg-white/70 rounded-md p-2">
+                          <p className="text-sm font-bold text-red-600">
+                            {rollbackImpact.bridgeEnrollments.toDelete}
+                          </p>
+                          <p className="text-[10px] text-slate-500">Enrollment Dihapus</p>
+                        </div>
+                      )}
+                      {(rollbackImpact.finalGrades?.toDelete > 0) && (
+                        <div className="bg-white/70 rounded-md p-2">
+                          <p className="text-sm font-bold text-red-600">
+                            {rollbackImpact.finalGrades.toDelete}
+                          </p>
+                          <p className="text-[10px] text-slate-500">Nilai Dihapus</p>
+                        </div>
+                      )}
+                      {(rollbackImpact.approvalLogs?.toDelete > 0) && (
+                        <div className="bg-white/70 rounded-md p-2">
+                          <p className="text-sm font-bold text-red-600">
+                            {rollbackImpact.approvalLogs.toDelete}
+                          </p>
+                          <p className="text-[10px] text-slate-500">Log Approval Dihapus</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* No impact */}
+                    {(!rollbackImpact.krsEnrollments?.toDelete && !rollbackImpact.krsEnrollments?.toReset &&
+                      !rollbackImpact.bridgeEnrollments?.toDelete && !rollbackImpact.finalGrades?.toDelete &&
+                      !rollbackImpact.approvalLogs?.toDelete) && (
+                        <div className="flex items-center gap-2 bg-white/70 rounded-md p-2">
+                          <CheckCircle size={14} className="text-green-600" />
+                          <p className="text-xs text-green-700">Tidak ada data yang terpengaruh.</p>
+                        </div>
+                      )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -597,7 +1055,13 @@ const AdminAcademicPage = () => {
               </Button>
               <Button
                 onClick={handleTransitionConfirm}
-                disabled={transitionSubmitting || (transitionModal.reasonRequired && !transitionReason.trim())}
+                disabled={
+                  transitionSubmitting ||
+                  (transitionModal.reasonRequired && !transitionReason.trim()) ||
+                  (transitionModal.toStatus === 'COMPLETED' && readinessLoading) ||
+                  (transitionModal.toStatus === 'COMPLETED' && readinessData && !readinessData.summary?.isReady) ||
+                  (transitionModal.direction === 'ROLLBACK' && rollbackImpactLoading)
+                }
                 className={
                   transitionModal.direction === 'ROLLBACK'
                     ? 'bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50'
@@ -656,8 +1120,8 @@ const AdminAcademicPage = () => {
                     <div
                       key={log.id}
                       className={`p-3 rounded-lg border text-sm ${log.direction === 'ROLLBACK'
-                          ? 'bg-amber-50 border-amber-200'
-                          : 'bg-slate-50 border-slate-200'
+                        ? 'bg-amber-50 border-amber-200'
+                        : 'bg-slate-50 border-slate-200'
                         }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -673,8 +1137,8 @@ const AdminAcademicPage = () => {
                           {STATUS_CONFIG[log.toStatus]?.label}
                         </span>
                         <span className={`ml-auto px-1.5 py-0.5 rounded text-xs font-medium ${log.direction === 'ROLLBACK'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-emerald-100 text-emerald-700'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700'
                           }`}>
                           {log.direction}
                         </span>

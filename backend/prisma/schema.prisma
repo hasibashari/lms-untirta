@@ -52,6 +52,7 @@ model User {
   email     String   @unique
   password  String // Akan di-hash (bcrypt)
   name      String
+  nim       String?  @unique // NIM (Nomor Induk Mahasiswa) — wajib untuk MAHASISWA
   role      Role     @default(MAHASISWA)
   createdAt DateTime @default(now())
 
@@ -291,6 +292,7 @@ model AcademicSemester {
   classes     Class[]
   finalGrades FinalGrade[]
   statusLogs  SemesterStatusLog[]
+  cronJobLogs CronJobLog[]
 
   // Constraint: Satu semester per tahun akademik
   @@unique([academicYear, semesterType])
@@ -380,5 +382,48 @@ model SemesterStatusLog {
   // Alasan (wajib untuk rollback & transisi kritis)
   reason String? @db.Text
 
+  createdAt DateTime @default(now())
+}
+
+// 13. Enum untuk Status Cron Job
+enum CronJobStatus {
+  SUCCESS
+  PARTIAL // Berhasil sebagian (ada error pada beberapa record)
+  FAILED // Gagal total
+  SKIPPED // Dilewati (tidak ada data yang perlu diproses)
+}
+
+// 14. Model CronJobLog (Audit Trail Eksekusi Cron Job)
+// Mencatat setiap eksekusi cron job untuk monitoring dan governance.
+// Digunakan untuk auto-approval KRS dan job otomatis lainnya.
+model CronJobLog {
+  id String @id @default(uuid())
+
+  // Identifikasi job
+  jobName String // "KRS_AUTO_APPROVAL" | nilai lain untuk job masa depan
+
+  // Status eksekusi
+  status CronJobStatus
+
+  // Relasi ke Academic Semester (opsional, jika job terkait semester)
+  academicSemesterId String?
+  academicSemester   AcademicSemester? @relation(fields: [academicSemesterId], references: [id])
+
+  // Hasil eksekusi
+  processedCount Int @default(0) // Jumlah record yang berhasil diproses
+  errorCount     Int @default(0) // Jumlah error
+  totalEligible  Int @default(0) // Jumlah record yang eligible untuk diproses
+
+  // Durasi eksekusi (ms)
+  durationMs Int @default(0)
+
+  // Detail (JSON)
+  details  Json? // Detail per-student: [{ studentId, studentName, courseCode, courseTitle }]
+  errorLog String? @db.Text // Error message jika gagal
+
+  // Alerting
+  isAnomalous Boolean @default(false) // True jika volume tidak normal
+
+  startedAt DateTime @default(now())
   createdAt DateTime @default(now())
 }

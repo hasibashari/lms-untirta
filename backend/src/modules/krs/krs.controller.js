@@ -10,11 +10,14 @@ export const getAvailableClasses = async (req, res) => {
       academicSemesterId: req.query.academicSemesterId,
       semester: req.query.semester,
     };
-    const classes = await krsService.getAvailableClasses(req.user.id, filters);
+    const result = await krsService.getAvailableClasses(req.user.id, filters);
     sendSuccess(res, {
       statusCode: 200,
-      message: 'Daftar kelas tersedia berhasil diambil',
-      data: classes,
+      message: result.classes.length > 0
+        ? 'Daftar kelas tersedia berhasil diambil'
+        : 'Tidak ada kelas tersedia saat ini',
+      data: result.classes,
+      _meta: result._meta,
     });
   } catch (error) {
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
@@ -37,10 +40,17 @@ export const enrollClass = async (req, res) => {
     if (error.message.includes('sudah terdaftar') || error.message.includes('sudah mengambil')) {
       return sendError(res, { statusCode: 409, message: error.message });
     }
+    if (error.code === 'SKS_LIMIT_EXCEEDED') {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        code: 'SKS_LIMIT_EXCEEDED',
+        details: error.details,
+      });
+    }
     if (
       error.message.includes('belum dibuka') ||
-      error.message.includes('penuh') ||
-      error.message.includes('melebihi batas')
+      error.message.includes('penuh')
     ) {
       return sendError(res, { statusCode: 400, message: error.message });
     }
@@ -255,6 +265,23 @@ export const getApprovalHistory = async (req, res) => {
     if (error.message.includes('tidak memiliki akses') || error.message.includes('bukan Dosen')) {
       return sendError(res, { statusCode: 403, message: error.message });
     }
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+// --- Get SKS Eligibility Info ---
+export const getSksEligibility = async (req, res) => {
+  try {
+    const result = await krsService.getSksEligibility(
+      req.user.id,
+      req.query.academicSemesterId
+    );
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Info kelayakan SKS berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };
