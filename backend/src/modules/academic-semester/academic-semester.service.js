@@ -143,7 +143,7 @@ const SIDE_EFFECTS = {
   },
 
   // Rollback: ONGOING → ENROLLMENT
-  // Cleanup: re-open enrollment, reset APPROVED/AUTO_APPROVED KRS back to DRAFT,
+  // Cleanup: re-open enrollment, reset APPROVED KRS back to DRAFT,
   // delete bridge Enrollment records, delete FinalGrade drafts (if any leaked through)
   // Rationale: going back to ENROLLMENT means students should be able to modify their KRS again.
   ROLLBACK_ENROLLMENT: async (tx, semesterId) => {
@@ -172,7 +172,7 @@ const SIDE_EFFECTS = {
       const krsStudentIds = await tx.krsEnrollment.findMany({
         where: {
           classId: { in: classIds },
-          status: { in: ['APPROVED', 'AUTO_APPROVED'] },
+          status: { in: ['APPROVED'] },
         },
         select: { studentId: true },
         distinct: ['studentId'],
@@ -188,11 +188,11 @@ const SIDE_EFFECTS = {
         });
       }
 
-      // 5. Reset APPROVED/AUTO_APPROVED/SUBMITTED KRS enrollments back to DRAFT
+      // 5. Reset APPROVED/SUBMITTED KRS enrollments back to DRAFT
       await tx.krsEnrollment.updateMany({
         where: {
           classId: { in: classIds },
-          status: { in: ['APPROVED', 'AUTO_APPROVED', 'SUBMITTED'] },
+          status: { in: ['APPROVED', 'SUBMITTED'] },
         },
         data: {
           status: 'DRAFT',
@@ -297,7 +297,7 @@ const checkForwardPreconditions = async (semesterId, fromStatus, toStatus) => {
       INNER JOIN "Class" c ON c.id = ke."classId"
       LEFT JOIN "FinalGrade" fg ON fg."studentId" = ke."studentId" AND fg."classId" = ke."classId"
       WHERE c."academicSemesterId" = ${semesterId}
-        AND ke.status IN ('APPROVED', 'AUTO_APPROVED')
+        AND ke.status IN ('APPROVED')
         AND fg.id IS NULL
     `;
     const missingGradeCount = studentsWithoutGrade[0]?.count ?? 0;
@@ -318,7 +318,7 @@ const checkForwardPreconditions = async (semesterId, fromStatus, toStatus) => {
       FROM "KrsEnrollment" ke
       INNER JOIN "Class" c ON c.id = ke."classId"
       WHERE c."academicSemesterId" = ${semesterId}
-        AND ke.status IN ('APPROVED', 'AUTO_APPROVED')
+        AND ke.status IN ('APPROVED')
     `;
     const totalEnrolled = totalEnrolledResult[0]?.count ?? 0;
 
@@ -374,7 +374,7 @@ const getCompletionReadiness = async (semesterId) => {
       lecturer: { select: { name: true } },
       _count: {
         select: {
-          krsEnrollments: { where: { status: { in: ['APPROVED', 'AUTO_APPROVED'] } } },
+          krsEnrollments: { where: { status: { in: ['APPROVED'] } } },
           finalGrades: true,
         },
       },
@@ -498,7 +498,7 @@ const getRollbackImpact = async (semesterId, fromStatus, toStatus) => {
     const krsToReset = await prisma.krsEnrollment.count({
       where: {
         classId: { in: classIds },
-        status: { in: ['APPROVED', 'AUTO_APPROVED', 'SUBMITTED'] },
+        status: { in: ['APPROVED', 'SUBMITTED'] },
       },
     });
     impact.krsEnrollments.toReset = krsToReset;
@@ -509,7 +509,7 @@ const getRollbackImpact = async (semesterId, fromStatus, toStatus) => {
     const krsStudentIds = await prisma.krsEnrollment.findMany({
       where: {
         classId: { in: classIds },
-        status: { in: ['APPROVED', 'AUTO_APPROVED'] },
+        status: { in: ['APPROVED'] },
       },
       select: { studentId: true },
       distinct: ['studentId'],

@@ -81,7 +81,7 @@ const getSksEligibility = async (studentId, academicSemesterId) => {
     where: {
       studentId,
       class: { academicSemesterId },
-      status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED', 'AUTO_APPROVED'] },
+      status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
     },
     select: {
       class: {
@@ -423,7 +423,7 @@ const enrollClass = async (studentId, classId) => {
       class: {
         academicSemesterId: classData.academicSemesterId,
       },
-      status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED', 'AUTO_APPROVED'] },
+      status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
     },
     select: {
       class: {
@@ -633,24 +633,6 @@ const getMyKRS = async (studentId, filters = {}) => {
   const ipkResult = await calculateCumulativeIPK(studentId);
   const maxSKSValue = getMaxSKS(ipkResult.ipk);
 
-  // Fetch auto-approval config from the active semester
-  let autoApprovalConfig = null;
-  if (filters.academicSemesterId) {
-    const semConfig = await prisma.academicSemester.findUnique({
-      where: { id: filters.academicSemesterId },
-      select: {
-        krsAutoApprovalEnabled: true,
-        krsApprovalDeadlineDays: true,
-      },
-    });
-    if (semConfig) {
-      autoApprovalConfig = {
-        enabled: semConfig.krsAutoApprovalEnabled,
-        deadlineDays: semConfig.krsApprovalDeadlineDays,
-      };
-    }
-  }
-
   return {
     enrollments: enrollments.map(e => ({
       enrollmentId: e.id,
@@ -667,7 +649,6 @@ const getMyKRS = async (studentId, filters = {}) => {
       maxSKS: maxSKSValue,
       ipk: ipkResult.ipk,
       isFirstSemester: ipkResult.courseCount === 0,
-      autoApproval: autoApprovalConfig,
     },
   };
 };
@@ -845,7 +826,7 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
           _count: {
             select: {
               krsEnrollments: {
-                where: { status: { in: ['APPROVED', 'AUTO_APPROVED'] } },
+                where: { status: { in: ['APPROVED'] } },
               },
             },
           },
@@ -1264,7 +1245,7 @@ const getAdvisoryStudents = async (dosenId, filters = {}) => {
 
   const result = students.map(s => {
     const pending = s.krsEnrollments.filter(e => e.status === 'SUBMITTED').length;
-    const approved = s.krsEnrollments.filter(e => e.status === 'APPROVED' || e.status === 'AUTO_APPROVED').length;
+    const approved = s.krsEnrollments.filter(e => e.status === 'APPROVED').length;
     const rejected = s.krsEnrollments.filter(e => e.status === 'REJECTED').length;
     totalPending += pending;
     totalApproved += approved;
@@ -1355,7 +1336,6 @@ const getKrsMonitoring = async (filters = {}) => {
     submitted: enrollments.filter(e => e.status === 'SUBMITTED').length,
     approved: enrollments.filter(e => e.status === 'APPROVED').length,
     rejected: enrollments.filter(e => e.status === 'REJECTED').length,
-    autoApproved: enrollments.filter(e => e.status === 'AUTO_APPROVED').length,
   };
 
   return { enrollments, summary };

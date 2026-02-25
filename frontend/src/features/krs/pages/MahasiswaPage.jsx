@@ -13,8 +13,6 @@ import {
   UserCheck,
   Send,
   RefreshCw,
-  Zap,
-  Clock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -160,31 +158,17 @@ const StudyPlan = () => {
 
   // Enrollment stats
   const enrollmentStats = useMemo(() => {
-    const stats = { draft: 0, submitted: 0, approved: 0, rejected: 0, autoApproved: 0 };
+    const stats = { draft: 0, submitted: 0, approved: 0, rejected: 0 };
     for (const e of enrollments) {
       if (e.status === 'DRAFT') stats.draft++;
       else if (e.status === 'SUBMITTED') stats.submitted++;
       else if (e.status === 'APPROVED') stats.approved++;
       else if (e.status === 'REJECTED') stats.rejected++;
-      else if (e.status === 'AUTO_APPROVED') stats.autoApproved++;
     }
     return stats;
   }, [enrollments]);
 
   const hasDraftEnrollments = enrollmentStats.draft > 0;
-
-  // Auto-approval countdown helper
-  const getAutoApprovalCountdown = useCallback((submittedAt) => {
-    if (!submittedAt || !summary.autoApproval?.enabled || !summary.autoApproval?.deadlineDays) return null;
-    const submitted = new Date(submittedAt);
-    const deadline = new Date(submitted);
-    deadline.setDate(deadline.getDate() + summary.autoApproval.deadlineDays);
-    const now = new Date();
-    const diffMs = deadline - now;
-    if (diffMs <= 0) return { days: 0, text: 'Akan segera disetujui otomatis' };
-    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    return { days, text: `Auto-approval dalam ${days} hari` };
-  }, [summary.autoApproval]);
 
   // Total SKS (exclude rejected)
   const totalSKS = useMemo(() => {
@@ -313,7 +297,7 @@ const StudyPlan = () => {
           variant={totalSKS > (summary.maxSKS || 20) ? 'danger' : 'warning'}
         />
         <StatCard
-          value={enrollmentStats.approved + enrollmentStats.autoApproved}
+          value={enrollmentStats.approved}
           label="Disetujui"
           variant="warning"
         />
@@ -373,18 +357,6 @@ const StudyPlan = () => {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
           <AlertCircle size={20} className="text-amber-600 shrink-0" />
           <p className="text-sm text-amber-700">Dosen pembimbing akademik belum ditetapkan. Hubungi Admin untuk penugasan.</p>
-        </div>
-      )}
-
-      {/* Auto-Approval Info Banner */}
-      {summary.autoApproval?.enabled && enrollmentStats.submitted > 0 && (
-        <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-start gap-3">
-          <Zap size={18} className="text-teal-600 mt-0.5 shrink-0" />
-          <div className="text-sm text-teal-800">
-            <strong>Auto-Approval Aktif:</strong> KRS yang belum ditanggapi Dosen PA
-            akan otomatis disetujui setelah <strong>{summary.autoApproval.deadlineDays} hari</strong> sejak
-            tanggal submit.
-          </div>
         </div>
       )}
 
@@ -789,12 +761,6 @@ const StudyPlan = () => {
                         <CourseBadge variant="success">{enrollment.class?.course?.sks || 3} SKS</CourseBadge>
                         <CourseBadge variant="purple">{enrollment.class?.name || 'Kelas'}</CourseBadge>
                         <KrsStatusBadge status={enrollment.status} />
-                        {enrollment.status === 'SUBMITTED' && getAutoApprovalCountdown(enrollment.submittedAt) && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-[10px] font-medium">
-                            <Clock size={10} />
-                            {getAutoApprovalCountdown(enrollment.submittedAt).text}
-                          </span>
-                        )}
                       </div>
                       {enrollment.class?.lecturer?.name && (
                         <p className="text-sm text-slate-600">Dosen: {enrollment.class.lecturer.name}</p>
@@ -892,12 +858,6 @@ const StudyPlan = () => {
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
                           <KrsStatusBadge status={enrollment.status} />
-                          {enrollment.status === 'SUBMITTED' && getAutoApprovalCountdown(enrollment.submittedAt) && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-[10px] font-medium">
-                              <Clock size={10} />
-                              {getAutoApprovalCountdown(enrollment.submittedAt).text}
-                            </span>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -954,7 +914,7 @@ const StudyPlan = () => {
                   SKS: <strong className="text-slate-900">{totalSKS}</strong>
                 </span>
                 <span className="text-slate-600">
-                  Disetujui: <strong className="text-green-700">{enrollmentStats.approved + enrollmentStats.autoApproved}</strong>
+                  Disetujui: <strong className="text-green-700">{enrollmentStats.approved}</strong>
                 </span>
                 {enrollmentStats.rejected > 0 && (
                   <span className="text-slate-600">

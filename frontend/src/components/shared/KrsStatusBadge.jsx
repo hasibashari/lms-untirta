@@ -1,4 +1,4 @@
-import { Clock, CheckCircle, XCircle, FileEdit, Zap } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, FileEdit } from 'lucide-react';
 
 const STATUS_CONFIG = {
   DRAFT: {
@@ -20,11 +20,6 @@ const STATUS_CONFIG = {
     label: 'Ditolak',
     className: 'bg-red-50 text-red-700 border-red-200',
     icon: XCircle,
-  },
-  AUTO_APPROVED: {
-    label: 'Otomatis Disetujui',
-    className: 'bg-teal-50 text-teal-700 border-teal-200',
-    icon: Zap,
   },
 };
 

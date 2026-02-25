@@ -1,5 +1,4 @@
 import * as semesterService from './academic-semester.service.js';
-import { getAutoApprovalStats, getAutoApprovalLogDetail } from '../../jobs/krs-auto-approval.job.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
 export const getAll = async (req, res) => {
@@ -201,32 +200,3 @@ export const getRollbackImpact = async (req, res) => {
   }
 };
 
-export const getAutoApprovalDashboard = async (req, res) => {
-  try {
-    const { academicSemesterId } = req.query;
-    const stats = await getAutoApprovalStats(academicSemesterId || null);
-    sendSuccess(res, {
-      statusCode: 200,
-      message: 'Statistik auto-approval berhasil diambil',
-      data: stats,
-    });
-  } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
-  }
-};
-
-export const getAutoApprovalLog = async (req, res) => {
-  try {
-    const log = await getAutoApprovalLogDetail(req.params.logId);
-    sendSuccess(res, {
-      statusCode: 200,
-      message: 'Detail log auto-approval berhasil diambil',
-      data: log,
-    });
-  } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
-  }
-};

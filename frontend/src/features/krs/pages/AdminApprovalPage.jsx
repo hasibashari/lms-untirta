@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Loader2, AlertCircle, CheckCircle, Users,
-  Clock, BarChart3, ChevronDown, ChevronUp, Search, Zap,
+  Clock, BarChart3, ChevronDown, ChevronUp, Search,
 } from 'lucide-react';
 import { getKrsMonitoring } from '../krsService';
 import SemesterFilter from '@/components/shared/SemesterFilter';
@@ -144,15 +144,6 @@ const AdminKrsMonitoringPage = () => {
               <p className="text-xs text-slate-500">Rejected</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
-              <Zap size={20} className="text-teal-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-teal-600">{summary.autoApproved || 0}</p>
-              <p className="text-xs text-slate-500">Auto Approved</p>
-            </div>
-          </div>
         </div>
       )}
 
@@ -175,7 +166,6 @@ const AdminKrsMonitoringPage = () => {
               <option value="SUBMITTED">Submitted</option>
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
-              <option value="AUTO_APPROVED">Auto Approved</option>
             </select>
           </div>
           <div className="w-full md:w-64">

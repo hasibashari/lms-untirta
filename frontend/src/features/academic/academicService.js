@@ -78,24 +78,6 @@ export const getRollbackImpact = (id, fromStatus, toStatus) => {
 };
 
 /**
- * [ADMIN] Get auto-approval statistics and execution logs
- * @param {string|null} academicSemesterId - Filter by semester (optional)
- */
-export const getAutoApprovalStats = (academicSemesterId = null) => {
-  const params = {};
-  if (academicSemesterId) params.academicSemesterId = academicSemesterId;
-  return api.get('/academic-semesters/auto-approval/stats', { params });
-};
-
-/**
- * [ADMIN] Get detailed auto-approval execution log
- * @param {string} logId - CronJobLog ID
- */
-export const getAutoApprovalLogDetail = (logId) => {
-  return api.get(`/academic-semesters/auto-approval/logs/${logId}`);
-};
-
-/**
  * [ADMIN] Set semester as active
  */
 export const setActiveSemester = (id) => {

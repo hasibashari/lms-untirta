@@ -17,8 +17,6 @@ import {
   updateStatus,
   getCompletionReadiness,
   getRollbackImpact,
-  getAutoApprovalDashboard,
-  getAutoApprovalLog,
   setActive,
   remove,
   getStatusLogs,
@@ -32,10 +30,6 @@ router.get('/', authenticateToken, getAll);
 router.get('/active', authenticateToken, getActive);
 
 // ========== ADMIN ONLY ==========
-// Auto-approval monitoring (must be before /:id to avoid param capture)
-router.get('/auto-approval/stats', authenticateToken, authorizeRole('ADMIN'), getAutoApprovalDashboard);
-router.get('/auto-approval/logs/:logId', authenticateToken, authorizeRole('ADMIN'), getAutoApprovalLog);
-
 // Semester by ID (must be after static routes)
 router.get('/:id', authenticateToken, getById);
 

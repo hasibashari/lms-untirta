@@ -32,7 +32,6 @@ export const KRS_STATUS = {
   SUBMITTED: 'SUBMITTED',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
-  AUTO_APPROVED: 'AUTO_APPROVED',
 };
 
 /**
@@ -42,7 +41,6 @@ export const KRS_STATUS = {
  *   DRAFT      → SUBMITTED       (by MAHASISWA)
  *   SUBMITTED  → APPROVED        (by DOSPEM)
  *   SUBMITTED  → REJECTED        (by DOSPEM)
- *   SUBMITTED  → AUTO_APPROVED   (by SYSTEM)
  *   REJECTED   → DRAFT           (by MAHASISWA, revisi)
  *
  * @param {string} currentStatus
@@ -52,10 +50,9 @@ export const KRS_STATUS = {
 export const isValidStatusTransition = (currentStatus, newStatus) => {
   const transitions = {
     DRAFT: ['SUBMITTED'],
-    SUBMITTED: ['APPROVED', 'REJECTED', 'AUTO_APPROVED'],
+    SUBMITTED: ['APPROVED', 'REJECTED'],
     REJECTED: ['DRAFT'],
     APPROVED: [], // Final state
-    AUTO_APPROVED: [], // Final state
   };
 
   return transitions[currentStatus]?.includes(newStatus) ?? false;

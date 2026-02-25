@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Loader2, AlertCircle, CheckCircle, X, Calendar, Plus,
-  ChevronRight, ChevronLeft, Trash2, Star, ArrowRight, History, Clock, Zap,
+  ChevronRight, ChevronLeft, Trash2, Star, ArrowRight, History, Clock,
 } from 'lucide-react';
 import {
   getAllSemesters,
@@ -12,7 +12,6 @@ import {
   getSemesterStatusLogs,
   getCompletionReadiness,
   getRollbackImpact,
-  getAutoApprovalStats,
 } from '../../academic/academicService';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { Button } from '@/components/ui/button';
@@ -96,11 +95,6 @@ const AdminAcademicPage = () => {
   const [logModal, setLogModal] = useState(null); // { semesterId, semesterLabel }
   const [statusLogs, setStatusLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
-
-  // Auto-approval monitoring
-  const [autoApprovalStats, setAutoApprovalStats] = useState(null);
-  const [autoApprovalLoading, setAutoApprovalLoading] = useState(false);
-  const [showAutoApproval, setShowAutoApproval] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -275,20 +269,6 @@ const AdminAcademicPage = () => {
       setLogsLoading(false);
     }
   };
-
-  // Fetch auto-approval stats for the active semester
-  const fetchAutoApprovalStats = useCallback(async () => {
-    const activeSemester = semesters.find(s => s.isActive);
-    setAutoApprovalLoading(true);
-    try {
-      const res = await getAutoApprovalStats(activeSemester?.id || null);
-      setAutoApprovalStats(res.data || null);
-    } catch {
-      setAutoApprovalStats(null);
-    } finally {
-      setAutoApprovalLoading(false);
-    }
-  }, [semesters]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -567,189 +547,6 @@ const AdminAcademicPage = () => {
           })}
         </div>
       )}
-
-      {/* ==================== Auto-Approval Monitoring Panel ==================== */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <button
-          onClick={() => {
-            const next = !showAutoApproval;
-            setShowAutoApproval(next);
-            if (next && !autoApprovalStats) fetchAutoApprovalStats();
-          }}
-          className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-slate-50 transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-teal-100 flex items-center justify-center">
-              <Zap size={18} className="text-teal-600" />
-            </div>
-            <div className="text-left">
-              <h3 className="font-semibold text-slate-900 text-sm sm:text-base">Auto-Approval KRS</h3>
-              <p className="text-xs text-slate-500">Monitoring eksekusi otomatis persetujuan KRS</p>
-            </div>
-          </div>
-          <ChevronRight size={18} className={`text-slate-400 transition-transform ${showAutoApproval ? 'rotate-90' : ''}`} />
-        </button>
-
-        {showAutoApproval && (
-          <div className="border-t border-slate-200 p-4 sm:p-6 space-y-4">
-            {autoApprovalLoading && (
-              <div className="flex items-center justify-center gap-2 py-6">
-                <Loader2 size={18} className="animate-spin text-slate-400" />
-                <span className="text-sm text-slate-500">Memuat statistik...</span>
-              </div>
-            )}
-
-            {!autoApprovalLoading && !autoApprovalStats && (
-              <div className="text-center py-6">
-                <p className="text-sm text-slate-500">Belum ada data auto-approval.</p>
-              </div>
-            )}
-
-            {!autoApprovalLoading && autoApprovalStats?.summary && (
-              <>
-                {/* Summary stat cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 text-center">
-                    <p className="text-xl font-bold text-teal-700">{autoApprovalStats.summary.totalAutoApproved}</p>
-                    <p className="text-[11px] text-teal-600">Total Auto-Approved</p>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
-                    <p className="text-xl font-bold text-slate-700">{autoApprovalStats.summary.totalExecutions}</p>
-                    <p className="text-[11px] text-slate-500">Total Eksekusi</p>
-                  </div>
-                  <div className={`border rounded-lg p-3 text-center ${autoApprovalStats.summary.failedCount > 0
-                      ? 'bg-red-50 border-red-200'
-                      : 'bg-green-50 border-green-200'
-                    }`}>
-                    <p className={`text-xl font-bold ${autoApprovalStats.summary.failedCount > 0 ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                      {autoApprovalStats.summary.failedCount > 0
-                        ? autoApprovalStats.summary.failedCount
-                        : autoApprovalStats.summary.successCount}
-                    </p>
-                    <p className={`text-[11px] ${autoApprovalStats.summary.failedCount > 0 ? 'text-red-500' : 'text-green-500'
-                      }`}>
-                      {autoApprovalStats.summary.failedCount > 0 ? 'Gagal' : 'Sukses'}
-                    </p>
-                  </div>
-                  <div className={`border rounded-lg p-3 text-center ${autoApprovalStats.summary.pendingAutoApproval > 0
-                      ? 'bg-amber-50 border-amber-200'
-                      : 'bg-slate-50 border-slate-200'
-                    }`}>
-                    <p className={`text-xl font-bold ${autoApprovalStats.summary.pendingAutoApproval > 0 ? 'text-amber-600' : 'text-slate-700'
-                      }`}>
-                      {autoApprovalStats.summary.pendingAutoApproval}
-                    </p>
-                    <p className="text-[11px] text-slate-500">Pending Approval</p>
-                  </div>
-                </div>
-
-                {/* Anomaly alert */}
-                {autoApprovalStats.summary.anomalyCount > 0 && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-700">
-                      <strong>Peringatan:</strong> Terdeteksi {autoApprovalStats.summary.anomalyCount} eksekusi
-                      dengan volume tidak normal. Periksa log di bawah.
-                    </p>
-                  </div>
-                )}
-
-                {/* Next auto-approval info */}
-                {autoApprovalStats.summary.nextAutoApprovalDate && (
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Clock size={14} className="text-blue-500 shrink-0" />
-                    <p className="text-xs text-blue-700">
-                      Auto-approval berikutnya diperkirakan: <strong>{formatDate(autoApprovalStats.summary.nextAutoApprovalDate)}</strong>
-                    </p>
-                  </div>
-                )}
-
-                {/* Last execution info */}
-                {autoApprovalStats.summary.lastExecution && (
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <History size={12} />
-                    <span>
-                      Eksekusi terakhir: {formatDate(autoApprovalStats.summary.lastExecution.startedAt)}
-                      {' — '}
-                      <span className={
-                        autoApprovalStats.summary.lastExecution.status === 'SUCCESS' ? 'text-green-600 font-medium' :
-                          autoApprovalStats.summary.lastExecution.status === 'FAILED' ? 'text-red-600 font-medium' :
-                            'text-slate-600 font-medium'
-                      }>
-                        {autoApprovalStats.summary.lastExecution.status}
-                      </span>
-                      {autoApprovalStats.summary.lastExecution.processedCount > 0 &&
-                        ` (${autoApprovalStats.summary.lastExecution.processedCount} approved)`}
-                      {autoApprovalStats.summary.lastExecution.durationMs > 0 &&
-                        ` — ${autoApprovalStats.summary.lastExecution.durationMs}ms`}
-                    </span>
-                  </div>
-                )}
-
-                {/* Recent execution logs table */}
-                {autoApprovalStats.recentLogs?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Riwayat Eksekusi (Terbaru)</p>
-                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
-                      <table className="w-full text-xs">
-                        <thead className="bg-slate-50 sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2 text-left font-medium text-slate-500">Waktu</th>
-                            <th className="px-3 py-2 text-center font-medium text-slate-500">Status</th>
-                            <th className="px-3 py-2 text-center font-medium text-slate-500">Diproses</th>
-                            <th className="px-3 py-2 text-center font-medium text-slate-500">Durasi</th>
-                            <th className="px-3 py-2 text-center font-medium text-slate-500">Flag</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {autoApprovalStats.recentLogs.map((log) => (
-                            <tr key={log.id} className={`hover:bg-slate-50 ${log.isAnomalous ? 'bg-red-50/50' : ''}`}>
-                              <td className="px-3 py-2 text-slate-600">{formatDate(log.startedAt)}</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${log.status === 'SUCCESS' ? 'bg-green-100 text-green-700' :
-                                    log.status === 'FAILED' ? 'bg-red-100 text-red-700' :
-                                      log.status === 'SKIPPED' ? 'bg-slate-100 text-slate-600' :
-                                        'bg-amber-100 text-amber-700'
-                                  }`}>
-                                  {log.status}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-center font-medium text-slate-700">{log.processedCount}</td>
-                              <td className="px-3 py-2 text-center text-slate-500">{log.durationMs}ms</td>
-                              <td className="px-3 py-2 text-center">
-                                {log.isAnomalous && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-medium">
-                                    <AlertCircle size={10} /> Anomali
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Refresh button */}
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchAutoApprovalStats}
-                    disabled={autoApprovalLoading}
-                    className="text-xs"
-                  >
-                    {autoApprovalLoading ? <Loader2 size={12} className="animate-spin" /> : <History size={12} />}
-                    Refresh
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* ==================== Transition Confirmation Modal ==================== */}
       {transitionModal && (

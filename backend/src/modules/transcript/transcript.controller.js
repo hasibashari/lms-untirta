@@ -1,6 +1,5 @@
 import * as transcriptService from './transcript.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
-import prisma from '../../config/prisma.js';
 
 // --- Get Study Results (Legacy — Course-based) ---
 export const getStudyResults = async (req, res) => {
@@ -72,24 +71,6 @@ export const getStudentTranscript = async (req, res) => {
       `accessed transcript of student ${studentId} (${result.student?.name || 'unknown'}) ` +
       `at ${new Date().toISOString()}`
     );
-
-    // Non-blocking audit persistence
-    prisma.cronJobLog.create({
-      data: {
-        jobName: 'TRANSCRIPT_ACCESS_AUDIT',
-        status: 'SUCCESS',
-        processedCount: 1,
-        details: {
-          accessorId: accessor.id,
-          accessorRole: accessor.role,
-          accessorEmail: accessor.email,
-          targetStudentId: studentId,
-          targetStudentName: result.student?.name,
-          targetStudentNim: result.student?.nim,
-          timestamp: new Date().toISOString(),
-        },
-      },
-    }).catch(err => console.error('[TRANSCRIPT_AUDIT] Failed to persist audit log:', err.message));
 
     sendSuccess(res, {
       statusCode: 200,
