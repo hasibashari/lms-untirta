@@ -4,8 +4,7 @@ import z from 'zod';
 const transcriptQuerySchema = z.object({
   query: z.object({
     semester: z.string().optional(), // Filter by course semester (1-8)
-    academicYear: z.string().optional(),
-    semesterType: z.enum(['GANJIL', 'GENAP']).optional(),
+    academicSemesterId: z.string().uuid().optional(),
   }),
 });
 

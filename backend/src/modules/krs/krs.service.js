@@ -35,12 +35,8 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     where.id = { notIn: enrolledClassIds };
   }
 
-  if (filters.academicYear) {
-    where.academicYear = filters.academicYear;
-  }
-
-  if (filters.semesterType) {
-    where.semesterType = filters.semesterType;
+  if (filters.academicSemesterId) {
+    where.academicSemesterId = filters.academicSemesterId;
   }
 
   // Filter berdasarkan semester course (jika diberikan)
@@ -52,8 +48,14 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     where,
     select: {
       id: true,
-      academicYear: true,
-      semesterType: true,
+      academicSemesterId: true,
+      academicSemester: {
+        select: {
+          id: true,
+          academicYear: true,
+          semesterType: true,
+        },
+      },
       section: true,
       schedule: true,
       room: true,
@@ -90,8 +92,9 @@ const getAvailableClasses = async (studentId, filters = {}) => {
 
   return classes.map(cls => ({
     id: cls.id,
-    academicYear: cls.academicYear,
-    semesterType: cls.semesterType,
+    academicSemesterId: cls.academicSemesterId,
+    academicYear: cls.academicSemester.academicYear,
+    semesterType: cls.academicSemester.semesterType,
     section: cls.section,
     schedule: cls.schedule,
     room: cls.room,
@@ -129,8 +132,7 @@ const enrollClass = async (studentId, classId) => {
       id: true,
       capacity: true,
       isEnrollmentOpen: true,
-      academicYear: true,
-      semesterType: true,
+      academicSemesterId: true,
       courseId: true,
       course: {
         select: {
@@ -176,14 +178,13 @@ const enrollClass = async (studentId, classId) => {
     throw new Error('Anda sudah terdaftar di kelas ini');
   }
 
-  // 4. Cek apakah sudah mengambil course yang sama di semester & tahun yang sama
+  // 4. Cek apakah sudah mengambil course yang sama di semester yang sama
   const duplicateCourse = await prisma.krsEnrollment.findFirst({
     where: {
       studentId,
       class: {
         courseId: classData.courseId,
-        academicYear: classData.academicYear,
-        semesterType: classData.semesterType,
+        academicSemesterId: classData.academicSemesterId,
       },
     },
     select: {
@@ -205,8 +206,7 @@ const enrollClass = async (studentId, classId) => {
     where: {
       studentId,
       class: {
-        academicYear: classData.academicYear,
-        semesterType: classData.semesterType,
+        academicSemesterId: classData.academicSemesterId,
       },
       status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
     },
@@ -251,8 +251,13 @@ const enrollClass = async (studentId, classId) => {
           section: true,
           schedule: true,
           room: true,
-          academicYear: true,
-          semesterType: true,
+          academicSemesterId: true,
+          academicSemester: {
+            select: {
+              academicYear: true,
+              semesterType: true,
+            },
+          },
           course: {
             select: {
               id: true,
@@ -339,19 +344,13 @@ const dropClass = async (studentId, classId) => {
 
 /**
  * Ambil daftar KRS mahasiswa (enrolled classes).
- * Bisa difilter berdasarkan academicYear dan semesterType.
+ * Bisa difilter berdasarkan academicSemesterId.
  */
 const getMyKRS = async (studentId, filters = {}) => {
   const where = { studentId };
 
-  if (filters.academicYear || filters.semesterType) {
-    where.class = {};
-    if (filters.academicYear) {
-      where.class.academicYear = filters.academicYear;
-    }
-    if (filters.semesterType) {
-      where.class.semesterType = filters.semesterType;
-    }
+  if (filters.academicSemesterId) {
+    where.class = { academicSemesterId: filters.academicSemesterId };
   }
 
   const enrollments = await prisma.krsEnrollment.findMany({
@@ -368,8 +367,13 @@ const getMyKRS = async (studentId, filters = {}) => {
           section: true,
           schedule: true,
           room: true,
-          academicYear: true,
-          semesterType: true,
+          academicSemesterId: true,
+          academicSemester: {
+            select: {
+              academicYear: true,
+              semesterType: true,
+            },
+          },
           course: {
             select: {
               id: true,
@@ -422,15 +426,24 @@ const getMyKRS = async (studentId, filters = {}) => {
 /**
  * Submit KRS — ubah semua enrollment DRAFT di semester tertentu menjadi SUBMITTED.
  */
-const submitKRS = async (studentId, academicYear, semesterType) => {
+const submitKRS = async (studentId, academicSemesterId) => {
+  // Validasi semester akademik ada
+  const semester = await prisma.academicSemester.findUnique({
+    where: { id: academicSemesterId },
+    select: { id: true, academicYear: true, semesterType: true },
+  });
+
+  if (!semester) {
+    throw new Error('Semester akademik tidak ditemukan');
+  }
+
   // Cari semua enrollment DRAFT di semester ini
   const draftEnrollments = await prisma.krsEnrollment.findMany({
     where: {
       studentId,
       status: KRS_STATUS.DRAFT,
       class: {
-        academicYear,
-        semesterType,
+        academicSemesterId,
       },
     },
     select: { id: true },
@@ -447,14 +460,27 @@ const submitKRS = async (studentId, academicYear, semesterType) => {
     },
     data: {
       status: KRS_STATUS.SUBMITTED,
+      submittedAt: new Date(),
     },
+  });
+
+  // Buat audit log untuk setiap enrollment
+  await prisma.krsApprovalLog.createMany({
+    data: draftEnrollments.map(e => ({
+      enrollmentId: e.id,
+      fromStatus: KRS_STATUS.DRAFT,
+      toStatus: KRS_STATUS.SUBMITTED,
+      actorId: studentId,
+      actorType: 'MAHASISWA',
+    })),
   });
 
   return {
     message: `${result.count} mata kuliah berhasil disubmit untuk persetujuan`,
     submittedCount: result.count,
-    academicYear,
-    semesterType,
+    academicSemesterId,
+    academicYear: semester.academicYear,
+    semesterType: semester.semesterType,
   };
 };
 
@@ -462,19 +488,27 @@ const submitKRS = async (studentId, academicYear, semesterType) => {
 
 /**
  * Update status satu KRS enrollment (approve/reject).
- * Hanya bisa dilakukan oleh Dosen PA atau Admin.
+ * Hanya bisa dilakukan oleh Dosen Pembimbing (Dospem) yang di-assign.
+ *
+ * Jika status baru = APPROVED, otomatis buat record di tabel Enrollment (bridge)
+ * agar mahasiswa bisa mengakses assignment di course tersebut.
  */
-const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null) => {
+const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, currentUser = null) => {
   const enrollment = await prisma.krsEnrollment.findUnique({
     where: { id: enrollmentId },
     select: {
       id: true,
       status: true,
       studentId: true,
+      classId: true,
+      student: {
+        select: { advisorId: true, name: true },
+      },
       class: {
         select: {
+          courseId: true,
           section: true,
-          course: { select: { title: true, code: true } },
+          course: { select: { id: true, title: true, code: true } },
         },
       },
     },
@@ -484,6 +518,21 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null) => {
     throw new Error('KRS enrollment tidak ditemukan');
   }
 
+  // AUTHORIZATION: Hanya Dospem yang di-assign yang boleh approve/reject
+  if (currentUser) {
+    if (currentUser.role === 'ADMIN') {
+      throw new Error('Admin tidak dapat menyetujui KRS secara langsung. Hubungi Dosen Pembimbing.');
+    }
+    if (currentUser.role === 'DOSEN') {
+      if (!currentUser.isDospem) {
+        throw new Error('Anda tidak terdaftar sebagai Dosen Pembimbing');
+      }
+      if (enrollment.student.advisorId !== currentUser.id) {
+        throw new Error('Anda bukan Dosen Pembimbing mahasiswa ini');
+      }
+    }
+  }
+
   // Validasi transisi status
   if (!isValidStatusTransition(enrollment.status, newStatus)) {
     throw new Error(
@@ -491,55 +540,212 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null) => {
     );
   }
 
-  const updated = await prisma.krsEnrollment.update({
-    where: { id: enrollmentId },
-    data: {
-      status: newStatus,
-      note: note || null,
-    },
+  // Gunakan transaction agar konsisten
+  const updated = await prisma.$transaction(async (tx) => {
+    // 1. Update status KRS enrollment
+    const result = await tx.krsEnrollment.update({
+      where: { id: enrollmentId },
+      data: {
+        status: newStatus,
+        note: note || null,
+        approvedAt: newStatus === KRS_STATUS.APPROVED ? new Date() : undefined,
+        approvedBy: newStatus === KRS_STATUS.APPROVED && currentUser ? currentUser.id : undefined,
+      },
+      select: {
+        id: true,
+        status: true,
+        note: true,
+        updatedAt: true,
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        class: {
+          select: {
+            section: true,
+            courseId: true,
+            course: {
+              select: { title: true, code: true },
+            },
+          },
+        },
+      },
+    });
+
+    // 2. Jika APPROVED, buat bridge Enrollment agar assignment module bisa authorize
+    if (newStatus === KRS_STATUS.APPROVED) {
+      await tx.enrollment.upsert({
+        where: {
+          userId_courseId: {
+            userId: enrollment.studentId,
+            courseId: enrollment.class.courseId,
+          },
+        },
+        create: {
+          userId: enrollment.studentId,
+          courseId: enrollment.class.courseId,
+        },
+        update: {}, // do nothing if already exists
+      });
+    }
+
+    // 3. Buat audit log
+    await tx.krsApprovalLog.create({
+      data: {
+        enrollmentId,
+        fromStatus: enrollment.status,
+        toStatus: newStatus,
+        actorId: currentUser?.id || null,
+        actorType: currentUser ? 'DOSPEM' : 'SYSTEM',
+        note: note || null,
+      },
+    });
+
+    return result;
+  });
+
+  return updated;
+};
+
+// ======================== BULK UPDATE STATUS (ADMIN) ========================
+
+/**
+ * Bulk update status KRS enrollments (approve/reject multiple).
+ * Hanya bisa dilakukan oleh Dospem untuk mahasiswa bimbingannya.
+ * Menggunakan transaction untuk konsistensi data.
+ */
+const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null, currentUser = null) => {
+  if (!enrollmentIds || enrollmentIds.length === 0) {
+    throw new Error('Tidak ada enrollment yang dipilih');
+  }
+
+  if (enrollmentIds.length > 50) {
+    throw new Error('Maksimal 50 enrollment per batch');
+  }
+
+  // Fetch all enrollments
+  const enrollments = await prisma.krsEnrollment.findMany({
+    where: { id: { in: enrollmentIds } },
     select: {
       id: true,
       status: true,
-      note: true,
-      updatedAt: true,
+      studentId: true,
       student: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
+        select: { advisorId: true },
       },
       class: {
         select: {
+          courseId: true,
           section: true,
-          course: {
-            select: { title: true, code: true },
-          },
+          course: { select: { title: true, code: true } },
         },
       },
     },
   });
 
-  return updated;
+  if (enrollments.length !== enrollmentIds.length) {
+    throw new Error('Beberapa enrollment tidak ditemukan');
+  }
+
+  // AUTHORIZATION: Dospem hanya bisa approve mahasiswa bimbingannya
+  if (currentUser && currentUser.role === 'DOSEN') {
+    if (!currentUser.isDospem) {
+      throw new Error('Anda tidak terdaftar sebagai Dosen Pembimbing');
+    }
+    const unauthorized = enrollments.filter(e => e.student.advisorId !== currentUser.id);
+    if (unauthorized.length > 0) {
+      throw new Error('Beberapa mahasiswa bukan bimbingan Anda');
+    }
+  }
+  if (currentUser && currentUser.role === 'ADMIN') {
+    throw new Error('Admin tidak dapat menyetujui KRS secara langsung');
+  }
+
+  // Validate all transitions
+  const invalidTransitions = enrollments.filter(
+    e => !isValidStatusTransition(e.status, newStatus)
+  );
+
+  if (invalidTransitions.length > 0) {
+    throw new Error(
+      `${invalidTransitions.length} enrollment tidak dapat diubah ke status ${newStatus}`
+    );
+  }
+
+  // Execute in transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Bulk update KRS status
+    await tx.krsEnrollment.updateMany({
+      where: { id: { in: enrollmentIds } },
+      data: {
+        status: newStatus,
+        note: note || null,
+        approvedAt: newStatus === KRS_STATUS.APPROVED ? new Date() : undefined,
+        approvedBy: newStatus === KRS_STATUS.APPROVED && currentUser ? currentUser.id : undefined,
+      },
+    });
+
+    // 2. If APPROVED, create bridge Enrollment records
+    if (newStatus === KRS_STATUS.APPROVED) {
+      for (const enrollment of enrollments) {
+        await tx.enrollment.upsert({
+          where: {
+            userId_courseId: {
+              userId: enrollment.studentId,
+              courseId: enrollment.class.courseId,
+            },
+          },
+          create: {
+            userId: enrollment.studentId,
+            courseId: enrollment.class.courseId,
+          },
+          update: {},
+        });
+      }
+    }
+
+    // 3. Create audit logs
+    await tx.krsApprovalLog.createMany({
+      data: enrollments.map(e => ({
+        enrollmentId: e.id,
+        fromStatus: e.status,
+        toStatus: newStatus,
+        actorId: currentUser?.id || null,
+        actorType: currentUser ? 'DOSPEM' : 'SYSTEM',
+        note: note || null,
+      })),
+    });
+
+    return { count: enrollmentIds.length };
+  });
+
+  return {
+    message: `${result.count} KRS enrollment berhasil di-${newStatus === 'APPROVED' ? 'approve' : 'reject'}`,
+    updatedCount: result.count,
+    status: newStatus,
+  };
 };
 
 // ======================== PENDING KRS (DOSEN/ADMIN VIEW) ========================
 
 /**
  * Ambil daftar KRS yang menunggu persetujuan (status SUBMITTED).
- * Untuk tampilan Dosen PA / Admin.
+ * Dospem hanya melihat mahasiswa bimbingannya.
+ * Admin melihat semua (monitoring).
  */
-const getPendingKRS = async (filters = {}) => {
+const getPendingKRS = async (filters = {}, currentUser = null) => {
   const where = { status: KRS_STATUS.SUBMITTED };
 
-  if (filters.academicYear || filters.semesterType) {
-    where.class = {};
-    if (filters.academicYear) {
-      where.class.academicYear = filters.academicYear;
-    }
-    if (filters.semesterType) {
-      where.class.semesterType = filters.semesterType;
-    }
+  // Dospem hanya melihat mahasiswa bimbingannya
+  if (currentUser && currentUser.role === 'DOSEN') {
+    where.student = { advisorId: currentUser.id };
+  }
+
+  if (filters.academicSemesterId) {
+    where.class = { academicSemesterId: filters.academicSemesterId };
   }
 
   const enrollments = await prisma.krsEnrollment.findMany({
@@ -559,8 +765,13 @@ const getPendingKRS = async (filters = {}) => {
         select: {
           id: true,
           section: true,
-          academicYear: true,
-          semesterType: true,
+          academicSemesterId: true,
+          academicSemester: {
+            select: {
+              academicYear: true,
+              semesterType: true,
+            },
+          },
           course: {
             select: {
               id: true,
@@ -806,6 +1017,160 @@ const getMyKRSLegacy = async (studentId, semester = null) => {
   }));
 };
 
+// ======================== ADVISORY (DOSPEM) ========================
+
+/**
+ * Ambil daftar mahasiswa bimbingan Dospem beserta status KRS mereka.
+ */
+const getAdvisoryStudents = async (dosenId, filters = {}) => {
+  const where = { advisorId: dosenId, role: 'MAHASISWA' };
+
+  const students = await prisma.user.findMany({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      krsEnrollments: {
+        where: filters.academicSemesterId ? {
+          class: { academicSemesterId: filters.academicSemesterId },
+        } : undefined,
+        select: {
+          id: true,
+          status: true,
+          submittedAt: true,
+          class: {
+            select: {
+              id: true,
+              section: true,
+              academicSemesterId: true,
+              academicSemester: {
+                select: {
+                  academicYear: true,
+                  semesterType: true,
+                },
+              },
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                  code: true,
+                  sks: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  // Hitung statistik
+  let totalPending = 0;
+  let totalApproved = 0;
+  let totalRejected = 0;
+
+  const result = students.map(s => {
+    const pending = s.krsEnrollments.filter(e => e.status === 'SUBMITTED').length;
+    const approved = s.krsEnrollments.filter(e => e.status === 'APPROVED' || e.status === 'AUTO_APPROVED').length;
+    const rejected = s.krsEnrollments.filter(e => e.status === 'REJECTED').length;
+    totalPending += pending;
+    totalApproved += approved;
+    totalRejected += rejected;
+
+    return {
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      enrollments: s.krsEnrollments,
+      stats: { pending, approved, rejected, total: s.krsEnrollments.length },
+    };
+  });
+
+  return {
+    students: result,
+    summary: {
+      totalStudents: students.length,
+      totalPending,
+      totalApproved,
+      totalRejected,
+    },
+  };
+};
+
+// ======================== KRS MONITORING (ADMIN) ========================
+
+/**
+ * Monitoring KRS untuk Admin — melihat semua KRS grouped by Dospem.
+ */
+const getKrsMonitoring = async (filters = {}) => {
+  const classWhere = {};
+  if (filters.academicSemesterId) classWhere.academicSemesterId = filters.academicSemesterId;
+
+  const enrollments = await prisma.krsEnrollment.findMany({
+    where: {
+      ...(Object.keys(classWhere).length > 0 ? { class: classWhere } : {}),
+    },
+    select: {
+      id: true,
+      status: true,
+      submittedAt: true,
+      approvedAt: true,
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          advisorId: true,
+          advisor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      class: {
+        select: {
+          id: true,
+          section: true,
+          academicSemesterId: true,
+          academicSemester: {
+            select: {
+              academicYear: true,
+              semesterType: true,
+            },
+          },
+          course: {
+            select: {
+              id: true,
+              title: true,
+              code: true,
+              sks: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Group by status for summary
+  const summary = {
+    total: enrollments.length,
+    draft: enrollments.filter(e => e.status === 'DRAFT').length,
+    submitted: enrollments.filter(e => e.status === 'SUBMITTED').length,
+    approved: enrollments.filter(e => e.status === 'APPROVED').length,
+    rejected: enrollments.filter(e => e.status === 'REJECTED').length,
+    autoApproved: enrollments.filter(e => e.status === 'AUTO_APPROVED').length,
+  };
+
+  return { enrollments, summary };
+};
+
 export {
   // New KRS (Class-based)
   getAvailableClasses,
@@ -814,7 +1179,11 @@ export {
   getMyKRS,
   submitKRS,
   updateEnrollmentStatus,
+  bulkUpdateEnrollmentStatus,
   getPendingKRS,
+  // Advisory (Dospem)
+  getAdvisoryStudents,
+  getKrsMonitoring,
   // Legacy compat (Course-based, for existing frontend)
   getAvailableCoursesLegacy,
   selfEnrollCourseLegacy,

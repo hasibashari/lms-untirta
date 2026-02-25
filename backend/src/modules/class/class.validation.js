@@ -5,12 +5,7 @@ const createClassSchema = z.object({
   body: z.object({
     courseId: z.string().uuid('Course ID tidak valid'),
     lecturerId: z.string().uuid('Lecturer ID tidak valid'),
-    academicYear: z
-      .string()
-      .regex(/^\d{4}\/\d{4}$/, 'Format tahun akademik harus YYYY/YYYY (contoh: 2025/2026)'),
-    semesterType: z.enum(['GANJIL', 'GENAP'], {
-      errorMap: () => ({ message: 'Semester harus GANJIL atau GENAP' }),
-    }),
+    academicSemesterId: z.string().uuid('Academic Semester ID tidak valid'),
     section: z
       .string()
       .min(1, 'Section minimal 1 karakter')
@@ -26,15 +21,7 @@ const createClassSchema = z.object({
 const updateClassSchema = z.object({
   body: z.object({
     lecturerId: z.string().uuid('Lecturer ID tidak valid').optional(),
-    academicYear: z
-      .string()
-      .regex(/^\d{4}\/\d{4}$/, 'Format tahun akademik harus YYYY/YYYY (contoh: 2025/2026)')
-      .optional(),
-    semesterType: z
-      .enum(['GANJIL', 'GENAP'], {
-        errorMap: () => ({ message: 'Semester harus GANJIL atau GENAP' }),
-      })
-      .optional(),
+    academicSemesterId: z.string().uuid('Academic Semester ID tidak valid').optional(),
     section: z
       .string()
       .min(1, 'Section minimal 1 karakter')
@@ -57,8 +44,7 @@ const toggleEnrollmentSchema = z.object({
 // --- Schema: Query filter ---
 const queryFilterSchema = z.object({
   query: z.object({
-    academicYear: z.string().optional(),
-    semesterType: z.enum(['GANJIL', 'GENAP']).optional(),
+    academicSemesterId: z.string().uuid().optional(),
     courseId: z.string().uuid().optional(),
   }),
 });

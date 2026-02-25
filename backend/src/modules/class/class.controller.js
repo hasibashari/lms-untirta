@@ -30,8 +30,7 @@ export const create = async (req, res) => {
 export const getAll = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
       courseId: req.query.courseId,
     };
     const classes = await classService.getAllClasses(filters);
@@ -64,8 +63,7 @@ export const getById = async (req, res) => {
 export const getMyClasses = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
     };
     const classes = await classService.getClassesByLecturer(req.user.id, filters);
     sendSuccess(res, {
@@ -81,8 +79,7 @@ export const getMyClasses = async (req, res) => {
 export const getByCourse = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
     };
     const classes = await classService.getClassesByCourse(req.params.courseId, filters);
     sendSuccess(res, {
@@ -98,8 +95,7 @@ export const getByCourse = async (req, res) => {
 export const getOpen = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
       courseId: req.query.courseId,
     };
     const classes = await classService.getOpenClasses(filters);

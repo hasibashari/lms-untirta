@@ -17,10 +17,7 @@ const dropClassSchema = z.object({
 // --- Schema: Submit KRS (bulk status change) ---
 const submitKrsSchema = z.object({
   body: z.object({
-    academicYear: z.string().regex(/^\d{4}\/\d{4}$/, 'Format tahun akademik harus YYYY/YYYY'),
-    semesterType: z.enum(['GANJIL', 'GENAP'], {
-      errorMap: () => ({ message: 'Semester harus GANJIL atau GENAP' }),
-    }),
+    academicSemesterId: z.string().uuid('Academic Semester ID tidak valid'),
   }),
 });
 
@@ -37,11 +34,21 @@ const updateStatusSchema = z.object({
   }),
 });
 
+// --- Schema: Bulk Update Status KRS (Admin) ---
+const bulkUpdateStatusSchema = z.object({
+  body: z.object({
+    enrollmentIds: z.array(z.string().uuid('Enrollment ID tidak valid')).min(1).max(50),
+    status: z.enum(['APPROVED', 'REJECTED'], {
+      errorMap: () => ({ message: 'Status harus APPROVED atau REJECTED' }),
+    }),
+    note: z.string().max(500).optional(),
+  }),
+});
+
 // --- Schema: Query filter ---
 const krsQuerySchema = z.object({
   query: z.object({
-    academicYear: z.string().optional(),
-    semesterType: z.enum(['GANJIL', 'GENAP']).optional(),
+    academicSemesterId: z.string().uuid().optional(),
     semester: z.string().optional(),
   }),
 });
@@ -51,5 +58,6 @@ export {
   dropClassSchema,
   submitKrsSchema,
   updateStatusSchema,
+  bulkUpdateStatusSchema,
   krsQuerySchema,
 };

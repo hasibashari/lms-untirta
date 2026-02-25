@@ -6,6 +6,7 @@ import {
   getTranscriptByClass,
   getAcademicSummary,
   getStudentTranscript,
+  getStudentList,
 } from './transcript.controller.js';
 
 const router = express.Router();
@@ -41,6 +42,14 @@ router.get(
 );
 
 // ========== DOSEN / ADMIN ROUTES ==========
+
+// GET /api/transcript/students — Daftar semua mahasiswa (Admin)
+router.get(
+  '/students',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  getStudentList
+);
 
 // GET /api/transcript/student/:studentId — Lihat transkrip mahasiswa tertentu
 router.get(

@@ -9,15 +9,22 @@ import prisma from '../../config/prisma.js';
 // --- Shared select projection ---
 const classSelect = {
   id: true,
-  academicYear: true,
-  semesterType: true,
   section: true,
   schedule: true,
   room: true,
   capacity: true,
   isEnrollmentOpen: true,
+  academicSemesterId: true,
   createdAt: true,
   updatedAt: true,
+  academicSemester: {
+    select: {
+      id: true,
+      academicYear: true,
+      semesterType: true,
+      status: true,
+    },
+  },
   course: {
     select: {
       id: true,
@@ -43,7 +50,8 @@ const classSelect = {
  * Validasi:
  *  1. Course harus ada
  *  2. Lecturer harus ada dan ber-role DOSEN
- *  3. Kombinasi (courseId, academicYear, semesterType, section) harus unik
+ *  3. AcademicSemester harus ada
+ *  4. Kombinasi (courseId, academicSemesterId, section) harus unik
  */
 const createClass = async (data) => {
   // 1. Validasi Course
@@ -70,13 +78,22 @@ const createClass = async (data) => {
     throw new Error('User yang dipilih bukan dosen');
   }
 
-  // 3. Cek duplikasi (unique constraint)
+  // 3. Validasi AcademicSemester
+  const semester = await prisma.academicSemester.findUnique({
+    where: { id: data.academicSemesterId },
+    select: { id: true, academicYear: true, semesterType: true },
+  });
+
+  if (!semester) {
+    throw new Error('Semester akademik tidak ditemukan');
+  }
+
+  // 4. Cek duplikasi (unique constraint)
   const existing = await prisma.class.findUnique({
     where: {
-      courseId_academicYear_semesterType_section: {
+      courseId_academicSemesterId_section: {
         courseId: data.courseId,
-        academicYear: data.academicYear,
-        semesterType: data.semesterType,
+        academicSemesterId: data.academicSemesterId,
         section: data.section,
       },
     },
@@ -85,17 +102,16 @@ const createClass = async (data) => {
 
   if (existing) {
     throw new Error(
-      `Kelas ${data.section} untuk mata kuliah ini di semester ${data.semesterType} ${data.academicYear} sudah ada`
+      `Kelas ${data.section} untuk mata kuliah ini di semester ${semester.semesterType} ${semester.academicYear} sudah ada`
     );
   }
 
-  // 4. Create
+  // 5. Create
   return prisma.class.create({
     data: {
       courseId: data.courseId,
       lecturerId: data.lecturerId,
-      academicYear: data.academicYear,
-      semesterType: data.semesterType,
+      academicSemesterId: data.academicSemesterId,
       section: data.section,
       schedule: data.schedule || null,
       room: data.room || null,
@@ -110,17 +126,13 @@ const createClass = async (data) => {
 
 /**
  * Ambil semua kelas offering, dengan filter opsional.
- * Filter: academicYear, semesterType, courseId
+ * Filter: academicSemesterId, courseId
  */
 const getAllClasses = async (filters = {}) => {
   const where = {};
 
-  if (filters.academicYear) {
-    where.academicYear = filters.academicYear;
-  }
-
-  if (filters.semesterType) {
-    where.semesterType = filters.semesterType;
+  if (filters.academicSemesterId) {
+    where.academicSemesterId = filters.academicSemesterId;
   }
 
   if (filters.courseId) {
@@ -133,14 +145,13 @@ const getAllClasses = async (filters = {}) => {
       ...classSelect,
       _count: {
         select: {
-          // Count placeholder — saat ini Class belum punya relasi enrollment langsung.
-          // Nantinya bisa ditambahkan ketika KRS terhubung ke Class.
+          krsEnrollments: true,
         },
       },
     },
     orderBy: [
-      { academicYear: 'desc' },
-      { semesterType: 'asc' },
+      { academicSemester: { academicYear: 'desc' } },
+      { academicSemester: { semesterType: 'asc' } },
       { course: { code: 'asc' } },
       { section: 'asc' },
     ],
@@ -169,20 +180,16 @@ const getClassById = async (classId) => {
 const getClassesByLecturer = async (lecturerId, filters = {}) => {
   const where = { lecturerId };
 
-  if (filters.academicYear) {
-    where.academicYear = filters.academicYear;
-  }
-
-  if (filters.semesterType) {
-    where.semesterType = filters.semesterType;
+  if (filters.academicSemesterId) {
+    where.academicSemesterId = filters.academicSemesterId;
   }
 
   return prisma.class.findMany({
     where,
     select: classSelect,
     orderBy: [
-      { academicYear: 'desc' },
-      { semesterType: 'asc' },
+      { academicSemester: { academicYear: 'desc' } },
+      { academicSemester: { semesterType: 'asc' } },
       { course: { code: 'asc' } },
       { section: 'asc' },
     ],
@@ -196,20 +203,16 @@ const getClassesByLecturer = async (lecturerId, filters = {}) => {
 const getClassesByCourse = async (courseId, filters = {}) => {
   const where = { courseId };
 
-  if (filters.academicYear) {
-    where.academicYear = filters.academicYear;
-  }
-
-  if (filters.semesterType) {
-    where.semesterType = filters.semesterType;
+  if (filters.academicSemesterId) {
+    where.academicSemesterId = filters.academicSemesterId;
   }
 
   return prisma.class.findMany({
     where,
     select: classSelect,
     orderBy: [
-      { academicYear: 'desc' },
-      { semesterType: 'asc' },
+      { academicSemester: { academicYear: 'desc' } },
+      { academicSemester: { semesterType: 'asc' } },
       { section: 'asc' },
     ],
   });
@@ -222,12 +225,8 @@ const getClassesByCourse = async (courseId, filters = {}) => {
 const getOpenClasses = async (filters = {}) => {
   const where = { isEnrollmentOpen: true };
 
-  if (filters.academicYear) {
-    where.academicYear = filters.academicYear;
-  }
-
-  if (filters.semesterType) {
-    where.semesterType = filters.semesterType;
+  if (filters.academicSemesterId) {
+    where.academicSemesterId = filters.academicSemesterId;
   }
 
   if (filters.courseId) {
@@ -251,7 +250,8 @@ const getOpenClasses = async (filters = {}) => {
  * Validasi:
  *  1. Kelas harus ada
  *  2. Jika ganti lecturer, harus ada dan ber-role DOSEN
- *  3. Jika ganti section/semester/year, cek uniqueness
+ *  3. Jika ganti academicSemesterId, semester harus ada
+ *  4. Jika ganti section/semester, cek uniqueness
  */
 const updateClass = async (classId, data) => {
   // 1. Cek kelas ada
@@ -260,8 +260,7 @@ const updateClass = async (classId, data) => {
     select: {
       id: true,
       courseId: true,
-      academicYear: true,
-      semesterType: true,
+      academicSemesterId: true,
       section: true,
     },
   });
@@ -286,23 +285,31 @@ const updateClass = async (classId, data) => {
     }
   }
 
-  // 3. Cek uniqueness jika field pembentuk unique constraint berubah
-  const newAcademicYear = data.academicYear || existingClass.academicYear;
-  const newSemesterType = data.semesterType || existingClass.semesterType;
+  // 3. Validasi academicSemester (jika diubah)
+  if (data.academicSemesterId) {
+    const semester = await prisma.academicSemester.findUnique({
+      where: { id: data.academicSemesterId },
+      select: { id: true },
+    });
+    if (!semester) {
+      throw new Error('Semester akademik tidak ditemukan');
+    }
+  }
+
+  // 4. Cek uniqueness jika field pembentuk unique constraint berubah
+  const newAcademicSemesterId = data.academicSemesterId || existingClass.academicSemesterId;
   const newSection = data.section || existingClass.section;
 
   const hasUniqueFieldChange =
-    newAcademicYear !== existingClass.academicYear ||
-    newSemesterType !== existingClass.semesterType ||
+    newAcademicSemesterId !== existingClass.academicSemesterId ||
     newSection !== existingClass.section;
 
   if (hasUniqueFieldChange) {
     const duplicate = await prisma.class.findUnique({
       where: {
-        courseId_academicYear_semesterType_section: {
+        courseId_academicSemesterId_section: {
           courseId: existingClass.courseId,
-          academicYear: newAcademicYear,
-          semesterType: newSemesterType,
+          academicSemesterId: newAcademicSemesterId,
           section: newSection,
         },
       },
@@ -311,12 +318,12 @@ const updateClass = async (classId, data) => {
 
     if (duplicate && duplicate.id !== classId) {
       throw new Error(
-        `Kelas ${newSection} untuk mata kuliah ini di semester ${newSemesterType} ${newAcademicYear} sudah ada`
+        `Kelas ${newSection} untuk mata kuliah ini di semester ini sudah ada`
       );
     }
   }
 
-  // 4. Update
+  // 5. Update
   return prisma.class.update({
     where: { id: classId },
     data,

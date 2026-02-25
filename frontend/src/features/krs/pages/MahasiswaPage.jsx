@@ -11,8 +11,11 @@ import {
   ArrowDownUp,
   Printer,
   Trash2,
+  UserCheck,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { getAvailableCourses, enrollCourse, unenrollCourse, getMyKRS } from '../krsService';
+import { getActiveSemester } from '@/features/academic/academicService';
 import { Button } from '@/components/ui/button';
 import StatCard from '@/components/ui/StatCard';
 import InfoBanner from '@/components/ui/InfoBanner';
@@ -54,9 +57,12 @@ import {
  * 5. Section: DAFTAR RENCANA STUDI - kelas yang sudah diambil
  */
 const StudyPlan = () => {
+  const { user } = useAuth();
+
   // State untuk data
   const [availableCourses, setAvailableCourses] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [activeSemester, setActiveSemester] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,13 +102,15 @@ const StudyPlan = () => {
       setError(null);
 
       try {
-        const [availableRes, enrolledRes] = await Promise.all([
+        const [availableRes, enrolledRes, semesterRes] = await Promise.all([
           getAvailableCourses(),
-          getMyKRS()
+          getMyKRS(),
+          getActiveSemester(),
         ]);
 
-        setAvailableCourses(availableRes.data || []);
-        setEnrolledCourses(enrolledRes.data || []);
+        setAvailableCourses(Array.isArray(availableRes?.data) ? availableRes.data : []);
+        setEnrolledCourses(Array.isArray(enrolledRes?.data) ? enrolledRes.data : []);
+        setActiveSemester(semesterRes?.data?.data || semesterRes?.data || null);
       } catch (err) {
         setError(err?.message || 'Gagal memuat data');
       } finally {
@@ -114,10 +122,10 @@ const StudyPlan = () => {
   }, []);
 
   // IDs of enrolled courses
-  const enrolledCourseIds = useMemo(() =>
-    new Set(enrolledCourses.map(e => e.courseId || e.course?.id)),
-    [enrolledCourses]
-  );
+  const enrolledCourseIds = useMemo(() => {
+    const courses = Array.isArray(enrolledCourses) ? enrolledCourses : [];
+    return new Set(courses.map(e => e.courseId || e.course?.id));
+  }, [enrolledCourses]);
 
   // Filter available courses
   const availableCoursesFiltered = useMemo(() =>
@@ -198,10 +206,10 @@ const StudyPlan = () => {
   };
 
   // Calculate total SKS
-  const totalSKSDitempuh = useMemo(() =>
-    enrolledCourses.reduce((sum, e) => sum + (e.course?.sks || 3), 0),
-    [enrolledCourses]
-  );
+  const totalSKSDitempuh = useMemo(() => {
+    const courses = Array.isArray(enrolledCourses) ? enrolledCourses : [];
+    return courses.reduce((sum, e) => sum + (e.course?.sks || 3), 0);
+  }, [enrolledCourses]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -251,7 +259,9 @@ const StudyPlan = () => {
       {/* Page Header */}
       <div>
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
-          Rencana Studi Semester 2025/2026 Genap
+          {activeSemester
+            ? `Rencana Studi Semester ${activeSemester.academicYear} ${activeSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
+            : 'Rencana Studi'}
         </h1>
         <p className="text-slate-500 mt-1 text-sm sm:text-base">
           Dashboard &gt; Rencana Studi
@@ -282,9 +292,29 @@ const StudyPlan = () => {
         />
       </div>
 
+      {/* Dosen Pembimbing Info */}
+      {user?.advisor ? (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+            <UserCheck size={20} className="text-blue-600" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-blue-800">Dosen Pembimbing Akademik</p>
+            <p className="text-sm text-blue-700">{user.advisor.name} &mdash; {user.advisor.email}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle size={20} className="text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-700">Dosen pembimbing akademik belum ditetapkan. Hubungi Admin untuk penugasan.</p>
+        </div>
+      )}
+
       {/* Info Banner - Masa Pengambilan KRS */}
       <InfoBanner variant="info">
-        Masa pengambilan Rencana Studi: 20 Januari 2026 pukul 15:00 sampai 09 Februari 2026 pukul 23:59
+        {activeSemester
+          ? `Masa pengambilan Rencana Studi semester ${activeSemester.academicYear} ${activeSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'} sedang berlangsung.`
+          : 'Masa pengambilan Rencana Studi sedang berlangsung.'}
       </InfoBanner>
 
       {/* Alert Messages */}

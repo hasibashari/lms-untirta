@@ -3,12 +3,29 @@ import { Globe } from 'lucide-react';
 /**
  * Logo Component
  * Reusable brand logo. Accepts `variant` and `className` to allow
- * visual tweaks (e.g. footer uses white text).
+ * visual tweaks (e.g. footer uses white text, icon for collapsed sidebar).
+ *
+ * variant="icon"  → Globe icon only (used in collapsed sidebar header)
+ * variant="footer" → white colour scheme
+ * variant="auth"  → white on translucent background
+ * default         → full logo with text
  */
 const Logo = ({ variant, className = '' }) => {
   const isFooter = variant === 'footer';
   const isAuth = variant === 'auth';
+  const isIcon = variant === 'icon';
 
+  // ── Icon-only variant ───────────────────────────────────────────────────────
+  if (isIcon) {
+    return (
+      <div className={`relative flex items-center justify-center w-8 h-8 ${className}`}>
+        <Globe className="w-7 h-7 text-blue-500 transition-transform group-hover:rotate-12" />
+        <span className="absolute top-0 right-0 w-2 h-2 bg-orange-400 rounded-full border-2 border-white" />
+      </div>
+    );
+  }
+
+  // ── Full variants ───────────────────────────────────────────────────────────
   const globeClass = `transition-transform ${isFooter ? 'w-8 h-8 text-white' : isAuth ? 'w-6 h-6 text-white' : 'w-8 h-8 text-blue-500'} ${!isFooter && !isAuth ? 'group-hover:rotate-12' : ''}`;
   const containerClass = `${isAuth ? 'flex items-center justify-center w-10 h-10 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20' : 'relative flex items-center justify-center w-10 h-10'}`;
   const dotBg = isFooter ? 'bg-orange-500' : 'bg-orange-400';

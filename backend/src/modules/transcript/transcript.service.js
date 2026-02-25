@@ -4,8 +4,14 @@ import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../..
 // ========================================================================
 // TRANSCRIPT SERVICE
 // Mengelola data transkrip akademik — hasil studi, IPK, dan rekap nilai.
-// Modul ini TIDAK mengimpor service dari module lain.
-// Grading logic menggunakan shared utility dari utils/grading.util.js.
+//
+// GRADE VISIBILITY RULES:
+// 1. FinalGrade with status=FINALIZED takes priority over assignment averages.
+// 2. Students can ONLY see FinalGrades when:
+//    a. The grade status is FINALIZED, AND
+//    b. The semester status is COMPLETED (or no semester link).
+// 3. Assignment-based grades are used as fallback for legacy data only.
+// 4. Admin/Dosen can see all grades regardless of status.
 // ========================================================================
 
 /**
@@ -122,10 +128,10 @@ const getStudyResults = async (studentId, filters = {}) => {
  * Ini untuk data yang datang dari sistem KRS baru.
  *
  * @param {string} studentId
- * @param {object} filters - { academicYear?, semesterType? }
+ * @param {object} filters - { academicSemesterId? }
  * @returns {object} { courses, summary }
  */
-const getTranscriptByClass = async (studentId, filters = {}) => {
+const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     select: { id: true, name: true },
@@ -135,20 +141,16 @@ const getTranscriptByClass = async (studentId, filters = {}) => {
     throw new Error('Mahasiswa tidak ditemukan');
   }
 
+  const isStudentView = options.isStudentView !== false; // default true
+
   // Build where clause
   const where = {
     studentId,
-    status: 'APPROVED', // Hanya yang sudah disetujui yang masuk transkrip
+    status: 'APPROVED',
   };
 
-  if (filters.academicYear || filters.semesterType) {
-    where.class = {};
-    if (filters.academicYear) {
-      where.class.academicYear = filters.academicYear;
-    }
-    if (filters.semesterType) {
-      where.class.semesterType = filters.semesterType;
-    }
+  if (filters.academicSemesterId) {
+    where.class = { academicSemesterId: filters.academicSemesterId };
   }
 
   const krsEnrollments = await prisma.krsEnrollment.findMany({
@@ -159,8 +161,15 @@ const getTranscriptByClass = async (studentId, filters = {}) => {
         select: {
           id: true,
           section: true,
-          academicYear: true,
-          semesterType: true,
+          academicSemesterId: true,
+          academicSemester: {
+            select: {
+              id: true,
+              academicYear: true,
+              semesterType: true,
+              status: true,
+            },
+          },
           course: {
             select: {
               id: true,
@@ -194,16 +203,60 @@ const getTranscriptByClass = async (studentId, filters = {}) => {
     },
   });
 
+  // Fetch FinalGrade data for this student
+  const classIds = krsEnrollments.map(e => e.class.id);
+  const finalGrades = await prisma.finalGrade.findMany({
+    where: {
+      studentId,
+      classId: { in: classIds },
+    },
+    select: {
+      classId: true,
+      letterGrade: true,
+      gradePoint: true,
+      numericScore: true,
+      status: true,
+    },
+  });
+  const finalGradeMap = new Map(finalGrades.map(g => [g.classId, g]));
+
   const coursesWithGrades = krsEnrollments.map(enrollment => {
     const cls = enrollment.class;
     const course = cls.course;
+    const semesterStatus = cls.academicSemester?.status;
+    const finalGrade = finalGradeMap.get(cls.id);
 
-    const allSubmissions = course.assignments.flatMap(a =>
-      a.submissions.map(s => ({ grade: s.grade }))
-    );
+    // GRADE VISIBILITY LOGIC:
+    // For student view: only show finalized grades from completed semesters
+    // For admin/dosen view: show all grades
+    let letterGrade = '-';
+    let gradePoint = 0;
+    let averageScore = null;
+    let gradeSource = 'none';
 
-    const { averageScore, gradedCount } = calculateAverageGrade(allSubmissions);
-    const { letterGrade, gradePoint } = convertToLetterGrade(averageScore);
+    if (finalGrade) {
+      const canShowGrade = !isStudentView ||
+        (finalGrade.status === 'FINALIZED' &&
+          (!semesterStatus || semesterStatus === 'COMPLETED'));
+
+      if (canShowGrade) {
+        letterGrade = finalGrade.letterGrade;
+        gradePoint = finalGrade.gradePoint;
+        averageScore = finalGrade.numericScore;
+        gradeSource = 'final_grade';
+      }
+    } else if (!isStudentView) {
+      // Fallback to assignment averages (only for admin/dosen view)
+      const allSubmissions = course.assignments.flatMap(a =>
+        a.submissions.map(s => ({ grade: s.grade }))
+      );
+      const avgResult = calculateAverageGrade(allSubmissions);
+      const converted = convertToLetterGrade(avgResult.averageScore);
+      averageScore = avgResult.averageScore;
+      letterGrade = converted.letterGrade;
+      gradePoint = converted.gradePoint;
+      gradeSource = 'assignment_average';
+    }
 
     return {
       courseId: course.id,
@@ -211,15 +264,15 @@ const getTranscriptByClass = async (studentId, filters = {}) => {
       courseName: course.title,
       semester: course.semester,
       section: cls.section,
-      academicYear: cls.academicYear,
-      semesterType: cls.semesterType,
+      academicYear: cls.academicSemester.academicYear,
+      semesterType: cls.academicSemester.semesterType,
       teacherName: cls.lecturer?.name || 'Unknown',
       sks: course.sks || 3,
       averageScore,
       letterGrade,
       gradePoint,
+      gradeSource,
       totalAssignments: course.assignments.length,
-      gradedAssignments: gradedCount,
       enrolledAt: enrollment.createdAt,
     };
   });
@@ -261,11 +314,111 @@ const getAcademicSummary = async (studentId) => {
   // Hitung dari enrollment lama
   const legacyResult = await getStudyResults(studentId);
 
-  // Hitung dari KRS baru
-  const krsResult = await getTranscriptByClass(studentId);
+  // Hitung dari KRS baru (student view — respects grade visibility)
+  const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView: true });
 
   return {
     student,
+    legacy: legacyResult.summary,
+    krs: krsResult.summary,
+  };
+};
+
+// ========================================================================
+// ADMIN: Get all students with academic summary
+// ========================================================================
+
+/**
+ * Ambil daftar semua mahasiswa dengan ringkasan akademik.
+ * Untuk tampilan Admin browse students.
+ */
+const getStudentList = async (filters = {}) => {
+  const where = { role: 'MAHASISWA' };
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: 'insensitive' } },
+      { email: { contains: filters.search, mode: 'insensitive' } },
+    ];
+  }
+
+  const students = await prisma.user.findMany({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      _count: {
+        select: {
+          enrollments: true,
+          krsEnrollments: true,
+        },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return students.map(s => ({
+    id: s.id,
+    name: s.name,
+    email: s.email,
+    createdAt: s.createdAt,
+    totalEnrollments: s._count.enrollments,
+    totalKrsEnrollments: s._count.krsEnrollments,
+  }));
+};
+
+/**
+ * Ambil transkrip lengkap mahasiswa untuk tampilan Admin.
+ * Menggabungkan data legacy dan KRS.
+ */
+const getFullStudentTranscript = async (studentId) => {
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { id: true, name: true, email: true, createdAt: true },
+  });
+
+  if (!student) {
+    throw new Error('Mahasiswa tidak ditemukan');
+  }
+
+  const legacyResult = await getStudyResults(studentId);
+  const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView: false });
+
+  // Combine all courses and compute unified GPA
+  const allCourses = [...legacyResult.courses, ...krsResult.courses];
+
+  // Deduplicate by courseId (prefer KRS result if exists)
+  const courseMap = new Map();
+  for (const course of legacyResult.courses) {
+    courseMap.set(course.courseId, { ...course, source: 'legacy' });
+  }
+  for (const course of krsResult.courses) {
+    courseMap.set(course.courseId, { ...course, source: 'krs' });
+  }
+  const unifiedCourses = Array.from(courseMap.values());
+  const unifiedGPA = calculateGPA(unifiedCourses);
+
+  // Grade distribution
+  const gradeDistribution = { A: 0, 'A-': 0, 'B+': 0, B: 0, 'B-': 0, 'C+': 0, C: 0, D: 0, E: 0, '-': 0 };
+  for (const course of unifiedCourses) {
+    const grade = course.letterGrade || '-';
+    if (gradeDistribution[grade] !== undefined) {
+      gradeDistribution[grade]++;
+    }
+  }
+
+  return {
+    student,
+    courses: unifiedCourses,
+    summary: {
+      totalCourses: unifiedCourses.length,
+      completedCourses: unifiedGPA.completedCourses,
+      totalSKS: unifiedGPA.totalSKS,
+      ipk: unifiedGPA.ipk,
+    },
+    gradeDistribution,
     legacy: legacyResult.summary,
     krs: krsResult.summary,
   };
@@ -275,4 +428,6 @@ export {
   getStudyResults,
   getTranscriptByClass,
   getAcademicSummary,
+  getStudentList,
+  getFullStudentTranscript,
 };

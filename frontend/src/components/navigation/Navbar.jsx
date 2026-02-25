@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 // Import Child Components
 import Logo from '../ui/Logo';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import DesktopNav from './DesktopNav';
 import MobileMenu from './MobileMenu';
 import ProfileDropdown from './ProfileDropdown';

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Input from '@/components/ui/Input';
 import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
 import Divider from '@/components/ui/Divider';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Checkbox from '@/components/ui/Checkbox';
 import NavLink from '@/components/ui/NavLink';
 
@@ -129,7 +129,7 @@ export default function Login() {
         </div>
 
         {/* Submit Button */}
-        <Button type="submit" loading={isLoading} showArrow fullWidth className="py-3">
+        <Button type="submit" loading={isLoading} showArrow fullWidth variant="default" className="py-3">
           Masuk Sekarang
         </Button>
       </form>

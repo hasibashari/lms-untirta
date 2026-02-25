@@ -9,6 +9,8 @@ import materialRoutes from './modules/material/material.routes.js';
 import classRoutes from './modules/class/class.routes.js';
 import krsRoutes from './modules/krs/krs.routes.js';
 import transcriptRoutes from './modules/transcript/transcript.routes.js';
+import academicSemesterRoutes from './modules/academic-semester/academic-semester.routes.js';
+import gradeRoutes from './modules/grade/grade.routes.js';
 
 dotenv.config();
 
@@ -43,5 +45,7 @@ app.use('/api/materials', materialRoutes); // Material Routes (Detail)
 app.use('/api/classes', classRoutes); // Class Offering Routes
 app.use('/api/krs', krsRoutes); // KRS (Kartu Rencana Studi)
 app.use('/api/transcript', transcriptRoutes); // Transcript (Hasil Studi)
+app.use('/api/academic-semesters', academicSemesterRoutes); // Academic Semester Management
+app.use('/api/grades', gradeRoutes); // Final Grade Management
 
 export default app;

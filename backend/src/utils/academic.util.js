@@ -32,15 +32,18 @@ export const KRS_STATUS = {
   SUBMITTED: 'SUBMITTED',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
+  AUTO_APPROVED: 'AUTO_APPROVED',
 };
 
 /**
  * Validasi apakah transisi status KRS diizinkan.
  *
  * Allowed transitions:
- *   DRAFT      → SUBMITTED
- *   SUBMITTED  → APPROVED | REJECTED
- *   REJECTED   → DRAFT (revisi)
+ *   DRAFT      → SUBMITTED       (by MAHASISWA)
+ *   SUBMITTED  → APPROVED        (by DOSPEM)
+ *   SUBMITTED  → REJECTED        (by DOSPEM)
+ *   SUBMITTED  → AUTO_APPROVED   (by SYSTEM)
+ *   REJECTED   → DRAFT           (by MAHASISWA, revisi)
  *
  * @param {string} currentStatus
  * @param {string} newStatus
@@ -49,9 +52,10 @@ export const KRS_STATUS = {
 export const isValidStatusTransition = (currentStatus, newStatus) => {
   const transitions = {
     DRAFT: ['SUBMITTED'],
-    SUBMITTED: ['APPROVED', 'REJECTED'],
+    SUBMITTED: ['APPROVED', 'REJECTED', 'AUTO_APPROVED'],
     REJECTED: ['DRAFT'],
-    APPROVED: [], // Final state — tidak bisa diubah
+    APPROVED: [], // Final state
+    AUTO_APPROVED: [], // Final state
   };
 
   return transitions[currentStatus]?.includes(newStatus) ?? false;

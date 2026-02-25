@@ -10,6 +10,7 @@ import {
   Plus,
   Inbox,
   User,
+  Award,
 } from 'lucide-react';
 import { getMyCourses, getCourseStudents } from '../courseService';
 import { getMaterials } from '../../material/materialService';
@@ -147,6 +148,13 @@ export default function CourseHome() {
       color: 'orange',
       to: `/dosen/courses/${courseId}/submissions`,
     },
+    {
+      title: 'Input Nilai Akhir',
+      description: 'Kelola nilai akhir mahasiswa',
+      icon: Award,
+      color: 'amber',
+      to: `/dosen/courses/${courseId}/grades`,
+    },
   ];
 
   const colorClasses = {
@@ -173,6 +181,12 @@ export default function CourseHome() {
       bgHover: 'group-hover:bg-orange-100',
       text: 'text-orange-600',
       border: 'hover:border-orange-300',
+    },
+    amber: {
+      bg: 'bg-amber-50',
+      bgHover: 'group-hover:bg-amber-100',
+      text: 'text-amber-600',
+      border: 'hover:border-amber-300',
     },
   };
 

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, ClipboardList, ArrowRight, Award, Clock } from 'lucide-react';
+import { BookOpen, ClipboardList, ArrowRight, Award, Clock, LayoutDashboard } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
 import { getMyDashboardStats } from '../../assignment/assignmentService';
+import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
 
 /**
  * MahasiswaDashboard
@@ -58,15 +59,19 @@ const MahasiswaDashboard = () => {
   // Preview hanya 3 kelas terbaru
   return (
     <div className="space-y-8">
-      {/* Welcome Header */}
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
-          Selamat Datang! 👋
-        </h1>
-        <p className="text-slate-500 mt-1">
-          Berikut adalah ringkasan pembelajaran Anda hari ini.
-        </p>
-      </div>
+      {/* Jumbotron / Hero Section */}
+      <DashboardJumbotron
+        icon={LayoutDashboard}
+        title="Selamat Datang! 👋"
+        subtitle="Berikut adalah ringkasan pembelajaran Anda hari ini."
+      >
+        <Link
+          to="/mahasiswa/classes"
+          className="px-4 py-2 text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition"
+        >
+          Lihat Kelas
+        </Link>
+      </DashboardJumbotron>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

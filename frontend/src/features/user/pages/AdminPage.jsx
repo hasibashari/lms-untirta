@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUsers } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import Button from '../../../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Card from '../../../components/ui/Card';
 
 export default function Users() {

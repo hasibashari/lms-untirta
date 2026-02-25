@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { getAllCourses, createCourse, updateCourse, deleteCourse } from '../courseService';
 import { getDosen } from '../../user/userService';
-import Button from '../../../components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 /**
  * Courses - Kelola Kelas (Admin)

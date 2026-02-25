@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Users, BookOpen, GraduationCap, UserCheck } from 'lucide-react';
-import Button from '../../../components/ui/Button';
-import Card from '../../../components/ui/Card';
+import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Card from '@/components/ui/Card';
+import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { getUsers, getDosen, getMahasiswa } from '../../user/userService';
 import { getAllCourses } from '../../course/courseService';
 
@@ -61,23 +62,25 @@ const AdminDashboard = () => {
 
   return (
     <div className='space-y-6'>
-      <div className='flex items-start justify-between gap-4 flex-wrap'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Admin Dashboard</h1>
-          <p className='text-gray-600 mt-1'>
-            Kelola user, kelas, dan penugasan dosen.
-          </p>
-        </div>
-
-        <div className='flex gap-2'>
-          <Button variant='secondary' onClick={() => navigate('/admin/users')}>
-            Kelola Users
-          </Button>
-          <Button onClick={() => navigate('/admin/courses')}>
-            Kelola Kelas
-          </Button>
-        </div>
-      </div>
+      {/* Jumbotron / Hero Section */}
+      <DashboardJumbotron
+        icon={LayoutDashboard}
+        title={`Selamat Datang, ${user?.name || 'Admin'}!`}
+        subtitle="Kelola user, kelas, dan penugasan dosen dari satu tempat."
+      >
+        <button
+          onClick={() => navigate('/admin/users')}
+          className="px-4 py-2 text-sm font-medium bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-lg transition"
+        >
+          Kelola Users
+        </button>
+        <button
+          onClick={() => navigate('/admin/courses')}
+          className="px-4 py-2 text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition"
+        >
+          Kelola Kelas
+        </button>
+      </DashboardJumbotron>
 
       {/* Stats Grid */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>

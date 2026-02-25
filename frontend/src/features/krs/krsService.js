@@ -4,12 +4,11 @@ import api from '../../services/apiService';
 
 /**
  * [MAHASISWA] Get available classes for KRS enrollment
- * @param {Object} params - { academicYear, semesterType }
+ * @param {Object} params - { academicSemesterId }
  */
 export const getAvailableClasses = (params = {}) => {
   const query = new URLSearchParams();
-  if (params.academicYear) query.append('academicYear', params.academicYear);
-  if (params.semesterType) query.append('semesterType', params.semesterType);
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
   const qs = query.toString();
   return api.get(`/krs/available${qs ? `?${qs}` : ''}`);
 };
@@ -39,26 +38,74 @@ export const dropClass = (classId) => {
 
 /**
  * [MAHASISWA] Submit KRS for approval
- * @param {Object} payload - { academicYear, semesterType }
+ * @param {Object} payload - { academicSemesterId }
  */
 export const submitKRS = (payload) => {
   return api.post('/krs/submit', payload);
 };
 
+// ========== Dospem Advisory Endpoints ==========
+
 /**
- * [DOSEN, ADMIN] Get pending KRS submissions
+ * [DOSPEM] Get advisory students with KRS status
+ * @param {Object} params - { academicSemesterId }
  */
-export const getPendingKRS = () => {
-  return api.get('/krs/pending');
+export const getAdvisoryStudents = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/krs/advisory/students${qs ? `?${qs}` : ''}`);
 };
 
 /**
- * [DOSEN, ADMIN] Approve or reject a KRS enrollment
+ * [DOSPEM] Get pending KRS from advised students
+ * @param {Object} params - { academicSemesterId }
+ */
+export const getAdvisoryPendingKRS = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/krs/advisory/pending${qs ? `?${qs}` : ''}`);
+};
+
+/**
+ * [DOSPEM] Approve or reject a KRS enrollment
  * @param {string} enrollmentId - UUID of the KRS enrollment
  * @param {Object} payload - { status: 'APPROVED'|'REJECTED', note? }
  */
 export const updateEnrollmentStatus = (enrollmentId, payload) => {
   return api.patch(`/krs/${enrollmentId}/status`, payload);
+};
+
+/**
+ * [DOSPEM] Bulk approve or reject KRS enrollments
+ * @param {Object} payload - { enrollmentIds: string[], status: 'APPROVED'|'REJECTED', note? }
+ */
+export const bulkUpdateEnrollmentStatus = (payload) => {
+  return api.patch('/krs/advisory/bulk-status', payload);
+};
+
+// ========== Admin Monitoring Endpoints ==========
+
+/**
+ * [ADMIN] Get KRS monitoring data
+ * @param {Object} params - { academicSemesterId }
+ */
+export const getKrsMonitoring = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/krs/monitoring${qs ? `?${qs}` : ''}`);
+};
+
+/**
+ * [ADMIN] Get pending KRS (monitoring)
+ */
+export const getPendingKRS = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/krs/pending${qs ? `?${qs}` : ''}`);
 };
 
 // ========== Legacy Endpoints (/api/courses) ==========

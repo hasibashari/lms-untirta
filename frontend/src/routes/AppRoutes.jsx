@@ -45,14 +45,28 @@ const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassesPa
 const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassesPage'));
 // KRS module
 const MahasiswaStudyPlan = lazy(() => import('../features/krs/pages/MahasiswaPage'));
+const AdminKrsMonitoring = lazy(() => import('../features/krs/pages/AdminApprovalPage'));
+const DosenAdvisory = lazy(() => import('../features/krs/pages/DosenAdvisoryPage'));
+
+// Advisor Assignment module
+const AdvisorAssignment = lazy(() => import('../features/user/pages/AdvisorAssignmentPage'));
 
 // Transcript module
 const MahasiswaStudyResult = lazy(() => import('../features/transcript/pages/MahasiswaPage'));
+const AdminStudentList = lazy(() => import('../features/transcript/pages/AdminStudentListPage'));
+const AdminStudentTranscript = lazy(() => import('../features/transcript/pages/AdminStudentTranscriptPage'));
 
 // Material module
 const DosenMaterials = lazy(() => import('../features/material/pages/DosenPage'));
 const DosenCreateMaterial = lazy(() => import('../features/material/pages/DosenCreatePage'));
 const MahasiswaMaterialDetail = lazy(() => import('../features/material/pages/MahasiswaDetailPage'));
+
+// Academic module
+const AdminAcademic = lazy(() => import('../features/academic/pages/AdminAcademicPage'));
+
+// Grade module
+const DosenGrading = lazy(() => import('../features/grade/pages/DosenGradingPage'));
+const DosenCourseGrades = lazy(() => import('../features/grade/pages/DosenCourseGradesPage'));
 
 // Assignment module
 const DosenAssignments = lazy(() => import('../features/assignment/pages/DosenPage'));
@@ -91,6 +105,11 @@ function AppRoutes() {
             <Route path="/admin/users" element={<Lazy component={AdminUsers} />} />
             <Route path="/admin/users/new" element={<Lazy component={AdminCreateUser} />} />
             <Route path="/admin/courses" element={<Lazy component={AdminCourses} />} />
+            <Route path="/admin/krs" element={<Lazy component={AdminKrsMonitoring} />} />
+            <Route path="/admin/advisor-assignment" element={<Lazy component={AdvisorAssignment} />} />
+            <Route path="/admin/academic" element={<Lazy component={AdminAcademic} />} />
+            <Route path="/admin/transcript" element={<Lazy component={AdminStudentList} />} />
+            <Route path="/admin/transcript/:studentId" element={<Lazy component={AdminStudentTranscript} />} />
           </Route>
         </Route>
       </Route>
@@ -100,8 +119,11 @@ function AppRoutes() {
         <Route element={<RoleRoute roles={['DOSEN']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dosen/dashboard" element={<Lazy component={DosenDashboard} />} />
+            <Route path="/dosen/advisory" element={<Lazy component={DosenAdvisory} />} />
             <Route path="/dosen/classes" element={<Lazy component={DosenMyClasses} />} />
             <Route path="/dosen/submissions" element={<Lazy component={DosenAllSubmissions} />} />
+            <Route path="/dosen/classes/:classId/grades" element={<Lazy component={DosenGrading} />} />
+            <Route path="/dosen/courses/:courseId/grades" element={<Lazy component={DosenCourseGrades} />} />
             <Route path="/dosen/courses/:courseId" element={<Lazy component={DosenCourseHome} />} />
             <Route path="/dosen/courses/:courseId/materials" element={<Lazy component={DosenMaterials} />} />
             <Route path="/dosen/courses/:courseId/materials/new" element={<Lazy component={DosenCreateMaterial} />} />

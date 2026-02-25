@@ -38,12 +38,11 @@ export const getOpenClasses = async () => {
 
 /**
  * [ADMIN, DOSEN] Get all class offerings with optional filters
- * @param {Object} params - { academicYear, semesterType, courseId }
+ * @param {Object} params - { academicSemesterId, courseId }
  */
 export const getAllClasses = async (params = {}) => {
   const query = new URLSearchParams();
-  if (params.academicYear) query.append('academicYear', params.academicYear);
-  if (params.semesterType) query.append('semesterType', params.semesterType);
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
   if (params.courseId) query.append('courseId', params.courseId);
   const qs = query.toString();
   return api.get(`/classes${qs ? `?${qs}` : ''}`);
@@ -65,7 +64,7 @@ export const getClassById = async (classId) => {
 
 /**
  * [ADMIN] Create a new class offering
- * @param {Object} payload - { courseId, lecturerId, academicYear, semesterType, section, schedule?, room?, capacity?, isEnrollmentOpen? }
+ * @param {Object} payload - { courseId, lecturerId, academicSemesterId, section, schedule?, room?, capacity?, isEnrollmentOpen? }
  */
 export const createClass = async (payload) => {
   return api.post('/classes', payload);
@@ -73,7 +72,7 @@ export const createClass = async (payload) => {
 
 /**
  * [ADMIN] Update a class offering
- * @param {Object} payload - { lecturerId?, academicYear?, semesterType?, section?, schedule?, room?, capacity?, isEnrollmentOpen? }
+ * @param {Object} payload - { lecturerId?, academicSemesterId?, section?, schedule?, room?, capacity?, isEnrollmentOpen? }
  */
 export const updateClass = async (classId, payload) => {
   return api.put(`/classes/${classId}`, payload);

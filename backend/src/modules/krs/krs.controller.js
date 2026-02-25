@@ -7,8 +7,7 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 export const getAvailableClasses = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
       semester: req.query.semester,
     };
     const classes = await krsService.getAvailableClasses(req.user.id, filters);
@@ -73,8 +72,7 @@ export const dropClass = async (req, res) => {
 export const getMyKRS = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
     };
     const krs = await krsService.getMyKRS(req.user.id, filters);
     sendSuccess(res, {
@@ -90,8 +88,8 @@ export const getMyKRS = async (req, res) => {
 // --- Submit KRS ---
 export const submitKRS = async (req, res) => {
   try {
-    const { academicYear, semesterType } = req.body;
-    const result = await krsService.submitKRS(req.user.id, academicYear, semesterType);
+    const { academicSemesterId } = req.body;
+    const result = await krsService.submitKRS(req.user.id, academicSemesterId);
     sendSuccess(res, {
       statusCode: 200,
       message: result.message,
@@ -105,12 +103,12 @@ export const submitKRS = async (req, res) => {
   }
 };
 
-// --- Update Enrollment Status (Dosen/Admin) ---
+// --- Update Enrollment Status (Dospem only) ---
 export const updateEnrollmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, note } = req.body;
-    const result = await krsService.updateEnrollmentStatus(id, status, note);
+    const result = await krsService.updateEnrollmentStatus(id, status, note, req.user);
 
     const statusLabel = status === 'APPROVED' ? 'disetujui' : 'ditolak';
     sendSuccess(res, {
@@ -125,21 +123,82 @@ export const updateEnrollmentStatus = async (req, res) => {
     if (error.message.includes('Tidak dapat mengubah')) {
       return sendError(res, { statusCode: 400, message: error.message });
     }
+    if (error.message.includes('bukan Dosen') || error.message.includes('tidak terdaftar') || error.message.includes('tidak dapat')) {
+      return sendError(res, { statusCode: 403, message: error.message });
+    }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };
 
-// --- Get Pending KRS (Dosen/Admin) ---
+// --- Bulk Update Enrollment Status (Dospem only) ---
+export const bulkUpdateEnrollmentStatus = async (req, res) => {
+  try {
+    const { enrollmentIds, status, note } = req.body;
+    const result = await krsService.bulkUpdateEnrollmentStatus(enrollmentIds, status, note, req.user);
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('tidak ditemukan') || error.message.includes('bukan mahasiswa')) {
+      return sendError(res, { statusCode: 404, message: error.message });
+    }
+    if (error.message.includes('tidak dapat') || error.message.includes('Tidak ada') || error.message.includes('Maksimal')) {
+      return sendError(res, { statusCode: 400, message: error.message });
+    }
+    if (error.message.includes('bukan') || error.message.includes('tidak terdaftar')) {
+      return sendError(res, { statusCode: 403, message: error.message });
+    }
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+// --- Get Pending KRS (Dospem/Admin) ---
 export const getPendingKRS = async (req, res) => {
   try {
     const filters = {
-      academicYear: req.query.academicYear,
-      semesterType: req.query.semesterType,
+      academicSemesterId: req.query.academicSemesterId,
     };
-    const result = await krsService.getPendingKRS(filters);
+    const result = await krsService.getPendingKRS(filters, req.user);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar KRS menunggu persetujuan berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+// --- Get Advisory Students (Dospem) ---
+export const getAdvisoryStudents = async (req, res) => {
+  try {
+    const filters = {
+      academicSemesterId: req.query.academicSemesterId,
+    };
+    const result = await krsService.getAdvisoryStudents(req.user.id, filters);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Daftar mahasiswa bimbingan berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};
+
+// --- KRS Monitoring (Admin) ---
+export const getKrsMonitoring = async (req, res) => {
+  try {
+    const filters = {
+      academicSemesterId: req.query.academicSemesterId,
+    };
+    const result = await krsService.getKrsMonitoring(filters);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Data monitoring KRS berhasil diambil',
       data: result,
     });
   } catch (error) {

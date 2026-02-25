@@ -6,6 +6,7 @@ import {
   enrollClassSchema,
   submitKrsSchema,
   updateStatusSchema,
+  bulkUpdateStatusSchema,
 } from './krs.validation.js';
 import {
   // New KRS (Class-based)
@@ -15,7 +16,10 @@ import {
   getMyKRS,
   submitKRS,
   updateEnrollmentStatus,
+  bulkUpdateEnrollmentStatus,
   getPendingKRS,
+  getAdvisoryStudents,
+  getKrsMonitoring,
   // Legacy compat
   getAvailableCoursesForKRS,
   selfEnrollCourse,
@@ -73,9 +77,44 @@ router.post(
   submitKRS
 );
 
-// ========== DOSEN / ADMIN ROUTES ==========
+// ========== DOSEN PEMBIMBING (DOSPEM) ROUTES ==========
 
-// GET /api/krs/pending — KRS yang menunggu persetujuan
+// GET /api/krs/advisory/students — Daftar mahasiswa bimbingan Dospem
+router.get(
+  '/advisory/students',
+  authenticateToken,
+  authorizeRole('DOSEN'),
+  getAdvisoryStudents
+);
+
+// GET /api/krs/advisory/pending — KRS pending dari mahasiswa bimbingan
+router.get(
+  '/advisory/pending',
+  authenticateToken,
+  authorizeRole('DOSEN'),
+  getPendingKRS
+);
+
+// PATCH /api/krs/advisory/bulk-status — Bulk approve/reject KRS (Dospem)
+router.patch(
+  '/advisory/bulk-status',
+  authenticateToken,
+  authorizeRole('DOSEN'),
+  validate(bulkUpdateStatusSchema),
+  bulkUpdateEnrollmentStatus
+);
+
+// ========== ADMIN MONITORING ROUTES ==========
+
+// GET /api/krs/monitoring — Monitoring KRS (Admin read-only)
+router.get(
+  '/monitoring',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  getKrsMonitoring
+);
+
+// GET /api/krs/pending — KRS yang menunggu persetujuan (Admin monitoring)
 router.get(
   '/pending',
   authenticateToken,
@@ -83,11 +122,11 @@ router.get(
   getPendingKRS
 );
 
-// PATCH /api/krs/:id/status — Approve/reject satu KRS enrollment
+// PATCH /api/krs/:id/status — Approve/reject satu KRS enrollment (Dospem only)
 router.patch(
   '/:id/status',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   validate(updateStatusSchema),
   updateEnrollmentStatus
 );

@@ -28,6 +28,22 @@ enum KrsStatus {
   SUBMITTED
   APPROVED
   REJECTED
+  AUTO_APPROVED // Otomatis disetujui setelah batas waktu terlewati
+}
+
+// Enum untuk Status Semester Akademik
+enum SemesterStatus {
+  PLANNING // Persiapan, admin bisa set kelas
+  ENROLLMENT // Masa KRS dibuka
+  ONGOING // Perkuliahan berlangsung
+  GRADING // Dosen input nilai akhir
+  COMPLETED // Semester selesai, nilai final visible
+}
+
+// Enum untuk Status Nilai Akhir
+enum GradeStatus {
+  DRAFT // Dosen sedang input, belum final
+  FINALIZED // Nilai sudah dikunci, visible ke mahasiswa
 }
 
 // 2. Model User
@@ -39,12 +55,21 @@ model User {
   role      Role     @default(MAHASISWA)
   createdAt DateTime @default(now())
 
+  // Dosen Pembimbing (Academic Advisor)
+  isDospem        Boolean @default(false) // Apakah dosen ini adalah Dosen Pembimbing?
+  advisorId       String? // FK ke Dosen Pembimbing (untuk mahasiswa)
+  advisor         User?   @relation("AdvisorStudents", fields: [advisorId], references: [id])
+  advisedStudents User[]  @relation("AdvisorStudents") // Mahasiswa yang dibimbing
+
   // Relasi
-  coursesTeaching Course[]        @relation("TeacherCourses") // Dosen mengajar banyak kelas
-  classesTeaching Class[]         @relation("LecturerClasses") // Dosen mengajar banyak kelas offering
-  enrollments     Enrollment[] // Mahasiswa bisa ambil banyak kelas (legacy)
-  krsEnrollments  KrsEnrollment[] // KRS: Mahasiswa mendaftar ke kelas offering
-  submissions     Submission[] // Mahasiswa bisa submit banyak tugas
+  coursesTeaching    Course[]            @relation("TeacherCourses") // Dosen mengajar banyak kelas
+  classesTeaching    Class[]             @relation("LecturerClasses") // Dosen mengajar banyak kelas offering
+  enrollments        Enrollment[] // Mahasiswa bisa ambil banyak kelas (legacy)
+  krsEnrollments     KrsEnrollment[] // KRS: Mahasiswa mendaftar ke kelas offering
+  submissions        Submission[] // Mahasiswa bisa submit banyak tugas
+  finalGrades        FinalGrade[]        @relation("StudentGrades") // Nilai akhir mahasiswa
+  gradesGiven        FinalGrade[]        @relation("LecturerGrades") // Nilai yang diberikan dosen
+  semesterStatusLogs SemesterStatusLog[] @relation("StatusLogPerformer") // Audit log status semester
 }
 
 // 3. Model Course (Kelas)
@@ -154,6 +179,7 @@ model Submission {
 // 7. Model Class (Kelas Offering)
 // Representasi penawaran mata kuliah di semester tertentu.
 // Satu Course bisa punya banyak Class (Kelas A, B, C di semester berbeda).
+// academicYear dan semesterType diperoleh melalui relasi AcademicSemester (normalisasi).
 model Class {
   id String @id @default(uuid())
 
@@ -165,10 +191,12 @@ model Class {
   lecturerId String
   lecturer   User   @relation("LecturerClasses", fields: [lecturerId], references: [id])
 
-  // Informasi Akademik
-  academicYear String // Tahun Akademik: "2025/2026"
-  semesterType SemesterType // GANJIL atau GENAP
-  section      String // Kelas: "A", "B", "C"
+  // Relasi ke Semester Akademik (sumber kebenaran untuk tahun & tipe semester)
+  academicSemesterId String
+  academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id])
+
+  // Kelas: "A", "B", "C"
+  section String
 
   // Jadwal & Kapasitas
   schedule String? // Contoh: "Senin, 08:00-10:00, Ruang A1.01"
@@ -184,8 +212,11 @@ model Class {
   // Relasi KRS
   krsEnrollments KrsEnrollment[]
 
+  // Relasi Nilai Akhir
+  finalGrades FinalGrade[]
+
   // Constraint: Satu course hanya bisa punya satu kelas per section per semester
-  @@unique([courseId, academicYear, semesterType, section])
+  @@unique([courseId, academicSemesterId, section])
 }
 
 // 8. Model KrsEnrollment (Pendaftaran KRS)
@@ -208,9 +239,143 @@ model KrsEnrollment {
   // Catatan (opsional, misal alasan reject)
   note String? @db.Text
 
+  // Tracking approval
+  submittedAt DateTime? // Kapan mahasiswa submit KRS
+  approvedAt  DateTime? // Kapan KRS diapprove
+  approvedBy  String? // userId yang approve (null jika auto-approved)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relasi audit trail
+  approvalLogs KrsApprovalLog[]
+
   // Constraint: Satu mahasiswa hanya bisa mendaftar ke satu kelas offering 1x
   @@unique([studentId, classId])
+}
+
+// 9. Model AcademicSemester (Tahun Akademik + Semester)
+// Master data yang dikelola oleh Admin.
+// Mengontrol status semester: PLANNING → ENROLLMENT → ONGOING → GRADING → COMPLETED
+model AcademicSemester {
+  id String @id @default(uuid())
+
+  // Tahun Akademik: "2025/2026"
+  academicYear String
+  // Tipe Semester
+  semesterType SemesterType
+
+  // Status Semester
+  status SemesterStatus @default(PLANNING)
+
+  // Tanggal penting
+  enrollmentStart DateTime? // Mulai KRS
+  enrollmentEnd   DateTime? // Selesai KRS
+  startDate       DateTime? // Mulai perkuliahan
+  endDate         DateTime? // Selesai perkuliahan
+  gradingDeadline DateTime? // Batas input nilai
+
+  isActive Boolean @default(false) // Hanya satu semester aktif
+
+  // KRS Auto-approval Configuration
+  krsApprovalDeadlineDays Int     @default(7) // Hari setelah submit untuk auto-approve
+  krsAutoApprovalEnabled  Boolean @default(true) // Master switch auto-approval
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi
+  classes     Class[]
+  finalGrades FinalGrade[]
+  statusLogs  SemesterStatusLog[]
+
+  // Constraint: Satu semester per tahun akademik
+  @@unique([academicYear, semesterType])
+}
+
+// 10. Model FinalGrade (Nilai Akhir Mata Kuliah)
+// Diinput oleh Dosen per mahasiswa per kelas.
+// Terpisah dari Submission/Assignment — ini nilai final yang masuk transkrip.
+model FinalGrade {
+  id String @id @default(uuid())
+
+  // Mahasiswa
+  studentId String
+  student   User   @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Kelas Offering
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  // Semester Akademik
+  academicSemesterId String
+  academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id])
+
+  // Dosen yang memberi nilai
+  lecturerId String
+  lecturer   User   @relation("LecturerGrades", fields: [lecturerId], references: [id])
+
+  // Nilai
+  letterGrade  String // A, A-, B+, B, B-, C+, C, D, E
+  gradePoint   Float // 4.0, 3.7, 3.3, ...
+  numericScore Float? // Skor numerik (opsional, untuk referensi)
+
+  // Status
+  status GradeStatus @default(DRAFT)
+
+  // Catatan
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Constraint: Satu nilai per mahasiswa per kelas
+  @@unique([studentId, classId])
+}
+
+// 11. Model KrsApprovalLog (Audit Trail Persetujuan KRS)
+// Mencatat setiap perubahan status KRS untuk traceability.
+model KrsApprovalLog {
+  id String @id @default(uuid())
+
+  // Relasi ke KRS Enrollment
+  enrollmentId String
+  enrollment   KrsEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  // Status transition
+  fromStatus KrsStatus
+  toStatus   KrsStatus
+
+  // Siapa yang melakukan aksi
+  actorId   String? // null untuk SYSTEM (auto-approval)
+  actorType String // "DOSPEM", "SYSTEM", "MAHASISWA"
+
+  // Catatan
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+}
+
+// 12. Model SemesterStatusLog (Audit Trail Transisi Status Semester)
+// Mencatat setiap perubahan status semester akademik untuk traceability.
+model SemesterStatusLog {
+  id String @id @default(uuid())
+
+  // Relasi ke Academic Semester
+  academicSemesterId String
+  academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id], onDelete: Cascade)
+
+  // Status transition
+  fromStatus SemesterStatus
+  toStatus   SemesterStatus
+  direction  String // "FORWARD" | "ROLLBACK"
+
+  // Siapa yang melakukan aksi
+  performedBy String
+  performer   User   @relation("StatusLogPerformer", fields: [performedBy], references: [id])
+
+  // Alasan (wajib untuk rollback & transisi kritis)
+  reason String? @db.Text
+
+  createdAt DateTime @default(now())
 }

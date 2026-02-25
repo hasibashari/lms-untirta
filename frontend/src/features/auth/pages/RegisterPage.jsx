@@ -8,7 +8,7 @@ import { register as registerAPI } from '../authService';
 import Input from '@/components/ui/Input';
 import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
 import Divider from '@/components/ui/Divider';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Checkbox from '@/components/ui/Checkbox';
 import NavLink from '@/components/ui/NavLink';
 
@@ -149,7 +149,7 @@ export default function Register() {
         />
 
         {/* Submit Button */}
-        <Button type="submit" loading={isLoading} showArrow fullWidth className="mt-6 py-3">
+        <Button type="submit" loading={isLoading} showArrow fullWidth variant="default" className="mt-6 py-3">
           Daftar Sekarang
         </Button>
       </form>

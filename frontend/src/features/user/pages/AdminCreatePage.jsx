@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUser } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import Button from '../../../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Input from '../../../components/ui/Input';
 import Card from '../../../components/ui/Card';
 
@@ -64,7 +64,7 @@ export default function CreateUser() {
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className='space-y-4 max-w-lg'>
+        <form onSubmit={handleSubmit} className='space-y-4'>
           {error && (
             <p className='text-sm text-red-600'>{errorMessage(error)}</p>
           )}
