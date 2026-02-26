@@ -4,7 +4,6 @@ import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import validate from '../../middlewares/validate.middleware.js';
 import {
   enrollClassSchema,
-  submitKrsSchema,
   updateStatusSchema,
   bulkUpdateStatusSchema,
   reviseEnrollmentSchema,
@@ -15,7 +14,6 @@ import {
   enrollClass,
   dropClass,
   getMyKRS,
-  submitKRS,
   updateEnrollmentStatus,
   bulkUpdateEnrollmentStatus,
   getPendingKRS,
@@ -77,16 +75,7 @@ router.delete(
   dropClass
 );
 
-// POST /api/krs/submit — Submit KRS untuk persetujuan
-router.post(
-  '/submit',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  validate(submitKrsSchema),
-  submitKRS
-);
-
-// PATCH /api/krs/:id/revise — Revisi KRS yang ditolak (REJECTED → DRAFT)
+// PATCH /api/krs/:id/revise — Resubmit KRS yang ditolak (REJECTED → PENDING)
 router.patch(
   '/:id/revise',
   authenticateToken,

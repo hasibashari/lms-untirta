@@ -24,8 +24,7 @@ enum SemesterType {
 
 // Enum untuk Status KRS
 enum KrsStatus {
-  DRAFT
-  SUBMITTED
+  PENDING
   APPROVED
   REJECTED
 }
@@ -219,7 +218,7 @@ model Class {
 
 // 8. Model KrsEnrollment (Pendaftaran KRS)
 // Mencatat mahasiswa mendaftar ke kelas offering tertentu.
-// Memiliki status workflow: DRAFT → SUBMITTED → APPROVED / REJECTED
+// Memiliki status workflow: PENDING → APPROVED / REJECTED
 model KrsEnrollment {
   id String @id @default(uuid())
 
@@ -232,7 +231,7 @@ model KrsEnrollment {
   class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   // Status KRS
-  status KrsStatus @default(DRAFT)
+  status KrsStatus @default(PENDING)
 
   // Catatan (opsional, misal alasan reject)
   note String? @db.Text
@@ -268,6 +267,9 @@ model AcademicSemester {
 
   // Status Semester
   status SemesterStatus @default(DRAFT)
+
+  // Batas maksimum SKS per mahasiswa di semester ini (default 24)
+  maxSks Int @default(24)
 
   // Tanggal penting
   startDate DateTime? // Mulai semester

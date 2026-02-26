@@ -63,7 +63,6 @@ const reviseEnrollmentSchema = z.object({
 export {
   enrollClassSchema,
   dropClassSchema,
-  submitKrsSchema,
   updateStatusSchema,
   bulkUpdateStatusSchema,
   krsQuerySchema,

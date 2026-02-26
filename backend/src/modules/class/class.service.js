@@ -81,11 +81,15 @@ const createClass = async (data) => {
   // 3. Validasi AcademicSemester
   const semester = await prisma.academicSemester.findUnique({
     where: { id: data.academicSemesterId },
-    select: { id: true, academicYear: true, semesterType: true },
+    select: { id: true, academicYear: true, semesterType: true, status: true },
   });
 
   if (!semester) {
     throw new Error('Semester akademik tidak ditemukan');
+  }
+
+  if (semester.status === 'CLOSED') {
+    throw new Error('Tidak dapat menambahkan kelas pada semester yang sudah CLOSED');
   }
 
   // 4. Cek duplikasi (unique constraint)
@@ -262,11 +266,16 @@ const updateClass = async (classId, data) => {
       courseId: true,
       academicSemesterId: true,
       section: true,
+      academicSemester: { select: { status: true } },
     },
   });
 
   if (!existingClass) {
     throw new Error('Kelas offering tidak ditemukan');
+  }
+
+  if (existingClass.academicSemester?.status === 'CLOSED') {
+    throw new Error('Tidak dapat mengubah kelas pada semester yang sudah CLOSED');
   }
 
   // 2. Validasi lecturer (jika diubah)
@@ -337,11 +346,18 @@ const updateClass = async (classId, data) => {
 const toggleEnrollment = async (classId, isEnrollmentOpen) => {
   const existingClass = await prisma.class.findUnique({
     where: { id: classId },
-    select: { id: true },
+    select: {
+      id: true,
+      academicSemester: { select: { status: true } },
+    },
   });
 
   if (!existingClass) {
     throw new Error('Kelas offering tidak ditemukan');
+  }
+
+  if (existingClass.academicSemester?.status === 'CLOSED') {
+    throw new Error('Tidak dapat mengubah status enrollment pada semester yang sudah CLOSED');
   }
 
   return prisma.class.update({
@@ -363,11 +379,16 @@ const deleteClass = async (classId) => {
       id: true,
       section: true,
       course: { select: { title: true, code: true } },
+      academicSemester: { select: { status: true } },
     },
   });
 
   if (!existingClass) {
     throw new Error('Kelas offering tidak ditemukan');
+  }
+
+  if (existingClass.academicSemester?.status === 'CLOSED') {
+    throw new Error('Tidak dapat menghapus kelas pada semester yang sudah CLOSED');
   }
 
   await prisma.class.delete({ where: { id: classId } });

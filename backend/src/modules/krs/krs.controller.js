@@ -94,27 +94,7 @@ export const getMyKRS = async (req, res) => {
       data: krs,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
-  }
-};
-
-// --- Submit KRS ---
-export const submitKRS = async (req, res) => {
-  try {
-    const { academicSemesterId } = req.body;
-    const result = await krsService.submitKRS(req.user.id, academicSemesterId);
-    sendSuccess(res, {
-      statusCode: 200,
-      message: result.message,
-      data: result,
-    });
-  } catch (error) {
-    if (error.message.includes('Tidak ada')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('belum dibuka') || error.message.includes('sudah ditutup') || error.message.includes('belum dimulai') || error.message.includes('sudah berakhir')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
+    console.error('getMyKRS error:', error);
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };
@@ -139,7 +119,17 @@ export const updateEnrollmentStatus = async (req, res) => {
     if (error.message.includes('Tidak dapat mengubah') || error.message.includes('Kapasitas')) {
       return sendError(res, { statusCode: 400, message: error.message });
     }
-    if (error.message.includes('bukan Dosen') || error.message.includes('tidak terdaftar') || error.message.includes('tidak dapat') || error.message.includes('wajib memberikan')) {
+    if (
+      error.message.includes('bukan Dosen') ||
+      error.message.includes('tidak terdaftar') ||
+      error.message.includes('tidak dapat') ||
+      error.message.includes('wajib memberikan') ||
+      error.message.includes('Wajib memberikan') ||
+      error.message.includes('Hanya Dosen Pembimbing')
+    ) {
+      return sendError(res, { statusCode: 403, message: error.message });
+    }
+    if (error.message.includes('belum dibuka') || error.message.includes('sudah ditutup') || error.message.includes('sudah berakhir')) {
       return sendError(res, { statusCode: 403, message: error.message });
     }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
@@ -164,7 +154,15 @@ export const bulkUpdateEnrollmentStatus = async (req, res) => {
     if (error.message.includes('tidak dapat') || error.message.includes('Tidak ada') || error.message.includes('Maksimal')) {
       return sendError(res, { statusCode: 400, message: error.message });
     }
-    if (error.message.includes('bukan') || error.message.includes('tidak terdaftar')) {
+    if (
+      error.message.includes('bukan') ||
+      error.message.includes('tidak terdaftar') ||
+      error.message.includes('Wajib memberikan') ||
+      error.message.includes('Hanya Dosen Pembimbing')
+    ) {
+      return sendError(res, { statusCode: 403, message: error.message });
+    }
+    if (error.message.includes('belum dibuka') || error.message.includes('sudah ditutup') || error.message.includes('sudah berakhir')) {
       return sendError(res, { statusCode: 403, message: error.message });
     }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });

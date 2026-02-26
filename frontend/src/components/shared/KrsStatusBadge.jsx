@@ -1,12 +1,7 @@
-import { Clock, CheckCircle, XCircle, FileEdit } from 'lucide-react';
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const STATUS_CONFIG = {
-  DRAFT: {
-    label: 'Draft',
-    className: 'bg-slate-100 text-slate-700 border-slate-200',
-    icon: FileEdit,
-  },
-  SUBMITTED: {
+  PENDING: {
     label: 'Menunggu',
     className: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: Clock,
@@ -24,7 +19,7 @@ const STATUS_CONFIG = {
 };
 
 const KrsStatusBadge = ({ status, className = '' }) => {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   const Icon = config.icon;
 
   return (

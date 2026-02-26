@@ -11,7 +11,6 @@ import {
   Printer,
   Trash2,
   UserCheck,
-  Send,
   RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,9 +19,7 @@ import {
   getMyKRS,
   enrollClass,
   dropClass,
-  submitKRS,
   reviseEnrollment,
-  getSksEligibility,
 } from '../krsService';
 import { getActiveSemester } from '@/features/academic/academicService';
 import KrsStatusBadge from '@/components/shared/KrsStatusBadge';
@@ -57,13 +54,12 @@ import {
 } from '@/components/ui/pagination';
 
 /**
- * KRS (Kartu Rencana Studi) — Full Approval Workflow
+ * KRS (Kartu Rencana Studi) — Simplified Approval Workflow
  *
  * Workflow:
- * 1. Student enrolls classes → status DRAFT
- * 2. Student submits KRS → status SUBMITTED (pending Dospem approval)
- * 3. Dospem approves/rejects each enrollment
- * 4. If rejected → student can revise (REJECTED → DRAFT) and resubmit
+ * 1. Student enrolls classes → status PENDING (langsung menunggu persetujuan)
+ * 2. Dospem approves/rejects each enrollment
+ * 3. If rejected → student can revise (REJECTED → PENDING) or drop
  */
 const StudyPlan = () => {
   const { user } = useAuth();
@@ -80,7 +76,6 @@ const StudyPlan = () => {
   // Action states
   const [enrolling, setEnrolling] = useState(null);
   const [dropping, setDropping] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const [revising, setRevising] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [actionError, setActionError] = useState(null);
@@ -158,17 +153,14 @@ const StudyPlan = () => {
 
   // Enrollment stats
   const enrollmentStats = useMemo(() => {
-    const stats = { draft: 0, submitted: 0, approved: 0, rejected: 0 };
+    const stats = { pending: 0, approved: 0, rejected: 0 };
     for (const e of enrollments) {
-      if (e.status === 'DRAFT') stats.draft++;
-      else if (e.status === 'SUBMITTED') stats.submitted++;
+      if (e.status === 'PENDING') stats.pending++;
       else if (e.status === 'APPROVED') stats.approved++;
       else if (e.status === 'REJECTED') stats.rejected++;
     }
     return stats;
   }, [enrollments]);
-
-  const hasDraftEnrollments = enrollmentStats.draft > 0;
 
   // Total SKS (exclude rejected)
   const totalSKS = useMemo(() => {
@@ -187,7 +179,7 @@ const StudyPlan = () => {
     setActionError(null);
     try {
       await enrollClass(classId);
-      showSuccess('Berhasil menambahkan kelas ke KRS (Draft)');
+      showSuccess('Berhasil menambahkan kelas ke KRS. Menunggu persetujuan Dosen PA.');
       await fetchData();
     } catch (err) {
       const responseData = err?.response?.data;
@@ -195,10 +187,7 @@ const StudyPlan = () => {
         const d = responseData.details;
         showError(
           `Total SKS melebihi batas! Saat ini ${d?.currentSKS || '?'} SKS, ` +
-          `menambah ${d?.courseSKS || '?'} SKS melebihi batas ${d?.maxSKS || '?'} SKS. ` +
-          (d?.ipk !== null && d?.ipk !== undefined
-            ? `IPK kumulatif: ${d.ipk} → maks ${d.maxSKS} SKS.`
-            : 'Mahasiswa baru: default maks 20 SKS.')
+          `menambah ${d?.courseSKS || '?'} SKS melebihi batas ${d?.maxSKS || '?'} SKS.`
         );
       } else {
         showError(responseData?.message || err?.message || 'Gagal menambahkan kelas');
@@ -218,25 +207,12 @@ const StudyPlan = () => {
     } finally { setDropping(null); }
   };
 
-  const handleSubmitKRS = async () => {
-    if (!activeSemester?.id) { showError('Tidak ada semester aktif'); return; }
-    setSubmitting(true);
-    setActionError(null);
-    try {
-      const res = await submitKRS({ academicSemesterId: activeSemester.id });
-      showSuccess(res?.data?.message || 'KRS berhasil disubmit untuk persetujuan Dosen PA');
-      await fetchData();
-    } catch (err) {
-      showError(err?.response?.data?.message || err?.message || 'Gagal mensubmit KRS');
-    } finally { setSubmitting(false); }
-  };
-
   const handleRevise = async (enrollmentId) => {
     setRevising(enrollmentId);
     setActionError(null);
     try {
       const res = await reviseEnrollment(enrollmentId);
-      showSuccess(res?.data?.message || 'KRS berhasil direvisi ke Draft. Silakan submit ulang.');
+      showSuccess(res?.data?.message || 'KRS berhasil direvisi. Menunggu persetujuan Dosen PA.');
       await fetchData();
     } catch (err) {
       showError(err?.response?.data?.message || err?.message || 'Gagal merevisi KRS');
@@ -259,7 +235,7 @@ const StudyPlan = () => {
     return pages;
   };
 
-  const canDrop = (status) => status === 'DRAFT' || status === 'REJECTED';
+  const canDrop = (status) => status === 'PENDING' || status === 'REJECTED';
   const canRevise = (status) => status === 'REJECTED';
 
   return (
@@ -289,12 +265,9 @@ const StudyPlan = () => {
           variant="warning"
         />
         <StatCard
-          value={summary.maxSKS || 20}
-          label={summary.ipk !== null && summary.ipk !== undefined
-            ? `Maks SKS (IPK ${summary.ipk})`
-            : 'Maks SKS (Semester 1)'
-          }
-          variant={totalSKS > (summary.maxSKS || 20) ? 'danger' : 'warning'}
+          value={summary.maxSKS || 24}
+          label="Maks SKS"
+          variant={totalSKS > (summary.maxSKS || 24) ? 'danger' : 'warning'}
         />
         <StatCard
           value={enrollmentStats.approved}
@@ -317,25 +290,13 @@ const StudyPlan = () => {
         </div>
       )}
 
-      {/* SKS Limit Info Banner */}
-      {summary.ipk !== null && summary.ipk !== undefined && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3">
-          <Info size={18} className="text-blue-600 mt-0.5 shrink-0" />
-          <div className="text-sm text-blue-800">
-            <strong>Jatah SKS berdasarkan IPK:</strong> IPK kumulatif Anda <strong>{summary.ipk.toFixed(2)}</strong> {' → '}
-            maksimal <strong>{summary.maxSKS} SKS</strong> semester ini.
-            {summary.ipk >= 3.0 && ' (IPK ≥ 3.00 → 24 SKS)'}
-            {summary.ipk >= 2.5 && summary.ipk < 3.0 && ' (IPK ≥ 2.50 → 22 SKS)'}
-            {summary.ipk >= 2.0 && summary.ipk < 2.5 && ' (IPK ≥ 2.00 → 20 SKS)'}
-            {summary.ipk < 2.0 && ' (IPK < 2.00 → 18 SKS)'}
-          </div>
-        </div>
-      )}
-      {summary.isFirstSemester && (
+      {/* SKS Limit Info */}
+      {summary.maxSKS && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3">
           <Info size={18} className="text-blue-600 mt-0.5 shrink-0" />
           <p className="text-sm text-blue-800">
-            Anda belum memiliki nilai yang difinalisasi. Sebagai mahasiswa baru, jatah SKS default: <strong>20 SKS</strong>.
+            Batas maksimum SKS semester ini: <strong>{summary.maxSKS} SKS</strong>.
+            Anda telah mengambil <strong>{totalSKS} SKS</strong> ({summary.maxSKS - totalSKS} SKS tersisa).
           </p>
         </div>
       )}
@@ -388,34 +349,13 @@ const StudyPlan = () => {
         </div>
       )}
 
-      {/* Submit KRS Banner */}
-      {hasDraftEnrollments && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Send size={20} className="text-indigo-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-indigo-800">Ada {enrollmentStats.draft} mata kuliah berstatus Draft</p>
-              <p className="text-xs text-indigo-600">Submit KRS untuk disetujui oleh Dosen PA Anda</p>
-            </div>
-          </div>
-          <Button
-            onClick={handleSubmitKRS}
-            disabled={submitting}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shrink-0"
-          >
-            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-            Submit KRS
-          </Button>
-        </div>
-      )}
-
       {/* Rejected Warning */}
       {enrollmentStats.rejected > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
           <AlertCircle size={20} className="text-red-600 shrink-0" />
           <div>
             <p className="text-sm font-medium text-red-800">{enrollmentStats.rejected} mata kuliah ditolak oleh Dosen PA</p>
-            <p className="text-xs text-red-600">Klik tombol revisi untuk mengembalikan ke Draft, lalu submit ulang atau hapus dari KRS.</p>
+            <p className="text-xs text-red-600">Klik tombol revisi untuk mengajukan ulang, atau hapus dari KRS.</p>
           </div>
         </div>
       )}
@@ -726,16 +666,7 @@ const StudyPlan = () => {
               <Printer size={16} />
               <span>Cetak KRS</span>
             </Button>
-            {hasDraftEnrollments && (
-              <Button
-                onClick={handleSubmitKRS}
-                disabled={submitting}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
-              >
-                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                Submit KRS ({enrollmentStats.draft} Draft)
-              </Button>
-            )}
+
           </div>
 
           {/* Mobile Card View */}
@@ -775,7 +706,7 @@ const StudyPlan = () => {
                           onClick={() => handleRevise(enrollment.id)}
                           disabled={isRevisingThis}
                           className="border-amber-200 text-amber-600 hover:bg-amber-50"
-                          title="Revisi ke Draft"
+                          title="Revisi (ajukan ulang)"
                         >
                           {isRevisingThis ? (
                             <Loader2 size={18} className="animate-spin" />
@@ -867,7 +798,7 @@ const StudyPlan = () => {
                               onClick={() => handleRevise(enrollment.id)}
                               disabled={isRevisingThis}
                               className="border-amber-200 text-amber-600 hover:bg-amber-50"
-                              title="Revisi ke Draft"
+                              title="Revisi (ajukan ulang)"
                             >
                               {isRevisingThis ? (
                                 <Loader2 size={18} className="animate-spin" />
@@ -922,7 +853,7 @@ const StudyPlan = () => {
               </div>
               <p className="text-xs sm:text-sm text-slate-500">
                 <Info size={14} className="inline mr-1" />
-                {enrollmentStats.submitted > 0 ? 'Menunggu persetujuan Dosen PA' : 'Submit KRS untuk pengajuan persetujuan'}
+                {enrollmentStats.pending > 0 ? 'Menunggu persetujuan Dosen PA' : 'Tambahkan kelas untuk mengajukan KRS'}
               </p>
             </div>
           </div>
@@ -936,10 +867,10 @@ const StudyPlan = () => {
         <div className="text-xs sm:text-sm text-blue-700">
           <p className="font-medium mb-1">Informasi Alur KRS</p>
           <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-blue-600">
-            <li>Pilih kelas dari daftar dan klik (+) untuk menambahkan ke KRS (Draft)</li>
-            <li>Klik &quot;Submit KRS&quot; untuk mengajukan persetujuan ke Dosen PA</li>
+            <li>Pilih kelas dari daftar dan klik (+) untuk menambahkan ke KRS</li>
+            <li>Kelas yang ditambahkan langsung berstatus Menunggu persetujuan Dosen PA</li>
             <li>Dosen PA akan menyetujui atau menolak setiap mata kuliah</li>
-            <li>Jika ditolak, klik revisi lalu submit ulang atau hapus dari KRS</li>
+            <li>Jika ditolak, klik revisi untuk mengajukan ulang atau hapus dari KRS</li>
             <li>Pastikan total SKS tidak melebihi jatah yang ditetapkan</li>
           </ul>
         </div>

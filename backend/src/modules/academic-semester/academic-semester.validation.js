@@ -10,6 +10,7 @@ const createSemesterSchema = z.object({
     }),
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
+    maxSks: z.number().int().min(1, 'Minimal 1 SKS').max(36, 'Maksimal 36 SKS').optional().default(24),
   }),
 });
 
@@ -20,6 +21,7 @@ const updateSemesterSchema = z.object({
   body: z.object({
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
+    maxSks: z.number().int().min(1, 'Minimal 1 SKS').max(36, 'Maksimal 36 SKS').optional(),
   }),
 });
 

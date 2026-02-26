@@ -122,7 +122,7 @@ const AdminKrsMonitoringPage = () => {
               <Clock size={20} className="text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-600">{summary.submitted || 0}</p>
+              <p className="text-2xl font-bold text-amber-600">{summary.pending || 0}</p>
               <p className="text-xs text-slate-500">Pending</p>
             </div>
           </div>
@@ -162,8 +162,7 @@ const AdminKrsMonitoringPage = () => {
               className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Semua Status</option>
-              <option value="DRAFT">Draft</option>
-              <option value="SUBMITTED">Submitted</option>
+              <option value="PENDING">Pending</option>
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
             </select>

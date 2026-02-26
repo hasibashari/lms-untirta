@@ -48,15 +48,7 @@ export const dropClass = (classId) => {
 };
 
 /**
- * [MAHASISWA] Submit KRS for approval
- * @param {Object} payload - { academicSemesterId }
- */
-export const submitKRS = (payload) => {
-  return api.post('/krs/submit', payload);
-};
-
-/**
- * [MAHASISWA] Revise a rejected KRS enrollment (REJECTED → DRAFT)
+ * [MAHASISWA] Revise a rejected KRS enrollment (REJECTED → PENDING)
  * @param {string} enrollmentId - UUID of the KRS enrollment
  */
 export const reviseEnrollment = (enrollmentId) => {

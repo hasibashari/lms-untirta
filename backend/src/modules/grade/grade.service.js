@@ -270,6 +270,14 @@ const finalizeGrades = async (classId, lecturerId) => {
     throw new Error('Anda tidak berhak memfinalisasi nilai untuk kelas ini');
   }
 
+  // Semester must be OPEN to finalize grades
+  const semesterStatus = classData.academicSemester?.status;
+  if (semesterStatus && semesterStatus !== 'OPEN') {
+    throw new Error(
+      `Tidak dapat memfinalisasi nilai saat status semester ${semesterStatus}. Semester harus dalam status OPEN.`
+    );
+  }
+
   const draftGrades = await prisma.finalGrade.findMany({
     where: { classId, status: 'DRAFT' },
     select: { id: true },

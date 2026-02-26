@@ -270,8 +270,10 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
       courseName: course.title,
       semester: course.semester,
       section: cls.section,
+      academicSemesterId: cls.academicSemesterId,
       academicYear: cls.academicSemester.academicYear,
       semesterType: cls.academicSemester.semesterType,
+      semesterStatus: semesterStatus || null,
       teacherName: cls.lecturer?.name || 'Unknown',
       sks: course.sks || 3,
       averageScore,
@@ -283,7 +285,37 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
     };
   });
 
-  const gpaResult = calculateGPA(coursesWithGrades);
+  // GPA/IPK: only count courses from CLOSED semesters
+  const closedCourses = coursesWithGrades.filter(c => c.semesterStatus === 'CLOSED');
+  const gpaResult = calculateGPA(closedCourses);
+
+  // Per-semester IPS breakdown (only CLOSED semesters)
+  const semesterMap = new Map();
+  for (const c of closedCourses) {
+    const key = c.academicSemesterId;
+    if (!key) continue;
+    if (!semesterMap.has(key)) {
+      semesterMap.set(key, {
+        academicSemesterId: key,
+        academicYear: c.academicYear,
+        semesterType: c.semesterType,
+        courses: [],
+      });
+    }
+    semesterMap.get(key).courses.push(c);
+  }
+
+  const semesterBreakdown = Array.from(semesterMap.values()).map(sem => {
+    const ips = calculateGPA(sem.courses);
+    return {
+      academicSemesterId: sem.academicSemesterId,
+      academicYear: sem.academicYear,
+      semesterType: sem.semesterType,
+      totalSKS: ips.totalSKS,
+      ips: ips.ipk,
+      completedCourses: ips.completedCourses,
+    };
+  });
 
   return {
     student: {
@@ -293,8 +325,9 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
       nim: student.nim,
     },
     courses: coursesWithGrades,
+    semesterBreakdown,
     summary: {
-      totalCourses: coursesWithGrades.length,
+      totalCourses: closedCourses.length,
       completedCourses: gpaResult.completedCourses,
       totalSKS: gpaResult.totalSKS,
       ipk: gpaResult.ipk,
@@ -397,8 +430,6 @@ const getFullStudentTranscript = async (studentId) => {
   const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView: false });
 
   // Combine all courses and compute unified GPA
-  const allCourses = [...legacyResult.courses, ...krsResult.courses];
-
   // Deduplicate by courseId (prefer KRS result if exists)
   const courseMap = new Map();
   for (const course of legacyResult.courses) {
@@ -408,7 +439,12 @@ const getFullStudentTranscript = async (studentId) => {
     courseMap.set(course.courseId, { ...course, source: 'krs' });
   }
   const unifiedCourses = Array.from(courseMap.values());
-  const unifiedGPA = calculateGPA(unifiedCourses);
+
+  // GPA only from CLOSED semesters (KRS courses) + legacy courses
+  const gpaEligible = unifiedCourses.filter(c =>
+    c.source === 'legacy' || c.semesterStatus === 'CLOSED'
+  );
+  const unifiedGPA = calculateGPA(gpaEligible);
 
   // Grade distribution
   const gradeDistribution = { A: 0, 'A-': 0, 'B+': 0, B: 0, 'B-': 0, 'C+': 0, C: 0, D: 0, E: 0, '-': 0 };

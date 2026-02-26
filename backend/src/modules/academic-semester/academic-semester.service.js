@@ -88,7 +88,7 @@ const applySideEffects = async (tx, semesterId, direction, targetStatus) => {
  *
  * For OPEN → CLOSED:
  *   - All APPROVED KRS students across all classes MUST have a FinalGrade record.
- *   - All FinalGrade records MUST be FINALIZED (not DRAFT).
+ *   - DRAFT FinalGrades are auto-finalized via side-effect, so they are NOT a blocker.
  */
 const checkForwardPreconditions = async (semesterId, fromStatus, toStatus) => {
   if (fromStatus === 'OPEN' && toStatus === 'CLOSED') {
@@ -104,17 +104,16 @@ const checkForwardPreconditions = async (semesterId, fromStatus, toStatus) => {
     `;
     const missingGradeCount = studentsWithoutGrade[0]?.count ?? 0;
 
-    // 2. Count FinalGrade records still in DRAFT status
+    // 2. Count grade status for context
     const draftGradeCount = await prisma.finalGrade.count({
       where: { academicSemesterId: semesterId, status: 'DRAFT' },
     });
 
-    // 3. Count already-finalized for context
     const finalizedGradeCount = await prisma.finalGrade.count({
       where: { academicSemesterId: semesterId, status: 'FINALIZED' },
     });
 
-    // 4. Total enrolled students for context
+    // 3. Total enrolled students for context
     const totalEnrolledResult = await prisma.$queryRaw`
       SELECT COUNT(DISTINCT ke."studentId" || '-' || ke."classId")::int AS count
       FROM "KrsEnrollment" ke
@@ -124,20 +123,14 @@ const checkForwardPreconditions = async (semesterId, fromStatus, toStatus) => {
     `;
     const totalEnrolled = totalEnrolledResult[0]?.count ?? 0;
 
-    if (missingGradeCount > 0 || draftGradeCount > 0) {
-      const issues = [];
-      if (missingGradeCount > 0) {
-        issues.push(`${missingGradeCount} mahasiswa belum memiliki nilai akhir`);
-      }
-      if (draftGradeCount > 0) {
-        issues.push(`${draftGradeCount} nilai masih berstatus DRAFT (belum difinalisasi dosen)`);
-      }
-
+    // Only block on missing grades (DRAFT grades will be auto-finalized by side-effect)
+    if (missingGradeCount > 0) {
       return {
         blocked: true,
         message:
-          `Tidak dapat menutup semester: ${issues.join('; ')}. ` +
-          `Semua nilai harus diinput dan difinalisasi sebelum semester dapat ditutup.`,
+          `Tidak dapat menutup semester: ${missingGradeCount} mahasiswa belum memiliki nilai akhir. ` +
+          `Semua nilai harus diinput sebelum semester dapat ditutup.` +
+          (draftGradeCount > 0 ? ` (${draftGradeCount} nilai DRAFT akan otomatis difinalisasi)` : ''),
         details: {
           totalEnrolled,
           missingGradeCount,
@@ -207,7 +200,8 @@ const getClosingReadiness = async (semesterId) => {
         draftCount,
         finalizedCount,
         missingGrades: missingGrades > 0 ? missingGrades : 0,
-        isReady: missingGrades <= 0 && draftCount === 0,
+        // Missing grades block closure; DRAFT grades are auto-finalized on close
+        isReady: missingGrades <= 0,
       };
     }),
   );
@@ -221,6 +215,7 @@ const getClosingReadiness = async (semesterId) => {
     totalFinalized: classDetails.reduce((sum, c) => sum + c.finalizedCount, 0),
     totalMissing: classDetails.reduce((sum, c) => sum + c.missingGrades, 0),
     isReady: classDetails.every((c) => c.isReady),
+    willAutoFinalize: classDetails.reduce((sum, c) => sum + c.draftCount, 0),
   };
 
   return { semester, summary, classes: classDetails };
@@ -316,6 +311,7 @@ const createSemester = async (data) => {
       semesterType: data.semesterType,
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
+      maxSks: data.maxSks ?? 24,
       status: 'DRAFT',
       isActive: false,
     },
@@ -328,11 +324,16 @@ const updateSemester = async (id, data) => {
   const semester = await prisma.academicSemester.findUnique({ where: { id } });
   if (!semester) throw new Error('Semester akademik tidak ditemukan');
 
+  if (semester.status === 'CLOSED') {
+    throw new Error('Tidak dapat mengubah semester yang sudah CLOSED');
+  }
+
   return prisma.academicSemester.update({
     where: { id },
     data: {
       startDate: data.startDate ? new Date(data.startDate) : semester.startDate,
       endDate: data.endDate ? new Date(data.endDate) : semester.endDate,
+      ...(data.maxSks !== undefined && { maxSks: data.maxSks }),
     },
   });
 };
@@ -417,6 +418,10 @@ const updateStatus = async (id, newStatus, performedBy, reason = null) => {
 const setActive = async (id) => {
   const semester = await prisma.academicSemester.findUnique({ where: { id } });
   if (!semester) throw new Error('Semester akademik tidak ditemukan');
+
+  if (semester.status === 'CLOSED') {
+    throw new Error('Tidak dapat mengaktifkan semester yang sudah CLOSED');
+  }
 
   await prisma.$transaction(async (tx) => {
     // Deactivate all semesters

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Loader2, AlertCircle, CheckCircle, XCircle, Users,
-  Clock, ChevronDown, ChevronUp, Search, UserCheck,
+  Clock, ChevronDown, ChevronUp, Search, UserCheck, ShieldOff,
 } from 'lucide-react';
 import {
   getAdvisoryStudents, getAdvisoryPendingKRS,
@@ -39,8 +39,12 @@ const DosenAdvisoryPage = () => {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [rejectNoteId, setRejectNoteId] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
+  const [revokeNoteId, setRevokeNoteId] = useState(null);
+  const [revokeNote, setRevokeNote] = useState('');
+  const [revokingId, setRevokingId] = useState(null);
   const [toast, setToast] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedStudentAll, setExpandedStudentAll] = useState(null);
 
   // Fetch pending KRS
   const fetchPending = useCallback(async () => {
@@ -200,6 +204,26 @@ const DosenAdvisoryPage = () => {
       showToast(err?.message || err || 'Gagal approve semua', 'error');
     } finally {
       setBulkProcessing(false);
+    }
+  };
+
+  // Revoke approval (APPROVED → REJECTED)
+  const handleRevoke = async (enrollmentId) => {
+    if (!revokeNote.trim()) {
+      showToast('Alasan pencabutan persetujuan wajib diisi', 'error');
+      return;
+    }
+    setRevokingId(enrollmentId);
+    try {
+      await updateEnrollmentStatus(enrollmentId, { status: 'REJECTED', note: revokeNote });
+      showToast('Persetujuan KRS berhasil dicabut');
+      setRevokeNoteId(null);
+      setRevokeNote('');
+      fetchStudents();
+    } catch (err) {
+      showToast(err?.message || err || 'Gagal mencabut persetujuan', 'error');
+    } finally {
+      setRevokingId(null);
     }
   };
 
@@ -490,50 +514,135 @@ const DosenAdvisoryPage = () => {
               </div>
             </div>
 
-            {/* Student List */}
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mahasiswa</TableHead>
-                    <TableHead className="text-center">Total MK</TableHead>
-                    <TableHead className="text-center">Pending</TableHead>
-                    <TableHead className="text-center">Approved</TableHead>
-                    <TableHead className="text-center">Rejected</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {advisoryData.students.map(student => (
-                    <TableRow key={student.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
-                            {student.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{student.name}</p>
-                            <p className="text-xs text-slate-500">{student.email}</p>
-                          </div>
+            {/* Student List — Expandable */}
+            <div className="space-y-3">
+              {advisoryData.students.map(student => {
+                const isExpanded = expandedStudentAll === student.id;
+                const approvedEnrollments = student.enrollments.filter(e => e.status === 'APPROVED');
+
+                return (
+                  <div key={student.id} className="bg-white rounded-xl border overflow-hidden">
+                    {/* Student Header */}
+                    <div
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => setExpandedStudentAll(isExpanded ? null : student.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm">
+                          {student.name?.charAt(0)}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">{student.stats?.total || 0}</TableCell>
-                      <TableCell className="text-center">
-                        {student.stats?.pending > 0 ? (
-                          <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">{student.stats.pending}</span>
-                        ) : (
-                          <span className="text-slate-400">0</span>
+                        <div>
+                          <h3 className="font-semibold text-slate-800">{student.name}</h3>
+                          <p className="text-xs text-slate-500">{student.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{student.stats?.total || 0} MK</span>
+                        {student.stats?.pending > 0 && (
+                          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{student.stats.pending} Pending</span>
                         )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-green-600 font-medium">{student.stats?.approved || 0}</span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-red-600 font-medium">{student.stats?.rejected || 0}</span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        {student.stats?.approved > 0 && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">{student.stats.approved} Approved</span>
+                        )}
+                        {student.stats?.rejected > 0 && (
+                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">{student.stats.rejected} Rejected</span>
+                        )}
+                        {isExpanded ? <ChevronUp size={18} className="text-slate-400 ml-1" /> : <ChevronDown size={18} className="text-slate-400 ml-1" />}
+                      </div>
+                    </div>
+
+                    {/* Expanded Enrollment Details */}
+                    {isExpanded && student.enrollments.length > 0 && (
+                      <div className="border-t">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Kode</TableHead>
+                                <TableHead>Mata Kuliah</TableHead>
+                                <TableHead>Kelas</TableHead>
+                                <TableHead className="text-center">SKS</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Aksi</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {student.enrollments.map(enrollment => {
+                                const semesterStatus = enrollment.class?.academicSemester?.status;
+                                const canRevoke = enrollment.status === 'APPROVED' && semesterStatus === 'OPEN';
+
+                                return (
+                                  <TableRow key={enrollment.id}>
+                                    <TableCell className="font-mono text-xs">{enrollment.class?.course?.code}</TableCell>
+                                    <TableCell className="font-medium">{enrollment.class?.course?.title}</TableCell>
+                                    <TableCell>{enrollment.class?.section}</TableCell>
+                                    <TableCell className="text-center">{enrollment.class?.course?.sks || 3}</TableCell>
+                                    <TableCell>
+                                      <KrsStatusBadge status={enrollment.status} />
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {canRevoke && (
+                                        <div>
+                                          {revokeNoteId === enrollment.id ? (
+                                            <div className="flex items-center justify-end gap-2">
+                                              <input
+                                                type="text"
+                                                value={revokeNote}
+                                                onChange={(e) => setRevokeNote(e.target.value)}
+                                                placeholder="Alasan pencabutan..."
+                                                className="text-xs border rounded-md px-2 py-1 w-44 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                                                autoFocus
+                                                onKeyDown={(e) => e.key === 'Enter' && handleRevoke(enrollment.id)}
+                                              />
+                                              <button
+                                                onClick={() => handleRevoke(enrollment.id)}
+                                                disabled={revokingId === enrollment.id}
+                                                className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 disabled:opacity-50"
+                                              >
+                                                {revokingId === enrollment.id ? <Loader2 size={12} className="animate-spin" /> : 'Cabut'}
+                                              </button>
+                                              <button
+                                                onClick={() => { setRevokeNoteId(null); setRevokeNote(''); }}
+                                                className="text-slate-400 hover:text-slate-600"
+                                              >
+                                                <XCircle size={16} />
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <button
+                                              onClick={() => { setRevokeNoteId(enrollment.id); setRevokeNote(''); }}
+                                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-md hover:bg-orange-100 transition-colors"
+                                              title="Cabut persetujuan KRS ini"
+                                            >
+                                              <ShieldOff size={12} />
+                                              Cabut Persetujuan
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                      {enrollment.status === 'REJECTED' && enrollment.note && (
+                                        <span className="text-xs text-slate-400 italic" title={enrollment.note}>
+                                          {enrollment.note.length > 30 ? enrollment.note.substring(0, 30) + '...' : enrollment.note}
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+
+                    {isExpanded && student.enrollments.length === 0 && (
+                      <div className="border-t px-4 py-6 text-center text-sm text-slate-400">
+                        Belum ada KRS yang diajukan untuk semester ini.
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )
