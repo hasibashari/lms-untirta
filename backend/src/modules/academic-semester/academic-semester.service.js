@@ -386,6 +386,58 @@ const deleteSemester = async (id) => {
   return prisma.academicSemester.delete({ where: { id } });
 };
 
+// ======================== STUDENT SEMESTER LIST ========================
+
+/**
+ * Get semesters visible to a student.
+ * Returns: all OPEN/CLOSED semesters where the student has KRS enrollments,
+ * plus the currently OPEN semester (even if no enrollments yet).
+ * Ordered by academicYear DESC, semesterType ASC (newest first).
+ */
+const getStudentSemesters = async (studentId) => {
+  // 1. Semesters where student has enrollments (OPEN or CLOSED only)
+  const enrolledSemesterIds = await prisma.krsEnrollment.findMany({
+    where: { studentId },
+    select: { class: { select: { academicSemesterId: true } } },
+    distinct: ['classId'],
+  });
+
+  const uniqueSemIds = [
+    ...new Set(enrolledSemesterIds.map((e) => e.class.academicSemesterId)),
+  ];
+
+  // 2. Also include the currently OPEN semester (student may not have enrolled yet)
+  const openSemester = await prisma.academicSemester.findFirst({
+    where: { status: 'OPEN' },
+    select: { id: true },
+  });
+
+  if (openSemester && !uniqueSemIds.includes(openSemester.id)) {
+    uniqueSemIds.push(openSemester.id);
+  }
+
+  if (uniqueSemIds.length === 0) return [];
+
+  // 3. Fetch semester details — exclude DRAFT
+  const semesters = await prisma.academicSemester.findMany({
+    where: {
+      id: { in: uniqueSemIds },
+      status: { in: ['OPEN', 'CLOSED'] },
+    },
+    select: {
+      id: true,
+      academicYear: true,
+      semesterType: true,
+      status: true,
+      isActive: true,
+      maxSks: true,
+    },
+    orderBy: [{ academicYear: 'desc' }, { semesterType: 'asc' }],
+  });
+
+  return semesters;
+};
+
 export {
   getAllSemesters,
   getActiveSemester,
@@ -395,4 +447,5 @@ export {
   updateStatus,
   deleteSemester,
   getClosingReadiness,
+  getStudentSemesters,
 };

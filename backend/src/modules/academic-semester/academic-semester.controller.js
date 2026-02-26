@@ -141,3 +141,16 @@ export const remove = async (req, res) => {
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };
+
+export const getStudentSemesters = async (req, res) => {
+  try {
+    const semesters = await semesterService.getStudentSemesters(req.user.id);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Daftar semester mahasiswa berhasil diambil',
+      data: semesters,
+    });
+  } catch (error) {
+    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  }
+};

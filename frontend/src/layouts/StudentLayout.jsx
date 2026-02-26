@@ -21,7 +21,7 @@ import SidebarNav from '../components/navigation/SidebarNav';
 const MahasiswaLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile sidebar
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Desktop collapse - default collapsed
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Desktop collapse - default collapsed
 
   const navItems = [
     {

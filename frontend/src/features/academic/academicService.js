@@ -62,3 +62,10 @@ export const getClosingReadiness = (id) => {
 export const deleteSemester = (id) => {
   return api.delete(`/academic-semesters/${id}`);
 };
+
+/**
+ * [MAHASISWA] Get semesters visible to the student (OPEN + CLOSED with enrollments)
+ */
+export const getStudentSemesters = () => {
+  return api.get('/academic-semesters/student-semesters');
+};

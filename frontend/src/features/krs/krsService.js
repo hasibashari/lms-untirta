@@ -15,9 +15,13 @@ export const getAvailableClasses = (params = {}) => {
 
 /**
  * [MAHASISWA] Get my KRS plan (enrolled class offerings)
+ * @param {Object} params - { academicSemesterId }
  */
-export const getMyKRS = () => {
-  return api.get('/krs/my-plan');
+export const getMyKRS = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/krs/my-plan${qs ? `?${qs}` : ''}`);
 };
 
 /**

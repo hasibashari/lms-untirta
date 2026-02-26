@@ -580,7 +580,7 @@ const getMyKRS = async (studentId, filters = {}) => {
     maxSKSValue = semesterData?.maxSks ?? 24;
   } else if (filters.academicSemesterId) {
     const semesterData = await prisma.academicSemester.findUnique({
-      where: { id: academicSemesterId },
+      where: { id: filters.academicSemesterId },
       select: { maxSks: true },
     });
     maxSKSValue = semesterData?.maxSks ?? 24;

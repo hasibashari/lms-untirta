@@ -16,6 +16,7 @@ import {
   updateStatus,
   getClosingReadiness,
   remove,
+  getStudentSemesters,
 } from './academic-semester.controller.js';
 
 const router = express.Router();
@@ -23,6 +24,9 @@ const router = express.Router();
 // ========== PUBLIC (authenticated) ==========
 router.get('/', authenticateToken, getAll);
 router.get('/active', authenticateToken, getActive);
+
+// ========== MAHASISWA ==========
+router.get('/student-semesters', authenticateToken, authorizeRole('MAHASISWA'), getStudentSemesters);
 
 // ========== ADMIN ONLY ==========
 router.get('/:id', authenticateToken, getById);
