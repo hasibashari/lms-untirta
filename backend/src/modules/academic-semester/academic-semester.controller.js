@@ -82,8 +82,6 @@ export const updateStatus = async (req, res) => {
     const semester = await semesterService.updateStatus(
       req.params.id,
       req.body.status,
-      req.user.id,
-      req.body.reason || null,
     );
     sendSuccess(res, {
       statusCode: 200,
@@ -103,7 +101,7 @@ export const updateStatus = async (req, res) => {
         details: error.details || null,
       });
     }
-    if (error.message.includes('Tidak dapat') || error.message.includes('Alasan wajib')) {
+    if (error.message.includes('Tidak dapat') || error.message.includes('Sudah ada semester OPEN')) {
       return sendError(res, { statusCode: 400, message: error.message });
     }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
@@ -117,22 +115,6 @@ export const getClosingReadiness = async (req, res) => {
       statusCode: 200,
       message: 'Status kesiapan penutupan semester berhasil diambil',
       data: readiness,
-    });
-  } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
-  }
-};
-
-export const setActive = async (req, res) => {
-  try {
-    const semester = await semesterService.setActive(req.params.id);
-    sendSuccess(res, {
-      statusCode: 200,
-      message: `Semester ${semester.semesterType} ${semester.academicYear} ditetapkan sebagai semester aktif`,
-      data: semester,
     });
   } catch (error) {
     if (error.message.includes('tidak ditemukan')) {
@@ -159,17 +141,3 @@ export const remove = async (req, res) => {
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };
-
-export const getStatusLogs = async (req, res) => {
-  try {
-    const logs = await semesterService.getStatusLogs(req.params.id);
-    sendSuccess(res, {
-      statusCode: 200,
-      message: 'Riwayat perubahan status berhasil diambil',
-      data: logs,
-    });
-  } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
-  }
-};
-

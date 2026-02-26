@@ -42,17 +42,9 @@ export const updateSemester = (id, payload) => {
 /**
  * [ADMIN] Update semester status
  * @param {string} status - DRAFT | OPEN | CLOSED
- * @param {string|null} reason - Optional reason for the transition
  */
-export const updateSemesterStatus = (id, status, reason = null) => {
-  return api.patch(`/academic-semesters/${id}/status`, { status, reason });
-};
-
-/**
- * [ADMIN] Get status transition audit logs for a semester
- */
-export const getSemesterStatusLogs = (id) => {
-  return api.get(`/academic-semesters/${id}/status-logs`);
+export const updateSemesterStatus = (id, status) => {
+  return api.patch(`/academic-semesters/${id}/status`, { status });
 };
 
 /**
@@ -62,13 +54,6 @@ export const getSemesterStatusLogs = (id) => {
  */
 export const getClosingReadiness = (id) => {
   return api.get(`/academic-semesters/${id}/closing-readiness`);
-};
-
-/**
- * [ADMIN] Set semester as active
- */
-export const setActiveSemester = (id) => {
-  return api.patch(`/academic-semesters/${id}/activate`);
 };
 
 /**

@@ -59,14 +59,13 @@ model User {
   advisedStudents User[]  @relation("AdvisorStudents") // Mahasiswa yang dibimbing
 
   // Relasi
-  coursesTeaching    Course[]            @relation("TeacherCourses") // Dosen mengajar banyak kelas
-  classesTeaching    Class[]             @relation("LecturerClasses") // Dosen mengajar banyak kelas offering
-  enrollments        Enrollment[] // Mahasiswa bisa ambil banyak kelas (legacy)
-  krsEnrollments     KrsEnrollment[] // KRS: Mahasiswa mendaftar ke kelas offering
-  submissions        Submission[] // Mahasiswa bisa submit banyak tugas
-  finalGrades        FinalGrade[]        @relation("StudentGrades") // Nilai akhir mahasiswa
-  gradesGiven        FinalGrade[]        @relation("LecturerGrades") // Nilai yang diberikan dosen
-  semesterStatusLogs SemesterStatusLog[] @relation("StatusLogPerformer") // Audit log status semester
+  coursesTeaching Course[]        @relation("TeacherCourses") // Dosen mengajar banyak kelas
+  classesTeaching Class[]         @relation("LecturerClasses") // Dosen mengajar banyak kelas offering
+  enrollments     Enrollment[] // Mahasiswa bisa ambil banyak kelas (legacy)
+  krsEnrollments  KrsEnrollment[] // KRS: Mahasiswa mendaftar ke kelas offering
+  submissions     Submission[] // Mahasiswa bisa submit banyak tugas
+  finalGrades     FinalGrade[]    @relation("StudentGrades") // Nilai akhir mahasiswa
+  gradesGiven     FinalGrade[]    @relation("LecturerGrades") // Nilai yang diberikan dosen
 }
 
 // 3. Model Course (Kelas)
@@ -283,7 +282,6 @@ model AcademicSemester {
   // Relasi
   classes     Class[]
   finalGrades FinalGrade[]
-  statusLogs  SemesterStatusLog[]
 
   // Constraint: Satu semester per tahun akademik
   @@unique([academicYear, semesterType])
@@ -348,30 +346,6 @@ model KrsApprovalLog {
 
   // Catatan
   note String? @db.Text
-
-  createdAt DateTime @default(now())
-}
-
-// 12. Model SemesterStatusLog (Audit Trail Transisi Status Semester)
-// Mencatat setiap perubahan status semester akademik untuk traceability.
-model SemesterStatusLog {
-  id String @id @default(uuid())
-
-  // Relasi ke Academic Semester
-  academicSemesterId String
-  academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id], onDelete: Cascade)
-
-  // Status transition
-  fromStatus SemesterStatus
-  toStatus   SemesterStatus
-  direction  String // "FORWARD" | "ROLLBACK"
-
-  // Siapa yang melakukan aksi
-  performedBy String
-  performer   User   @relation("StatusLogPerformer", fields: [performedBy], references: [id])
-
-  // Alasan (wajib untuk rollback & transisi kritis)
-  reason String? @db.Text
 
   createdAt DateTime @default(now())
 }

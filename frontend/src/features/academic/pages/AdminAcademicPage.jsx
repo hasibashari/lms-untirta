@@ -1,26 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Loader2, AlertCircle, CheckCircle, X, Calendar, Plus,
-  ChevronRight, ChevronLeft, Trash2, Star, ArrowRight, History, Clock,
+  ChevronRight, Trash2, ArrowRight,
 } from 'lucide-react';
 import {
   getAllSemesters,
   createSemester,
   updateSemesterStatus,
-  setActiveSemester,
   deleteSemester,
-  getSemesterStatusLogs,
   getClosingReadiness,
 } from '../../academic/academicService';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { Button } from '@/components/ui/button';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
 
 // ============================================================
 // Admin Academic Semester Management Page
 // Simplified lifecycle: DRAFT → OPEN → CLOSED
+// OPEN automatically acts as the active semester (only one at a time).
 // ============================================================
 
 const STATUS_CONFIG = {
@@ -29,23 +25,11 @@ const STATUS_CONFIG = {
   CLOSED: { label: 'Closed', color: 'bg-violet-100 text-violet-700', order: 2 },
 };
 
-// Client-side mirror of the backend transition rules
-const TRANSITION_RULES = {
-  DRAFT: {
-    OPEN: { direction: 'FORWARD', reasonRequired: false },
-  },
-  OPEN: {
-    CLOSED: { direction: 'FORWARD', reasonRequired: true },
-  },
-  CLOSED: {},
-};
-
-const getAllowedTransitions = (status) => {
-  const rules = TRANSITION_RULES[status] || {};
-  return Object.entries(rules).map(([target, rule]) => ({
-    target,
-    ...rule,
-  }));
+// Allowed forward-only transitions
+const ALLOWED_TRANSITIONS = {
+  DRAFT: ['OPEN'],
+  OPEN: ['CLOSED'],
+  CLOSED: [],
 };
 
 const AdminAcademicPage = () => {
@@ -66,19 +50,13 @@ const AdminAcademicPage = () => {
 
   // Transition confirmation modal
   const [transitionModal, setTransitionModal] = useState(null);
-  // { semesterId, semesterLabel, fromStatus, toStatus, direction, reasonRequired }
-  const [transitionReason, setTransitionReason] = useState('');
+  // { semesterId, semesterLabel, fromStatus, toStatus }
   const [transitionSubmitting, setTransitionSubmitting] = useState(false);
 
   // Closing readiness pre-flight check
   const [readinessData, setReadinessData] = useState(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [readinessError, setReadinessError] = useState(null);
-
-  // Audit log viewer
-  const [logModal, setLogModal] = useState(null); // { semesterId, semesterLabel }
-  const [statusLogs, setStatusLogs] = useState([]);
-  const [logsLoading, setLogsLoading] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -122,8 +100,8 @@ const AdminAcademicPage = () => {
 
   // Open transition confirmation modal
   const openTransitionModal = (sem, targetStatus) => {
-    const rule = TRANSITION_RULES[sem.status]?.[targetStatus];
-    if (!rule) return;
+    const allowed = ALLOWED_TRANSITIONS[sem.status] || [];
+    if (!allowed.includes(targetStatus)) return;
 
     const semLabel = `${sem.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'} ${sem.academicYear}`;
     setTransitionModal({
@@ -131,10 +109,7 @@ const AdminAcademicPage = () => {
       semesterLabel: semLabel,
       fromStatus: sem.status,
       toStatus: targetStatus,
-      direction: rule.direction,
-      reasonRequired: rule.reasonRequired,
     });
-    setTransitionReason('');
     setReadinessData(null);
     setReadinessError(null);
 
@@ -157,32 +132,25 @@ const AdminAcademicPage = () => {
   // Execute status transition
   const handleTransitionConfirm = async () => {
     if (!transitionModal) return;
-    const { semesterId, toStatus, reasonRequired } = transitionModal;
-
-    if (reasonRequired && !transitionReason.trim()) {
-      showToast('Alasan wajib diisi untuk transisi ini', 'error');
-      return;
-    }
+    const { semesterId, toStatus } = transitionModal;
 
     setTransitionSubmitting(true);
     try {
-      await updateSemesterStatus(semesterId, toStatus, transitionReason.trim() || null);
+      await updateSemesterStatus(semesterId, toStatus);
       showToast(`Status semester berhasil diubah ke ${toStatus}`);
       setTransitionModal(null);
-      setTransitionReason('');
       setReadinessData(null);
       fetchData();
     } catch (err) {
-      // Handle structured GRADE_COMPLETION_REQUIRED error from backend
       const responseData = err?.response?.data;
       if (responseData?.code === 'GRADE_COMPLETION_REQUIRED') {
         showToast(responseData.message, 'error');
-        // Refresh readiness data to show updated state
+        // Refresh readiness data
         if (transitionModal?.semesterId) {
           setReadinessLoading(true);
-          getCompletionReadiness(transitionModal.semesterId)
+          getClosingReadiness(transitionModal.semesterId)
             .then((res) => setReadinessData(res.data || res))
-            .catch(() => { })
+            .catch(() => {})
             .finally(() => setReadinessLoading(false));
         }
       } else {
@@ -193,21 +161,7 @@ const AdminAcademicPage = () => {
     }
   };
 
-  // Set active
-  const handleSetActive = async (id) => {
-    setProcessingId(id);
-    try {
-      await setActiveSemester(id);
-      showToast('Semester aktif berhasil diubah');
-      fetchData();
-    } catch (err) {
-      showToast(err?.message || 'Gagal mengatur semester aktif', 'error');
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  // Delete
+  // Delete (only DRAFT)
   const handleDelete = async (id) => {
     if (!confirm('Yakin hapus semester ini?')) return;
     setProcessingId(id);
@@ -222,29 +176,6 @@ const AdminAcademicPage = () => {
     }
   };
 
-  // Open audit log modal
-  const openLogModal = async (sem) => {
-    const semLabel = `${sem.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'} ${sem.academicYear}`;
-    setLogModal({ semesterId: sem.id, semesterLabel: semLabel });
-    setLogsLoading(true);
-    try {
-      const res = await getSemesterStatusLogs(sem.id);
-      setStatusLogs(res.data || []);
-    } catch {
-      setStatusLogs([]);
-    } finally {
-      setLogsLoading(false);
-    }
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('id-ID', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -257,10 +188,11 @@ const AdminAcademicPage = () => {
       {/* Toast */}
       {toast && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-700'
-            : 'bg-green-50 border-green-200 text-green-700'
-            }`}
+          className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${
+            toast.type === 'error'
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : 'bg-green-50 border-green-200 text-green-700'
+          }`}
         >
           {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle size={18} />}
           <span className="flex-1 text-sm">{toast.msg}</span>
@@ -286,7 +218,7 @@ const AdminAcademicPage = () => {
           ))}
         </div>
         <p className="text-xs text-slate-500 mt-3">
-          <strong>Draft</strong>: Persiapan kelas &rarr; <strong>Open</strong>: KRS, perkuliahan, penilaian &rarr;{' '}
+          <strong>Draft</strong>: Persiapan kelas &rarr; <strong>Open</strong>: KRS, perkuliahan, penilaian (otomatis aktif) &rarr;{' '}
           <strong>Closed</strong>: Semester selesai, nilai visible ke mahasiswa.
         </p>
       </div>
@@ -399,14 +331,14 @@ const AdminAcademicPage = () => {
           {semesters.map((sem) => {
             const cfg = STATUS_CONFIG[sem.status] || STATUS_CONFIG.DRAFT;
             const isProcessing = processingId === sem.id;
-            const transitions = getAllowedTransitions(sem.status);
-            const forwardTransition = transitions.find(t => t.direction === 'FORWARD');
+            const nextStatuses = ALLOWED_TRANSITIONS[sem.status] || [];
 
             return (
               <div
                 key={sem.id}
-                className={`bg-white rounded-xl border overflow-hidden ${sem.isActive ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200'
-                  }`}
+                className={`bg-white rounded-xl border overflow-hidden ${
+                  sem.isActive ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200'
+                }`}
               >
                 <div className="p-4 sm:p-5">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -416,21 +348,19 @@ const AdminAcademicPage = () => {
                         <Calendar size={22} className="text-blue-600" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-slate-900">
-                            {sem.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}{' '}
-                            {sem.academicYear}
-                          </h3>
-                          {sem.isActive && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                              <Star size={10} /> Aktif
-                            </span>
-                          )}
-                        </div>
+                        <h3 className="font-semibold text-slate-900">
+                          {sem.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}{' '}
+                          {sem.academicYear}
+                        </h3>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
                             {cfg.label}
                           </span>
+                          {sem.isActive && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                              Aktif
+                            </span>
+                          )}
                           <span className="text-xs text-slate-400">
                             {sem._count?.classes || 0} kelas &bull;{' '}
                             {sem._count?.finalGrades || 0} nilai &bull;{' '}
@@ -442,26 +372,11 @@ const AdminAcademicPage = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap items-center gap-2">
-                      {/* Set Active */}
-                      {!sem.isActive && (
+                      {/* Forward transition button */}
+                      {nextStatuses.map((target) => (
                         <button
-                          onClick={() => handleSetActive(sem.id)}
-                          disabled={isProcessing}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg disabled:opacity-50 transition"
-                        >
-                          {isProcessing ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            <Star size={12} />
-                          )}
-                          Set Aktif
-                        </button>
-                      )}
-
-                      {/* Forward button */}
-                      {forwardTransition && (
-                        <button
-                          onClick={() => openTransitionModal(sem, forwardTransition.target)}
+                          key={target}
+                          onClick={() => openTransitionModal(sem, target)}
                           disabled={isProcessing}
                           className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg disabled:opacity-50 transition"
                         >
@@ -470,21 +385,11 @@ const AdminAcademicPage = () => {
                           ) : (
                             <ChevronRight size={12} />
                           )}
-                          {forwardTransition.target}
+                          {target}
                         </button>
-                      )}
+                      ))}
 
-                      {/* Audit log button */}
-                      <button
-                        onClick={() => openLogModal(sem)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-lg transition"
-                        title="Riwayat perubahan status"
-                      >
-                        <History size={12} />
-                        Log
-                      </button>
-
-                      {/* Delete button */}
+                      {/* Delete button — only for DRAFT with no dependents */}
                       {sem.status === 'DRAFT' &&
                         (sem._count?.classes || 0) === 0 &&
                         (sem._count?.finalGrades || 0) === 0 && (
@@ -548,17 +453,20 @@ const AdminAcademicPage = () => {
               </span>
             </div>
 
-            {/* Direction badge */}
-            <div className="text-center">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium border border-emerald-200">
-                <ChevronRight size={12} /> Forward
-              </span>
-            </div>
+            {/* OPEN warning */}
+            {transitionModal.toStatus === 'OPEN' && (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <AlertCircle size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-700">
+                  Semester ini akan otomatis menjadi <strong>semester aktif</strong>.
+                  Jika ada semester lain yang sedang OPEN, transisi ini akan ditolak.
+                </p>
+              </div>
+            )}
 
-            {/* Warning for critical transitions */}
+            {/* CLOSED warnings & readiness check */}
             {transitionModal.toStatus === 'CLOSED' && (
               <div className="space-y-3">
-                {/* Static warning — always shown */}
                 <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-red-700">
@@ -567,7 +475,6 @@ const AdminAcademicPage = () => {
                   </p>
                 </div>
 
-                {/* Pre-flight readiness check — dynamic */}
                 {readinessLoading && (
                   <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
                     <Loader2 size={14} className="animate-spin text-slate-500" />
@@ -583,11 +490,11 @@ const AdminAcademicPage = () => {
                 )}
 
                 {readinessData && !readinessLoading && (
-                  <div className={`p-3 border rounded-lg space-y-3 ${readinessData.summary?.isReady
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
-                    }`}>
-                    {/* Summary header */}
+                  <div className={`p-3 border rounded-lg space-y-3 ${
+                    readinessData.summary?.isReady
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-red-50 border-red-200'
+                  }`}>
                     <div className="flex items-start gap-2">
                       {readinessData.summary?.isReady ? (
                         <CheckCircle size={16} className="text-green-600 shrink-0 mt-0.5" />
@@ -627,15 +534,17 @@ const AdminAcademicPage = () => {
                         <p className="text-[10px] text-slate-500">Finalized</p>
                       </div>
                       <div className="bg-white/60 rounded-md p-2">
-                        <p className={`text-sm font-bold ${(readinessData.summary?.totalDraft || 0) > 0 ? 'text-amber-600' : 'text-slate-800'
-                          }`}>
+                        <p className={`text-sm font-bold ${
+                          (readinessData.summary?.totalDraft || 0) > 0 ? 'text-amber-600' : 'text-slate-800'
+                        }`}>
                           {readinessData.summary?.totalDraft || 0}
                         </p>
                         <p className="text-[10px] text-slate-500">Draft</p>
                       </div>
                       <div className="bg-white/60 rounded-md p-2">
-                        <p className={`text-sm font-bold ${(readinessData.summary?.totalMissing || 0) > 0 ? 'text-red-600' : 'text-slate-800'
-                          }`}>
+                        <p className={`text-sm font-bold ${
+                          (readinessData.summary?.totalMissing || 0) > 0 ? 'text-red-600' : 'text-slate-800'
+                        }`}>
                           {readinessData.summary?.totalMissing || 0}
                         </p>
                         <p className="text-[10px] text-slate-500">Belum Dinilai</p>
@@ -678,29 +587,6 @@ const AdminAcademicPage = () => {
               </div>
             )}
 
-
-
-            {/* Reason input */}
-            {transitionModal.reasonRequired && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Alasan <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={transitionReason}
-                  onChange={(e) => setTransitionReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  rows={3}
-                  placeholder="Jelaskan alasan perubahan status ini..."
-                  maxLength={500}
-                  required
-                />
-                <p className="text-xs text-slate-400 mt-1">
-                  {transitionReason.length}/500 karakter
-                </p>
-              </div>
-            )}
-
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button
@@ -714,7 +600,6 @@ const AdminAcademicPage = () => {
                 onClick={handleTransitionConfirm}
                 disabled={
                   transitionSubmitting ||
-                  (transitionModal.reasonRequired && !transitionReason.trim()) ||
                   (transitionModal.toStatus === 'CLOSED' && readinessLoading) ||
                   (transitionModal.toStatus === 'CLOSED' && readinessData && !readinessData.summary?.isReady)
                 }
@@ -727,90 +612,6 @@ const AdminAcademicPage = () => {
                 {transitionSubmitting && <Loader2 size={14} className="animate-spin" />}
                 Konfirmasi
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== Audit Log Modal ==================== */}
-      {logModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setLogModal(null)}
-          />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <History size={18} /> Riwayat Status
-                </h3>
-                <p className="text-sm text-slate-500">{logModal.semesterLabel}</p>
-              </div>
-              <button
-                onClick={() => setLogModal(null)}
-                className="p-1 hover:bg-slate-100 rounded-lg"
-              >
-                <X size={18} className="text-slate-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-5">
-              {logsLoading ? (
-                <div className="text-center py-8">
-                  <Loader2 size={24} className="animate-spin text-blue-500 mx-auto mb-2" />
-                  <p className="text-sm text-slate-500">Memuat riwayat...</p>
-                </div>
-              ) : statusLogs.length === 0 ? (
-                <div className="text-center py-8">
-                  <Clock size={24} className="text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm text-slate-500">Belum ada riwayat perubahan status</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {statusLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className={`p-3 rounded-lg border text-sm ${log.direction === 'ROLLBACK'
-                        ? 'bg-amber-50 border-amber-200'
-                        : 'bg-slate-50 border-slate-200'
-                        }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[log.fromStatus]?.color}`}>
-                          {STATUS_CONFIG[log.fromStatus]?.label}
-                        </span>
-                        {log.direction === 'ROLLBACK' ? (
-                          <ChevronLeft size={14} className="text-amber-500" />
-                        ) : (
-                          <ChevronRight size={14} className="text-emerald-500" />
-                        )}
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[log.toStatus]?.color}`}>
-                          {STATUS_CONFIG[log.toStatus]?.label}
-                        </span>
-                        <span className={`ml-auto px-1.5 py-0.5 rounded text-xs font-medium ${log.direction === 'ROLLBACK'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-emerald-100 text-emerald-700'
-                          }`}>
-                          {log.direction}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
-                        <span>{log.performer?.name || 'Unknown'}</span>
-                        <span>&bull;</span>
-                        <span>{formatDate(log.createdAt)}</span>
-                      </div>
-                      {log.reason && (
-                        <p className="text-xs text-slate-600 mt-2 italic bg-white/60 rounded p-2">
-                          &ldquo;{log.reason}&rdquo;
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>

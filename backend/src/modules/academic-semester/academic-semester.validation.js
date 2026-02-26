@@ -35,14 +35,7 @@ const updateStatusSchema = z.object({
         message: 'Status harus DRAFT, OPEN, atau CLOSED',
       }),
     }),
-    reason: z.string().max(500, 'Alasan maksimal 500 karakter').optional().nullable(),
   }),
 });
 
-const setActiveSchema = z.object({
-  params: z.object({
-    id: z.string().uuid('Semester ID tidak valid'),
-  }),
-});
-
-export { createSemesterSchema, updateSemesterSchema, updateStatusSchema, setActiveSchema };
+export { createSemesterSchema, updateSemesterSchema, updateStatusSchema };
