@@ -29,7 +29,7 @@ const calculateCumulativeIPK = async (studentId) => {
       studentId,
       status: 'FINALIZED',
       academicSemester: {
-        status: 'COMPLETED',
+        status: 'CLOSED',
       },
     },
     select: {
@@ -111,8 +111,7 @@ const getSksEligibility = async (studentId, academicSemesterId) => {
  * Validasi bahwa masa pengisian KRS masih terbuka.
  * Cek:
  *  1. Semester harus ada
- *  2. Status semester harus ENROLLMENT
- *  3. Tanggal saat ini harus dalam rentang enrollmentStart - enrollmentEnd
+ *  2. Status semester harus OPEN
  *
  * @param {string} academicSemesterId
  * @throws Error jika masa KRS tidak terbuka
@@ -122,8 +121,6 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
     where: { id: academicSemesterId },
     select: {
       status: true,
-      enrollmentStart: true,
-      enrollmentEnd: true,
       academicYear: true,
       semesterType: true,
     },
@@ -133,18 +130,10 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
     throw new Error('Semester akademik tidak ditemukan');
   }
 
-  if (semester.status !== 'ENROLLMENT') {
+  if (semester.status !== 'OPEN') {
     throw new Error(
       `Masa pengisian KRS untuk semester ${semester.academicYear} ${semester.semesterType} belum dibuka atau sudah ditutup (status: ${semester.status})`
     );
-  }
-
-  const now = new Date();
-  if (semester.enrollmentStart && now < new Date(semester.enrollmentStart)) {
-    throw new Error('Masa pengisian KRS belum dimulai');
-  }
-  if (semester.enrollmentEnd && now > new Date(semester.enrollmentEnd)) {
-    throw new Error('Masa pengisian KRS sudah berakhir');
   }
 };
 
@@ -153,7 +142,7 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
 /**
  * Ambil kelas offering yang tersedia untuk KRS mahasiswa.
  * Hanya menampilkan kelas yang:
- *  1. Semester dalam status ENROLLMENT (atau isEnrollmentOpen = true)
+ *  1. Semester dalam status OPEN (atau isEnrollmentOpen = true)
  *  2. Mahasiswa belum terdaftar
  *  3. Kapasitas belum penuh
  *
@@ -164,7 +153,7 @@ const getAvailableClasses = async (studentId, filters = {}) => {
   // 1. Resolve the target academic semester
   let targetSemesterId = filters.academicSemesterId;
 
-  // If no specific semester requested, auto-resolve the active ENROLLMENT semester
+  // If no specific semester requested, auto-resolve the active OPEN semester
   if (!targetSemesterId) {
     const activeSemester = await prisma.academicSemester.findFirst({
       where: { isActive: true },
@@ -302,8 +291,8 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     _meta = {
       reason: !semesterDiag
         ? 'NO_ACTIVE_SEMESTER'
-        : semesterDiag.status !== 'ENROLLMENT'
-          ? 'SEMESTER_NOT_ENROLLMENT'
+        : semesterDiag.status !== 'OPEN'
+          ? 'SEMESTER_NOT_OPEN'
           : totalClassesInSemester === 0
             ? 'NO_CLASSES_CREATED'
             : closedClasses === totalClassesInSemester

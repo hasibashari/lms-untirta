@@ -337,10 +337,10 @@ const AdminClassesPage = () => {
       {/* Toast */}
       {toast && (
         <div className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-700'
-            : toast.type === 'info'
-              ? 'bg-blue-50 border-blue-200 text-blue-700'
-              : 'bg-green-50 border-green-200 text-green-700'
+          ? 'bg-red-50 border-red-200 text-red-700'
+          : toast.type === 'info'
+            ? 'bg-blue-50 border-blue-200 text-blue-700'
+            : 'bg-green-50 border-green-200 text-green-700'
           }`}>
           {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
           <span className="flex-1">{toast.message}</span>
@@ -565,8 +565,8 @@ const AdminClassesPage = () => {
                         {cls.course?.sks || 3} SKS
                       </span>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${cls.isEnrollmentOpen
-                          ? 'bg-green-50 text-green-700 border border-green-200'
-                          : 'bg-red-50 text-red-700 border border-red-200'
+                        ? 'bg-green-50 text-green-700 border border-green-200'
+                        : 'bg-red-50 text-red-700 border border-red-200'
                         }`}>
                         {cls.isEnrollmentOpen ? 'Buka' : 'Tutup'}
                       </span>
@@ -586,8 +586,8 @@ const AdminClassesPage = () => {
                       onClick={() => handleToggleEnrollment(cls)}
                       disabled={toggling === cls.id}
                       className={`p-2 rounded-lg transition ${cls.isEnrollmentOpen
-                          ? 'text-green-600 hover:bg-green-50'
-                          : 'text-slate-400 hover:bg-slate-50'
+                        ? 'text-green-600 hover:bg-green-50'
+                        : 'text-slate-400 hover:bg-slate-50'
                         }`}
                       title={cls.isEnrollmentOpen ? 'Tutup Pendaftaran' : 'Buka Pendaftaran'}
                     >
@@ -649,9 +649,9 @@ const AdminClassesPage = () => {
                     <TableCell>
                       <span className="text-sm text-slate-600">{getSemesterLabel(cls.academicSemester)}</span>
                       {cls.academicSemester?.status && (
-                        <span className={`ml-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${cls.academicSemester.status === 'ENROLLMENT' ? 'bg-green-50 text-green-700' :
-                            cls.academicSemester.status === 'PLANNING' ? 'bg-slate-100 text-slate-600' :
-                              'bg-blue-50 text-blue-600'
+                        <span className={`ml-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${cls.academicSemester.status === 'OPEN' ? 'bg-green-50 text-green-700' :
+                          cls.academicSemester.status === 'DRAFT' ? 'bg-slate-100 text-slate-600' :
+                            'bg-blue-50 text-blue-600'
                           }`}>
                           {cls.academicSemester.status}
                         </span>
@@ -673,8 +673,8 @@ const AdminClassesPage = () => {
                         onClick={() => handleToggleEnrollment(cls)}
                         disabled={toggling === cls.id}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${cls.isEnrollmentOpen
-                            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
-                            : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                          ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                          : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
                           }`}
                       >
                         {toggling === cls.id ? (
@@ -877,8 +877,8 @@ const AdminClassesPage = () => {
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, isEnrollmentOpen: !prev.isEnrollmentOpen }))}
                         className={`w-full px-4 py-2 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 ${formData.isEnrollmentOpen
-                            ? 'bg-green-50 border-green-300 text-green-700'
-                            : 'bg-red-50 border-red-300 text-red-600'
+                          ? 'bg-green-50 border-green-300 text-green-700'
+                          : 'bg-red-50 border-red-300 text-red-600'
                           }`}
                       >
                         {formData.isEnrollmentOpen ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}

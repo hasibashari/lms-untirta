@@ -8,11 +8,8 @@ const createSemesterSchema = z.object({
     semesterType: z.enum(['GANJIL', 'GENAP'], {
       errorMap: () => ({ message: 'Semester harus GANJIL atau GENAP' }),
     }),
-    enrollmentStart: z.string().datetime().optional(),
-    enrollmentEnd: z.string().datetime().optional(),
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
-    gradingDeadline: z.string().datetime().optional(),
   }),
 });
 
@@ -21,11 +18,8 @@ const updateSemesterSchema = z.object({
     id: z.string().uuid('Semester ID tidak valid'),
   }),
   body: z.object({
-    enrollmentStart: z.string().datetime().optional(),
-    enrollmentEnd: z.string().datetime().optional(),
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
-    gradingDeadline: z.string().datetime().optional(),
   }),
 });
 
@@ -34,9 +28,9 @@ const updateStatusSchema = z.object({
     id: z.string().uuid('Semester ID tidak valid'),
   }),
   body: z.object({
-    status: z.enum(['PLANNING', 'ENROLLMENT', 'ONGOING', 'GRADING', 'COMPLETED'], {
+    status: z.enum(['DRAFT', 'OPEN', 'CLOSED'], {
       errorMap: () => ({
-        message: 'Status harus PLANNING, ENROLLMENT, ONGOING, GRADING, atau COMPLETED',
+        message: 'Status harus DRAFT, OPEN, atau CLOSED',
       }),
     }),
     reason: z.string().max(500, 'Alasan maksimal 500 karakter').optional().nullable(),

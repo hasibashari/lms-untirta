@@ -104,11 +104,11 @@ const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numeric
     throw new Error('Anda tidak berhak memberikan nilai untuk kelas ini');
   }
 
-  // Check semester allows grading
+  // Check semester allows grading (only when OPEN)
   const semesterStatus = classData.academicSemester?.status;
-  if (semesterStatus && !['ONGOING', 'GRADING'].includes(semesterStatus)) {
+  if (semesterStatus && semesterStatus !== 'OPEN') {
     throw new Error(
-      `Tidak dapat input nilai saat status semester ${semesterStatus}. Semester harus dalam status ONGOING atau GRADING.`
+      `Tidak dapat input nilai saat status semester ${semesterStatus}. Semester harus dalam status OPEN.`
     );
   }
 
@@ -185,7 +185,7 @@ const bulkInputGrades = async (classId, lecturerId, grades) => {
   }
 
   const semesterStatus = classData.academicSemester?.status;
-  if (semesterStatus && !['ONGOING', 'GRADING'].includes(semesterStatus)) {
+  if (semesterStatus && semesterStatus !== 'OPEN') {
     throw new Error(
       `Tidak dapat input nilai saat status semester ${semesterStatus}`
     );
@@ -308,11 +308,11 @@ const getMyGrades = async (studentId, filters = {}) => {
     where.academicSemesterId = filters.academicSemesterId;
   }
 
-  // Also check: only show grades from completed semesters
+  // Also check: only show grades from closed semesters
   // Unless explicitly requested otherwise (e.g., admin view)
   if (!filters.includeOngoing) {
     where.OR = [
-      { academicSemester: { status: 'COMPLETED' } },
+      { academicSemester: { status: 'CLOSED' } },
       { academicSemesterId: '' }, // Legacy grades without semester link
     ];
   }

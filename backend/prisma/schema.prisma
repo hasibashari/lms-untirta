@@ -32,11 +32,9 @@ enum KrsStatus {
 
 // Enum untuk Status Semester Akademik
 enum SemesterStatus {
-  PLANNING // Persiapan, admin bisa set kelas
-  ENROLLMENT // Masa KRS dibuka
-  ONGOING // Perkuliahan berlangsung
-  GRADING // Dosen input nilai akhir
-  COMPLETED // Semester selesai, nilai final visible
+  DRAFT // Persiapan, admin bisa set kelas & konfigurasi
+  OPEN // Semester aktif: KRS, perkuliahan, dan penilaian
+  CLOSED // Semester selesai, nilai final visible
 }
 
 // Enum untuk Status Nilai Akhir
@@ -259,7 +257,7 @@ model KrsEnrollment {
 
 // 9. Model AcademicSemester (Tahun Akademik + Semester)
 // Master data yang dikelola oleh Admin.
-// Mengontrol status semester: PLANNING → ENROLLMENT → ONGOING → GRADING → COMPLETED
+// Mengontrol status semester: DRAFT → OPEN → CLOSED
 model AcademicSemester {
   id String @id @default(uuid())
 
@@ -269,14 +267,11 @@ model AcademicSemester {
   semesterType SemesterType
 
   // Status Semester
-  status SemesterStatus @default(PLANNING)
+  status SemesterStatus @default(DRAFT)
 
   // Tanggal penting
-  enrollmentStart DateTime? // Mulai KRS
-  enrollmentEnd   DateTime? // Selesai KRS
-  startDate       DateTime? // Mulai perkuliahan
-  endDate         DateTime? // Selesai perkuliahan
-  gradingDeadline DateTime? // Batas input nilai
+  startDate DateTime? // Mulai semester
+  endDate   DateTime? // Selesai semester
 
   isActive Boolean @default(false) // Hanya satu semester aktif
 

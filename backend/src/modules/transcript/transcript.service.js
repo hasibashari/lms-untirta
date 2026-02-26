@@ -9,7 +9,7 @@ import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../..
 // 1. FinalGrade with status=FINALIZED takes priority over assignment averages.
 // 2. Students can ONLY see FinalGrades when:
 //    a. The grade status is FINALIZED, AND
-//    b. The semester status is COMPLETED (or no semester link).
+//    b. The semester status is CLOSED (or no semester link).
 // 3. Assignment-based grades are used as fallback for legacy data only.
 // 4. Admin/Dosen can see all grades regardless of status.
 // ========================================================================
@@ -233,7 +233,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
     const finalGrade = finalGradeMap.get(cls.id);
 
     // GRADE VISIBILITY LOGIC:
-    // For student view: only show finalized grades from completed semesters
+    // For student view: only show finalized grades from closed semesters
     // For admin/dosen view: show all grades
     let letterGrade = '-';
     let gradePoint = 0;
@@ -243,7 +243,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
     if (finalGrade) {
       const canShowGrade = !isStudentView ||
         (finalGrade.status === 'FINALIZED' &&
-          (!semesterStatus || semesterStatus === 'COMPLETED'));
+          (!semesterStatus || semesterStatus === 'CLOSED'));
 
       if (canShowGrade) {
         letterGrade = finalGrade.letterGrade;

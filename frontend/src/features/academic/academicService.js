@@ -25,7 +25,7 @@ export const getSemesterById = (id) => {
 
 /**
  * [ADMIN] Create a new academic semester
- * @param {Object} payload - { academicYear, semesterType, enrollmentStart?, enrollmentEnd?, startDate?, endDate?, gradingDeadline? }
+ * @param {Object} payload - { academicYear, semesterType, startDate?, endDate? }
  */
 export const createSemester = (payload) => {
   return api.post('/academic-semesters', payload);
@@ -33,7 +33,7 @@ export const createSemester = (payload) => {
 
 /**
  * [ADMIN] Update academic semester dates
- * @param {Object} payload - { enrollmentStart?, enrollmentEnd?, startDate?, endDate?, gradingDeadline? }
+ * @param {Object} payload - { startDate?, endDate? }
  */
 export const updateSemester = (id, payload) => {
   return api.put(`/academic-semesters/${id}`, payload);
@@ -41,8 +41,8 @@ export const updateSemester = (id, payload) => {
 
 /**
  * [ADMIN] Update semester status
- * @param {string} status - PLANNING | ENROLLMENT | ONGOING | GRADING | COMPLETED
- * @param {string|null} reason - Reason for the transition (required for rollbacks)
+ * @param {string} status - DRAFT | OPEN | CLOSED
+ * @param {string|null} reason - Optional reason for the transition
  */
 export const updateSemesterStatus = (id, status, reason = null) => {
   return api.patch(`/academic-semesters/${id}/status`, { status, reason });
@@ -56,25 +56,12 @@ export const getSemesterStatusLogs = (id) => {
 };
 
 /**
- * [ADMIN] Get completion readiness check for a semester
- * Pre-flight validation before GRADING → COMPLETED transition.
+ * [ADMIN] Get closing readiness check for a semester
+ * Pre-flight validation before OPEN → CLOSED transition.
  * Returns grade completion stats per class.
  */
-export const getCompletionReadiness = (id) => {
-  return api.get(`/academic-semesters/${id}/completion-readiness`);
-};
-
-/**
- * [ADMIN] Get rollback impact preview for a semester
- * Shows counts of records that will be deleted/reset during rollback.
- * @param {string} id - Semester ID
- * @param {string} fromStatus - Current status
- * @param {string} toStatus - Target rollback status
- */
-export const getRollbackImpact = (id, fromStatus, toStatus) => {
-  return api.get(`/academic-semesters/${id}/rollback-impact`, {
-    params: { fromStatus, toStatus },
-  });
+export const getClosingReadiness = (id) => {
+  return api.get(`/academic-semesters/${id}/closing-readiness`);
 };
 
 /**

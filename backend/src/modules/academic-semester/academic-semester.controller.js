@@ -110,12 +110,12 @@ export const updateStatus = async (req, res) => {
   }
 };
 
-export const getCompletionReadiness = async (req, res) => {
+export const getClosingReadiness = async (req, res) => {
   try {
-    const readiness = await semesterService.getCompletionReadiness(req.params.id);
+    const readiness = await semesterService.getClosingReadiness(req.params.id);
     sendSuccess(res, {
       statusCode: 200,
-      message: 'Status kesiapan semester berhasil diambil',
+      message: 'Status kesiapan penutupan semester berhasil diambil',
       data: readiness,
     });
   } catch (error) {
@@ -169,33 +169,6 @@ export const getStatusLogs = async (req, res) => {
       data: logs,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
-  }
-};
-
-export const getRollbackImpact = async (req, res) => {
-  try {
-    const { fromStatus, toStatus } = req.query;
-    if (!fromStatus || !toStatus) {
-      return sendError(res, {
-        statusCode: 400,
-        message: 'Parameter fromStatus dan toStatus wajib diisi',
-      });
-    }
-    const impact = await semesterService.getRollbackImpact(
-      req.params.id,
-      fromStatus,
-      toStatus
-    );
-    sendSuccess(res, {
-      statusCode: 200,
-      message: 'Rollback impact preview berhasil diambil',
-      data: impact,
-    });
-  } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
     sendError(res, { statusCode: 500, message: 'Internal Server Error' });
   }
 };

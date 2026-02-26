@@ -10,8 +10,7 @@ import {
   setActiveSemester,
   deleteSemester,
   getSemesterStatusLogs,
-  getCompletionReadiness,
-  getRollbackImpact,
+  getClosingReadiness,
 } from '../../academic/academicService';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { Button } from '@/components/ui/button';
@@ -21,35 +20,24 @@ import {
 
 // ============================================================
 // Admin Academic Semester Management Page
-// Full state machine with rollback support and audit trail
+// Simplified lifecycle: DRAFT → OPEN → CLOSED
 // ============================================================
 
 const STATUS_CONFIG = {
-  PLANNING: { label: 'Planning', color: 'bg-slate-100 text-slate-700', order: 0 },
-  ENROLLMENT: { label: 'Enrollment', color: 'bg-blue-100 text-blue-700', order: 1 },
-  ONGOING: { label: 'Ongoing', color: 'bg-emerald-100 text-emerald-700', order: 2 },
-  GRADING: { label: 'Grading', color: 'bg-amber-100 text-amber-700', order: 3 },
-  COMPLETED: { label: 'Completed', color: 'bg-violet-100 text-violet-700', order: 4 },
+  DRAFT: { label: 'Draft', color: 'bg-slate-100 text-slate-700', order: 0 },
+  OPEN: { label: 'Open', color: 'bg-emerald-100 text-emerald-700', order: 1 },
+  CLOSED: { label: 'Closed', color: 'bg-violet-100 text-violet-700', order: 2 },
 };
 
 // Client-side mirror of the backend transition rules
 const TRANSITION_RULES = {
-  PLANNING: {
-    ENROLLMENT: { direction: 'FORWARD', reasonRequired: false },
+  DRAFT: {
+    OPEN: { direction: 'FORWARD', reasonRequired: false },
   },
-  ENROLLMENT: {
-    PLANNING: { direction: 'ROLLBACK', reasonRequired: true },
-    ONGOING: { direction: 'FORWARD', reasonRequired: false },
+  OPEN: {
+    CLOSED: { direction: 'FORWARD', reasonRequired: true },
   },
-  ONGOING: {
-    ENROLLMENT: { direction: 'ROLLBACK', reasonRequired: true },
-    GRADING: { direction: 'FORWARD', reasonRequired: false },
-  },
-  GRADING: {
-    ONGOING: { direction: 'ROLLBACK', reasonRequired: true },
-    COMPLETED: { direction: 'FORWARD', reasonRequired: true },
-  },
-  COMPLETED: {},
+  CLOSED: {},
 };
 
 const getAllowedTransitions = (status) => {
@@ -81,15 +69,10 @@ const AdminAcademicPage = () => {
   const [transitionReason, setTransitionReason] = useState('');
   const [transitionSubmitting, setTransitionSubmitting] = useState(false);
 
-  // Completion readiness pre-flight check
+  // Closing readiness pre-flight check
   const [readinessData, setReadinessData] = useState(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [readinessError, setReadinessError] = useState(null);
-
-  // Rollback impact preview
-  const [rollbackImpact, setRollbackImpact] = useState(null);
-  const [rollbackImpactLoading, setRollbackImpactLoading] = useState(false);
-  const [rollbackImpactError, setRollbackImpactError] = useState(null);
 
   // Audit log viewer
   const [logModal, setLogModal] = useState(null); // { semesterId, semesterLabel }
@@ -153,13 +136,11 @@ const AdminAcademicPage = () => {
     setTransitionReason('');
     setReadinessData(null);
     setReadinessError(null);
-    setRollbackImpact(null);
-    setRollbackImpactError(null);
 
-    // Pre-flight: fetch completion readiness when targeting COMPLETED
-    if (targetStatus === 'COMPLETED') {
+    // Pre-flight: fetch closing readiness when targeting CLOSED
+    if (targetStatus === 'CLOSED') {
       setReadinessLoading(true);
-      getCompletionReadiness(sem.id)
+      getClosingReadiness(sem.id)
         .then((res) => {
           setReadinessData(res.data || res);
         })
@@ -168,21 +149,6 @@ const AdminAcademicPage = () => {
         })
         .finally(() => {
           setReadinessLoading(false);
-        });
-    }
-
-    // Pre-flight: fetch rollback impact preview for rollback transitions
-    if (rule.direction === 'ROLLBACK') {
-      setRollbackImpactLoading(true);
-      getRollbackImpact(sem.id, sem.status, targetStatus)
-        .then((res) => {
-          setRollbackImpact(res.data || res);
-        })
-        .catch((err) => {
-          setRollbackImpactError(err?.response?.data?.message || err?.message || 'Gagal memuat data dampak rollback');
-        })
-        .finally(() => {
-          setRollbackImpactLoading(false);
         });
     }
   };
@@ -319,10 +285,8 @@ const AdminAcademicPage = () => {
           ))}
         </div>
         <p className="text-xs text-slate-500 mt-3">
-          <strong>Planning</strong>: Persiapan kelas &rarr; <strong>Enrollment</strong>: KRS dibuka &rarr;{' '}
-          <strong>Ongoing</strong>: Perkuliahan &rarr; <strong>Grading</strong>: Input nilai &rarr;{' '}
-          <strong>Completed</strong>: Nilai visible ke mahasiswa.{' '}
-          <span className="text-amber-600 font-medium">Rollback tersedia (kecuali dari Completed).</span>
+          <strong>Draft</strong>: Persiapan kelas &rarr; <strong>Open</strong>: KRS, perkuliahan, penilaian &rarr;{' '}
+          <strong>Closed</strong>: Semester selesai, nilai visible ke mahasiswa.
         </p>
       </div>
 
@@ -418,11 +382,10 @@ const AdminAcademicPage = () => {
       ) : (
         <div className="space-y-3">
           {semesters.map((sem) => {
-            const cfg = STATUS_CONFIG[sem.status] || STATUS_CONFIG.PLANNING;
+            const cfg = STATUS_CONFIG[sem.status] || STATUS_CONFIG.DRAFT;
             const isProcessing = processingId === sem.id;
             const transitions = getAllowedTransitions(sem.status);
             const forwardTransition = transitions.find(t => t.direction === 'FORWARD');
-            const rollbackTransition = transitions.find(t => t.direction === 'ROLLBACK');
 
             return (
               <div
@@ -463,23 +426,6 @@ const AdminAcademicPage = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap items-center gap-2">
-                      {/* Rollback button */}
-                      {rollbackTransition && (
-                        <button
-                          onClick={() => openTransitionModal(sem, rollbackTransition.target)}
-                          disabled={isProcessing}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg disabled:opacity-50 transition"
-                          title={`Rollback ke ${rollbackTransition.target}`}
-                        >
-                          {isProcessing ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            <ChevronLeft size={12} />
-                          )}
-                          {rollbackTransition.target}
-                        </button>
-                      )}
-
                       {/* Set Active */}
                       {!sem.isActive && (
                         <button
@@ -523,7 +469,7 @@ const AdminAcademicPage = () => {
                       </button>
 
                       {/* Delete button */}
-                      {sem.status === 'PLANNING' &&
+                      {sem.status === 'DRAFT' &&
                         (sem._count?.classes || 0) === 0 &&
                         (sem._count?.finalGrades || 0) === 0 && (
                           <button
@@ -560,9 +506,7 @@ const AdminAcademicPage = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
-                  {transitionModal.direction === 'ROLLBACK'
-                    ? 'Konfirmasi Rollback Status'
-                    : 'Konfirmasi Perubahan Status'}
+                  Konfirmasi Perubahan Status
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
                   {transitionModal.semesterLabel}
@@ -582,11 +526,7 @@ const AdminAcademicPage = () => {
               <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${STATUS_CONFIG[transitionModal.fromStatus]?.color}`}>
                 {STATUS_CONFIG[transitionModal.fromStatus]?.label}
               </span>
-              {transitionModal.direction === 'ROLLBACK' ? (
-                <ChevronLeft size={20} className="text-amber-500" />
-              ) : (
-                <ChevronRight size={20} className="text-emerald-500" />
-              )}
+              <ChevronRight size={20} className="text-emerald-500" />
               <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${STATUS_CONFIG[transitionModal.toStatus]?.color}`}>
                 {STATUS_CONFIG[transitionModal.toStatus]?.label}
               </span>
@@ -594,26 +534,20 @@ const AdminAcademicPage = () => {
 
             {/* Direction badge */}
             <div className="text-center">
-              {transitionModal.direction === 'ROLLBACK' ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-200">
-                  <ChevronLeft size={12} /> Rollback
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium border border-emerald-200">
-                  <ChevronRight size={12} /> Forward
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium border border-emerald-200">
+                <ChevronRight size={12} /> Forward
+              </span>
             </div>
 
             {/* Warning for critical transitions */}
-            {transitionModal.toStatus === 'COMPLETED' && (
+            {transitionModal.toStatus === 'CLOSED' && (
               <div className="space-y-3">
                 {/* Static warning — always shown */}
                 <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-red-700">
-                    <strong>Perhatian:</strong> Mengubah status ke COMPLETED bersifat permanen
-                    dan tidak dapat di-rollback. Pastikan semua nilai sudah benar.
+                    <strong>Perhatian:</strong> Mengubah status ke CLOSED bersifat permanen.
+                    Pastikan semua nilai sudah benar.
                   </p>
                 </div>
 
@@ -728,97 +662,7 @@ const AdminAcademicPage = () => {
               </div>
             )}
 
-            {transitionModal.direction === 'ROLLBACK' && (
-              <div className="space-y-3">
-                {/* Static rollback warning */}
-                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700">
-                    <strong>Rollback:</strong> Status akan dikembalikan ke tahap sebelumnya.
-                    Data terkait akan dibersihkan secara otomatis.
-                  </p>
-                </div>
 
-                {/* Loading state */}
-                {rollbackImpactLoading && (
-                  <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <Loader2 size={14} className="animate-spin text-slate-500" />
-                    <p className="text-xs text-slate-600">Menghitung dampak rollback...</p>
-                  </div>
-                )}
-
-                {/* Error state */}
-                {rollbackImpactError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-700">{rollbackImpactError}</p>
-                  </div>
-                )}
-
-                {/* Impact preview */}
-                {rollbackImpact && !rollbackImpactLoading && (
-                  <div className="p-3 border border-amber-200 bg-amber-50/50 rounded-lg space-y-3">
-                    <p className="text-xs font-semibold text-amber-800">
-                      Dampak Rollback — {rollbackImpact.totalClasses || 0} kelas terpengaruh
-                    </p>
-
-                    {/* Impact stats grid */}
-                    <div className="grid grid-cols-2 gap-2 text-center">
-                      {(rollbackImpact.krsEnrollments?.toDelete > 0) && (
-                        <div className="bg-white/70 rounded-md p-2">
-                          <p className="text-sm font-bold text-red-600">
-                            {rollbackImpact.krsEnrollments.toDelete}
-                          </p>
-                          <p className="text-[10px] text-slate-500">KRS Dihapus</p>
-                        </div>
-                      )}
-                      {(rollbackImpact.krsEnrollments?.toReset > 0) && (
-                        <div className="bg-white/70 rounded-md p-2">
-                          <p className="text-sm font-bold text-amber-600">
-                            {rollbackImpact.krsEnrollments.toReset}
-                          </p>
-                          <p className="text-[10px] text-slate-500">KRS Di-reset ke DRAFT</p>
-                        </div>
-                      )}
-                      {(rollbackImpact.bridgeEnrollments?.toDelete > 0) && (
-                        <div className="bg-white/70 rounded-md p-2">
-                          <p className="text-sm font-bold text-red-600">
-                            {rollbackImpact.bridgeEnrollments.toDelete}
-                          </p>
-                          <p className="text-[10px] text-slate-500">Enrollment Dihapus</p>
-                        </div>
-                      )}
-                      {(rollbackImpact.finalGrades?.toDelete > 0) && (
-                        <div className="bg-white/70 rounded-md p-2">
-                          <p className="text-sm font-bold text-red-600">
-                            {rollbackImpact.finalGrades.toDelete}
-                          </p>
-                          <p className="text-[10px] text-slate-500">Nilai Dihapus</p>
-                        </div>
-                      )}
-                      {(rollbackImpact.approvalLogs?.toDelete > 0) && (
-                        <div className="bg-white/70 rounded-md p-2">
-                          <p className="text-sm font-bold text-red-600">
-                            {rollbackImpact.approvalLogs.toDelete}
-                          </p>
-                          <p className="text-[10px] text-slate-500">Log Approval Dihapus</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* No impact */}
-                    {(!rollbackImpact.krsEnrollments?.toDelete && !rollbackImpact.krsEnrollments?.toReset &&
-                      !rollbackImpact.bridgeEnrollments?.toDelete && !rollbackImpact.finalGrades?.toDelete &&
-                      !rollbackImpact.approvalLogs?.toDelete) && (
-                        <div className="flex items-center gap-2 bg-white/70 rounded-md p-2">
-                          <CheckCircle size={14} className="text-green-600" />
-                          <p className="text-xs text-green-700">Tidak ada data yang terpengaruh.</p>
-                        </div>
-                      )}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Reason input */}
             {transitionModal.reasonRequired && (
@@ -855,20 +699,17 @@ const AdminAcademicPage = () => {
                 disabled={
                   transitionSubmitting ||
                   (transitionModal.reasonRequired && !transitionReason.trim()) ||
-                  (transitionModal.toStatus === 'COMPLETED' && readinessLoading) ||
-                  (transitionModal.toStatus === 'COMPLETED' && readinessData && !readinessData.summary?.isReady) ||
-                  (transitionModal.direction === 'ROLLBACK' && rollbackImpactLoading)
+                  (transitionModal.toStatus === 'CLOSED' && readinessLoading) ||
+                  (transitionModal.toStatus === 'CLOSED' && readinessData && !readinessData.summary?.isReady)
                 }
                 className={
-                  transitionModal.direction === 'ROLLBACK'
-                    ? 'bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50'
-                    : transitionModal.toStatus === 'COMPLETED'
-                      ? 'bg-red-600 hover:bg-red-700 text-white disabled:opacity-50'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
+                  transitionModal.toStatus === 'CLOSED'
+                    ? 'bg-red-600 hover:bg-red-700 text-white disabled:opacity-50'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
                 }
               >
                 {transitionSubmitting && <Loader2 size={14} className="animate-spin" />}
-                {transitionModal.direction === 'ROLLBACK' ? 'Rollback' : 'Konfirmasi'}
+                Konfirmasi
               </Button>
             </div>
           </div>

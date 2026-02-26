@@ -186,7 +186,7 @@ const DosenGradingPage = () => {
 
   const { class: classInfo, students, summary, semesterStatus } = data;
   const allFinalized = summary.draft === 0 && summary.finalized > 0;
-  const canEdit = !allFinalized && (!semesterStatus || ['ONGOING', 'GRADING'].includes(semesterStatus));
+  const canEdit = !allFinalized && (!semesterStatus || semesterStatus === 'OPEN');
 
   return (
     <div className="space-y-6">
@@ -202,8 +202,8 @@ const DosenGradingPage = () => {
       {toast && (
         <div
           className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${toast.type === 'error'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-green-50 border-green-200 text-green-700'
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : 'bg-green-50 border-green-200 text-green-700'
             }`}
         >
           {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle size={18} />}
@@ -263,12 +263,12 @@ const DosenGradingPage = () => {
       </div>
 
       {/* Semester status warning */}
-      {semesterStatus && !['ONGOING', 'GRADING'].includes(semesterStatus) && (
+      {semesterStatus && semesterStatus !== 'OPEN' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
           <AlertCircle size={18} className="text-amber-600 shrink-0" />
           <p className="text-sm text-amber-700">
             Semester saat ini berstatus <strong>{semesterStatus}</strong>. Input nilai hanya diperbolehkan saat status{' '}
-            <strong>ONGOING</strong> atau <strong>GRADING</strong>.
+            <strong>OPEN</strong>.
           </p>
         </div>
       )}
@@ -278,7 +278,7 @@ const DosenGradingPage = () => {
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
           <Lock size={18} className="text-green-600 shrink-0" />
           <p className="text-sm text-green-700">
-            Semua nilai sudah difinalisasi. Nilai akan terlihat oleh mahasiswa setelah semester dinyatakan COMPLETED oleh admin.
+            Semua nilai sudah difinalisasi. Nilai akan terlihat oleh mahasiswa setelah semester dinyatakan CLOSED oleh admin.
           </p>
         </div>
       )}
@@ -420,8 +420,8 @@ const DosenGradingPage = () => {
                             onChange={(e) => handleGradeChange(student.id, e.target.value)}
                             disabled={isFinalized || !canEdit}
                             className={`w-24 px-2 py-1.5 border rounded-lg text-sm font-medium text-center focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400 ${currentGrade
-                                ? GRADE_COLORS[currentGrade] || 'border-slate-200'
-                                : 'border-slate-200'
+                              ? GRADE_COLORS[currentGrade] || 'border-slate-200'
+                              : 'border-slate-200'
                               }`}
                           >
                             <option value="">—</option>

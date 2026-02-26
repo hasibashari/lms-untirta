@@ -304,17 +304,15 @@ const StudyPlan = () => {
       </div>
 
       {/* Semester Status Warning */}
-      {activeSemester && activeSemester.status !== 'ENROLLMENT' && (
+      {activeSemester && activeSemester.status !== 'OPEN' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
           <div className="text-sm text-amber-800">
             <strong>Masa pengisian KRS belum dibuka.</strong>{' '}
             Semester {activeSemester.academicYear} {activeSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}{' '}
             masih dalam tahap <strong>{activeSemester.status}</strong>.
-            {activeSemester.status === 'PLANNING' && ' Admin perlu mengubah status ke ENROLLMENT terlebih dahulu.'}
-            {activeSemester.status === 'ONGOING' && ' Masa KRS sudah terlewati untuk semester ini.'}
-            {activeSemester.status === 'GRADING' && ' Semester sedang dalam masa penilaian.'}
-            {activeSemester.status === 'COMPLETED' && ' Semester ini sudah selesai.'}
+            {activeSemester.status === 'DRAFT' && ' Admin perlu mengubah status ke OPEN terlebih dahulu.'}
+            {activeSemester.status === 'CLOSED' && ' Semester ini sudah selesai.'}
           </div>
         </div>
       )}
@@ -491,7 +489,7 @@ const StudyPlan = () => {
                 ? 'Tidak ada mata kuliah yang ditemukan'
                 : availableMeta?.reason === 'NO_ACTIVE_SEMESTER'
                   ? 'Tidak ada semester aktif saat ini'
-                  : availableMeta?.reason === 'SEMESTER_NOT_ENROLLMENT'
+                  : availableMeta?.reason === 'SEMESTER_NOT_OPEN'
                     ? `Semester ${availableMeta.semester?.academicYear || ''} belum memasuki masa pengisian KRS (status: ${availableMeta.semester?.status || '-'})`
                     : availableMeta?.reason === 'NO_CLASSES_CREATED'
                       ? 'Belum ada kelas yang dibuka untuk semester ini. Hubungi admin untuk informasi lebih lanjut.'
