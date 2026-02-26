@@ -1,7 +1,12 @@
 import * as courseService from './course.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
-// --- Create a new course ---
+/**
+ * Creates a new course.
+ * Typically used by Teachers or Admins to initialize a new subject.
+ * @param {import('express').Request} req - Express request object. Expects course details in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const createCourse = async (req, res) => {
   try {
     const newCourse = await courseService.createCourse(req.body, req.user.id);
@@ -14,7 +19,11 @@ export const createCourse = async (req, res) => {
   }
 };
 
-// --- Get all courses ---
+/**
+ * Retrieves all courses available in the system.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getCourses = async (req, res) => {
   try {
     const courses = await courseService.getAllCourses();
@@ -24,7 +33,12 @@ export const getCourses = async (req, res) => {
   }
 };
 
-// --- Enroll Student to Course ---
+/**
+ * Enrolls a student into a specific course.
+ * Supports enrollment by `studentId` or `email`.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and student identifier in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const enrollStudent = async (req, res) => {
   try {
     const { id: courseId } = req.params;
@@ -65,6 +79,12 @@ export const enrollStudent = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves courses relevant to the authenticated user based on their role.
+ * - Students: Courses they are enrolled in.
+ * - Teachers: Courses they are teaching (optionally with stats).
+ * - Admins: All courses.
+ */
 export const getMyCourses = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -97,7 +117,11 @@ export const getMyCourses = async (req, res) => {
   }
 };
 
-// --- Get Students by Course ---
+/**
+ * Retrieves the list of students enrolled in a specific course.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getStudentsByCourse = async (req, res) => {
   try {
     const { id: courseId } = req.params;
@@ -114,7 +138,12 @@ export const getStudentsByCourse = async (req, res) => {
   }
 };
 
-// --- Get Available Students for Enrollment ---
+/**
+ * Retrieves a list of students who are NOT yet enrolled in a specific course.
+ * Useful for populating an "Add Student" dropdown.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getAvailableStudents = async (req, res) => {
   try {
     const { id: courseId } = req.params;
@@ -137,7 +166,11 @@ export const getAvailableStudents = async (req, res) => {
 
 // ========== ADMIN COURSE MANAGEMENT ==========
 
-// --- Admin: Get All Courses ---
+/**
+ * Retrieves all courses with detailed administrative information.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const adminGetAllCourses = async (req, res) => {
   try {
     const courses = await courseService.adminGetAllCourses();
@@ -147,7 +180,12 @@ export const adminGetAllCourses = async (req, res) => {
   }
 };
 
-// --- Admin: Create Course ---
+/**
+ * Creates a new course with administrative privileges.
+ * Allows setting the teacher explicitly during creation.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const adminCreateCourse = async (req, res) => {
   try {
     const newCourse = await courseService.adminCreateCourse(req.body);
@@ -163,7 +201,11 @@ export const adminCreateCourse = async (req, res) => {
   }
 };
 
-// --- Admin: Update Course ---
+/**
+ * Updates an existing course with administrative privileges.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const adminUpdateCourse = async (req, res) => {
   try {
     const { id } = req.params;
@@ -180,7 +222,11 @@ export const adminUpdateCourse = async (req, res) => {
   }
 };
 
-// --- Admin: Delete Course ---
+/**
+ * Deletes a course and all associated data (enrollments, materials, assignments).
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const adminDeleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
@@ -194,7 +240,11 @@ export const adminDeleteCourse = async (req, res) => {
   }
 };
 
-// --- Admin: Assign Teacher to Course ---
+/**
+ * Assigns a specific teacher to a course.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and `teacherId` in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const adminAssignTeacher = async (req, res) => {
   try {
     const { id } = req.params;

@@ -1,6 +1,13 @@
 import prisma from '../../config/prisma.js';
 
-// --- Create a new course ---
+/**
+ * Creates a new course in the database.
+ * Checks for unique course code before creation.
+ * @param {object} data - Course data (title, description, code).
+ * @param {string} teacherId - The ID of the teacher creating the course.
+ * @returns {Promise<object>} The created course object.
+ * @throws {Error} If the course code is already in use.
+ */
 const createCourse = async (data, teacherId) => {
   // 1. Cek apakah Kode Mata Kuliah (Unique) sudah ada?
   const existingCourse = await prisma.course.findUnique({
@@ -34,7 +41,10 @@ const createCourse = async (data, teacherId) => {
   });
 };
 
-// --- Get all courses with teacher info ---
+/**
+ * Retrieves all courses including teacher information.
+ * @returns {Promise<Array<object>>} List of courses.
+ */
 const getAllCourses = async () => {
   // Kita ingin mengambil data kelas BESERTA nama dosennya
   return await prisma.course.findMany({
@@ -60,8 +70,16 @@ const getAllCourses = async () => {
   });
 };
 
-// Add Studen
-
+/**
+ * Adds a student to a course using their email address.
+ * Validates course ownership (if teacher) and ensures the user is a student.
+ * @param {string} courseId - The ID of the course.
+ * @param {string} studentEmail - The email of the student to enroll.
+ * @param {string} teacherId - The ID of the user performing the action.
+ * @param {string} teacherRole - The role of the user performing the action.
+ * @returns {Promise<object>} The created enrollment object.
+ * @throws {Error} If course/student not found, access denied, or already enrolled.
+ */
 const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole) => {
   // 1. Validasi: Pastikan Kelas itu milik Dosen yang sedang login
   const course = await prisma.course.findUnique({
@@ -135,6 +153,11 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
   };
 };
 
+/**
+ * Retrieves all courses a student is enrolled in.
+ * @param {string} studentId - The ID of the student.
+ * @returns {Promise<Array<object>>} List of enrolled courses with teacher info.
+ */
 const getEnrolledCourses = async studentId => {
   const enrollments = await prisma.enrollment.findMany({
     where: { userId: studentId },
@@ -175,7 +198,11 @@ const getEnrolledCourses = async studentId => {
   }));
 };
 
-// --- Get Teaching Courses (For Dosen) ---
+/**
+ * Retrieves courses taught by a specific teacher (basic info).
+ * @param {string} teacherId - The ID of the teacher.
+ * @returns {Promise<Array<object>>} List of courses.
+ */
 const getTeachingCourses = async teacherId => {
   // Ambil semua kelas yang diajar oleh Dosen ini
   const courses = await prisma.course.findMany({
@@ -190,8 +217,12 @@ const getTeachingCourses = async teacherId => {
   return courses;
 };
 
-// --- Get Teaching Courses WITH Stats (Optimized - Single Query) ---
-// Menghindari N+1 query dengan menggunakan _count Prisma
+/**
+ * Retrieves courses taught by a specific teacher including statistics.
+ * Uses Prisma's `_count` to efficiently fetch student and material counts.
+ * @param {string} teacherId - The ID of the teacher.
+ * @returns {Promise<Array<object>>} List of courses with stats.
+ */
 const getTeachingCoursesWithStats = async teacherId => {
   const courses = await prisma.course.findMany({
     where: { teacherId },
@@ -215,7 +246,15 @@ const getTeachingCoursesWithStats = async teacherId => {
   return courses;
 };
 
-// --- Get Students by Course ---
+/**
+ * Retrieves the list of students enrolled in a specific course.
+ * Validates that the requester is the teacher of the course or an admin.
+ * @param {string} courseId - The ID of the course.
+ * @param {string} userId - The ID of the user requesting the list.
+ * @param {string} userRole - The role of the user.
+ * @returns {Promise<Array<object>>} List of enrolled students.
+ * @throws {Error} If course not found or access denied.
+ */
 const getStudentsByCourse = async (courseId, userId, userRole) => {
   // 1. Validasi: Pastikan Kelas tersebut ada
   const course = await prisma.course.findUnique({
@@ -258,8 +297,15 @@ const getStudentsByCourse = async (courseId, userId, userRole) => {
   }));
 };
 
-// --- Get Available Students for Enrollment ---
-// Mengambil daftar mahasiswa yang belum terdaftar di kelas tertentu
+/**
+ * Retrieves students who are NOT yet enrolled in a specific course.
+ * Useful for finding students to add to a class.
+ * @param {string} courseId - The ID of the course.
+ * @param {string} userId - The ID of the user requesting the list.
+ * @param {string} userRole - The role of the user.
+ * @returns {Promise<Array<object>>} List of available students.
+ * @throws {Error} If course not found or access denied.
+ */
 const getAvailableStudentsForCourse = async (courseId, userId, userRole) => {
   // 1. Validasi: Pastikan Kelas tersebut ada
   const course = await prisma.course.findUnique({
@@ -301,8 +347,16 @@ const getAvailableStudentsForCourse = async (courseId, userId, userRole) => {
   return availableStudents;
 };
 
-// --- Add Student to Course by ID ---
-// Versi baru: enroll berdasarkan studentId (bukan email)
+/**
+ * Adds a student to a course using their User ID.
+ * Validates course ownership and ensures the user is a student.
+ * @param {string} courseId - The ID of the course.
+ * @param {string} studentId - The ID of the student to enroll.
+ * @param {string} teacherId - The ID of the user performing the action.
+ * @param {string} teacherRole - The role of the user performing the action.
+ * @returns {Promise<object>} The created enrollment object.
+ * @throws {Error} If course/student not found, access denied, or already enrolled.
+ */
 const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRole) => {
   // 1. Validasi: Pastikan Kelas itu milik Dosen yang sedang login
   const course = await prisma.course.findUnique({
@@ -374,7 +428,10 @@ const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRol
 
 // ========== ADMIN COURSE MANAGEMENT ==========
 
-// --- Admin: Get All Courses with Details ---
+/**
+ * Retrieves all courses with comprehensive details for admin view.
+ * Includes counts of students, materials, and assignments.
+ */
 const adminGetAllCourses = async () => {
   return await prisma.course.findMany({
     select: {
@@ -408,7 +465,12 @@ const adminGetAllCourses = async () => {
   });
 };
 
-// --- Admin: Create Course ---
+/**
+ * Creates a new course with administrative privileges.
+ * Allows setting the teacher explicitly.
+ * @param {object} data - Course data.
+ * @returns {Promise<object>} The created course.
+ */
 const adminCreateCourse = async (data) => {
   // Cek kode unik
   const existingCourse = await prisma.course.findUnique({
@@ -462,7 +524,12 @@ const adminCreateCourse = async (data) => {
   });
 };
 
-// --- Admin: Update Course ---
+/**
+ * Updates an existing course (Admin).
+ * @param {string} courseId - The ID of the course.
+ * @param {object} data - Update data.
+ * @returns {Promise<object>} The updated course.
+ */
 const adminUpdateCourse = async (courseId, data) => {
   // Cek apakah course exists
   const course = await prisma.course.findUnique({
@@ -528,7 +595,11 @@ const adminUpdateCourse = async (courseId, data) => {
   });
 };
 
-// --- Admin: Delete Course ---
+/**
+ * Deletes a course (Admin).
+ * Cascades delete to related records via Prisma schema configuration.
+ * @param {string} courseId - The ID of the course.
+ */
 const adminDeleteCourse = async (courseId) => {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
@@ -558,7 +629,11 @@ const adminDeleteCourse = async (courseId) => {
   };
 };
 
-// --- Admin: Assign Teacher to Course ---
+/**
+ * Assigns a teacher to a course (Admin).
+ * @param {string} courseId - The ID of the course.
+ * @param {string} teacherId - The ID of the teacher.
+ */
 const adminAssignTeacher = async (courseId, teacherId) => {
   const course = await prisma.course.findUnique({
     where: { id: courseId },

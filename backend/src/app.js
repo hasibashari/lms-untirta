@@ -28,8 +28,14 @@ app.use(cors({
 // Body parser untuk JSON
 app.use(express.json());
 
-// Logging sederhana (Middleware)
-// Setiap request yang masuk akan dicatat di console
+/**
+ * Global request logging middleware.
+ * Logs the timestamp, HTTP method, and original URL for every incoming request.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ * @param {import('express').NextFunction} next - Express next function.
+ */
+
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   next(); // Lanjut ke proses berikutnya (Route Handler)

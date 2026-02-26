@@ -2,7 +2,11 @@ import z from 'zod';
 
 const VALID_LETTER_GRADES = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
 
-const inputGradeSchema = z.object({
+/**
+ * Zod validation schema for inputting a single grade.
+ * Validates classId in params and grade details (letterGrade, numericScore) in body.
+ */
+export const inputGradeSchema = z.object({
   params: z.object({
     classId: z.string().uuid('Class ID tidak valid'),
   }),
@@ -18,7 +22,11 @@ const inputGradeSchema = z.object({
   }),
 });
 
-const bulkInputGradeSchema = z.object({
+/**
+ * Zod validation schema for bulk inputting grades.
+ * Validates an array of grade objects.
+ */
+export const bulkInputGradeSchema = z.object({
   params: z.object({
     classId: z.string().uuid('Class ID tidak valid'),
   }),
@@ -41,10 +49,12 @@ const bulkInputGradeSchema = z.object({
   }),
 });
 
-const finalizeGradesSchema = z.object({
+/**
+ * Zod validation schema for finalizing grades.
+ * Validates classId in params.
+ */
+export const finalizeGradesSchema = z.object({
   params: z.object({
     classId: z.string().uuid('Class ID tidak valid'),
   }),
 });
-
-export { inputGradeSchema, bulkInputGradeSchema, finalizeGradesSchema };

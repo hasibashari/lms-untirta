@@ -30,7 +30,11 @@ const router = express.Router();
 
 // ========== SPECIFIC ROUTES (tanpa parameter, harus di atas /:id) ==========
 
-// GET /api/classes/me — Kelas yang diajar oleh dosen yang login
+/**
+ * GET /api/classes/me
+ * Retrieves classes taught by the authenticated lecturer.
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.get(
   '/me',
   authenticateToken,
@@ -38,7 +42,11 @@ router.get(
   getMyClasses
 );
 
-// GET /api/classes/open — Kelas yang buka pendaftaran (untuk KRS)
+/**
+ * GET /api/classes/open
+ * Retrieves classes that are open for enrollment (for KRS).
+ * Middleware: Auth Token, Role: MAHASISWA/ADMIN.
+ */
 router.get(
   '/open',
   authenticateToken,
@@ -46,7 +54,11 @@ router.get(
   getOpen
 );
 
-// GET /api/classes/course/:courseId — Kelas offering berdasarkan mata kuliah
+/**
+ * GET /api/classes/course/:courseId
+ * Retrieves class offerings for a specific course.
+ * Middleware: Auth Token.
+ */
 router.get(
   '/course/:courseId',
   authenticateToken,
@@ -55,7 +67,11 @@ router.get(
 
 // ========== CRUD ROUTES ==========
 
-// GET /api/classes — Daftar semua kelas offering (Admin & Dosen)
+/**
+ * GET /api/classes
+ * Retrieves all class offerings.
+ * Middleware: Auth Token, Role: ADMIN/DOSEN.
+ */
 router.get(
   '/',
   authenticateToken,
@@ -63,7 +79,11 @@ router.get(
   getAll
 );
 
-// POST /api/classes — Buat kelas offering baru (Admin only)
+/**
+ * POST /api/classes
+ * Creates a new class offering.
+ * Middleware: Auth Token, Role: ADMIN, Validation: createClassSchema.
+ */
 router.post(
   '/',
   authenticateToken,
@@ -74,14 +94,22 @@ router.post(
 
 // ========== PARAMETERIZED ROUTES (/:id) ==========
 
-// GET /api/classes/:id — Detail satu kelas offering
+/**
+ * GET /api/classes/:id
+ * Retrieves details of a specific class offering.
+ * Middleware: Auth Token.
+ */
 router.get(
   '/:id',
   authenticateToken,
   getById
 );
 
-// PUT /api/classes/:id — Update kelas offering (Admin only)
+/**
+ * PUT /api/classes/:id
+ * Updates an existing class offering.
+ * Middleware: Auth Token, Role: ADMIN, Validation: updateClassSchema.
+ */
 router.put(
   '/:id',
   authenticateToken,
@@ -90,7 +118,11 @@ router.put(
   update
 );
 
-// PATCH /api/classes/:id/enrollment — Buka/tutup pendaftaran (Admin only)
+/**
+ * PATCH /api/classes/:id/enrollment
+ * Toggles the enrollment status of a class.
+ * Middleware: Auth Token, Role: ADMIN, Validation: toggleEnrollmentSchema.
+ */
 router.patch(
   '/:id/enrollment',
   authenticateToken,
@@ -99,7 +131,11 @@ router.patch(
   toggleEnrollment
 );
 
-// DELETE /api/classes/:id — Hapus kelas offering (Admin only)
+/**
+ * DELETE /api/classes/:id
+ * Deletes a class offering.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.delete(
   '/:id',
   authenticateToken,

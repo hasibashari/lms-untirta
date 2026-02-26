@@ -3,6 +3,11 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 
 // ======================== CREATE ========================
 
+/**
+ * Creates a new class offering (Kelas Offering).
+ * @param {import('express').Request} req - Express request object. Expects class details in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const create = async (req, res) => {
   try {
     const newClass = await classService.createClass(req.body);
@@ -27,6 +32,11 @@ export const create = async (req, res) => {
 
 // ======================== READ ========================
 
+/**
+ * Retrieves all class offerings, optionally filtered by semester or course.
+ * @param {import('express').Request} req - Express request object. Supports query params `academicSemesterId` and `courseId`.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getAll = async (req, res) => {
   try {
     const filters = {
@@ -44,6 +54,11 @@ export const getAll = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves details of a specific class offering by ID.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getById = async (req, res) => {
   try {
     const classData = await classService.getClassById(req.params.id);
@@ -60,6 +75,11 @@ export const getById = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves classes taught by the currently authenticated lecturer.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getMyClasses = async (req, res) => {
   try {
     const filters = {
@@ -76,6 +96,11 @@ export const getMyClasses = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves all class offerings for a specific course.
+ * @param {import('express').Request} req - Express request object. Expects `courseId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getByCourse = async (req, res) => {
   try {
     const filters = {
@@ -92,6 +117,12 @@ export const getByCourse = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves class offerings that are currently open for enrollment.
+ * Used by students during KRS period.
+ * @param {import('express').Request} req - Express request object. Supports query params `academicSemesterId` and `courseId`.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getOpen = async (req, res) => {
   try {
     const filters = {
@@ -111,6 +142,11 @@ export const getOpen = async (req, res) => {
 
 // ======================== UPDATE ========================
 
+/**
+ * Updates an existing class offering.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and update data in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const update = async (req, res) => {
   try {
     const updatedClass = await classService.updateClass(req.params.id, req.body);
@@ -133,6 +169,11 @@ export const update = async (req, res) => {
   }
 };
 
+/**
+ * Toggles the enrollment status (open/closed) of a class.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and `isEnrollmentOpen` in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const toggleEnrollment = async (req, res) => {
   try {
     const { isEnrollmentOpen } = req.body;
@@ -154,6 +195,11 @@ export const toggleEnrollment = async (req, res) => {
 
 // ======================== DELETE ========================
 
+/**
+ * Deletes a class offering.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const remove = async (req, res) => {
   try {
     const result = await classService.deleteClass(req.params.id);

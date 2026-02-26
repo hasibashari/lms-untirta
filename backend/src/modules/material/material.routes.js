@@ -7,13 +7,18 @@ import { updateMaterialSchema } from './material.validation.js';
 
 const router = express.Router();
 
-// GET /api/materials/:materialId - Get Material Detail
-// Endpoint ini memisahkan detail materi dari list materi di course
-// Untuk akses lebih fleksibel dan modular
+/**
+ * GET /api/materials/:materialId
+ * Retrieves the detailed content of a specific material.
+ * Middleware: Auth Token.
+ */
 router.get('/:materialId', authenticateToken, getMaterialById);
 
-// PUT /api/materials/:materialId - Update Material (Dosen Only)
-// Endpoint untuk mengupdate materi yang sudah ada
+/**
+ * PUT /api/materials/:materialId
+ * Updates an existing material.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: updateMaterialSchema.
+ */
 router.put(
   '/:materialId',
   authenticateToken,
@@ -22,8 +27,11 @@ router.put(
   updateMaterial
 );
 
-// DELETE /api/materials/:materialId - Delete Material (Dosen Only)
-// Endpoint untuk menghapus materi
+/**
+ * DELETE /api/materials/:materialId
+ * Deletes a material.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ */
 router.delete(
   '/:materialId',
   authenticateToken,

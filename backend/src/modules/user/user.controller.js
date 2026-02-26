@@ -1,7 +1,12 @@
 import * as userService from './user.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
-// Controller untuk membuat user baru oleh Admin
+/**
+ * Creates a new user (Admin or Lecturer) in the system.
+ * This action is restricted to Administrators.
+ * @param {import('express').Request} req - Express request object. Expects user details in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const createUser = async (req, res) => {
   try {
     const newUser = await userService.createUserByAdmin(req.body);
@@ -14,6 +19,12 @@ export const createUser = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves a list of all users, with optional filtering.
+ * Supports filtering by role and Dospem status.
+ * @param {import('express').Request} req - Express request object. Supports query params `role` and `isDospem`.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getAllUsers = async (req, res) => {
   try {
     const { role, isDospem } = req.query;
@@ -39,6 +50,11 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves detailed information about a specific user by ID.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -56,6 +72,12 @@ export const getUserById = async (req, res) => {
 
 // ======================== DOSPEM MANAGEMENT ========================
 
+/**
+ * Updates the "Dosen Pembimbing" (Academic Advisor) status for a lecturer.
+ * Grants or revokes the ability to advise students.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and `isDospem` in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const updateDospemStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,6 +99,11 @@ export const updateDospemStatus = async (req, res) => {
   }
 };
 
+/**
+ * Assigns or unassigns an academic advisor for a specific student.
+ * @param {import('express').Request} req - Express request object. Expects `id` (student) in params and `advisorId` in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const assignAdvisor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -98,6 +125,12 @@ export const assignAdvisor = async (req, res) => {
   }
 };
 
+/**
+ * Bulk assigns an academic advisor to multiple students.
+ * Useful for batch processing student assignments.
+ * @param {import('express').Request} req - Express request object. Expects `studentIds` array and `advisorId` in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const bulkAssignAdvisor = async (req, res) => {
   try {
     const { studentIds, advisorId } = req.body;
@@ -114,6 +147,11 @@ export const bulkAssignAdvisor = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves a summary of all academic advisors and their current student counts.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getAdvisorSummary = async (req, res) => {
   try {
     const result = await userService.getAdvisorSummary();
@@ -123,6 +161,11 @@ export const getAdvisorSummary = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves the list of students assigned to a specific academic advisor.
+ * @param {import('express').Request} req - Express request object. Expects `dosenId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getAdvisorStudents = async (req, res) => {
   try {
     const { dosenId } = req.params;

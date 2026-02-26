@@ -11,12 +11,11 @@ import { KRS_STATUS, isValidStatusTransition } from '../../utils/academic.util.j
 // ======================== SKS ELIGIBILITY ========================
 
 /**
- * Ambil info kelayakan SKS mahasiswa untuk semester tertentu.
- * Batas SKS ditentukan oleh field maxSks di AcademicSemester (berlaku sama untuk semua mahasiswa).
- *
- * @param {string} studentId
- * @param {string} academicSemesterId
- * @returns {Promise<object>}
+ * Retrieves SKS (credit) eligibility information for a student in a specific semester.
+ * The SKS limit is determined by the `maxSks` field on the AcademicSemester.
+ * @param {string} studentId - The ID of the student.
+ * @param {string} academicSemesterId - The ID of the academic semester.
+ * @returns {Promise<{maxSKS: number, currentSKS: number, remainingSKS: number}>} An object with SKS details.
  */
 const getSksEligibility = async (studentId, academicSemesterId) => {
   // Get semester's maxSks
@@ -59,13 +58,10 @@ const getSksEligibility = async (studentId, academicSemesterId) => {
 // ======================== ENROLLMENT PERIOD GUARD ========================
 
 /**
- * Validasi bahwa masa pengisian KRS masih terbuka.
- * Cek:
- *  1. Semester harus ada
- *  2. Status semester harus OPEN
- *
- * @param {string} academicSemesterId
- * @throws Error jika masa KRS tidak terbuka
+ * Asserts that the KRS enrollment period for a given semester is currently open.
+ * It checks if the semester exists and its status is 'OPEN'.
+ * @param {string} academicSemesterId - The ID of the academic semester to check.
+ * @throws {Error} If the enrollment period is not open.
  */
 const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
   const semester = await prisma.academicSemester.findUnique({
@@ -91,14 +87,12 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
 // ======================== AVAILABLE CLASSES ========================
 
 /**
- * Ambil kelas offering yang tersedia untuk KRS mahasiswa.
- * Hanya menampilkan kelas yang:
- *  1. Semester dalam status OPEN (atau isEnrollmentOpen = true)
- *  2. Mahasiswa belum terdaftar
- *  3. Kapasitas belum penuh
- *
- * Returns _meta with diagnostics when result is empty, so frontend can
- * display actionable messages to the student.
+ * Retrieves class offerings available for a student's KRS.
+ * It filters classes that are open for enrollment, not full, and not already taken by the student.
+ * If no classes are available, it returns diagnostic metadata for the frontend.
+ * @param {string} studentId - The ID of the student.
+ * @param {object} [filters={}] - Optional filters (e.g., academicSemesterId, semester).
+ * @returns {Promise<{classes: Array<object>, _meta: object|null}>} An object containing the list of classes and optional metadata.
  */
 const getAvailableClasses = async (studentId, filters = {}) => {
   // 1. Resolve the target academic semester
@@ -268,13 +262,15 @@ const getAvailableClasses = async (studentId, filters = {}) => {
 // ======================== ENROLL ========================
 
 /**
- * Mahasiswa mendaftar ke kelas offering (tambah ke KRS).
- * Validasi:
- *  1. Kelas harus ada dan enrollment harus terbuka
- *  2. Kapasitas belum penuh
- *  3. Mahasiswa belum terdaftar di kelas ini
- *  4. Mahasiswa belum terdaftar di kelas lain untuk course yang sama (semester & tahun sama)
- *  5. Total SKS tidak melebihi batas
+ * Enrolls a student in a class offering for their KRS.
+ * This function performs several critical validations:
+ * - Checks if the class exists and is open for enrollment.
+ * - Verifies that the class capacity has not been reached.
+ * - Prevents duplicate enrollment in the same class or another section of the same course.
+ * - Ensures the student's total SKS (credits) does not exceed the semester limit.
+ * @param {string} studentId - The ID of the student.
+ * @param {string} classId - The ID of the class to enroll in.
+ * @returns {Promise<object>} The newly created KRS enrollment record.
  */
 const enrollClass = async (studentId, classId) => {
   // 1. Validasi kelas ada dan terbuka
@@ -453,8 +449,12 @@ const enrollClass = async (studentId, classId) => {
 // ======================== DROP (UNENROLL) ========================
 
 /**
- * Mahasiswa drop kelas dari KRS.
- * Hanya bisa drop jika status masih PENDING atau REJECTED.
+ * Allows a student to drop a class from their KRS.
+ * This action is only permitted if the enrollment status is 'PENDING' or 'REJECTED'.
+ * It is blocked if the class has already been 'APPROVED'.
+ * @param {string} studentId - The ID of the student.
+ * @param {string} classId - The ID of the class to drop.
+ * @returns {Promise<{message: string, classId: string}>} A success message and the ID of the dropped class.
  */
 const dropClass = async (studentId, classId) => {
   const enrollment = await prisma.krsEnrollment.findUnique({
@@ -508,8 +508,11 @@ const dropClass = async (studentId, classId) => {
 // ======================== MY KRS ========================
 
 /**
- * Ambil daftar KRS mahasiswa (enrolled classes).
- * Bisa difilter berdasarkan academicSemesterId.
+ * Retrieves the list of classes a student has enrolled in for their KRS.
+ * Can be filtered by a specific academic semester.
+ * @param {string} studentId - The ID of the student.
+ * @param {object} [filters={}] - Optional filters (e.g., academicSemesterId).
+ * @returns {Promise<{enrollments: Array<object>, summary: object}>} The student's KRS details and a summary of total credits.
  */
 const getMyKRS = async (studentId, filters = {}) => {
   const where = { studentId };
@@ -607,11 +610,15 @@ const getMyKRS = async (studentId, filters = {}) => {
 // ======================== UPDATE STATUS (DOSEN / ADMIN) ========================
 
 /**
- * Update status satu KRS enrollment (approve/reject).
- * Hanya bisa dilakukan oleh Dosen Pembimbing (Dospem) yang di-assign.
- *
- * Jika status baru = APPROVED, otomatis buat record di tabel Enrollment (bridge)
- * agar mahasiswa bisa mengakses assignment di course tersebut.
+ * Updates the status of a single KRS enrollment (e.g., from PENDING to APPROVED).
+ * This is a critical state transition performed by an academic advisor (Dospem) or an Admin.
+ * If approved, it creates a corresponding record in the main `Enrollment` table to grant course access.
+ * If an approval is revoked, it removes the `Enrollment` record.
+ * @param {string} enrollmentId - The ID of the KRS enrollment to update.
+ * @param {string} newStatus - The target status ('APPROVED' or 'REJECTED').
+ * @param {string|null} [note=null] - An optional note, required for rejections or admin actions.
+ * @param {object|null} [currentUser=null] - The user performing the action.
+ * @returns {Promise<object>} The updated KRS enrollment record.
  */
 const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, currentUser = null) => {
   const enrollment = await prisma.krsEnrollment.findUnique({
@@ -796,9 +803,14 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
 // ======================== BULK UPDATE STATUS (ADMIN) ========================
 
 /**
- * Bulk update status KRS enrollments (approve/reject multiple).
- * Hanya bisa dilakukan oleh Dospem untuk mahasiswa bimbingannya.
- * Menggunakan transaction untuk konsistensi data.
+ * Updates the status of multiple KRS enrollments in a single batch operation.
+ * This function is restricted to academic advisors for their advisees or Admins.
+ * It uses a database transaction to ensure all updates succeed or fail together.
+ * @param {Array<string>} enrollmentIds - An array of KRS enrollment IDs to update.
+ * @param {string} newStatus - The target status for all enrollments.
+ * @param {string|null} [note=null] - An optional note for the update.
+ * @param {object|null} [currentUser=null] - The user performing the bulk action.
+ * @returns {Promise<{message: string, updatedCount: number, status: string}>} A summary of the bulk operation.
  */
 const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null, currentUser = null) => {
   if (!enrollmentIds || enrollmentIds.length === 0) {
@@ -968,9 +980,12 @@ const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null,
 // ======================== PENDING KRS (DOSEN/ADMIN VIEW) ========================
 
 /**
- * Ambil daftar KRS yang menunggu persetujuan (status PENDING).
- * Dospem hanya melihat mahasiswa bimbingannya.
- * Admin melihat semua (monitoring).
+ * Retrieves a list of KRS enrollments that are awaiting approval (status 'PENDING').
+ * If the user is an advisor, it returns pending enrollments only for their advisees.
+ * If the user is an Admin, it returns all pending enrollments across the system.
+ * @param {object} [filters={}] - Optional filters (e.g., academicSemesterId).
+ * @param {object|null} [currentUser=null] - The user requesting the list.
+ * @returns {Promise<Array<object>>} A list of pending KRS enrollment records.
  */
 const getPendingKRS = async (filters = {}, currentUser = null) => {
   const where = { status: KRS_STATUS.PENDING };
@@ -1036,8 +1051,12 @@ const getPendingKRS = async (filters = {}, currentUser = null) => {
 // ======================== REVISE REJECTED KRS ========================
 
 /**
- * Mahasiswa merevisi KRS yang ditolak: REJECTED → DRAFT.
- * Hanya bisa dilakukan jika masa KRS masih terbuka.
+ * Allows a student to revise a rejected KRS enrollment.
+ * This action transitions the status from 'REJECTED' back to 'PENDING' for re-approval.
+ * It can only be performed during an open enrollment period.
+ * @param {string} studentId - The ID of the student revising the enrollment.
+ * @param {string} enrollmentId - The ID of the rejected KRS enrollment.
+ * @returns {Promise<{message: string, enrollment: object}>} A success message and the updated enrollment data.
  */
 const reviseRejectedEnrollment = async (studentId, enrollmentId) => {
   const enrollment = await prisma.krsEnrollment.findFirst({
@@ -1122,8 +1141,12 @@ const reviseRejectedEnrollment = async (studentId, enrollmentId) => {
 // ======================== APPROVAL HISTORY ========================
 
 /**
- * Ambil riwayat approval KRS untuk satu enrollment.
- * Mahasiswa hanya bisa lihat miliknya, Daspem bisa lihat anak bimbingan, Admin semua.
+ * Retrieves the approval history (audit log) for a single KRS enrollment.
+ * Access is restricted: students can only view their own history, advisors can view their advisees',
+ * and Admins can view any history.
+ * @param {string} enrollmentId - The ID of the KRS enrollment.
+ * @param {object} currentUser - The user requesting the history.
+ * @returns {Promise<Array<object>>} An array of log entries.
  */
 const getApprovalHistory = async (enrollmentId, currentUser) => {
   const enrollment = await prisma.krsEnrollment.findUnique({
@@ -1158,7 +1181,12 @@ const getApprovalHistory = async (enrollmentId, currentUser) => {
 // ======================== ADVISORY (DOSPEM) ========================
 
 /**
- * Ambil daftar mahasiswa bimbingan Dospem beserta status KRS mereka.
+ * Retrieves the list of advisees for a specific academic advisor (Dospem).
+ * For each student, it includes their KRS enrollments and a summary of their status
+ * (pending, approved, rejected) for the filtered semester.
+ * @param {string} dosenId - The ID of the academic advisor.
+ * @param {object} [filters={}] - Optional filters (e.g., academicSemesterId).
+ * @returns {Promise<{students: Array<object>, summary: object}>} A list of advisees and an overall summary.
  */
 const getAdvisoryStudents = async (dosenId, filters = {}) => {
   const where = { advisorId: dosenId, role: 'MAHASISWA' };
@@ -1243,7 +1271,10 @@ const getAdvisoryStudents = async (dosenId, filters = {}) => {
 // ======================== KRS MONITORING (ADMIN) ========================
 
 /**
- * Monitoring KRS untuk Admin — melihat semua KRS grouped by Dospem.
+ * Retrieves a comprehensive list of all KRS enrollments for administrative monitoring.
+ * This provides a system-wide view of all student study plans for a given semester.
+ * @param {object} [filters={}] - Optional filters (e.g., academicSemesterId).
+ * @returns {Promise<{enrollments: Array<object>, summary: object}>} A list of all enrollments and a status summary.
  */
 const getKrsMonitoring = async (filters = {}) => {
   const classWhere = {};

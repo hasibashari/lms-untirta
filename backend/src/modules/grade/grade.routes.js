@@ -17,7 +17,11 @@ import {
 
 const router = express.Router();
 
-// ========== MAHASISWA: View my finalized grades ==========
+/**
+ * GET /api/grades/my-grades
+ * Retrieves the authenticated student's finalized grades.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get(
   '/my-grades',
   authenticateToken,
@@ -25,7 +29,11 @@ router.get(
   getMyGrades
 );
 
-// ========== DOSEN: Grade management ==========
+/**
+ * GET /api/grades/class/:classId
+ * Retrieves the list of students in a class for grading (Lecturer).
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.get(
   '/class/:classId',
   authenticateToken,
@@ -33,6 +41,11 @@ router.get(
   getClassStudents
 );
 
+/**
+ * POST /api/grades/class/:classId
+ * Inputs or updates a grade for a single student.
+ * Middleware: Auth Token, Role: DOSEN, Validation: inputGradeSchema.
+ */
 router.post(
   '/class/:classId',
   authenticateToken,
@@ -41,6 +54,11 @@ router.post(
   inputGrade
 );
 
+/**
+ * POST /api/grades/class/:classId/bulk
+ * Inputs or updates grades for multiple students.
+ * Middleware: Auth Token, Role: DOSEN, Validation: bulkInputGradeSchema.
+ */
 router.post(
   '/class/:classId/bulk',
   authenticateToken,
@@ -49,6 +67,11 @@ router.post(
   bulkInputGrades
 );
 
+/**
+ * PATCH /api/grades/class/:classId/finalize
+ * Finalizes grades for a class.
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.patch(
   '/class/:classId/finalize',
   authenticateToken,

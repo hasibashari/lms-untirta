@@ -26,15 +26,15 @@ import {
   getSksEligibility,
 } from './krs.controller.js';
 
+// --- Router Setup ---
 const router = express.Router();
 
-// ========================================================================
-// KRS ROUTES — /api/krs
-// ========================================================================
 
-// ========== MAHASISWA ROUTES ==========
-
-// GET /api/krs/available — Kelas offering yang tersedia untuk KRS
+/**
+ * GET /api/krs/available
+ * Retrieves class offerings available for the student to enroll in.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get(
   '/available',
   authenticateToken,
@@ -42,7 +42,11 @@ router.get(
   getAvailableClasses
 );
 
-// GET /api/krs/my-plan — KRS mahasiswa (enrolled classes)
+/**
+ * GET /api/krs/my-plan
+ * Retrieves the authenticated student's current study plan (KRS).
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get(
   '/my-plan',
   authenticateToken,
@@ -50,7 +54,11 @@ router.get(
   getMyKRS
 );
 
-// GET /api/krs/sks-eligibility — Info kelayakan SKS berdasarkan IPK
+/**
+ * GET /api/krs/sks-eligibility
+ * Retrieves the student's SKS credit eligibility for the current/specified semester.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get(
   '/sks-eligibility',
   authenticateToken,
@@ -58,7 +66,11 @@ router.get(
   getSksEligibility
 );
 
-// POST /api/krs/enroll — Tambah kelas ke KRS
+/**
+ * POST /api/krs/enroll
+ * Enrolls the student in a class, adding it to their KRS.
+ * Middleware: Auth Token, Role: MAHASISWA, Validation: enrollClassSchema.
+ */
 router.post(
   '/enroll',
   authenticateToken,
@@ -67,7 +79,11 @@ router.post(
   enrollClass
 );
 
-// DELETE /api/krs/drop/:classId — Drop kelas dari KRS
+/**
+ * DELETE /api/krs/drop/:classId
+ * Drops a class from the student's KRS (only if not yet approved).
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.delete(
   '/drop/:classId',
   authenticateToken,
@@ -75,7 +91,11 @@ router.delete(
   dropClass
 );
 
-// PATCH /api/krs/:id/revise — Resubmit KRS yang ditolak (REJECTED → PENDING)
+/**
+ * PATCH /api/krs/:id/revise
+ * Resubmits a rejected KRS enrollment for approval.
+ * Middleware: Auth Token, Role: MAHASISWA, Validation: reviseEnrollmentSchema.
+ */
 router.patch(
   '/:id/revise',
   authenticateToken,
@@ -84,7 +104,11 @@ router.patch(
   reviseEnrollment
 );
 
-// GET /api/krs/:id/history — Riwayat approval KRS
+/**
+ * GET /api/krs/:id/history
+ * Retrieves the approval history for a specific KRS enrollment.
+ * Middleware: Auth Token. (Authorization handled in service).
+ */
 router.get(
   '/:id/history',
   authenticateToken,
@@ -93,7 +117,11 @@ router.get(
 
 // ========== DOSEN PEMBIMBING (DOSPEM) ROUTES ==========
 
-// GET /api/krs/advisory/students — Daftar mahasiswa bimbingan Dospem
+/**
+ * GET /api/krs/advisory/students
+ * Retrieves the list of advisees for the authenticated academic advisor.
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.get(
   '/advisory/students',
   authenticateToken,
@@ -101,7 +129,11 @@ router.get(
   getAdvisoryStudents
 );
 
-// GET /api/krs/advisory/pending — KRS pending dari mahasiswa bimbingan
+/**
+ * GET /api/krs/advisory/pending
+ * Retrieves pending KRS submissions from the advisor's advisees.
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.get(
   '/advisory/pending',
   authenticateToken,
@@ -109,7 +141,11 @@ router.get(
   getPendingKRS
 );
 
-// PATCH /api/krs/advisory/bulk-status — Bulk approve/reject KRS (Dospem/Admin)
+/**
+ * PATCH /api/krs/advisory/bulk-status
+ * Bulk approves or rejects multiple KRS enrollments.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: bulkUpdateStatusSchema.
+ */
 router.patch(
   '/advisory/bulk-status',
   authenticateToken,
@@ -120,7 +156,11 @@ router.patch(
 
 // ========== ADMIN MONITORING ROUTES ==========
 
-// GET /api/krs/monitoring — Monitoring KRS (Admin read-only)
+/**
+ * GET /api/krs/monitoring
+ * Retrieves all KRS data for administrative monitoring.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.get(
   '/monitoring',
   authenticateToken,
@@ -128,7 +168,11 @@ router.get(
   getKrsMonitoring
 );
 
-// GET /api/krs/pending — KRS yang menunggu persetujuan (Admin/Dospem)
+/**
+ * GET /api/krs/pending
+ * Retrieves all pending KRS submissions across the system.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ */
 router.get(
   '/pending',
   authenticateToken,
@@ -136,7 +180,11 @@ router.get(
   getPendingKRS
 );
 
-// PATCH /api/krs/:id/status — Approve/reject satu KRS enrollment (Dospem/Admin)
+/**
+ * PATCH /api/krs/:id/status
+ * Approves or rejects a single KRS enrollment.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: updateStatusSchema.
+ */
 router.patch(
   '/:id/status',
   authenticateToken,

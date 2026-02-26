@@ -122,6 +122,8 @@ const checkClosePreconditions = async (semesterId) => {
 /**
  * Pre-flight check: is the semester ready to be closed?
  * Used by frontend to display a readiness summary in the transition modal.
+ * @param {string} semesterId - The ID of the semester to check.
+ * @returns {Promise<object>} An object containing the semester details and a readiness summary.
  */
 const getClosingReadiness = async (semesterId) => {
   const semester = await prisma.academicSemester.findUnique({
@@ -191,6 +193,10 @@ const getClosingReadiness = async (semesterId) => {
 
 // ======================== CRUD ========================
 
+/**
+ * Retrieves all academic semesters.
+ * @returns {Promise<Array<object>>} List of semesters with counts of classes and grades.
+ */
 const getAllSemesters = async () => {
   return prisma.academicSemester.findMany({
     orderBy: [{ academicYear: 'desc' }, { semesterType: 'asc' }],
@@ -205,6 +211,10 @@ const getAllSemesters = async () => {
   });
 };
 
+/**
+ * Retrieves the currently active academic semester.
+ * @returns {Promise<object|null>} The active semester object or null if none exists.
+ */
 const getActiveSemester = async () => {
   return prisma.academicSemester.findFirst({
     where: { isActive: true },
@@ -219,6 +229,12 @@ const getActiveSemester = async () => {
   });
 };
 
+/**
+ * Retrieves a semester by its ID.
+ * @param {string} id - The semester ID.
+ * @returns {Promise<object>} The semester object.
+ * @throws {Error} If the semester is not found.
+ */
 const getSemesterById = async (id) => {
   const semester = await prisma.academicSemester.findUnique({
     where: { id },
@@ -236,6 +252,15 @@ const getSemesterById = async (id) => {
   return semester;
 };
 
+/**
+ * Creates a new academic semester.
+ * @param {object} data - The semester data.
+ * @param {string} data.academicYear - The academic year (e.g., "2023/2024").
+ * @param {string} data.semesterType - The type ("GANJIL" or "GENAP").
+ * @param {string|Date} [data.startDate] - Start date.
+ * @param {string|Date} [data.endDate] - End date.
+ * @returns {Promise<object>} The created semester.
+ */
 const createSemester = async (data) => {
   const existing = await prisma.academicSemester.findUnique({
     where: {
@@ -265,6 +290,14 @@ const createSemester = async (data) => {
   });
 };
 
+/**
+ * Updates an existing academic semester.
+ * @param {string} id - The semester ID.
+ * @param {object} data - The update data.
+ * @returns {Promise<object>} The updated semester.
+ * @throws {Error} If the semester is not found.
+ * @throws {Error} If attempting to update a CLOSED semester.
+ */
 const updateSemester = async (id, data) => {
   const semester = await prisma.academicSemester.findUnique({ where: { id } });
   if (!semester) throw new Error('Semester akademik tidak ditemukan');
@@ -290,6 +323,11 @@ const updateSemester = async (id, data) => {
  * Linear forward only: DRAFT → OPEN → CLOSED.
  * OPEN automatically sets the semester as active (only one allowed).
  * CLOSED clears the active flag.
+ * @param {string} id - The semester ID.
+ * @param {string} newStatus - The target status.
+ * @returns {Promise<object>} The updated semester.
+ * @throws {Error} If the transition is invalid.
+ * @throws {Error} If preconditions (like grade completion) are not met.
  */
 const updateStatus = async (id, newStatus) => {
   const semester = await prisma.academicSemester.findUnique({ where: { id } });
@@ -358,6 +396,12 @@ const updateStatus = async (id, newStatus) => {
 
 // ======================== DELETE SEMESTER ========================
 
+/**
+ * Deletes a semester.
+ * Only allowed for DRAFT semesters that have no associated classes or grades.
+ * @param {string} id - The semester ID.
+ * @returns {Promise<object>} The deleted semester object.
+ */
 const deleteSemester = async (id) => {
   const semester = await prisma.academicSemester.findUnique({
     where: { id },
@@ -392,7 +436,8 @@ const deleteSemester = async (id) => {
  * Get semesters visible to a student.
  * Returns: all OPEN/CLOSED semesters where the student has KRS enrollments,
  * plus the currently OPEN semester (even if no enrollments yet).
- * Ordered by academicYear DESC, semesterType ASC (newest first).
+ * @param {string} studentId - The ID of the student.
+ * @returns {Promise<Array<object>>} List of semesters ordered by newest first.
  */
 const getStudentSemesters = async (studentId) => {
   // 1. Semesters where student has enrollments (OPEN or CLOSED only)

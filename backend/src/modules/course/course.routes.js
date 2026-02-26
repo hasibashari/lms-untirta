@@ -27,21 +27,28 @@ import { create, getAssignments } from '../assignment/assignment.controller.js';
 import { createAssignmentSchema } from '../assignment/assignment.validation.js';
 
 // --- Router Setup ---
-
 const router = express.Router();
 
-// --- API Routes ---
-// PENTING: Route spesifik harus di atas route dengan parameter (/:id) untuk menghindari konflik
-
-// ========== SPECIFIC ROUTES (tanpa parameter) ==========
-
-// 1. Route My Courses (Dynamic based on role)
+/**
+ * GET /api/courses/me
+ * Retrieves courses relevant to the authenticated user based on their role.
+ * Middleware: Auth Token.
+ */
 router.get('/me', authenticateToken, getMyCourses);
 
-// 2. Route Get All Courses
+/**
+ * GET /api/courses
+ * Retrieves all courses available in the system.
+ * Middleware: Auth Token.
+ */
 router.get('/', authenticateToken, getCourses);
 
-// GET /api/courses/study-results - Get Study Results (delegated to transcript)
+/**
+ * GET /api/courses/study-results
+ * Retrieves the study results (transcript) for the authenticated student.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
+
 router.get(
   '/study-results',
   authenticateToken,
@@ -49,9 +56,12 @@ router.get(
   getStudyResults
 );
 
-// ========== ADMIN ROUTES ==========
 
-// GET /api/courses/admin/all - Get All Courses (Admin Only)
+/**
+ * GET /api/courses/admin/all
+ * Retrieves all courses with detailed administrative info.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.get(
   '/admin/all',
   authenticateToken,
@@ -59,7 +69,11 @@ router.get(
   adminGetAllCourses
 );
 
-// POST /api/courses/admin - Create Course (Admin Only)
+/**
+ * POST /api/courses/admin
+ * Creates a new course (Admin).
+ * Middleware: Auth Token, Role: ADMIN, Validation: createCourseSchema.
+ */
 router.post(
   '/admin',
   authenticateToken,
@@ -68,7 +82,11 @@ router.post(
   adminCreateCourse
 );
 
-// PUT /api/courses/admin/:id - Update Course (Admin Only)
+/**
+ * PUT /api/courses/admin/:id
+ * Updates an existing course (Admin).
+ * Middleware: Auth Token, Role: ADMIN, Validation: updateCourseSchema.
+ */
 router.put(
   '/admin/:id',
   authenticateToken,
@@ -77,7 +95,11 @@ router.put(
   adminUpdateCourse
 );
 
-// DELETE /api/courses/admin/:id - Delete Course (Admin Only)
+/**
+ * DELETE /api/courses/admin/:id
+ * Deletes a course (Admin).
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.delete(
   '/admin/:id',
   authenticateToken,
@@ -85,7 +107,11 @@ router.delete(
   adminDeleteCourse
 );
 
-// PATCH /api/courses/admin/:id/assign-teacher - Assign Teacher (Admin Only)
+/**
+ * PATCH /api/courses/admin/:id/assign-teacher
+ * Assigns a teacher to a course.
+ * Middleware: Auth Token, Role: ADMIN, Validation: assignTeacherSchema.
+ */
 router.patch(
   '/admin/:id/assign-teacher',
   authenticateToken,
@@ -94,9 +120,12 @@ router.patch(
   adminAssignTeacher
 );
 
-// ========== PARAMETERIZED ROUTES (/:id) ==========
 
-// 3. GET /api/courses/:id/students - Get Students in a Course (Dosen Only)
+/**
+ * GET /api/courses/:id/students
+ * Retrieves students enrolled in a course.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ */
 router.get(
   '/:id/students',
   authenticateToken,
@@ -104,7 +133,11 @@ router.get(
   getStudentsByCourse
 );
 
-// 4. GET /api/courses/:id/available-students - Get Available Students for Enrollment
+/**
+ * GET /api/courses/:id/available-students
+ * Retrieves students not yet enrolled in a course.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ */
 router.get(
   '/:id/available-students',
   authenticateToken,
@@ -112,7 +145,11 @@ router.get(
   getAvailableStudents
 );
 
-// 5. Protected Route - Create Course (Hanya Dosen & Admin)
+/**
+ * POST /api/courses
+ * Creates a new course (Teacher/Admin).
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: createCourseSchema.
+ */
 router.post(
   '/',
   authenticateToken,
@@ -121,7 +158,11 @@ router.post(
   createCourse
 );
 
-// POST /api/courses/:id/enroll - Tambahkan mahasiswa ke course (Dosen/Admin)
+/**
+ * POST /api/courses/:id/enroll
+ * Enrolls a student in a course.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: enrollStudentSchema.
+ */
 router.post(
   '/:id/enroll',
   authenticateToken,
@@ -130,7 +171,11 @@ router.post(
   enrollStudent
 );
 
-// --- MATERIAL ROUTES ---
+/**
+ * POST /api/courses/:courseId/materials
+ * Creates a new material for a course.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: createMaterialSchema.
+ */
 router.post(
   '/:courseId/materials',
   authenticateToken,
@@ -139,13 +184,22 @@ router.post(
   createMaterial
 );
 
+/**
+ * GET /api/courses/:courseId/materials
+ * Retrieves materials for a course.
+ * Middleware: Auth Token.
+ */
 router.get(
   '/:courseId/materials',
   authenticateToken,
   getMaterials
 );
 
-// --- ASSIGNMENT ROUTES ---
+/**
+ * POST /api/courses/:courseId/assignments
+ * Creates a new assignment for a course.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: createAssignmentSchema.
+ */
 router.post(
   '/:courseId/assignments',
   authenticateToken,
@@ -154,6 +208,11 @@ router.post(
   create
 );
 
+/**
+ * GET /api/courses/:courseId/assignments
+ * Retrieves assignments for a course.
+ * Middleware: Auth Token.
+ */
 router.get(
   '/:courseId/assignments',
   authenticateToken,

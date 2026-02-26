@@ -1,6 +1,11 @@
 import * as semesterService from './academic-semester.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
+/**
+ * Retrieves all academic semesters ordered by academic year.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getAll = async (req, res) => {
   try {
     const semesters = await semesterService.getAllSemesters();
@@ -14,6 +19,11 @@ export const getAll = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves the currently active academic semester (status: OPEN).
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getActive = async (req, res) => {
   try {
     const semester = await semesterService.getActiveSemester();
@@ -29,6 +39,11 @@ export const getActive = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves details of a specific academic semester by ID.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getById = async (req, res) => {
   try {
     const semester = await semesterService.getSemesterById(req.params.id);
@@ -45,6 +60,11 @@ export const getById = async (req, res) => {
   }
 };
 
+/**
+ * Creates a new academic semester.
+ * @param {import('express').Request} req - Express request object. Expects semester details in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const create = async (req, res) => {
   try {
     const semester = await semesterService.createSemester(req.body);
@@ -61,6 +81,11 @@ export const create = async (req, res) => {
   }
 };
 
+/**
+ * Updates an existing academic semester.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and update data in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const update = async (req, res) => {
   try {
     const semester = await semesterService.updateSemester(req.params.id, req.body);
@@ -77,6 +102,11 @@ export const update = async (req, res) => {
   }
 };
 
+/**
+ * Updates the status of an academic semester (e.g., DRAFT -> OPEN -> CLOSED).
+ * @param {import('express').Request} req - Express request object. Expects `id` in params and `status` in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const updateStatus = async (req, res) => {
   try {
     const semester = await semesterService.updateStatus(
@@ -108,6 +138,12 @@ export const updateStatus = async (req, res) => {
   }
 };
 
+/**
+ * Checks if a semester is ready to be closed.
+ * Returns a summary of grading progress and any blocking issues.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getClosingReadiness = async (req, res) => {
   try {
     const readiness = await semesterService.getClosingReadiness(req.params.id);
@@ -124,6 +160,11 @@ export const getClosingReadiness = async (req, res) => {
   }
 };
 
+/**
+ * Deletes a DRAFT academic semester.
+ * @param {import('express').Request} req - Express request object. Expects `id` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const remove = async (req, res) => {
   try {
     await semesterService.deleteSemester(req.params.id);
@@ -142,6 +183,12 @@ export const remove = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves the list of semesters relevant to the authenticated student.
+ * Includes semesters where the student has enrolled, plus the currently active semester.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getStudentSemesters = async (req, res) => {
   try {
     const semesters = await semesterService.getStudentSemesters(req.user.id);

@@ -1,5 +1,9 @@
 import z from 'zod';
 
+/**
+ * Zod validation schema for creating a new academic semester.
+ * Enforces format for academic year (YYYY/YYYY) and valid semester types.
+ */
 const createSemesterSchema = z.object({
   body: z.object({
     academicYear: z
@@ -14,6 +18,10 @@ const createSemesterSchema = z.object({
   }),
 });
 
+/**
+ * Zod validation schema for updating an academic semester.
+ * Allows updating dates and max SKS.
+ */
 const updateSemesterSchema = z.object({
   params: z.object({
     id: z.string().uuid('Semester ID tidak valid'),
@@ -25,6 +33,10 @@ const updateSemesterSchema = z.object({
   }),
 });
 
+/**
+ * Zod validation schema for updating the status of a semester.
+ * Restricts status to DRAFT, OPEN, or CLOSED.
+ */
 const updateStatusSchema = z.object({
   params: z.object({
     id: z.string().uuid('Semester ID tidak valid'),

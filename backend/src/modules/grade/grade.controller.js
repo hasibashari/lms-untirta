@@ -1,7 +1,12 @@
 import * as gradeService from './grade.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
-// ======================== DOSEN: Get students for grading ========================
+/**
+ * Retrieves the list of students in a class for grading purposes.
+ * Intended for lecturers to view their class roster and current grade status.
+ * @param {import('express').Request} req - Express request object. Expects `classId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getClassStudents = async (req, res) => {
   try {
     const result = await gradeService.getClassStudentsForGrading(
@@ -24,7 +29,11 @@ export const getClassStudents = async (req, res) => {
   }
 };
 
-// ======================== DOSEN: Input single grade ========================
+/**
+ * Inputs or updates a grade for a single student in a class.
+ * @param {import('express').Request} req - Express request object. Expects `classId` in params and grade data in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const inputGrade = async (req, res) => {
   try {
     const result = await gradeService.inputGrade(
@@ -55,7 +64,11 @@ export const inputGrade = async (req, res) => {
   }
 };
 
-// ======================== DOSEN: Bulk input grades ========================
+/**
+ * Inputs or updates grades for multiple students in a batch.
+ * @param {import('express').Request} req - Express request object. Expects `classId` in params and `grades` array in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const bulkInputGrades = async (req, res) => {
   try {
     const result = await gradeService.bulkInputGrades(
@@ -86,7 +99,12 @@ export const bulkInputGrades = async (req, res) => {
   }
 };
 
-// ======================== DOSEN: Finalize grades ========================
+/**
+ * Finalizes the grades for a class, making them visible to students.
+ * This action is irreversible for the semester.
+ * @param {import('express').Request} req - Express request object. Expects `classId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const finalizeGrades = async (req, res) => {
   try {
     const result = await gradeService.finalizeGrades(
@@ -112,7 +130,12 @@ export const finalizeGrades = async (req, res) => {
   }
 };
 
-// ======================== STUDENT: Get my grades ========================
+/**
+ * Retrieves the authenticated student's own grades.
+ * Only shows finalized grades or grades from closed semesters.
+ * @param {import('express').Request} req - Express request object. Supports optional `semesterId` query param.
+ * @param {import('express').Response} res - Express response object.
+ */
 export const getMyGrades = async (req, res) => {
   try {
     const filters = {

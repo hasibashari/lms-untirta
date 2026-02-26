@@ -1,6 +1,14 @@
 // middlewares/validate.middleware.js
 import { sendError } from '../utils/response.js';
 
+/**
+ * Middleware to validate request data against a Zod schema.
+ * Checks `body`, `query`, and `params` against the provided schema.
+ * If validation fails, it returns a 400 Bad Request with detailed error messages.
+ *
+ * @param {import('zod').ZodSchema} schema - The Zod schema to validate against.
+ * @returns {import('express').RequestHandler} Express middleware function.
+ */
 const validate = schema => (req, res, next) => {
   try {
     schema.parse({

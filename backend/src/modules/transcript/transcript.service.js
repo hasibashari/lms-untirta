@@ -15,12 +15,12 @@ import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../..
 // ========================================================================
 
 /**
- * Ambil hasil studi mahasiswa (transkrip) berdasarkan enrollment lama (Course-based).
- * Menghitung rata-rata nilai per course, konversi ke huruf mutu, dan IPK.
- *
- * @param {string} studentId
- * @param {object} filters - { semester?: string }
- * @returns {object} { courses, summary }
+ * Retrieves study results based on legacy course enrollments.
+ * Calculates average grades per course and overall GPA.
+ * @param {string} studentId - The ID of the student.
+ * @param {object} filters - Filter options (e.g., semester).
+ * @returns {Promise<object>} Object containing student info, courses, and summary.
+ * @throws {Error} If student is not found.
  */
 const getStudyResults = async (studentId, filters = {}) => {
   // Validasi mahasiswa ada
@@ -130,12 +130,13 @@ const getStudyResults = async (studentId, filters = {}) => {
 };
 
 /**
- * Ambil transkrip berdasarkan KrsEnrollment (Class-based).
- * Ini untuk data yang datang dari sistem KRS baru.
- *
- * @param {string} studentId
- * @param {object} filters - { academicSemesterId? }
- * @returns {object} { courses, summary }
+ * Retrieves the transcript based on KrsEnrollment (Class-based).
+ * Handles grade visibility rules based on semester status and user role.
+ * @param {string} studentId - The ID of the student.
+ * @param {object} filters - Filter options (e.g., academicSemesterId).
+ * @param {object} [options] - Options like `isStudentView`.
+ * @returns {Promise<object>} Object containing student info, courses, semester breakdown, and summary.
+ * @throws {Error} If student is not found.
  */
 const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   const student = await prisma.user.findUnique({
@@ -336,11 +337,10 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
 };
 
 /**
- * Ambil ringkasan akademik mahasiswa — gabungan kedua sumber data.
- * Berguna untuk dashboard.
- *
- * @param {string} studentId
- * @returns {object} summary
+ * Retrieves a combined academic summary from both legacy and new systems.
+ * @param {string} studentId - The ID of the student.
+ * @returns {Promise<object>} Summary object.
+ * @throws {Error} If student is not found.
  */
 const getAcademicSummary = async (studentId) => {
   const student = await prisma.user.findUnique({
@@ -370,8 +370,9 @@ const getAcademicSummary = async (studentId) => {
 // ========================================================================
 
 /**
- * Ambil daftar semua mahasiswa dengan ringkasan akademik.
- * Untuk tampilan Admin browse students.
+ * Retrieves a list of all students with their academic summary counts.
+ * @param {object} filters - Filter options (e.g., search).
+ * @returns {Promise<Array<object>>} List of students with enrollment counts.
  */
 const getStudentList = async (filters = {}) => {
   const where = { role: 'MAHASISWA' };
@@ -413,8 +414,11 @@ const getStudentList = async (filters = {}) => {
 };
 
 /**
- * Ambil transkrip lengkap mahasiswa untuk tampilan Admin.
- * Menggabungkan data legacy dan KRS.
+ * Retrieves the full transcript for a student, combining legacy and new data.
+ * Intended for Admin/Lecturer view, showing all grades regardless of visibility rules.
+ * @param {string} studentId - The ID of the student.
+ * @returns {Promise<object>} Comprehensive transcript object including grade distribution.
+ * @throws {Error} If student is not found.
  */
 const getFullStudentTranscript = async (studentId) => {
   const student = await prisma.user.findUnique({

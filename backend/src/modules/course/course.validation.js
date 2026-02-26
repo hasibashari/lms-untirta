@@ -1,6 +1,10 @@
 import z from 'zod';
 
-const createCourseSchema = z.object({
+/**
+ * Zod validation schema for creating a new course.
+ * Enforces title length and unique code format requirements.
+ */
+export const createCourseSchema = z.object({
   body: z.object({
     title: z.string().min(3, 'Judul kelas minimal 3 karakter'),
     description: z.string().optional(), // Boleh kosong
@@ -11,8 +15,10 @@ const createCourseSchema = z.object({
   }),
 });
 
-// Schema untuk Update Course (Admin)
-const updateCourseSchema = z.object({
+/**
+ * Zod validation schema for updating an existing course.
+ */
+export const updateCourseSchema = z.object({
   body: z.object({
     title: z.string().min(3, 'Judul kelas minimal 3 karakter').optional(),
     description: z.string().optional(),
@@ -23,15 +29,20 @@ const updateCourseSchema = z.object({
   }),
 });
 
-// Schema untuk Assign Teacher (Admin)
-const assignTeacherSchema = z.object({
+/**
+ * Zod validation schema for assigning a teacher to a course.
+ */
+export const assignTeacherSchema = z.object({
   body: z.object({
     teacherId: z.string().uuid('Teacher ID tidak valid'),
   }),
 });
 
-// Schema untuk Enrollment - support studentId (baru) dan email (legacy)
-const enrollStudentSchema = z.object({
+/**
+ * Zod validation schema for enrolling a student.
+ * Supports either `studentId` or `email` (legacy).
+ */
+export const enrollStudentSchema = z.object({
   body: z.object({
     studentId: z.string().uuid('Student ID tidak valid').optional(),
     email: z.string().email('Format email tidak valid').optional(),
@@ -39,5 +50,3 @@ const enrollStudentSchema = z.object({
     message: 'studentId atau email wajib diisi',
   }),
 });
-
-export { createCourseSchema, updateCourseSchema, assignTeacherSchema, enrollStudentSchema };

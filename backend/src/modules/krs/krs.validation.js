@@ -1,28 +1,40 @@
 import z from 'zod';
 
-// --- Schema: Enroll ke Kelas (KRS) ---
-const enrollClassSchema = z.object({
+/**
+ * Zod validation schema for enrolling in a class.
+ * Requires a valid UUID for the classId.
+ */
+export const enrollClassSchema = z.object({
   body: z.object({
     classId: z.string().uuid('Class ID tidak valid'),
   }),
 });
 
-// --- Schema: Drop / Unenroll dari Kelas ---
-const dropClassSchema = z.object({
+/**
+ * Zod validation schema for dropping a class from KRS.
+ * Validates the classId from the URL parameters.
+ */
+export const dropClassSchema = z.object({
   params: z.object({
     classId: z.string().uuid('Class ID tidak valid'),
   }),
 });
 
-// --- Schema: Submit KRS (bulk status change) ---
-const submitKrsSchema = z.object({
+/**
+ * Zod validation schema for submitting a KRS plan.
+ * @deprecated This schema might be for a legacy bulk submission flow and may not be in active use.
+ */
+export const submitKrsSchema = z.object({
   body: z.object({
     academicSemesterId: z.string().uuid('Academic Semester ID tidak valid'),
   }),
 });
 
-// --- Schema: Update Status KRS (Dosen PA / Admin) ---
-const updateStatusSchema = z.object({
+/**
+ * Zod validation schema for updating the status of a single KRS enrollment.
+ * Used by academic advisors or admins to approve or reject a class.
+ */
+export const updateStatusSchema = z.object({
   params: z.object({
     id: z.string().uuid('Enrollment ID tidak valid'),
   }),
@@ -34,8 +46,11 @@ const updateStatusSchema = z.object({
   }),
 });
 
-// --- Schema: Bulk Update Status KRS (Admin) ---
-const bulkUpdateStatusSchema = z.object({
+/**
+ * Zod validation schema for bulk-updating the status of multiple KRS enrollments.
+ * Ensures an array of valid UUIDs is provided.
+ */
+export const bulkUpdateStatusSchema = z.object({
   body: z.object({
     enrollmentIds: z.array(z.string().uuid('Enrollment ID tidak valid')).min(1).max(50),
     status: z.enum(['APPROVED', 'REJECTED'], {
@@ -45,26 +60,23 @@ const bulkUpdateStatusSchema = z.object({
   }),
 });
 
-// --- Schema: Query filter ---
-const krsQuerySchema = z.object({
+/**
+ * Zod validation schema for KRS-related query parameters.
+ * Validates optional filters like academic semester and course semester.
+ */
+export const krsQuerySchema = z.object({
   query: z.object({
     academicSemesterId: z.string().uuid().optional(),
     semester: z.string().optional(),
   }),
 });
 
-// --- Schema: Revise Rejected KRS ---
-const reviseEnrollmentSchema = z.object({
+/**
+ * Zod validation schema for revising a rejected KRS enrollment.
+ * Validates the enrollment ID from the URL parameters.
+ */
+export const reviseEnrollmentSchema = z.object({
   params: z.object({
     id: z.string().uuid('Enrollment ID tidak valid'),
   }),
 });
-
-export {
-  enrollClassSchema,
-  dropClassSchema,
-  updateStatusSchema,
-  bulkUpdateStatusSchema,
-  krsQuerySchema,
-  reviseEnrollmentSchema,
-};

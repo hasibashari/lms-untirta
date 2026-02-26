@@ -1,6 +1,12 @@
 import * as assignmentService from './assignment.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
+/**
+ * Creates a new assignment for a specific course.
+ * Validates that the requester is the teacher of the course before creating.
+ * @param {import('express').Request} req - Express request object. Requires `courseId` in params and assignment details in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 const create = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -11,6 +17,12 @@ const create = async (req, res) => {
   }
 };
 
+/**
+ * Handles assignment submission by a student.
+ * Checks if the submission is late or if it's a duplicate before saving.
+ * @param {import('express').Request} req - Express request object. Expects `assignmentId` in params and submission data in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 const submit = async (req, res) => {
   try {
     const { assignmentId } = req.params;
@@ -31,6 +43,12 @@ const submit = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves a list of submissions for a specific assignment.
+ * Intended for teachers to view student work.
+ * @param {import('express').Request} req - Express request object. Expects `assignmentId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getSubmissions = async (req, res) => {
   try {
     const { assignmentId } = req.params;
@@ -44,6 +62,12 @@ const getSubmissions = async (req, res) => {
   }
 };
 
+/**
+ * Grades a specific student submission.
+ * Updates the grade and feedback fields.
+ * @param {import('express').Request} req - Express request object. Expects `submissionId` in params and grade data in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 const grade = async (req, res) => {
   try {
     const { submissionId } = req.params;
@@ -60,7 +84,12 @@ const grade = async (req, res) => {
   }
 };
 
-// Get Assignments by Course (Mahasiswa & Dosen)
+/**
+ * Retrieves all assignments for a specific course.
+ * The result format differs slightly based on whether the user is a Student (includes status) or Teacher.
+ * @param {import('express').Request} req - Express request object. Expects `courseId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getAssignments = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -77,7 +106,12 @@ const getAssignments = async (req, res) => {
   }
 };
 
-// Get Assignment Detail with My Submission (Mahasiswa)
+/**
+ * Retrieves assignment details along with the current user's submission status.
+ * Primarily used by students to view a specific task and their progress.
+ * @param {import('express').Request} req - Express request object. Expects `assignmentId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getMyAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
@@ -94,7 +128,11 @@ const getMyAssignment = async (req, res) => {
   }
 };
 
-// Get All My Grades (Mahasiswa)
+/**
+ * Retrieves all grades for the authenticated student across all enrolled courses.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getAllMyGrades = async (req, res) => {
   try {
     const result = await assignmentService.getAllMyGrades(req.user.id);
@@ -104,7 +142,12 @@ const getAllMyGrades = async (req, res) => {
   }
 };
 
-// Get Dashboard Stats (Mahasiswa)
+/**
+ * Retrieves dashboard statistics for a student.
+ * Includes counts of total assignments, pending tasks, and graded work.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getMyDashboardStats = async (req, res) => {
   try {
     const result = await assignmentService.getMyDashboardStats(req.user.id);
@@ -114,7 +157,12 @@ const getMyDashboardStats = async (req, res) => {
   }
 };
 
-// Get Dashboard Stats (Dosen)
+/**
+ * Retrieves dashboard statistics for a teacher.
+ * Includes counts of students, materials, assignments, and pending grading tasks.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getTeacherDashboardStats = async (req, res) => {
   try {
     const result = await assignmentService.getTeacherDashboardStats(req.user.id);
@@ -124,7 +172,12 @@ const getTeacherDashboardStats = async (req, res) => {
   }
 };
 
-// Get Recent Submissions (Dosen)
+/**
+ * Retrieves the most recent submissions for a teacher's courses.
+ * Useful for a notification feed or "Recent Activity" widget.
+ * @param {import('express').Request} req - Express request object. Supports optional `limit` query parameter.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getRecentSubmissions = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
@@ -136,7 +189,10 @@ const getRecentSubmissions = async (req, res) => {
 };
 
 /**
- * Get Assignment Detail - Untuk edit form
+ * Retrieves detailed information about an assignment.
+ * Typically used to populate an edit form for teachers.
+ * @param {import('express').Request} req - Express request object. Expects `assignmentId` in params.
+ * @param {import('express').Response} res - Express response object.
  */
 const getAssignmentDetail = async (req, res) => {
   try {
@@ -154,7 +210,10 @@ const getAssignmentDetail = async (req, res) => {
 };
 
 /**
- * Update Assignment
+ * Updates an existing assignment.
+ * Only the creator (teacher) or an admin can perform this action.
+ * @param {import('express').Request} req - Express request object. Expects `assignmentId` in params and update data in body.
+ * @param {import('express').Response} res - Express response object.
  */
 const updateAssignment = async (req, res) => {
   try {
@@ -181,7 +240,10 @@ const updateAssignment = async (req, res) => {
 };
 
 /**
- * Delete Assignment
+ * Deletes an assignment and all associated submissions.
+ * This is a destructive action restricted to the assignment creator or admin.
+ * @param {import('express').Request} req - Express request object. Expects `assignmentId` in params.
+ * @param {import('express').Response} res - Express response object.
  */
 const deleteAssignment = async (req, res) => {
   try {

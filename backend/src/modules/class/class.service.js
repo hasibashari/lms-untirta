@@ -46,12 +46,18 @@ const classSelect = {
 // ======================== CREATE ========================
 
 /**
- * Buat kelas offering baru.
- * Validasi:
- *  1. Course harus ada
- *  2. Lecturer harus ada dan ber-role DOSEN
- *  3. AcademicSemester harus ada
- *  4. Kombinasi (courseId, academicSemesterId, section) harus unik
+ * Creates a new class offering.
+ * Validates existence of course, lecturer, and semester. Ensures the lecturer has the correct role
+ * and that the class section is unique for the given course and semester.
+ * @param {object} data - The class data.
+ * @param {string} data.courseId - The ID of the course.
+ * @param {string} data.lecturerId - The ID of the lecturer.
+ * @param {string} data.academicSemesterId - The ID of the academic semester.
+ * @param {string} data.section - The class section (e.g., "A", "B").
+ * @param {string} [data.schedule] - The class schedule.
+ * @param {string} [data.room] - The room location.
+ * @returns {Promise<object>} The created class object.
+ * @throws {Error} If validation fails or duplicate class exists.
  */
 const createClass = async (data) => {
   // 1. Validasi Course
@@ -129,8 +135,9 @@ const createClass = async (data) => {
 // ======================== READ ========================
 
 /**
- * Ambil semua kelas offering, dengan filter opsional.
- * Filter: academicSemesterId, courseId
+ * Retrieves all class offerings, optionally filtered by semester or course.
+ * @param {object} filters - Filter criteria.
+ * @returns {Promise<Array<object>>} List of classes with enrollment counts.
  */
 const getAllClasses = async (filters = {}) => {
   const where = {};
@@ -163,7 +170,10 @@ const getAllClasses = async (filters = {}) => {
 };
 
 /**
- * Ambil detail satu kelas offering by ID.
+ * Retrieves details of a specific class offering by ID.
+ * @param {string} classId - The class ID.
+ * @returns {Promise<object>} The class object.
+ * @throws {Error} If the class is not found.
  */
 const getClassById = async (classId) => {
   const classData = await prisma.class.findUnique({
@@ -179,7 +189,10 @@ const getClassById = async (classId) => {
 };
 
 /**
- * Ambil kelas offering yang diajar oleh dosen tertentu.
+ * Retrieves classes taught by a specific lecturer.
+ * @param {string} lecturerId - The lecturer's user ID.
+ * @param {object} filters - Optional filters (e.g., academicSemesterId).
+ * @returns {Promise<Array<object>>} List of classes.
  */
 const getClassesByLecturer = async (lecturerId, filters = {}) => {
   const where = { lecturerId };
@@ -201,8 +214,10 @@ const getClassesByLecturer = async (lecturerId, filters = {}) => {
 };
 
 /**
- * Ambil kelas offering berdasarkan courseId.
- * Berguna untuk melihat semua section/offering dari satu mata kuliah.
+ * Retrieves all class offerings for a specific course.
+ * Useful for viewing all sections of a course in a given semester.
+ * @param {string} courseId - The course ID.
+ * @returns {Promise<Array<object>>} List of classes.
  */
 const getClassesByCourse = async (courseId, filters = {}) => {
   const where = { courseId };
@@ -223,8 +238,9 @@ const getClassesByCourse = async (courseId, filters = {}) => {
 };
 
 /**
- * Ambil kelas offering yang buka pendaftaran (untuk KRS).
- * Modul KRS bisa memanggil endpoint ini untuk menampilkan kelas yang tersedia.
+ * Retrieves class offerings that are currently open for enrollment.
+ * @param {object} filters - Optional filters.
+ * @returns {Promise<Array<object>>} List of open classes.
  */
 const getOpenClasses = async (filters = {}) => {
   const where = { isEnrollmentOpen: true };
@@ -250,12 +266,11 @@ const getOpenClasses = async (filters = {}) => {
 // ======================== UPDATE ========================
 
 /**
- * Update kelas offering.
- * Validasi:
- *  1. Kelas harus ada
- *  2. Jika ganti lecturer, harus ada dan ber-role DOSEN
- *  3. Jika ganti academicSemesterId, semester harus ada
- *  4. Jika ganti section/semester, cek uniqueness
+ * Updates an existing class offering.
+ * Validates constraints if critical fields (lecturer, semester, section) are modified.
+ * @param {string} classId - The class ID.
+ * @param {object} data - The update data.
+ * @returns {Promise<object>} The updated class object.
  */
 const updateClass = async (classId, data) => {
   // 1. Cek kelas ada
@@ -341,7 +356,10 @@ const updateClass = async (classId, data) => {
 };
 
 /**
- * Toggle status enrollment (buka/tutup pendaftaran).
+ * Toggles the enrollment status of a class.
+ * @param {string} classId - The class ID.
+ * @param {boolean} isEnrollmentOpen - The new status.
+ * @returns {Promise<object>} The updated class object.
  */
 const toggleEnrollment = async (classId, isEnrollmentOpen) => {
   const existingClass = await prisma.class.findUnique({
@@ -370,7 +388,10 @@ const toggleEnrollment = async (classId, isEnrollmentOpen) => {
 // ======================== DELETE ========================
 
 /**
- * Hapus kelas offering.
+ * Deletes a class offering.
+ * Restricted if the semester is already closed.
+ * @param {string} classId - The class ID.
+ * @returns {Promise<object>} Result message and deleted ID.
  */
 const deleteClass = async (classId) => {
   const existingClass = await prisma.class.findUnique({

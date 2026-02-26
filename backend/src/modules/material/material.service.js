@@ -1,5 +1,14 @@
 import prisma from '../../config/prisma.js';
 
+/**
+ * Creates a new course material.
+ * Validates that the user is the teacher of the course and automatically assigns an order number.
+ * @param {string} courseId - The ID of the course.
+ * @param {string} teacherId - The ID of the teacher creating the material.
+ * @param {object} data - The material data.
+ * @returns {Promise<object>} The created material object.
+ * @throws {Error} If the course is not found or if the user is not the course teacher.
+ */
 const createMaterial = async (courseId, teacherId, data) => {
   // 1. Cek Permission: Apakah course ini milik Dosen tersebut?
   const course = await prisma.course.findUnique({
@@ -49,6 +58,14 @@ const createMaterial = async (courseId, teacherId, data) => {
   });
 };
 
+/**
+ * Retrieves a list of materials for a course.
+ * For students, it verifies enrollment before returning the list.
+ * @param {string} courseId - The ID of the course.
+ * @param {string} userId - The ID of the user requesting the materials.
+ * @param {string} userRole - The role of the user.
+ * @returns {Promise<Array<object>>} A list of material objects, ordered sequentially.
+ */
 const getMaterials = async (courseId, userId, userRole) => {
   // 1. Validasi Akses: User harus terdaftar di kelas ini (kecuali Dosen pemilik/Admin)
   if (userRole === 'MAHASISWA') {
@@ -78,6 +95,14 @@ const getMaterials = async (courseId, userId, userRole) => {
   });
 };
 
+/**
+ * Retrieves the detailed content of a single material.
+ * Performs authorization to ensure the user is either the course teacher, an admin, or an enrolled student.
+ * @param {string} materialId - The ID of the material to retrieve.
+ * @param {string} userId - The ID of the user.
+ * @param {string} userRole - The role of the user.
+ * @returns {Promise<object>} The detailed material object with attachments.
+ */
 const getMaterialById = async (materialId, userId, userRole) => {
   // 1. Cari Material berdasarkan ID
   const material = await prisma.material.findUnique({
@@ -145,8 +170,14 @@ const getMaterialById = async (materialId, userId, userRole) => {
 };
 
 /**
- * Update Material - Memperbarui data materi yang sudah ada
- * Hanya Dosen pemilik kelas yang bisa mengupdate
+ * Updates an existing course material.
+ * Verifies that the user is the course teacher or an admin before applying changes.
+ * @param {string} materialId - The ID of the material to update.
+ * @param {string} userId - The ID of the user performing the update.
+ * @param {string} userRole - The role of the user.
+ * @param {object} data - The update data (title, content, fileUrl, videoUrl, order).
+ * @returns {Promise<object>} The updated material object.
+ * @throws {Error} If the material is not found or if the user lacks permission.
  */
 const updateMaterial = async (materialId, userId, userRole, data) => {
   // 1. Cari material beserta informasi course-nya
@@ -201,8 +232,13 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
 };
 
 /**
- * Delete Material - Menghapus materi dari database
- * Hanya Dosen pemilik kelas yang bisa menghapus
+ * Deletes a course material from the database.
+ * Verifies that the user is the course teacher or an admin before deletion.
+ * @param {string} materialId - The ID of the material to delete.
+ * @param {string} userId - The ID of the user performing the deletion.
+ * @param {string} userRole - The role of the user.
+ * @returns {Promise<{message: string}>} A success message.
+ * @throws {Error} If the material is not found or if the user lacks permission.
  */
 const deleteMaterial = async (materialId, userId, userRole) => {
   // 1. Cari material beserta informasi course-nya

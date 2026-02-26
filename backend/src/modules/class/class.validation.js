@@ -1,7 +1,10 @@
 import z from 'zod';
 
-// --- Schema: Create Class (Kelas Offering) ---
-const createClassSchema = z.object({
+/**
+ * Zod validation schema for creating a new class offering.
+ * Enforces required fields like course, lecturer, semester, and section.
+ */
+export const createClassSchema = z.object({
   body: z.object({
     courseId: z.string().uuid('Course ID tidak valid'),
     lecturerId: z.string().uuid('Lecturer ID tidak valid'),
@@ -17,8 +20,10 @@ const createClassSchema = z.object({
   }),
 });
 
-// --- Schema: Update Class ---
-const updateClassSchema = z.object({
+/**
+ * Zod validation schema for updating a class offering.
+ */
+export const updateClassSchema = z.object({
   body: z.object({
     lecturerId: z.string().uuid('Lecturer ID tidak valid').optional(),
     academicSemesterId: z.string().uuid('Academic Semester ID tidak valid').optional(),
@@ -34,24 +39,21 @@ const updateClassSchema = z.object({
   }),
 });
 
-// --- Schema: Toggle Enrollment Status ---
-const toggleEnrollmentSchema = z.object({
+/**
+ * Zod validation schema for toggling enrollment status.
+ */
+export const toggleEnrollmentSchema = z.object({
   body: z.object({
     isEnrollmentOpen: z.boolean({ required_error: 'Status enrollment wajib diisi (true/false)' }),
   }),
 });
 
-// --- Schema: Query filter ---
-const queryFilterSchema = z.object({
+/**
+ * Zod validation schema for query filters.
+ */
+export const queryFilterSchema = z.object({
   query: z.object({
     academicSemesterId: z.string().uuid().optional(),
     courseId: z.string().uuid().optional(),
   }),
 });
-
-export {
-  createClassSchema,
-  updateClassSchema,
-  toggleEnrollmentSchema,
-  queryFilterSchema,
-};

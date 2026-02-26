@@ -24,49 +24,59 @@ import {
 
 const router = express.Router();
 
-// GET ALL MY GRADES (Mahasiswa) - Nilai terpusat dari semua kelas
-// URL: GET /api/assignments/my-grades
+/**
+ * GET /api/assignments/my-grades
+ * Retrieves all grades for the authenticated student across all enrolled courses.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get('/my-grades', authenticateToken, authorizeRole('MAHASISWA'), getAllMyGrades);
 
-// GET DASHBOARD STATS (Mahasiswa) - Statistik untuk dashboard
-// URL: GET /api/assignments/my-stats
+/**
+ * GET /api/assignments/my-stats
+ * Retrieves dashboard statistics for the authenticated student.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
 
-// GET DASHBOARD STATS (Dosen) - Statistik untuk dashboard dosen
-// URL: GET /api/assignments/teacher-stats
+/**
+ * GET /api/assignments/teacher-stats
+ * Retrieves dashboard statistics for the authenticated teacher.
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
 
-// GET RECENT SUBMISSIONS (Dosen) - Submissions terbaru untuk notifikasi
-// URL: GET /api/assignments/recent-submissions
+/**
+ * GET /api/assignments/recent-submissions
+ * Retrieves recent submissions for the teacher's courses.
+ * Middleware: Auth Token, Role: DOSEN.
+ */
 router.get('/recent-submissions', authenticateToken, authorizeRole('DOSEN'), getRecentSubmissions);
 
-// GET ASSIGNMENT DETAIL with MY SUBMISSION (Mahasiswa)
-// URL: GET /api/assignments/:assignmentId/me
-// Endpoint untuk mahasiswa melihat detail tugas + status submission mereka
+/**
+ * GET /api/assignments/:assignmentId/me
+ * Retrieves assignment details along with the student's submission status.
+ * Middleware: Auth Token, Role: MAHASISWA.
+ */
 router.get('/:assignmentId/me', authenticateToken, authorizeRole('MAHASISWA'), getMyAssignment);
 
-// Route untuk SUBMIT TUGAS (Student)
-// URL: POST /api/assignments/:assignmentId/submit
+/**
+ * POST /api/assignments/:assignmentId/submit
+ * Submits an assignment for the authenticated student.
+ * Middleware: Auth Token, Role: MAHASISWA, Validation: submitAssignmentSchema.
+ */
 router.post(
   '/:assignmentId/submit',
   authenticateToken,
-  authorizeRole('MAHASISWA'), // Hanya mahasiswa
+  authorizeRole('MAHASISWA'),
   validate(submitAssignmentSchema),
   submit
 );
 
-// 1. GET SUBMISSIONS (Dosen melihat siapa yang sudah kumpul di tugas tertentu)
-// URL: GET /api/assignments/:assignmentId/submissions
-router.get(
-  '/:assignmentId/submissions',
-  authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
-  getSubmissions
-);
-
-// 2. GRADE SUBMISSION (Dosen memberi nilai pada submission tertentu)
-// URL: PATCH /api/assignments/submissions/:submissionId
-// Note: Kita pakai PATCH karena hanya mengupdate sebagian data (grade & feedback)
+/**
+ * PATCH /api/assignments/submissions/:submissionId
+ * Grades a specific submission (updates grade and feedback).
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: gradeSubmissionSchema.
+ */
 router.patch(
   '/submissions/:submissionId',
   authenticateToken,
@@ -75,9 +85,23 @@ router.patch(
   grade
 );
 
-// --- ASSIGNMENT CRUD ROUTES ---
+/**
+ * GET /api/assignments/:assignmentId/submissions
+ * Retrieves all submissions for a specific assignment.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ */
+router.get(
+  '/:assignmentId/submissions',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  getSubmissions
+);
 
-// GET /api/assignments/:assignmentId - Get Assignment Detail (untuk edit form & mahasiswa view)
+/**
+ * GET /api/assignments/:assignmentId
+ * Retrieves assignment details (used for edit form or general view).
+ * Middleware: Auth Token, Role: DOSEN/ADMIN/MAHASISWA.
+ */
 router.get(
   '/:assignmentId',
   authenticateToken,
@@ -85,7 +109,11 @@ router.get(
   getAssignmentDetail
 );
 
-// PUT /api/assignments/:assignmentId - Update Assignment (Dosen Only)
+/**
+ * PUT /api/assignments/:assignmentId
+ * Updates an existing assignment.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: updateAssignmentSchema.
+ */
 router.put(
   '/:assignmentId',
   authenticateToken,
@@ -94,8 +122,11 @@ router.put(
   updateAssignment
 );
 
-// DELETE /api/assignments/:assignmentId - Delete Assignment (Dosen Only)
-// CATATAN: Ini juga akan menghapus semua submission terkait
+/**
+ * DELETE /api/assignments/:assignmentId
+ * Deletes an assignment and all related submissions.
+ * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ */
 router.delete(
   '/:assignmentId',
   authenticateToken,

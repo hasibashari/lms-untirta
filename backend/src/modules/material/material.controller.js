@@ -1,6 +1,12 @@
 import * as materialService from './material.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
+/**
+ * Creates a new course material.
+ * Only the teacher of the course or an admin can create material.
+ * @param {import('express').Request} req - Express request object. Expects `courseId` in params and material data in body.
+ * @param {import('express').Response} res - Express response object.
+ */
 const createMaterial = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -24,6 +30,12 @@ const createMaterial = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves a list of all materials for a specific course.
+ * Students must be enrolled to view materials.
+ * @param {import('express').Request} req - Express request object. Expects `courseId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getMaterials = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -37,6 +49,12 @@ const getMaterials = async (req, res) => {
   }
 };
 
+/**
+ * Retrieves the detailed content of a single material.
+ * Authorization checks ensure the user is enrolled or is the teacher/admin.
+ * @param {import('express').Request} req - Express request object. Expects `materialId` in params.
+ * @param {import('express').Response} res - Express response object.
+ */
 const getMaterialById = async (req, res) => {
   try {
     const { materialId } = req.params;
@@ -54,7 +72,10 @@ const getMaterialById = async (req, res) => {
 };
 
 /**
- * Update Material
+ * Updates an existing course material.
+ * Only the teacher of the course or an admin can perform this action.
+ * @param {import('express').Request} req - Express request object. Expects `materialId` in params and update data in body.
+ * @param {import('express').Response} res - Express response object.
  */
 const updateMaterial = async (req, res) => {
   try {
@@ -81,7 +102,10 @@ const updateMaterial = async (req, res) => {
 };
 
 /**
- * Delete Material
+ * Deletes a course material.
+ * This is a destructive action restricted to the course teacher or an admin.
+ * @param {import('express').Request} req - Express request object. Expects `materialId` in params.
+ * @param {import('express').Response} res - Express response object.
  */
 const deleteMaterial = async (req, res) => {
   try {

@@ -21,30 +21,60 @@ const router = express.Router();
 router.use(authenticateToken);
 router.use(authorizeRole('ADMIN'));
 
-// POST /api/users
-// Digunakan Admin untuk membuat Dosen/Admin baru
+/**
+ * POST /api/users
+ * Creates a new user (Admin/Dosen).
+ * Middleware: Auth Token, Role: ADMIN, Validation: createUserSchema.
+ */
 router.post('/', validate(createUserSchema), createUser);
 
-// GET /api/users
+/**
+ * GET /api/users
+ * Retrieves a list of all users.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.get('/', getAllUsers);
 
-// GET /api/users/advisor-summary — Daftar semua Dospem dengan jumlah mahasiswa
+/**
+ * GET /api/users/advisor-summary
+ * Retrieves a summary of all academic advisors and their student counts.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.get('/advisor-summary', getAdvisorSummary);
 
-// GET /api/users/advisors/:dosenId/students — Mahasiswa bimbingan seorang Dospem
+/**
+ * GET /api/users/advisors/:dosenId/students
+ * Retrieves the list of students assigned to a specific academic advisor.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.get('/advisors/:dosenId/students', getAdvisorStudents);
 
-// GET /api/users/:id
-// Digunakan Admin untuk melihat detail user berdasarkan ID
+/**
+ * GET /api/users/:id
+ * Retrieves detailed information about a specific user by ID.
+ * Middleware: Auth Token, Role: ADMIN.
+ */
 router.get('/:id', getUserById);
 
-// PATCH /api/users/:id/dospem-status — Grant/revoke Dospem permission
+/**
+ * PATCH /api/users/:id/dospem-status
+ * Updates the "Dospem" status for a lecturer.
+ * Middleware: Auth Token, Role: ADMIN, Validation: updateDospemSchema.
+ */
 router.patch('/:id/dospem-status', validate(updateDospemSchema), updateDospemStatus);
 
-// PATCH /api/users/:id/advisor — Assign advisor ke mahasiswa
+/**
+ * PATCH /api/users/:id/advisor
+ * Assigns an advisor to a student.
+ * Middleware: Auth Token, Role: ADMIN, Validation: assignAdvisorSchema.
+ */
 router.patch('/:id/advisor', validate(assignAdvisorSchema), assignAdvisor);
 
-// PATCH /api/users/bulk-advisor — Bulk assign advisor
+/**
+ * PATCH /api/users/bulk-advisor
+ * Bulk assigns an advisor to multiple students.
+ * Middleware: Auth Token, Role: ADMIN, Validation: bulkAssignAdvisorSchema.
+ */
 router.patch('/bulk-advisor', validate(bulkAssignAdvisorSchema), bulkAssignAdvisor);
 
 export default router;

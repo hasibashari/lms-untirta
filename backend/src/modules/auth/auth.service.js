@@ -3,7 +3,18 @@ import bcrypt from 'bcryptjs';
 import { signToken } from '../../config/jwt.js';
 import { ROLES } from '../../config/roles.js';
 
-// Register a new user
+/**
+ * Registers a new user in the system.
+ * This function performs a check for duplicate emails, hashes the provided password, and persists the new user with a default role.
+ *
+ * @param {object} payload - The registration payload.
+ * @param {string} payload.email - The user's email address.
+ * @param {string} payload.name - The user's full name.
+ * @param {string} payload.password - The user's raw password.
+ * @returns {Promise<object>} The newly created user's public profile (id, name, email, role).
+ * @throws {Error} If the email address is already in use.
+ */
+
 const registerUser = async ({ email, name, password }) => {
   // 1. Cek duplikasi email
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -32,7 +43,17 @@ const registerUser = async ({ email, name, password }) => {
   };
 };
 
-// Login user
+/**
+ * Authenticates a user based on email and password.
+ * Validates credentials against the database and generates a JWT token upon successful authentication.
+ *
+ * @param {object} credentials - The login credentials.
+ * @param {string} credentials.email - The user's email address.
+ * @param {string} credentials.password - The user's raw password.
+ * @returns {Promise<object>} An object containing the access token and the user's profile.
+ * @throws {Error} If authentication fails due to invalid email or password.
+ */
+
 const loginUser = async ({ email, password }) => {
   // 1. Cari user berdasarkan email
   const user = await prisma.user.findUnique({
@@ -74,6 +95,15 @@ const loginUser = async ({ email, password }) => {
     },
   };
 };
+
+/**
+ * Retrieves a user's profile by their unique identifier.
+ * Fetches comprehensive user data, including relations like advisor information if the user is a student.
+ *
+ * @param {string|number} userId - The unique identifier of the user.
+ * @returns {Promise<object>} The detailed user record.
+ * @throws {Error} If no user is found with the provided ID.
+ */
 
 const getUserById = async userId => {
   const user = await prisma.user.findUnique({
