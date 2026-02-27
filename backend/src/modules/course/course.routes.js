@@ -23,8 +23,6 @@ import { getStudyResults } from '../transcript/transcript.controller.js';
 
 import { createMaterial, getMaterials } from '../material/material.controller.js';
 import { createMaterialSchema } from '../material/material.validation.js';
-import { create, getAssignments } from '../assignment/assignment.controller.js';
-import { createAssignmentSchema } from '../assignment/assignment.validation.js';
 
 // --- Router Setup ---
 const router = express.Router();
@@ -193,30 +191,6 @@ router.get(
   '/:courseId/materials',
   authenticateToken,
   getMaterials
-);
-
-/**
- * POST /api/courses/:courseId/assignments
- * Creates a new assignment for a course.
- * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: createAssignmentSchema.
- */
-router.post(
-  '/:courseId/assignments',
-  authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
-  validate(createAssignmentSchema),
-  create
-);
-
-/**
- * GET /api/courses/:courseId/assignments
- * Retrieves assignments for a course.
- * Middleware: Auth Token.
- */
-router.get(
-  '/:courseId/assignments',
-  authenticateToken,
-  getAssignments
 );
 
 export default router;

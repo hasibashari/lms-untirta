@@ -76,6 +76,7 @@ router.patch(
   '/class/:classId/finalize',
   authenticateToken,
   authorizeRole('DOSEN'),
+  validate(finalizeGradesSchema),
   finalizeGrades
 );
 

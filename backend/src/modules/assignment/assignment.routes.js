@@ -3,6 +3,7 @@ import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import {
+  createAssignmentSchema,
   submitAssignmentSchema,
   gradeSubmissionSchema,
   updateAssignmentSchema,
@@ -10,6 +11,7 @@ import {
 import {
   create,
   submit,
+  getAssignments,
   getSubmissions,
   grade,
   getMyAssignment,
@@ -51,6 +53,26 @@ router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeach
  * Middleware: Auth Token, Role: DOSEN.
  */
 router.get('/recent-submissions', authenticateToken, authorizeRole('DOSEN'), getRecentSubmissions);
+
+/**
+ * POST /api/assignments/course/:courseId
+ * Creates a new assignment for a specific course.
+ * Middleware: Auth Token, Role: DOSEN, Validation: createAssignmentSchema.
+ */
+router.post(
+  '/course/:courseId',
+  authenticateToken,
+  authorizeRole('DOSEN'),
+  validate(createAssignmentSchema),
+  create
+);
+
+/**
+ * GET /api/assignments/course/:courseId
+ * Retrieves all assignments for a specific course.
+ * Middleware: Auth Token.
+ */
+router.get('/course/:courseId', authenticateToken, getAssignments);
 
 /**
  * GET /api/assignments/:assignmentId/me
