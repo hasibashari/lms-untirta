@@ -19,7 +19,7 @@
  *   ✓ Auth/Authz — 401 without token, 403 for non-admin
  */
 
-import { describe, it, expect, beforeAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import request from 'supertest';
 import { getApp } from '../helpers/request.js';
 import { cleanDatabase } from '../helpers/db.js';

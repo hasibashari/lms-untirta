@@ -1,27 +1,29 @@
 /**
  * Academic Semester API — Integration Tests
  *
- * Tests all /api/academic-semesters routes against a real test database.
+ * Tests the full HTTP request lifecycle:
+ *   Route → Middleware → Controller → Service → Database (test DB)
  *
- * Routes tested:
- *   POST   /                     (ADMIN)
- *   GET    /                     (auth)
- *   GET    /active               (auth)
- *   GET    /student-semesters    (MAHASISWA)
- *   GET    /:id                  (auth)
- *   PUT    /:id                  (ADMIN)
- *   PATCH  /:id/status           (ADMIN)
- *   GET    /:id/closing-readiness (ADMIN)
- *   DELETE /:id                  (ADMIN)
+ * What we test:
+ *   ✓ Auth guards — 401 without token, 403 for wrong roles
+ *   ✓ POST /api/academic-semesters — create semester (ADMIN)
+ *   ✓ GET /api/academic-semesters — list all semesters (Authenticated)
+ *   ✓ GET /api/academic-semesters/active — get active semester (Authenticated)
+ *   ✓ GET /api/academic-semesters/student-semesters — student semesters (MAHASISWA)
+ *   ✓ GET /api/academic-semesters/:id — semester detail (Authenticated)
+ *   ✓ PUT /api/academic-semesters/:id — update semester (ADMIN)
+ *   ✓ PATCH /api/academic-semesters/:id/status — update status (ADMIN)
+ *   ✓ GET /api/academic-semesters/:id/closing-readiness — check closing readiness (ADMIN)
+ *   ✓ DELETE /api/academic-semesters/:id — delete semester (ADMIN)
+ *   ✓ Validation — missing/invalid fields
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import request from 'supertest';
 import { getApp } from '../helpers/request.js';
-import prisma from '../helpers/prisma.js';
 import { cleanDatabase } from '../helpers/db.js';
 import { createAdmin, createDosen, createMahasiswa } from '../helpers/auth.js';
-import { validSemester, validSemesterGenap } from '../fixtures/academic-semester.fixture.js';
+import { validSemester } from '../fixtures/academic-semester.fixture.js';
 
 const API = '/api/academic-semesters';
 

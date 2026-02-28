@@ -1,14 +1,17 @@
 /**
  * Material API — Integration Tests
  *
- * Tests all material-related routes against a real test database.
+ * Tests the full HTTP request lifecycle:
+ *   Route → Middleware → Controller → Service → Database (test DB)
  *
- * Routes tested:
- *   POST   /api/courses/:courseId/materials    (DOSEN/ADMIN)
- *   GET    /api/courses/:courseId/materials    (auth)
- *   GET    /api/materials/:materialId         (auth)
- *   PUT    /api/materials/:materialId         (DOSEN/ADMIN)
- *   DELETE /api/materials/:materialId         (DOSEN/ADMIN)
+ * What we test:
+ *   ✓ Auth guards — 401 without token, 403 for wrong roles
+ *   ✓ POST /api/courses/:courseId/materials — create material (DOSEN/ADMIN)
+ *   ✓ GET /api/courses/:courseId/materials — list materials (Authenticated)
+ *   ✓ GET /api/materials/:materialId — material detail (Authenticated)
+ *   ✓ PUT /api/materials/:materialId — update material (DOSEN/ADMIN)
+ *   ✓ DELETE /api/materials/:materialId — delete material (DOSEN/ADMIN)
+ *   ✓ Validation — missing/invalid fields
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
@@ -23,7 +26,7 @@ const MATERIAL_API = '/api/materials';
 
 let app;
 let adminToken, dosenToken, mhsToken, otherDosenToken;
-let dosenUser, mhsUser, otherDosenUser;
+let dosenUser, mhsUser;
 let course;
 
 const seedCourse = async (teacherId) => {
@@ -69,7 +72,6 @@ beforeEach(async () => {
   otherDosenToken = otherDosen.token;
   mhsToken = mhs.token;
   dosenUser = dosen.user;
-  otherDosenUser = otherDosen.user;
   mhsUser = mhs.user;
 
   course = await seedCourse();

@@ -1,9 +1,16 @@
 /**
  * Transcript API — Integration Tests
  *
- * Tests all transcript endpoints with a real test database.
- * Covers auth guards, student views (study-results, by-class, summary),
- * admin/dosen views (student list, full transcript).
+ * Tests the full HTTP request lifecycle:
+ *   Route → Middleware → Controller → Service → Database (test DB)
+ *
+ * What we test:
+ *   ✓ Auth guards — 401 without token, 403 for wrong roles
+ *   ✓ GET /api/transcript/study-results — study results (MAHASISWA)
+ *   ✓ GET /api/transcript/by-class — transcript by class (MAHASISWA)
+ *   ✓ GET /api/transcript/summary — academic summary (MAHASISWA)
+ *   ✓ GET /api/transcript/students — list students (ADMIN)
+ *   ✓ GET /api/transcript/student/:studentId — full transcript (ADMIN/DOSEN)
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';

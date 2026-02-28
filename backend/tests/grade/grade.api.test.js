@@ -1,8 +1,17 @@
 /**
  * Grade API — Integration Tests
  *
- * Tests all grade API endpoints with a real test database.
- * Covers auth guards, input/bulk grading, finalization, and student grade retrieval.
+ * Tests the full HTTP request lifecycle:
+ *   Route → Middleware → Controller → Service → Database (test DB)
+ *
+ * What we test:
+ *   ✓ Auth guards — 401 without token, 403 for wrong roles
+ *   ✓ GET /api/grades/class/:classId — get students for grading (DOSEN)
+ *   ✓ POST /api/grades/class/:classId — input single grade (DOSEN)
+ *   ✓ POST /api/grades/class/:classId/bulk — bulk input grades (DOSEN)
+ *   ✓ PATCH /api/grades/class/:classId/finalize — finalize grades (DOSEN)
+ *   ✓ GET /api/grades/my-grades — view own grades (MAHASISWA)
+ *   ✓ Validation — missing/invalid fields, closed semester checks
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
@@ -18,7 +27,6 @@ const API = '/api/grades';
 // ── Shared state ──
 let dosen, dosenToken;
 let student, studentToken;
-let admin, adminToken;
 let otherDosen, otherDosenToken;
 let semester, course, classObj;
 

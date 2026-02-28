@@ -35,7 +35,6 @@ import {
   createAdmin,
   createDosen,
   createMahasiswa,
-  createAuthenticatedUser,
 } from '../helpers/auth.js';
 import { createKrsScenario } from '../fixtures/krs.fixture.js';
 import prisma from '../helpers/prisma.js';
