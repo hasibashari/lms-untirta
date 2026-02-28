@@ -9,7 +9,7 @@ import materialRoutes from './modules/material/material.routes.js';
 import classRoutes from './modules/class/class.routes.js';
 import krsRoutes from './modules/krs/krs.routes.js';
 import transcriptRoutes from './modules/transcript/transcript.routes.js';
-import academicSemesterRoutes from './modules/academic-semester/academic-semester.routes.js';
+import academicSemesterRoutes from './modules/academic/academic.routes.js';
 import gradeRoutes from './modules/grade/grade.routes.js';
 
 dotenv.config();

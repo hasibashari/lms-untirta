@@ -6,7 +6,7 @@ import {
   createSemesterSchema,
   updateSemesterSchema,
   updateStatusSchema,
-} from './academic-semester.validation.js';
+} from './academic.validation.js';
 import {
   getAll,
   getActive,
@@ -17,7 +17,7 @@ import {
   getClosingReadiness,
   remove,
   getStudentSemesters,
-} from './academic-semester.controller.js';
+} from './academic.controller.js';
 
 const router = express.Router();
 

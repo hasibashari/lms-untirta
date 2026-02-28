@@ -1,4 +1,4 @@
-import * as semesterService from './academic-semester.service.js';
+import * as semesterService from './academic.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 
 /**

@@ -70,6 +70,7 @@ export function createPrismaMock() {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
     $executeRawUnsafe: jest.fn(),
+    $queryRaw: jest.fn(),
     $queryRawUnsafe: jest.fn(),
   };
 }
