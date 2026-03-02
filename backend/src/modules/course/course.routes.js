@@ -29,25 +29,82 @@ import { createMaterialSchema } from '../material/material.validation.js';
 const router = express.Router();
 
 /**
- * GET /api/courses/me
- * Retrieves courses relevant to the authenticated user based on their role.
- * Middleware: Auth Token.
+ * @swagger
+ * /api/courses/me:
+ *   get:
+ *     summary: Get my courses (role-aware)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Courses relevant to the authenticated user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Course'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.get('/me', authenticateToken, getMyCourses);
 
 /**
- * GET /api/courses
- * Retrieves all courses available in the system.
- * Middleware: Auth Token.
+ * @swagger
+ * /api/courses:
+ *   get:
+ *     summary: List all courses
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *     responses:
+ *       200:
+ *         description: Paginated course list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Course'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.get('/', authenticateToken, getCourses);
 
 /**
- * GET /api/courses/study-results
- * Retrieves the study results (transcript) for the authenticated student.
- * Middleware: Auth Token, Role: MAHASISWA.
+ * @swagger
+ * /api/courses/study-results:
+ *   get:
+ *     summary: Get study results (student transcript legacy)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Study results for the authenticated student
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
-
 router.get(
   '/study-results',
   authenticateToken,
@@ -57,9 +114,40 @@ router.get(
 
 
 /**
- * GET /api/courses/admin/all
- * Retrieves all courses with detailed administrative info.
- * Middleware: Auth Token, Role: ADMIN.
+ * @swagger
+ * /api/courses/admin/all:
+ *   get:
+ *     summary: List all courses (admin detail view)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by title or code
+ *     responses:
+ *       200:
+ *         description: Paginated admin course list with teacher info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Course'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get(
   '/admin/all',
@@ -69,9 +157,55 @@ router.get(
 );
 
 /**
- * POST /api/courses/admin
- * Creates a new course (Admin).
- * Middleware: Auth Token, Role: ADMIN, Validation: createCourseSchema.
+ * @swagger
+ * /api/courses/admin:
+ *   post:
+ *     summary: Create a course (admin)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, code, sks]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               semester:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 8
+ *               sks:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 6
+ *               teacherId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       201:
+ *         description: Course created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Course'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.post(
   '/admin',
@@ -82,9 +216,55 @@ router.post(
 );
 
 /**
- * PUT /api/courses/admin/:id
- * Updates an existing course (Admin).
- * Middleware: Auth Token, Role: ADMIN, Validation: updateCourseSchema.
+ * @swagger
+ * /api/courses/admin/{id}:
+ *   put:
+ *     summary: Update a course (admin)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               semester:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 8
+ *               sks:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 6
+ *     responses:
+ *       200:
+ *         description: Course updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Course'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.put(
   '/admin/:id',
@@ -95,9 +275,28 @@ router.put(
 );
 
 /**
- * DELETE /api/courses/admin/:id
- * Deletes a course (Admin).
- * Middleware: Auth Token, Role: ADMIN.
+ * @swagger
+ * /api/courses/admin/{id}:
+ *   delete:
+ *     summary: Delete a course (admin)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: Course deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.delete(
   '/admin/:id',
@@ -107,9 +306,45 @@ router.delete(
 );
 
 /**
- * PATCH /api/courses/admin/:id/assign-teacher
- * Assigns a teacher to a course.
- * Middleware: Auth Token, Role: ADMIN, Validation: assignTeacherSchema.
+ * @swagger
+ * /api/courses/admin/{id}/assign-teacher:
+ *   patch:
+ *     summary: Assign a teacher to a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [teacherId]
+ *             properties:
+ *               teacherId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Teacher assigned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Course'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.patch(
   '/admin/:id/assign-teacher',
@@ -121,9 +356,34 @@ router.patch(
 
 
 /**
- * GET /api/courses/:id/students
- * Retrieves students enrolled in a course.
- * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ * @swagger
+ * /api/courses/{id}/students:
+ *   get:
+ *     summary: List students enrolled in a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: Enrolled students
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get(
   '/:id/students',
@@ -133,9 +393,34 @@ router.get(
 );
 
 /**
- * GET /api/courses/:id/available-students
- * Retrieves students not yet enrolled in a course.
- * Middleware: Auth Token, Role: DOSEN/ADMIN.
+ * @swagger
+ * /api/courses/{id}/available-students:
+ *   get:
+ *     summary: List students not yet enrolled in a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: Available students
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get(
   '/:id/available-students',
@@ -145,9 +430,52 @@ router.get(
 );
 
 /**
- * POST /api/courses
- * Creates a new course (Teacher/Admin).
- * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: createCourseSchema.
+ * @swagger
+ * /api/courses:
+ *   post:
+ *     summary: Create a course (teacher / admin)
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, code, sks]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               semester:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 8
+ *               sks:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 6
+ *     responses:
+ *       201:
+ *         description: Course created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Course'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.post(
   '/',
@@ -158,9 +486,43 @@ router.post(
 );
 
 /**
- * POST /api/courses/:id/enroll
- * Enrolls a student in a course.
- * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: enrollStudentSchema.
+ * @swagger
+ * /api/courses/{id}/enroll:
+ *   post:
+ *     summary: Enroll a student in a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [studentId]
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       201:
+ *         description: Student enrolled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: Student already enrolled
  */
 router.post(
   '/:id/enroll',
@@ -171,10 +533,86 @@ router.post(
 );
 
 /**
- * POST /api/courses/:courseId/materials
- * Creates a new material for a course.
- * Accepts multipart/form-data with an optional file field ('file').
- * Middleware: Auth Token, Role: DOSEN/ADMIN, Upload, Validation: createMaterialSchema.
+ * @swagger
+ * /api/courses/{courseId}/materials:
+ *   post:
+ *     summary: Create a material for a course
+ *     tags: [Materials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [title]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               videoUrl:
+ *                 type: string
+ *                 format: uri
+ *               order:
+ *                 type: integer
+ *               isPublished:
+ *                 type: boolean
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Material created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Material'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *   get:
+ *     summary: List materials for a course
+ *     tags: [Materials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Course materials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Material'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.post(
   '/:courseId/materials',
@@ -185,11 +623,6 @@ router.post(
   createMaterial
 );
 
-/**
- * GET /api/courses/:courseId/materials
- * Retrieves materials for a course.
- * Middleware: Auth Token.
- */
 router.get(
   '/:courseId/materials',
   authenticateToken,

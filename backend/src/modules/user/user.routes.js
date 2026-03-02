@@ -22,58 +22,333 @@ router.use(authenticateToken);
 router.use(authorizeRole('ADMIN'));
 
 /**
- * POST /api/users
- * Creates a new user (Admin/Dosen).
- * Middleware: Auth Token, Role: ADMIN, Validation: createUserSchema.
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, name]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, DOSEN, MAHASISWA]
+ *                 default: MAHASISWA
+ *               nim:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       409:
+ *         description: Email already registered
  */
 router.post('/', validate(createUserSchema), createUser);
 
 /**
- * GET /api/users
- * Retrieves a list of all users.
- * Middleware: Auth Token, Role: ADMIN.
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: List all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [ADMIN, DOSEN, MAHASISWA]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by name or email
+ *     responses:
+ *       200:
+ *         description: Paginated user list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/User'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', getAllUsers);
 
 /**
- * GET /api/users/advisor-summary
- * Retrieves a summary of all academic advisors and their student counts.
- * Middleware: Auth Token, Role: ADMIN.
+ * @swagger
+ * /api/users/advisor-summary:
+ *   get:
+ *     summary: Get advisor summary with student counts
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of advisors with their student counts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                           name:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           _count:
+ *                             type: object
+ *                             properties:
+ *                               advisees:
+ *                                 type: integer
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/advisor-summary', getAdvisorSummary);
 
 /**
- * GET /api/users/advisors/:dosenId/students
- * Retrieves the list of students assigned to a specific academic advisor.
- * Middleware: Auth Token, Role: ADMIN.
+ * @swagger
+ * /api/users/advisors/{dosenId}/students:
+ *   get:
+ *     summary: List students of a specific advisor
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: dosenId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Advisor (Dosen) UUID
+ *     responses:
+ *       200:
+ *         description: List of students under the advisor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get('/advisors/:dosenId/students', getAdvisorStudents);
 
 /**
- * GET /api/users/:id
- * Retrieves detailed information about a specific user by ID.
- * Middleware: Auth Token, Role: ADMIN.
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: User details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get('/:id', getUserById);
 
 /**
- * PATCH /api/users/:id/dospem-status
- * Updates the "Dospem" status for a lecturer.
- * Middleware: Auth Token, Role: ADMIN, Validation: updateDospemSchema.
+ * @swagger
+ * /api/users/{id}/dospem-status:
+ *   patch:
+ *     summary: Update lecturer Dospem status
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [isDospem]
+ *             properties:
+ *               isDospem:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Dospem status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.patch('/:id/dospem-status', validate(updateDospemSchema), updateDospemStatus);
 
 /**
- * PATCH /api/users/:id/advisor
- * Assigns an advisor to a student.
- * Middleware: Auth Token, Role: ADMIN, Validation: assignAdvisorSchema.
+ * @swagger
+ * /api/users/{id}/advisor:
+ *   patch:
+ *     summary: Assign advisor to a student
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [advisorId]
+ *             properties:
+ *               advisorId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Advisor assigned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.patch('/:id/advisor', validate(assignAdvisorSchema), assignAdvisor);
 
 /**
- * PATCH /api/users/bulk-advisor
- * Bulk assigns an advisor to multiple students.
- * Middleware: Auth Token, Role: ADMIN, Validation: bulkAssignAdvisorSchema.
+ * @swagger
+ * /api/users/bulk-advisor:
+ *   patch:
+ *     summary: Bulk assign advisor to multiple students
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [advisorId, studentIds]
+ *             properties:
+ *               advisorId:
+ *                 type: string
+ *                 format: uuid
+ *               studentIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 minItems: 1
+ *     responses:
+ *       200:
+ *         description: Advisor assigned to all students
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.patch('/bulk-advisor', validate(bulkAssignAdvisorSchema), bulkAssignAdvisor);
 

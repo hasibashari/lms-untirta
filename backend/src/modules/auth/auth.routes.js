@@ -17,20 +17,128 @@ const authLimiter = rateLimit({
 });
 
 /**
- * POST /api/auth/register
- * Registers a new user in the system.
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, name]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, DOSEN, MAHASISWA]
+ *                 default: MAHASISWA
+ *               nim:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       409:
+ *         description: Email already registered
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Too many attempts
  */
 router.post('/register', authLimiter, validate(registerSchema), register);
 
+
 /**
- * POST /api/auth/login
- * Authenticates a user and returns an access token.
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user and obtain JWT token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         token:
+ *                           type: string
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Too many attempts
  */
 router.post('/login', authLimiter, validate(loginSchema), login);
 
 /**
- * GET /api/auth/me
- * Retrieves the profile of the currently authenticated user.
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.get('/me', authenticateToken, getMe);
 

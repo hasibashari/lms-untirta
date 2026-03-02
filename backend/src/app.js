@@ -20,6 +20,9 @@ import transcriptRoutes from './modules/transcript/transcript.routes.js';
 import academicSemesterRoutes from './modules/academic/academic.routes.js';
 import gradeRoutes from './modules/grade/grade.routes.js';
 
+import swaggerUi from 'swagger-ui-express'
+import { swaggerSpec } from './config/swagger.js'
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +55,9 @@ app.use(express.json());
 // Protected static file access — requires valid JWT
 app.use('/uploads', authenticateToken, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
+// Swagger UI & JSON spec for Postman import
+app.get('/docs.json', (_req, res) => res.json(swaggerSpec))
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // -- MOUNT ROUTES --
 app.use('/api/auth', authRoutes); // Login/Register

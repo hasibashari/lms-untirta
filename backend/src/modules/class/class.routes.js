@@ -31,9 +31,30 @@ const router = express.Router();
 // ========== SPECIFIC ROUTES (tanpa parameter, harus di atas /:id) ==========
 
 /**
- * GET /api/classes/me
- * Retrieves classes taught by the authenticated lecturer.
- * Middleware: Auth Token, Role: DOSEN.
+ * @swagger
+ * /api/classes/me:
+ *   get:
+ *     summary: Get classes taught by the authenticated lecturer
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lecturer's classes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Class'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get(
   '/me',
@@ -43,9 +64,33 @@ router.get(
 );
 
 /**
- * GET /api/classes/open
- * Retrieves classes that are open for enrollment (for KRS).
- * Middleware: Auth Token, Role: MAHASISWA/ADMIN.
+ * @swagger
+ * /api/classes/open:
+ *   get:
+ *     summary: List classes open for enrollment
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *     responses:
+ *       200:
+ *         description: Open class offerings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Class'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get(
   '/open',
@@ -55,9 +100,35 @@ router.get(
 );
 
 /**
- * GET /api/classes/course/:courseId
- * Retrieves class offerings for a specific course.
- * Middleware: Auth Token.
+ * @swagger
+ * /api/classes/course/{courseId}:
+ *   get:
+ *     summary: List class offerings for a course
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Classes for the course
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Class'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.get(
   '/course/:courseId',
@@ -68,9 +139,93 @@ router.get(
 // ========== CRUD ROUTES ==========
 
 /**
- * GET /api/classes
- * Retrieves all class offerings.
- * Middleware: Auth Token, Role: ADMIN/DOSEN.
+ * @swagger
+ * /api/classes:
+ *   get:
+ *     summary: List all class offerings
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: academicSemesterId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Paginated class list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Class'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *   post:
+ *     summary: Create a new class offering
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [courseId, lecturerId, academicSemesterId, section, capacity]
+ *             properties:
+ *               courseId:
+ *                 type: string
+ *                 format: uuid
+ *               lecturerId:
+ *                 type: string
+ *                 format: uuid
+ *               academicSemesterId:
+ *                 type: string
+ *                 format: uuid
+ *               section:
+ *                 type: string
+ *                 example: A
+ *               schedule:
+ *                 type: string
+ *               room:
+ *                 type: string
+ *               capacity:
+ *                 type: integer
+ *                 minimum: 1
+ *     responses:
+ *       201:
+ *         description: Class created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Class'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get(
   '/',
@@ -79,11 +234,6 @@ router.get(
   getAll
 );
 
-/**
- * POST /api/classes
- * Creates a new class offering.
- * Middleware: Auth Token, Role: ADMIN, Validation: createClassSchema.
- */
 router.post(
   '/',
   authenticateToken,
@@ -95,9 +245,95 @@ router.post(
 // ========== PARAMETERIZED ROUTES (/:id) ==========
 
 /**
- * GET /api/classes/:id
- * Retrieves details of a specific class offering.
- * Middleware: Auth Token.
+ * @swagger
+ * /api/classes/{id}:
+ *   get:
+ *     summary: Get class details
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: Class details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Class'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   put:
+ *     summary: Update a class offering
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               section:
+ *                 type: string
+ *               schedule:
+ *                 type: string
+ *               room:
+ *                 type: string
+ *               capacity:
+ *                 type: integer
+ *                 minimum: 1
+ *               lecturerId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Class updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Class'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   delete:
+ *     summary: Delete a class offering
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: Class deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get(
   '/:id',
@@ -105,11 +341,6 @@ router.get(
   getById
 );
 
-/**
- * PUT /api/classes/:id
- * Updates an existing class offering.
- * Middleware: Auth Token, Role: ADMIN, Validation: updateClassSchema.
- */
 router.put(
   '/:id',
   authenticateToken,
@@ -119,9 +350,44 @@ router.put(
 );
 
 /**
- * PATCH /api/classes/:id/enrollment
- * Toggles the enrollment status of a class.
- * Middleware: Auth Token, Role: ADMIN, Validation: toggleEnrollmentSchema.
+ * @swagger
+ * /api/classes/{id}/enrollment:
+ *   patch:
+ *     summary: Toggle class enrollment status
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [isEnrollmentOpen]
+ *             properties:
+ *               isEnrollmentOpen:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Enrollment status toggled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Class'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.patch(
   '/:id/enrollment',
@@ -131,11 +397,6 @@ router.patch(
   toggleEnrollment
 );
 
-/**
- * DELETE /api/classes/:id
- * Deletes a class offering.
- * Middleware: Auth Token, Role: ADMIN.
- */
 router.delete(
   '/:id',
   authenticateToken,
