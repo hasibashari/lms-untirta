@@ -20,11 +20,17 @@
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import request from 'supertest';
 import { getApp } from '../helpers/request.js';
 import prisma from '../helpers/prisma.js';
 import { cleanDatabase } from '../helpers/db.js';
 import { createAdmin, createDosen, createMahasiswa } from '../helpers/auth.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const TEST_PDF = path.resolve(__dirname, '../fixtures/test-file.pdf');
+const TEST_TXT = path.resolve(__dirname, '../fixtures/test-file.txt');
 
 const API = '/api/assignments';
 
@@ -203,24 +209,26 @@ describe('POST /course/:courseId', () => {
     expect(res.status).toBe(400);
   });
 
-  it('500 — dosen does not own the course (no granular error handling)', async () => {
+  it('403 — dosen does not own the course', async () => {
     const otherDosen = await createDosen({ email: 'other@test.com' });
     const res = await request(app)
       .post(`${API}/course/${course.id}`)
       .set('Authorization', `Bearer ${otherDosen.token}`)
       .send({ title: 'Tugas', dueDate: new Date(Date.now() + 86400000).toISOString() });
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(403);
+    expect(res.body.success).toBe(false);
   });
 
-  it('500 — course not found (no granular error handling)', async () => {
+  it('404 — course not found', async () => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
     const res = await request(app)
       .post(`${API}/course/${fakeId}`)
       .set('Authorization', `Bearer ${dosenToken}`)
       .send({ title: 'Tugas', dueDate: new Date(Date.now() + 86400000).toISOString() });
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -284,7 +292,7 @@ describe('POST /:assignmentId/submit', () => {
     const res = await request(app)
       .post(`${API}/${assignment.id}/submit`)
       .set('Authorization', `Bearer ${mhsToken}`)
-      .send({ fileUrl: 'https://example.com/myfile.pdf' });
+      .attach('file', TEST_PDF);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty('id');
@@ -295,27 +303,30 @@ describe('POST /:assignmentId/submit', () => {
     const res = await request(app)
       .post(`${API}/${assignment.id}/submit`)
       .set('Authorization', `Bearer ${mhsToken}`)
-      .send({ fileUrl: 'https://example.com/myfile.pdf', note: 'Catatan saya' });
+      .attach('file', TEST_PDF)
+      .field('note', 'Catatan saya');
 
     expect(res.status).toBe(200);
   });
 
-  it('400 — invalid fileUrl', async () => {
+  it('400 — unsupported file type', async () => {
     const res = await request(app)
       .post(`${API}/${assignment.id}/submit`)
       .set('Authorization', `Bearer ${mhsToken}`)
-      .send({ fileUrl: 'not-a-url' });
+      .attach('file', TEST_TXT);
 
     expect(res.status).toBe(400);
   });
 
-  it('400 — missing fileUrl', async () => {
+  it('400 — missing file', async () => {
     const res = await request(app)
       .post(`${API}/${assignment.id}/submit`)
       .set('Authorization', `Bearer ${mhsToken}`)
       .send({});
 
     expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/file|wajib|unggah/i);
   });
 
   it('409 — duplicate submission', async () => {
@@ -324,19 +335,20 @@ describe('POST /:assignmentId/submit', () => {
     const res = await request(app)
       .post(`${API}/${assignment.id}/submit`)
       .set('Authorization', `Bearer ${mhsToken}`)
-      .send({ fileUrl: 'https://example.com/myfile.pdf' });
+      .attach('file', TEST_PDF);
 
     expect(res.status).toBe(409);
   });
 
-  it('500 — assignment not found (no granular error handling)', async () => {
+  it('404 — assignment not found', async () => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
     const res = await request(app)
       .post(`${API}/${fakeId}/submit`)
       .set('Authorization', `Bearer ${mhsToken}`)
-      .send({ fileUrl: 'https://example.com/myfile.pdf' });
+      .attach('file', TEST_PDF);
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
   });
 });
 
