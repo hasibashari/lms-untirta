@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma.js';
 import { KRS_STATUS, isValidStatusTransition } from '../../utils/academic.util.js';
+import { AppError } from '../../config/errors.js';
 
 // ========================================================================
 // KRS SERVICE
@@ -25,7 +26,7 @@ const getSksEligibility = async (studentId, academicSemesterId) => {
   });
 
   if (!semester) {
-    throw new Error('Semester akademik tidak ditemukan');
+    throw new AppError(404, 'Semester akademik tidak ditemukan');
   }
 
   const maxSKS = semester.maxSks;
@@ -63,8 +64,8 @@ const getSksEligibility = async (studentId, academicSemesterId) => {
  * @param {string} academicSemesterId - The ID of the academic semester to check.
  * @throws {Error} If the enrollment period is not open.
  */
-const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
-  const semester = await prisma.academicSemester.findUnique({
+const assertEnrollmentPeriodOpen = async (academicSemesterId, client = prisma) => {
+  const semester = await client.academicSemester.findUnique({
     where: { id: academicSemesterId },
     select: {
       status: true,
@@ -74,11 +75,11 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId) => {
   });
 
   if (!semester) {
-    throw new Error('Semester akademik tidak ditemukan');
+    throw new AppError(404, 'Semester akademik tidak ditemukan');
   }
 
   if (semester.status !== 'OPEN') {
-    throw new Error(
+    throw new AppError(400,
       `Masa pengisian KRS untuk semester ${semester.academicYear} ${semester.semesterType} belum dibuka atau sudah ditutup (status: ${semester.status})`
     );
   }
@@ -273,177 +274,174 @@ const getAvailableClasses = async (studentId, filters = {}) => {
  * @returns {Promise<object>} The newly created KRS enrollment record.
  */
 const enrollClass = async (studentId, classId) => {
-  // 1. Validasi kelas ada dan terbuka
-  const classData = await prisma.class.findUnique({
-    where: { id: classId },
-    select: {
-      id: true,
-      capacity: true,
-      isEnrollmentOpen: true,
-      academicSemesterId: true,
-      courseId: true,
-      course: {
-        select: {
-          id: true,
-          title: true,
-          code: true,
-          sks: true,
+  return prisma.$transaction(async (tx) => {
+    // 1. Validasi kelas ada dan terbuka
+    const classData = await tx.class.findUnique({
+      where: { id: classId },
+      select: {
+        id: true,
+        capacity: true,
+        isEnrollmentOpen: true,
+        academicSemesterId: true,
+        courseId: true,
+        course: {
+          select: {
+            id: true,
+            title: true,
+            code: true,
+            sks: true,
+          },
+        },
+        _count: {
+          select: {
+            krsEnrollments: true,
+          },
         },
       },
-      _count: {
-        select: {
-          krsEnrollments: true,
+    });
+
+    if (!classData) {
+      throw new AppError(404, 'Kelas offering tidak ditemukan');
+    }
+
+    if (!classData.isEnrollmentOpen) {
+      throw new AppError(400, 'Pendaftaran kelas ini belum dibuka', 'ENROLLMENT_CLOSED');
+    }
+
+    // 1b. Validasi masa pengisian KRS masih terbuka
+    await assertEnrollmentPeriodOpen(classData.academicSemesterId, tx);
+
+    // 2. Cek kapasitas
+    if (classData._count.krsEnrollments >= classData.capacity) {
+      throw new AppError(400, 'Kapasitas kelas sudah penuh', 'CLASS_FULL');
+    }
+
+    // 3. Cek duplikasi di kelas yang sama
+    const existingEnrollment = await tx.krsEnrollment.findUnique({
+      where: {
+        studentId_classId: {
+          studentId,
+          classId,
         },
       },
-    },
-  });
+      select: { id: true },
+    });
 
-  if (!classData) {
-    throw new Error('Kelas offering tidak ditemukan');
-  }
+    if (existingEnrollment) {
+      throw new AppError(409, 'Anda sudah terdaftar di kelas ini');
+    }
 
-  if (!classData.isEnrollmentOpen) {
-    throw new Error('Pendaftaran kelas ini belum dibuka');
-  }
+    // 4. Cek apakah sudah mengambil course yang sama di semester yang sama
+    const duplicateCourse = await tx.krsEnrollment.findFirst({
+      where: {
+        studentId,
+        class: {
+          courseId: classData.courseId,
+          academicSemesterId: classData.academicSemesterId,
+        },
+      },
+      select: {
+        id: true,
+        class: {
+          select: { section: true },
+        },
+      },
+    });
 
-  // 1b. Validasi masa pengisian KRS masih terbuka
-  await assertEnrollmentPeriodOpen(classData.academicSemesterId);
+    if (duplicateCourse) {
+      throw new AppError(409,
+        `Anda sudah mengambil mata kuliah ini di kelas ${duplicateCourse.class.section}`
+      );
+    }
 
-  // 2. Cek kapasitas
-  if (classData._count.krsEnrollments >= classData.capacity) {
-    throw new Error('Kapasitas kelas sudah penuh');
-  }
+    // 5. Cek batas SKS
+    const currentEnrollments = await tx.krsEnrollment.findMany({
+      where: {
+        studentId,
+        class: {
+          academicSemesterId: classData.academicSemesterId,
+        },
+        status: { in: ['PENDING', 'APPROVED'] },
+      },
+      select: {
+        class: {
+          select: {
+            course: {
+              select: { sks: true },
+            },
+          },
+        },
+      },
+    });
 
-  // 3. Cek duplikasi di kelas yang sama
-  const existingEnrollment = await prisma.krsEnrollment.findUnique({
-    where: {
-      studentId_classId: {
+    const currentSKS = currentEnrollments.reduce(
+      (total, e) => total + (e.class.course.sks || 3),
+      0
+    );
+    const courseSKS = classData.course.sks || 3;
+
+    // Get semester's maxSks limit
+    const semester = await tx.academicSemester.findUnique({
+      where: { id: classData.academicSemesterId },
+      select: { maxSks: true },
+    });
+    const maxSKS = semester?.maxSks ?? 24;
+
+    if (currentSKS + courseSKS > maxSKS) {
+      throw new AppError(400, `Total SKS melebihi batas semester (${currentSKS}+${courseSKS} > ${maxSKS} SKS).`, 'SKS_LIMIT_EXCEEDED', { currentSKS, courseSKS, maxSKS });
+    }
+
+    // 6. Create KRS enrollment (directly as PENDING — no draft phase)
+    const enrollment = await tx.krsEnrollment.create({
+      data: {
         studentId,
         classId,
+        status: KRS_STATUS.PENDING,
+        submittedAt: new Date(),
       },
-    },
-    select: { id: true },
-  });
-
-  if (existingEnrollment) {
-    throw new Error('Anda sudah terdaftar di kelas ini');
-  }
-
-  // 4. Cek apakah sudah mengambil course yang sama di semester yang sama
-  const duplicateCourse = await prisma.krsEnrollment.findFirst({
-    where: {
-      studentId,
-      class: {
-        courseId: classData.courseId,
-        academicSemesterId: classData.academicSemesterId,
-      },
-    },
-    select: {
-      id: true,
-      class: {
-        select: { section: true },
-      },
-    },
-  });
-
-  if (duplicateCourse) {
-    throw new Error(
-      `Anda sudah mengambil mata kuliah ini di kelas ${duplicateCourse.class.section}`
-    );
-  }
-
-  // 5. Cek batas SKS
-  const currentEnrollments = await prisma.krsEnrollment.findMany({
-    where: {
-      studentId,
-      class: {
-        academicSemesterId: classData.academicSemesterId,
-      },
-      status: { in: ['PENDING', 'APPROVED'] },
-    },
-    select: {
-      class: {
-        select: {
-          course: {
-            select: { sks: true },
-          },
-        },
-      },
-    },
-  });
-
-  const currentSKS = currentEnrollments.reduce(
-    (total, e) => total + (e.class.course.sks || 3),
-    0
-  );
-  const courseSKS = classData.course.sks || 3;
-
-  // Get semester's maxSks limit
-  const semester = await prisma.academicSemester.findUnique({
-    where: { id: classData.academicSemesterId },
-    select: { maxSks: true },
-  });
-  const maxSKS = semester?.maxSks ?? 24;
-
-  if (currentSKS + courseSKS > maxSKS) {
-    const error = new Error(
-      `Total SKS melebihi batas semester (${currentSKS}+${courseSKS} > ${maxSKS} SKS).`
-    );
-    error.code = 'SKS_LIMIT_EXCEEDED';
-    error.details = { currentSKS, courseSKS, maxSKS };
-    throw error;
-  }
-
-  // 6. Create KRS enrollment (directly as PENDING — no draft phase)
-  const enrollment = await prisma.krsEnrollment.create({
-    data: {
-      studentId,
-      classId,
-      status: KRS_STATUS.PENDING,
-      submittedAt: new Date(),
-    },
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      class: {
-        select: {
-          id: true,
-          section: true,
-          schedule: true,
-          room: true,
-          academicSemesterId: true,
-          academicSemester: {
-            select: {
-              academicYear: true,
-              semesterType: true,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        class: {
+          select: {
+            id: true,
+            section: true,
+            schedule: true,
+            room: true,
+            academicSemesterId: true,
+            academicSemester: {
+              select: {
+                academicYear: true,
+                semesterType: true,
+              },
             },
-          },
-          course: {
-            select: {
-              id: true,
-              title: true,
-              code: true,
-              sks: true,
+            course: {
+              select: {
+                id: true,
+                title: true,
+                code: true,
+                sks: true,
+              },
             },
-          },
-          lecturer: {
-            select: {
-              id: true,
-              name: true,
+            lecturer: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  return {
-    enrollmentId: enrollment.id,
-    status: enrollment.status,
-    createdAt: enrollment.createdAt,
-    class: enrollment.class,
-  };
+    return {
+      enrollmentId: enrollment.id,
+      status: enrollment.status,
+      createdAt: enrollment.createdAt,
+      class: enrollment.class,
+    };
+  }, { isolationLevel: 'Serializable', timeout: 10000 });
 };
 
 // ======================== DROP (UNENROLL) ========================
@@ -480,14 +478,14 @@ const dropClass = async (studentId, classId) => {
   });
 
   if (!enrollment) {
-    throw new Error('Anda tidak terdaftar di kelas ini');
+    throw new AppError(404, 'Anda tidak terdaftar di kelas ini');
   }
 
   // Semester must be OPEN to drop
   await assertEnrollmentPeriodOpen(enrollment.class.academicSemesterId);
 
   if (enrollment.status === KRS_STATUS.APPROVED) {
-    throw new Error('Tidak dapat menghapus mata kuliah yang sudah disetujui');
+    throw new AppError(400, 'Tidak dapat menghapus mata kuliah yang sudah disetujui');
   }
 
   await prisma.krsEnrollment.delete({
@@ -643,7 +641,7 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
   });
 
   if (!enrollment) {
-    throw new Error('KRS enrollment tidak ditemukan');
+    throw new AppError(404, 'KRS enrollment tidak ditemukan');
   }
 
   // Guard: semester must be OPEN for any status change
@@ -651,7 +649,7 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
 
   // Guard: validate state transition
   if (!isValidStatusTransition(enrollment.status, newStatus)) {
-    throw new Error(
+    throw new AppError(400,
       `Tidak dapat mengubah status dari ${enrollment.status} ke ${newStatus}`
     );
   }
@@ -665,24 +663,24 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
     if (currentUser.role === 'ADMIN') {
       // Admin cannot revoke approvals — only dospem can
       if (isRevoke) {
-        throw new Error('Hanya Dosen Pembimbing yang dapat mencabut persetujuan KRS');
+        throw new AppError(403, 'Hanya Dosen Pembimbing yang dapat mencabut persetujuan KRS');
       }
       if (!note || note.trim().length < 10) {
-        throw new Error(
+        throw new AppError(400,
           'Admin wajib memberikan alasan minimal 10 karakter untuk menyetujui/menolak KRS'
         );
       }
       actorType = 'ADMIN';
     } else if (currentUser.role === 'DOSEN') {
       if (!currentUser.isDospem) {
-        throw new Error('Anda tidak terdaftar sebagai Dosen Pembimbing');
+        throw new AppError(403, 'Anda tidak terdaftar sebagai Dosen Pembimbing');
       }
       if (enrollment.student.advisorId !== currentUser.id) {
-        throw new Error('Anda bukan Dosen Pembimbing mahasiswa ini');
+        throw new AppError(403, 'Anda bukan Dosen Pembimbing mahasiswa ini');
       }
       // Revoke requires a note explaining why
       if (isRevoke && (!note || note.trim().length === 0)) {
-        throw new Error('Wajib memberikan alasan untuk mencabut persetujuan KRS');
+        throw new AppError(400, 'Wajib memberikan alasan untuk mencabut persetujuan KRS');
       }
       actorType = 'DOSPEM';
     }
@@ -752,8 +750,9 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
       });
 
       if (classData && classData._count.krsEnrollments >= classData.capacity) {
-        throw new Error(
-          `Kapasitas kelas sudah penuh (${classData._count.krsEnrollments}/${classData.capacity}). Tidak dapat menyetujui KRS ini.`
+        throw new AppError(400,
+          `Kapasitas kelas sudah penuh (${classData._count.krsEnrollments}/${classData.capacity}). Tidak dapat menyetujui KRS ini.`,
+          'CLASS_FULL'
         );
       }
 
@@ -814,11 +813,11 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
  */
 const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null, currentUser = null) => {
   if (!enrollmentIds || enrollmentIds.length === 0) {
-    throw new Error('Tidak ada enrollment yang dipilih');
+    throw new AppError(400, 'Tidak ada enrollment yang dipilih');
   }
 
   if (enrollmentIds.length > 50) {
-    throw new Error('Maksimal 50 enrollment per batch');
+    throw new AppError(400, 'Maksimal 50 enrollment per batch');
   }
 
   // Fetch all enrollments
@@ -843,7 +842,7 @@ const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null,
   });
 
   if (enrollments.length !== enrollmentIds.length) {
-    throw new Error('Beberapa enrollment tidak ditemukan');
+    throw new AppError(404, 'Beberapa enrollment tidak ditemukan');
   }
 
   // Guard: semester must be OPEN
@@ -858,25 +857,25 @@ const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null,
 
   if (currentUser && currentUser.role === 'DOSEN') {
     if (!currentUser.isDospem) {
-      throw new Error('Anda tidak terdaftar sebagai Dosen Pembimbing');
+      throw new AppError(403, 'Anda tidak terdaftar sebagai Dosen Pembimbing');
     }
     const unauthorized = enrollments.filter(e => e.student.advisorId !== currentUser.id);
     if (unauthorized.length > 0) {
-      throw new Error('Beberapa mahasiswa bukan bimbingan Anda');
+      throw new AppError(403, 'Beberapa mahasiswa bukan bimbingan Anda');
     }
     // Revoke in bulk requires a note
     if (hasRevokeItems && (!note || note.trim().length === 0)) {
-      throw new Error('Wajib memberikan alasan untuk mencabut persetujuan KRS');
+      throw new AppError(400, 'Wajib memberikan alasan untuk mencabut persetujuan KRS');
     }
     bulkActorType = 'DOSPEM';
   }
   if (currentUser && currentUser.role === 'ADMIN') {
     // Admin cannot revoke approvals
     if (hasRevokeItems) {
-      throw new Error('Hanya Dosen Pembimbing yang dapat mencabut persetujuan KRS');
+      throw new AppError(403, 'Hanya Dosen Pembimbing yang dapat mencabut persetujuan KRS');
     }
     if (!note || note.trim().length < 10) {
-      throw new Error(
+      throw new AppError(400,
         'Admin wajib memberikan alasan minimal 10 karakter untuk menyetujui/menolak KRS'
       );
     }
@@ -887,7 +886,7 @@ const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null,
   const invalidTransitions = enrollments.filter(e => !isValidStatusTransition(e.status, newStatus));
 
   if (invalidTransitions.length > 0) {
-    throw new Error(
+    throw new AppError(400,
       `${invalidTransitions.length} enrollment tidak dapat diubah ke status ${newStatus}`
     );
   }
@@ -1079,11 +1078,11 @@ const reviseRejectedEnrollment = async (studentId, enrollmentId) => {
   });
 
   if (!enrollment) {
-    throw new Error('KRS enrollment tidak ditemukan');
+    throw new AppError(404, 'KRS enrollment tidak ditemukan');
   }
 
   if (enrollment.status !== KRS_STATUS.REJECTED) {
-    throw new Error('Hanya KRS yang ditolak yang dapat direvisi');
+    throw new AppError(400, 'Hanya KRS yang ditolak yang dapat direvisi');
   }
 
   // Pastikan masa KRS masih terbuka
@@ -1159,15 +1158,15 @@ const getApprovalHistory = async (enrollmentId, currentUser) => {
   });
 
   if (!enrollment) {
-    throw new Error('KRS enrollment tidak ditemukan');
+    throw new AppError(404, 'KRS enrollment tidak ditemukan');
   }
 
   // Authorization
   if (currentUser.role === 'MAHASISWA' && enrollment.studentId !== currentUser.id) {
-    throw new Error('Anda tidak memiliki akses ke riwayat KRS ini');
+    throw new AppError(403, 'Anda tidak memiliki akses ke riwayat KRS ini');
   }
   if (currentUser.role === 'DOSEN' && enrollment.student.advisorId !== currentUser.id) {
-    throw new Error('Anda bukan Dosen Pembimbing mahasiswa ini');
+    throw new AppError(403, 'Anda bukan Dosen Pembimbing mahasiswa ini');
   }
 
   const logs = await prisma.krsApprovalLog.findMany({

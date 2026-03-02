@@ -1,5 +1,6 @@
 import * as userService from './user.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
 
 /**
  * Creates a new user (Admin or Lecturer) in the system.
@@ -11,11 +12,8 @@ export const createUser = async (req, res) => {
   try {
     const newUser = await userService.createUserByAdmin(req.body);
     sendSuccess(res, { statusCode: 201, message: 'User berhasil dibuat', data: newUser });
-  } catch (err) {
-    if (err.message === 'Email sudah terdaftar') {
-      return sendError(res, { statusCode: 409, message: err.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
 
@@ -34,7 +32,7 @@ export const getAllUsers = async (req, res) => {
     }
 
     const isDospemFilter = isDospem === 'true' ? true : isDospem === 'false' ? false : undefined;
-    const users = await userService.getAllUsers(role, isDospemFilter);
+    const { data, pagination } = await userService.getAllUsers(role, isDospemFilter, req.query);
 
     const roleMessages = {
       DOSEN: 'Daftar dosen berhasil diambil',
@@ -44,9 +42,9 @@ export const getAllUsers = async (req, res) => {
 
     const message = role ? roleMessages[role] : 'Daftar seluruh user berhasil diambil';
 
-    sendSuccess(res, { statusCode: 200, message, data: users });
+    sendSuccess(res, { statusCode: 200, message, data, pagination });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -66,7 +64,7 @@ export const getUserById = async (req, res) => {
 
     sendSuccess(res, { statusCode: 200, message: 'Berhasil mengambil detail user', data: user });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -89,13 +87,7 @@ export const updateDospemStatus = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Hanya dosen')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -115,13 +107,7 @@ export const assignAdvisor = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Hanya') || error.message.includes('harus') || error.message.includes('belum')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -137,13 +123,7 @@ export const bulkAssignAdvisor = async (req, res) => {
     const result = await userService.bulkAssignAdvisor(studentIds, advisorId);
     sendSuccess(res, { statusCode: 200, message: result.message, data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan') || error.message.includes('bukan mahasiswa')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('Maksimal') || error.message.includes('Tidak ada')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -157,7 +137,7 @@ export const getAdvisorSummary = async (req, res) => {
     const result = await userService.getAdvisorSummary();
     sendSuccess(res, { statusCode: 200, message: 'Daftar Dosen Pembimbing berhasil diambil', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -172,9 +152,6 @@ export const getAdvisorStudents = async (req, res) => {
     const result = await userService.getAdvisorStudents(dosenId);
     sendSuccess(res, { statusCode: 200, message: 'Daftar mahasiswa bimbingan berhasil diambil', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan') || error.message.includes('bukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };

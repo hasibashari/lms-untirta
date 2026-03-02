@@ -1,5 +1,7 @@
 import prisma from '../../config/prisma.js';
 import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../../utils/grading.util.js';
+import { AppError } from '../../config/errors.js';
+import { paginate } from '../../utils/pagination.js';
 
 // ========================================================================
 // TRANSCRIPT SERVICE
@@ -30,7 +32,7 @@ const getStudyResults = async (studentId, filters = {}) => {
   });
 
   if (!student) {
-    throw new Error('Mahasiswa tidak ditemukan');
+    throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
   // Build where clause for enrollment
@@ -145,7 +147,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   });
 
   if (!student) {
-    throw new Error('Mahasiswa tidak ditemukan');
+    throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
   const isStudentView = options.isStudentView !== false; // default true
@@ -349,7 +351,7 @@ const getAcademicSummary = async (studentId) => {
   });
 
   if (!student) {
-    throw new Error('Mahasiswa tidak ditemukan');
+    throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
   // Hitung dari enrollment lama
@@ -374,7 +376,8 @@ const getAcademicSummary = async (studentId) => {
  * @param {object} filters - Filter options (e.g., search).
  * @returns {Promise<Array<object>>} List of students with enrollment counts.
  */
-const getStudentList = async (filters = {}) => {
+const getStudentList = async (filters = {}, query = {}) => {
+  const { skip, take, meta } = paginate(query);
   const where = { role: 'MAHASISWA' };
 
   if (filters.search) {
@@ -384,33 +387,41 @@ const getStudentList = async (filters = {}) => {
     ];
   }
 
-  const students = await prisma.user.findMany({
-    where,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      nim: true,
-      createdAt: true,
-      _count: {
-        select: {
-          enrollments: true,
-          krsEnrollments: true,
+  const [students, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        nim: true,
+        createdAt: true,
+        _count: {
+          select: {
+            enrollments: true,
+            krsEnrollments: true,
+          },
         },
       },
-    },
-    orderBy: { name: 'asc' },
-  });
+      orderBy: { name: 'asc' },
+      skip,
+      take,
+    }),
+    prisma.user.count({ where }),
+  ]);
 
-  return students.map(s => ({
-    id: s.id,
-    name: s.name,
-    email: s.email,
-    nim: s.nim,
-    createdAt: s.createdAt,
-    totalEnrollments: s._count.enrollments,
-    totalKrsEnrollments: s._count.krsEnrollments,
-  }));
+  return {
+    data: students.map(s => ({
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      nim: s.nim,
+      createdAt: s.createdAt,
+      totalEnrollments: s._count.enrollments,
+      totalKrsEnrollments: s._count.krsEnrollments,
+    })),
+    pagination: meta(total),
+  };
 };
 
 /**
@@ -427,7 +438,7 @@ const getFullStudentTranscript = async (studentId) => {
   });
 
   if (!student) {
-    throw new Error('Mahasiswa tidak ditemukan');
+    throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
   const legacyResult = await getStudyResults(studentId);

@@ -35,7 +35,6 @@ export const updateAssignmentSchema = z.object({
  */
 export const submitAssignmentSchema = z.object({
   body: z.object({
-    fileUrl: z.string().url('URL tidak valid').min(1, 'URL harus diisi'),
     note: z.string().optional(),
   }),
 });

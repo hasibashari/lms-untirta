@@ -1,5 +1,6 @@
 import * as gradeService from './grade.service.js';
-import { sendSuccess, sendError } from '../../utils/response.js';
+import { sendSuccess } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
 
 /**
  * Retrieves the list of students in a class for grading purposes.
@@ -19,13 +20,7 @@ export const getClassStudents = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('tidak berhak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -47,20 +42,7 @@ export const inputGrade = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('tidak berhak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (
-      error.message.includes('Tidak dapat') ||
-      error.message.includes('sudah difinalisasi') ||
-      error.message.includes('tidak terdaftar')
-    ) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -82,20 +64,7 @@ export const bulkInputGrades = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('tidak berhak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (
-      error.message.includes('Tidak dapat') ||
-      error.message.includes('sudah difinalisasi') ||
-      error.message.includes('tidak terdaftar')
-    ) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -117,16 +86,7 @@ export const finalizeGrades = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('tidak berhak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (error.message.includes('Tidak ada')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -148,6 +108,6 @@ export const getMyGrades = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };

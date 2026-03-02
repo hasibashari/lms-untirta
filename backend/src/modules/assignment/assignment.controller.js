@@ -1,5 +1,10 @@
 import * as assignmentService from './assignment.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
+import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
+
+const buildFileUrl = (req, filename) =>
+  `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 
 /**
  * Creates a new assignment for a specific course.
@@ -13,7 +18,7 @@ const create = async (req, res) => {
     const result = await assignmentService.createAssignment(courseId, req.user.id, req.body);
     sendSuccess(res, { statusCode: 201, message: 'Tugas berhasil dibuat', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -26,20 +31,26 @@ const create = async (req, res) => {
 const submit = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const result = await assignmentService.submitAssignment(assignmentId, req.user.id, req.body);
+    const { note } = req.body;
+
+    let fileUrl = null;
+    if (req.file) {
+      await persistUploadMeta({ userId: req.user.id, file: req.file });
+      fileUrl = buildFileUrl(req, req.file.filename);
+    }
+
+    const result = await assignmentService.submitAssignment(assignmentId, req.user.id, {
+      fileUrl,
+      note,
+    });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Tugas berhasil dikumpulkan',
       data: { ...result, status: 'Submitted' },
     });
   } catch (error) {
-    if (error.message.includes('habis')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('sudah mengumpulkan')) {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    if (req.file) cleanupFile(req.file.path).catch(() => { });
+    return handleError(res, error);
   }
 };
 
@@ -55,10 +66,7 @@ const getSubmissions = async (req, res) => {
     const result = await assignmentService.getSubmissionsByAssignment(assignmentId, req.user.id);
     sendSuccess(res, { statusCode: 200, message: 'Daftar pengumpulan berhasil diambil', data: result });
   } catch (error) {
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -74,13 +82,7 @@ const grade = async (req, res) => {
     const result = await assignmentService.gradeSubmission(submissionId, req.user.id, req.body);
     sendSuccess(res, { statusCode: 200, message: 'Nilai berhasil disimpan', data: result });
   } catch (error) {
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -96,13 +98,7 @@ const getAssignments = async (req, res) => {
     const result = await assignmentService.getAssignmentsByCourse(courseId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Daftar tugas berhasil diambil', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('belum terdaftar')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -118,13 +114,7 @@ const getMyAssignment = async (req, res) => {
     const result = await assignmentService.getAssignmentWithMySubmission(assignmentId, req.user.id);
     sendSuccess(res, { statusCode: 200, message: 'Status tugas berhasil diambil', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('belum terdaftar')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -138,7 +128,7 @@ const getAllMyGrades = async (req, res) => {
     const result = await assignmentService.getAllMyGrades(req.user.id);
     sendSuccess(res, { statusCode: 200, message: 'Daftar nilai berhasil diambil', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -153,7 +143,7 @@ const getMyDashboardStats = async (req, res) => {
     const result = await assignmentService.getMyDashboardStats(req.user.id);
     sendSuccess(res, { statusCode: 200, message: 'Statistik berhasil diambil', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -168,7 +158,7 @@ const getTeacherDashboardStats = async (req, res) => {
     const result = await assignmentService.getTeacherDashboardStats(req.user.id);
     sendSuccess(res, { statusCode: 200, message: 'Statistik dosen berhasil diambil', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -184,7 +174,7 @@ const getRecentSubmissions = async (req, res) => {
     const result = await assignmentService.getRecentSubmissionsForTeacher(req.user.id, limit);
     sendSuccess(res, { statusCode: 200, message: 'Submissions terbaru berhasil diambil', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -205,7 +195,7 @@ const getAssignmentDetail = async (req, res) => {
 
     sendSuccess(res, { statusCode: 200, message: 'Detail tugas berhasil diambil', data: result });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -229,13 +219,7 @@ const updateAssignment = async (req, res) => {
 
     sendSuccess(res, { statusCode: 200, message: 'Tugas berhasil diperbarui', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -257,13 +241,7 @@ const deleteAssignment = async (req, res) => {
 
     sendSuccess(res, { statusCode: 200, message: result.message, data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 

@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { AppError } from '../../config/errors.js';
 
 /**
  * Creates a new assignment for a specific course.
@@ -17,11 +18,11 @@ const createAssignment = async (courseId, teacherId, data) => {
   const course = await prisma.course.findUnique({ where: { id: courseId } });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   if (course.teacherId !== teacherId) {
-    throw new Error('Akses ditolak');
+    throw new AppError(403, 'Akses ditolak');
   }
 
   return prisma.assignment.create({
@@ -59,7 +60,7 @@ const submitAssignment = async (assignmentId, studentId, data) => {
   const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
 
   if (!assignment) {
-    throw new Error('Tugas tidak ditemukan');
+    throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
   // TODO Cek apakah mahasiswa terdaftar di kelas tsb? (Skip dulu biar ringkas, tapi idealnya dicek)
@@ -78,7 +79,7 @@ const submitAssignment = async (assignmentId, studentId, data) => {
   });
 
   if (existingSubmission) {
-    throw new Error('Anda sudah mengumpulkan tugas ini');
+    throw new AppError(409, 'Anda sudah mengumpulkan tugas ini');
   }
 
   const submission = await prisma.submission.create({
@@ -142,7 +143,7 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 2. Authorization: Mahasiswa harus terdaftar di kelas
@@ -157,7 +158,7 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
     });
 
     if (!enrollment) {
-      throw new Error('Anda belum terdaftar di kelas ini');
+      throw new AppError(403, 'Anda belum terdaftar di kelas ini');
     }
   }
 
@@ -227,7 +228,7 @@ const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
   });
 
   if (!assignment) {
-    throw new Error('Tugas tidak ditemukan');
+    throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
   // 2. Cek apakah mahasiswa terdaftar di kelas
@@ -241,7 +242,7 @@ const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
   });
 
   if (!enrollment) {
-    throw new Error('Anda belum terdaftar di kelas ini');
+    throw new AppError(403, 'Anda belum terdaftar di kelas ini');
   }
 
   // 3. Cari submission mahasiswa ini (jika ada)
@@ -305,10 +306,10 @@ const getSubmissionsByAssignment = async (assignmentId, teacherId) => {
     },
   });
   if (!assignment) {
-    throw new Error('Tugas tidak ditemukan');
+    throw new AppError(404, 'Tugas tidak ditemukan');
   }
   if (assignment.course.teacherId !== teacherId) {
-    throw new Error('Akses ditolak');
+    throw new AppError(403, 'Akses ditolak');
   }
   // Ambil submission beserta nama mahasiswany
   return await prisma.submission.findMany({
@@ -492,11 +493,11 @@ const gradeSubmission = async (submissionId, teacherId, data) => {
   });
 
   if (!submission) {
-    throw new Error('Submission tidak ditemukan');
+    throw new AppError(404, 'Submission tidak ditemukan');
   }
   // Cek apakah user yang request adalah Dosen pemilik kelas
   if (submission.assignment.course.teacherId !== teacherId) {
-    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
   }
 
   // Update Nilai
@@ -672,16 +673,16 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
   });
 
   if (!assignment) {
-    throw new Error('Tugas tidak ditemukan');
+    throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
   // 2. Authorization: Hanya Dosen pemilik atau Admin
   if (userRole === 'DOSEN' && assignment.course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan tugas dari kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan tugas dari kelas Anda');
   }
 
   if (userRole === 'MAHASISWA') {
-    throw new Error('Akses ditolak: Mahasiswa tidak dapat mengedit tugas');
+    throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat mengedit tugas');
   }
 
   // 3. Update Assignment
@@ -734,16 +735,16 @@ const deleteAssignment = async (assignmentId, userId, userRole) => {
   });
 
   if (!assignment) {
-    throw new Error('Tugas tidak ditemukan');
+    throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
   // 2. Authorization: Hanya Dosen pemilik atau Admin
   if (userRole === 'DOSEN' && assignment.course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan tugas dari kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan tugas dari kelas Anda');
   }
 
   if (userRole === 'MAHASISWA') {
-    throw new Error('Akses ditolak: Mahasiswa tidak dapat menghapus tugas');
+    throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat menghapus tugas');
   }
 
   // 3. Delete Assignment (submissions akan cascade delete)

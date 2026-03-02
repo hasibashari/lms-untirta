@@ -1,4 +1,6 @@
 import prisma from '../../config/prisma.js';
+import { AppError } from '../../config/errors.js';
+import { paginate } from '../../utils/pagination.js';
 
 /**
  * Creates a new course in the database.
@@ -15,7 +17,7 @@ const createCourse = async (data, teacherId) => {
   });
 
   if (existingCourse) {
-    throw new Error('Kode kelas sudah digunakan');
+    throw new AppError(409, 'Kode kelas sudah digunakan');
   }
 
   // 2. Simpan ke DB
@@ -45,29 +47,37 @@ const createCourse = async (data, teacherId) => {
  * Retrieves all courses including teacher information.
  * @returns {Promise<Array<object>>} List of courses.
  */
-const getAllCourses = async () => {
+const getAllCourses = async (query = {}) => {
+  const { skip, take, meta } = paginate(query);
   // Kita ingin mengambil data kelas BESERTA nama dosennya
-  return await prisma.course.findMany({
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      code: true,
-      semester: true,
-      sks: true,
-      createdAt: true,
-      teacher: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
+  const [courses, total] = await Promise.all([
+    prisma.course.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        code: true,
+        semester: true,
+        sks: true,
+        createdAt: true,
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
+    }),
+    prisma.course.count(),
+  ]);
+
+  return { data: courses, pagination: meta(total) };
 };
 
 /**
@@ -87,14 +97,14 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 2. Cek Kepemilikan (Authorization Logic)
   // Jika role-nya DOSEN, dia cuma boleh edit kelas miliknya sendiri.
   // Jika role-nya ADMIN, dia boleh edit kelas siapa saja (Bypass).
   if (teacherRole === 'DOSEN' && course.teacherId !== teacherId) {
-    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
   }
 
   // 2. Cari Mahasiswa by Email
@@ -103,12 +113,12 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
   });
 
   if (!student) {
-    throw new Error('Mahasiswa dengan email tersebut tidak ditemukan');
+    throw new AppError(404, 'Mahasiswa dengan email tersebut tidak ditemukan');
   }
 
   // Validasi tambahan: Pastikan yang dimasukkan adalah MAHASISWA (bukan Dosen lain)
   if (student.role !== 'MAHASISWA') {
-    throw new Error('User tersebut bukan mahasiswa');
+    throw new AppError(400, 'User tersebut bukan mahasiswa');
   }
 
   // 4. Cek Duplikasi (Idempotency)
@@ -123,7 +133,7 @@ const addStudentToCourse = async (courseId, studentEmail, teacherId, teacherRole
   });
 
   if (existingEnrollment) {
-    throw new Error('Mahasiswa sudah terdaftar di kelas ini');
+    throw new AppError(409, 'Mahasiswa sudah terdaftar di kelas ini');
   }
 
   // 5. Eksekusi Create Enrollment
@@ -262,12 +272,12 @@ const getStudentsByCourse = async (courseId, userId, userRole) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 2. Authorization: Hanya Dosen pemilik kelas atau Admin yang bisa akses
   if (userRole === 'DOSEN' && course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
   }
 
   // 3. Ambil daftar Enrollment dengan data student
@@ -313,12 +323,12 @@ const getAvailableStudentsForCourse = async (courseId, userId, userRole) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 2. Authorization: Hanya Dosen pemilik kelas atau Admin yang bisa akses
   if (userRole === 'DOSEN' && course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
   }
 
   // 3. Ambil ID mahasiswa yang sudah enrolled di course ini
@@ -364,12 +374,12 @@ const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRol
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 2. Cek Kepemilikan (Authorization Logic)
   if (teacherRole === 'DOSEN' && course.teacherId !== teacherId) {
-    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
   }
 
   // 3. Cari Mahasiswa by ID
@@ -378,12 +388,12 @@ const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRol
   });
 
   if (!student) {
-    throw new Error('Mahasiswa tidak ditemukan');
+    throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
   // Validasi: Pastikan yang dipilih adalah MAHASISWA
   if (student.role !== 'MAHASISWA') {
-    throw new Error('User tersebut bukan mahasiswa');
+    throw new AppError(400, 'User tersebut bukan mahasiswa');
   }
 
   // 4. Cek Duplikasi
@@ -397,7 +407,7 @@ const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRol
   });
 
   if (existingEnrollment) {
-    throw new Error('Mahasiswa sudah terdaftar di kelas ini');
+    throw new AppError(409, 'Mahasiswa sudah terdaftar di kelas ini');
   }
 
   // 5. Eksekusi Create Enrollment
@@ -432,37 +442,45 @@ const addStudentToCourseById = async (courseId, studentId, teacherId, teacherRol
  * Retrieves all courses with comprehensive details for admin view.
  * Includes counts of students, materials, and assignments.
  */
-const adminGetAllCourses = async () => {
-  return await prisma.course.findMany({
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      code: true,
-      semester: true,
-      sks: true,
-      createdAt: true,
-      teacherId: true,
-      teacher: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
+const adminGetAllCourses = async (query = {}) => {
+  const { skip, take, meta } = paginate(query);
+  const [courses, total] = await Promise.all([
+    prisma.course.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        code: true,
+        semester: true,
+        sks: true,
+        createdAt: true,
+        teacherId: true,
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            students: true,
+            materials: true,
+            assignments: true,
+          },
         },
       },
-      _count: {
-        select: {
-          students: true,
-          materials: true,
-          assignments: true,
-        },
-      },
-    },
-    orderBy: [
-      { semester: 'asc' },
-      { createdAt: 'desc' },
-    ],
-  });
+      orderBy: [
+        { semester: 'asc' },
+        { createdAt: 'desc' },
+      ],
+      skip,
+      take,
+    }),
+    prisma.course.count(),
+  ]);
+
+  return { data: courses, pagination: meta(total) };
 };
 
 /**
@@ -478,7 +496,7 @@ const adminCreateCourse = async (data) => {
   });
 
   if (existingCourse) {
-    throw new Error('Kode kelas sudah digunakan');
+    throw new AppError(409, 'Kode kelas sudah digunakan');
   }
 
   // Jika teacherId diberikan, validasi bahwa user adalah DOSEN
@@ -488,11 +506,11 @@ const adminCreateCourse = async (data) => {
     });
 
     if (!teacher) {
-      throw new Error('Dosen tidak ditemukan');
+      throw new AppError(404, 'Dosen tidak ditemukan');
     }
 
     if (teacher.role !== 'DOSEN') {
-      throw new Error('User tersebut bukan dosen');
+      throw new AppError(400, 'User tersebut bukan dosen');
     }
   }
 
@@ -537,7 +555,7 @@ const adminUpdateCourse = async (courseId, data) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // Jika mengubah code, cek apakah sudah dipakai
@@ -547,7 +565,7 @@ const adminUpdateCourse = async (courseId, data) => {
     });
 
     if (existingCourse) {
-      throw new Error('Kode kelas sudah digunakan');
+      throw new AppError(409, 'Kode kelas sudah digunakan');
     }
   }
 
@@ -558,11 +576,11 @@ const adminUpdateCourse = async (courseId, data) => {
     });
 
     if (!teacher) {
-      throw new Error('Dosen tidak ditemukan');
+      throw new AppError(404, 'Dosen tidak ditemukan');
     }
 
     if (teacher.role !== 'DOSEN') {
-      throw new Error('User tersebut bukan dosen');
+      throw new AppError(400, 'User tersebut bukan dosen');
     }
   }
 
@@ -614,7 +632,7 @@ const adminDeleteCourse = async (courseId) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // Delete related records first (Prisma cascade)
@@ -640,7 +658,7 @@ const adminAssignTeacher = async (courseId, teacherId) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   const teacher = await prisma.user.findUnique({
@@ -648,11 +666,11 @@ const adminAssignTeacher = async (courseId, teacherId) => {
   });
 
   if (!teacher) {
-    throw new Error('Dosen tidak ditemukan');
+    throw new AppError(404, 'Dosen tidak ditemukan');
   }
 
   if (teacher.role !== 'DOSEN') {
-    throw new Error('User tersebut bukan dosen');
+    throw new AppError(400, 'User tersebut bukan dosen');
   }
 
   return await prisma.course.update({

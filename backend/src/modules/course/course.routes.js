@@ -2,6 +2,7 @@ import express from 'express';
 import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
+import { upload } from '../../middlewares/upload.middleware.js';
 import { createCourseSchema, enrollStudentSchema, updateCourseSchema, assignTeacherSchema } from './course.validation.js';
 import {
   createCourse,
@@ -172,12 +173,14 @@ router.post(
 /**
  * POST /api/courses/:courseId/materials
  * Creates a new material for a course.
- * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: createMaterialSchema.
+ * Accepts multipart/form-data with an optional file field ('file').
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Upload, Validation: createMaterialSchema.
  */
 router.post(
   '/:courseId/materials',
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
+  upload.single('file'),
   validate(createMaterialSchema),
   createMaterial
 );

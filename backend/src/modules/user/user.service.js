@@ -1,5 +1,7 @@
 import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
+import { AppError } from '../../config/errors.js';
+import { paginate } from '../../utils/pagination.js';
 
 /**
  * Creates a new user with a specific role initiated by an Admin.
@@ -16,7 +18,7 @@ const createUserByAdmin = async data => {
   // 1. Cek duplikasi
   const extistingUser = await prisma.user.findUnique({ where: { email: data.email } });
   if (extistingUser) {
-    throw new Error('Email sudah terdaftar');
+    throw new AppError(409, 'Email sudah terdaftar');
   }
 
   // 2. Hash Password Default (Misal: admin memberi password awal "123456")
@@ -47,48 +49,57 @@ const createUserByAdmin = async data => {
  * @param {boolean} [isDospemFilter] - Optional isDospem status to filter by.
  * @returns {Promise<Array<object>>} List of users with advisor info and student counts.
  */
-const getAllUsers = async (roleFilter, isDospemFilter) => {
+const getAllUsers = async (roleFilter, isDospemFilter, query = {}) => {
+  const { skip, take, meta } = paginate(query);
   const whereClause = {};
   if (roleFilter) whereClause.role = roleFilter;
   if (isDospemFilter !== undefined) whereClause.isDospem = isDospemFilter;
 
-  const users = await prisma.user.findMany({
-    where: whereClause,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isDospem: true,
-      advisorId: true,
-      advisor: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isDospem: true,
+        advisorId: true,
+        advisor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            advisedStudents: true,
+          },
         },
       },
-      _count: {
-        select: {
-          advisedStudents: true,
-        },
+      orderBy: {
+        name: 'asc',
       },
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
+      skip,
+      take,
+    }),
+    prisma.user.count({ where: whereClause }),
+  ]);
 
-  return users.map(u => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    isDospem: u.isDospem,
-    advisorId: u.advisorId,
-    advisor: u.advisor,
-    advisedStudentCount: u._count.advisedStudents,
-  }));
+  return {
+    data: users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      isDospem: u.isDospem,
+      advisorId: u.advisorId,
+      advisor: u.advisor,
+      advisedStudentCount: u._count.advisedStudents,
+    })),
+    pagination: meta(total),
+  };
 };
 
 /**
@@ -135,8 +146,8 @@ const updateDospemStatus = async (userId, isDospem) => {
     select: { id: true, role: true },
   });
 
-  if (!user) throw new Error('User tidak ditemukan');
-  if (user.role !== 'DOSEN') throw new Error('Hanya dosen yang dapat dijadikan Dosen Pembimbing');
+  if (!user) throw new AppError(404, 'User tidak ditemukan');
+  if (user.role !== 'DOSEN') throw new AppError(400, 'Hanya dosen yang dapat dijadikan Dosen Pembimbing');
 
   return await prisma.user.update({
     where: { id: userId },
@@ -165,8 +176,8 @@ const assignAdvisor = async (studentId, advisorId) => {
     select: { id: true, role: true, advisorId: true },
   });
 
-  if (!student) throw new Error('Mahasiswa tidak ditemukan');
-  if (student.role !== 'MAHASISWA') throw new Error('Hanya mahasiswa yang dapat memiliki Dosen Pembimbing');
+  if (!student) throw new AppError(404, 'Mahasiswa tidak ditemukan');
+  if (student.role !== 'MAHASISWA') throw new AppError(400, 'Hanya mahasiswa yang dapat memiliki Dosen Pembimbing');
 
   if (advisorId) {
     const advisor = await prisma.user.findUnique({
@@ -174,9 +185,9 @@ const assignAdvisor = async (studentId, advisorId) => {
       select: { id: true, role: true, isDospem: true },
     });
 
-    if (!advisor) throw new Error('Dosen tidak ditemukan');
-    if (advisor.role !== 'DOSEN') throw new Error('Advisor harus memiliki role DOSEN');
-    if (!advisor.isDospem) throw new Error('Dosen ini belum ditunjuk sebagai Dosen Pembimbing');
+    if (!advisor) throw new AppError(404, 'Dosen tidak ditemukan');
+    if (advisor.role !== 'DOSEN') throw new AppError(400, 'Advisor harus memiliki role DOSEN');
+    if (!advisor.isDospem) throw new AppError(400, 'Dosen ini belum ditunjuk sebagai Dosen Pembimbing');
   }
 
   return await prisma.user.update({
@@ -208,11 +219,11 @@ const assignAdvisor = async (studentId, advisorId) => {
  */
 const bulkAssignAdvisor = async (studentIds, advisorId) => {
   if (!studentIds || studentIds.length === 0) {
-    throw new Error('Tidak ada mahasiswa yang dipilih');
+    throw new AppError(400, 'Tidak ada mahasiswa yang dipilih');
   }
 
   if (studentIds.length > 50) {
-    throw new Error('Maksimal 50 mahasiswa per batch');
+    throw new AppError(400, 'Maksimal 50 mahasiswa per batch');
   }
 
   // Validate advisor
@@ -222,9 +233,9 @@ const bulkAssignAdvisor = async (studentIds, advisorId) => {
       select: { id: true, role: true, isDospem: true },
     });
 
-    if (!advisor) throw new Error('Dosen tidak ditemukan');
-    if (advisor.role !== 'DOSEN') throw new Error('Advisor harus memiliki role DOSEN');
-    if (!advisor.isDospem) throw new Error('Dosen ini belum ditunjuk sebagai Dosen Pembimbing');
+    if (!advisor) throw new AppError(404, 'Dosen tidak ditemukan');
+    if (advisor.role !== 'DOSEN') throw new AppError(400, 'Advisor harus memiliki role DOSEN');
+    if (!advisor.isDospem) throw new AppError(400, 'Dosen ini belum ditunjuk sebagai Dosen Pembimbing');
   }
 
   // Validate all students
@@ -234,7 +245,7 @@ const bulkAssignAdvisor = async (studentIds, advisorId) => {
   });
 
   if (students.length !== studentIds.length) {
-    throw new Error('Beberapa user bukan mahasiswa atau tidak ditemukan');
+    throw new AppError(400, 'Beberapa user bukan mahasiswa atau tidak ditemukan');
   }
 
   const result = await prisma.user.updateMany({
@@ -289,8 +300,8 @@ const getAdvisorStudents = async (advisorId) => {
     select: { id: true, role: true, isDospem: true, name: true },
   });
 
-  if (!advisor) throw new Error('Dosen tidak ditemukan');
-  if (!advisor.isDospem) throw new Error('Dosen ini bukan Dosen Pembimbing');
+  if (!advisor) throw new AppError(404, 'Dosen tidak ditemukan');
+  if (!advisor.isDospem) throw new AppError(400, 'Dosen ini bukan Dosen Pembimbing');
 
   const students = await prisma.user.findMany({
     where: { advisorId, role: 'MAHASISWA' },

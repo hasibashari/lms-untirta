@@ -1,5 +1,6 @@
 import * as courseService from './course.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
 
 /**
  * Creates a new course.
@@ -12,10 +13,7 @@ export const createCourse = async (req, res) => {
     const newCourse = await courseService.createCourse(req.body, req.user.id);
     sendSuccess(res, { statusCode: 201, message: 'Kelas berhasil dibuat', data: newCourse });
   } catch (error) {
-    if (error.message === 'Kode kelas sudah digunakan') {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -26,10 +24,10 @@ export const createCourse = async (req, res) => {
  */
 export const getCourses = async (req, res) => {
   try {
-    const courses = await courseService.getAllCourses();
-    sendSuccess(res, { statusCode: 200, message: 'Daftar kelas berhasil diambil', data: courses });
+    const { data, pagination } = await courseService.getAllCourses(req.query);
+    sendSuccess(res, { statusCode: 200, message: 'Daftar kelas berhasil diambil', data, pagination });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -66,16 +64,7 @@ export const enrollStudent = async (req, res) => {
 
     sendSuccess(res, { statusCode: 201, message: 'Mahasiswa berhasil ditambahkan ke kelas', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (error.message.includes('sudah terdaftar') || error.message.includes('bukan mahasiswa')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -93,6 +82,7 @@ export const getMyCourses = async (req, res) => {
 
     let courses;
     let message;
+    let pagination;
 
     if (userRole === 'MAHASISWA') {
       courses = await courseService.getEnrolledCourses(userId);
@@ -105,15 +95,17 @@ export const getMyCourses = async (req, res) => {
       }
       message = 'Berhasil mengambil daftar kelas yang diajar';
     } else if (userRole === 'ADMIN') {
-      courses = await courseService.getAllCourses();
+      const result = await courseService.getAllCourses(req.query);
+      courses = result.data;
+      pagination = result.pagination;
       message = 'Berhasil mengambil semua daftar kelas';
     } else {
       return sendError(res, { statusCode: 403, message: 'Role tidak dikenali' });
     }
 
-    sendSuccess(res, { statusCode: 200, message, data: courses });
+    sendSuccess(res, { statusCode: 200, message, data: courses, pagination });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -128,13 +120,7 @@ export const getStudentsByCourse = async (req, res) => {
     const students = await courseService.getStudentsByCourse(courseId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Daftar mahasiswa berhasil diambil', data: students });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -154,13 +140,7 @@ export const getAvailableStudents = async (req, res) => {
     );
     sendSuccess(res, { statusCode: 200, message: 'Daftar mahasiswa tersedia berhasil diambil', data: students });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -173,10 +153,10 @@ export const getAvailableStudents = async (req, res) => {
  */
 export const adminGetAllCourses = async (req, res) => {
   try {
-    const courses = await courseService.adminGetAllCourses();
-    sendSuccess(res, { statusCode: 200, message: 'Daftar semua kelas berhasil diambil', data: courses });
+    const { data, pagination } = await courseService.adminGetAllCourses(req.query);
+    sendSuccess(res, { statusCode: 200, message: 'Daftar semua kelas berhasil diambil', data, pagination });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -191,13 +171,7 @@ export const adminCreateCourse = async (req, res) => {
     const newCourse = await courseService.adminCreateCourse(req.body);
     sendSuccess(res, { statusCode: 201, message: 'Kelas berhasil dibuat', data: newCourse });
   } catch (error) {
-    if (error.message === 'Kode kelas sudah digunakan') {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -212,13 +186,7 @@ export const adminUpdateCourse = async (req, res) => {
     const updatedCourse = await courseService.adminUpdateCourse(id, req.body);
     sendSuccess(res, { statusCode: 200, message: 'Kelas berhasil diperbarui', data: updatedCourse });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message === 'Kode kelas sudah digunakan') {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -233,10 +201,7 @@ export const adminDeleteCourse = async (req, res) => {
     const result = await courseService.adminDeleteCourse(id);
     sendSuccess(res, { statusCode: 200, message: result.message, data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -252,12 +217,6 @@ export const adminAssignTeacher = async (req, res) => {
     const updatedCourse = await courseService.adminAssignTeacher(id, teacherId);
     sendSuccess(res, { statusCode: 200, message: 'Dosen berhasil ditetapkan ke kelas', data: updatedCourse });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('bukan dosen')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };

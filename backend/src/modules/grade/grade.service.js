@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { AppError } from '../../config/errors.js';
 
 // ======================== GRADE POINT MAPPING ========================
 
@@ -40,9 +41,9 @@ const getClassStudentsForGrading = async (classId, lecturerId) => {
     },
   });
 
-  if (!classData) throw new Error('Kelas tidak ditemukan');
+  if (!classData) throw new AppError(404, 'Kelas tidak ditemukan');
   if (classData.lecturerId !== lecturerId) {
-    throw new Error('Anda tidak berhak mengakses kelas ini');
+    throw new AppError(403, 'Anda tidak berhak mengakses kelas ini');
   }
 
   // Get enrolled students (APPROVED KRS only)
@@ -116,15 +117,16 @@ const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numeric
     },
   });
 
-  if (!classData) throw new Error('Kelas tidak ditemukan');
+  if (!classData) throw new AppError(404, 'Kelas tidak ditemukan');
   if (classData.lecturerId !== lecturerId) {
-    throw new Error('Anda tidak berhak memberikan nilai untuk kelas ini');
+    throw new AppError(403, 'Anda tidak berhak memberikan nilai untuk kelas ini');
   }
 
   // Check semester allows grading (only when OPEN)
   const semesterStatus = classData.academicSemester?.status;
   if (semesterStatus && semesterStatus !== 'OPEN') {
-    throw new Error(
+    throw new AppError(
+      400,
       `Tidak dapat input nilai saat status semester ${semesterStatus}. Semester harus dalam status OPEN.`
     );
   }
@@ -135,7 +137,7 @@ const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numeric
   });
 
   if (!enrollment) {
-    throw new Error('Mahasiswa tidak terdaftar di kelas ini atau KRS belum disetujui');
+    throw new AppError(400, 'Mahasiswa tidak terdaftar di kelas ini atau KRS belum disetujui');
   }
 
   // Check if existing finalized grade
@@ -144,7 +146,7 @@ const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numeric
   });
 
   if (existing && existing.status === 'FINALIZED') {
-    throw new Error('Nilai sudah difinalisasi dan tidak dapat diubah');
+    throw new AppError(409, 'Nilai sudah difinalisasi dan tidak dapat diubah');
   }
 
   const gradePoint = getGradePoint(letterGrade);
@@ -204,14 +206,15 @@ const bulkInputGrades = async (classId, lecturerId, grades) => {
     },
   });
 
-  if (!classData) throw new Error('Kelas tidak ditemukan');
+  if (!classData) throw new AppError(404, 'Kelas tidak ditemukan');
   if (classData.lecturerId !== lecturerId) {
-    throw new Error('Anda tidak berhak memberikan nilai untuk kelas ini');
+    throw new AppError(403, 'Anda tidak berhak memberikan nilai untuk kelas ini');
   }
 
   const semesterStatus = classData.academicSemester?.status;
   if (semesterStatus && semesterStatus !== 'OPEN') {
-    throw new Error(
+    throw new AppError(
+      400,
       `Tidak dapat input nilai saat status semester ${semesterStatus}`
     );
   }
@@ -227,7 +230,7 @@ const bulkInputGrades = async (classId, lecturerId, grades) => {
   const notEnrolled = studentIds.filter((id) => !enrolledIds.has(id));
 
   if (notEnrolled.length > 0) {
-    throw new Error(`${notEnrolled.length} mahasiswa tidak terdaftar di kelas ini`);
+    throw new AppError(400, `${notEnrolled.length} mahasiswa tidak terdaftar di kelas ini`);
   }
 
   // Check for already finalized grades
@@ -241,7 +244,8 @@ const bulkInputGrades = async (classId, lecturerId, grades) => {
   });
 
   if (existingFinalized.length > 0) {
-    throw new Error(
+    throw new AppError(
+      409,
       `${existingFinalized.length} nilai sudah difinalisasi dan tidak dapat diubah`
     );
   }
@@ -298,15 +302,16 @@ const finalizeGrades = async (classId, lecturerId) => {
     },
   });
 
-  if (!classData) throw new Error('Kelas tidak ditemukan');
+  if (!classData) throw new AppError(404, 'Kelas tidak ditemukan');
   if (classData.lecturerId !== lecturerId) {
-    throw new Error('Anda tidak berhak memfinalisasi nilai untuk kelas ini');
+    throw new AppError(403, 'Anda tidak berhak memfinalisasi nilai untuk kelas ini');
   }
 
   // Semester must be OPEN to finalize grades
   const semesterStatus = classData.academicSemester?.status;
   if (semesterStatus && semesterStatus !== 'OPEN') {
-    throw new Error(
+    throw new AppError(
+      400,
       `Tidak dapat memfinalisasi nilai saat status semester ${semesterStatus}. Semester harus dalam status OPEN.`
     );
   }
@@ -317,7 +322,7 @@ const finalizeGrades = async (classId, lecturerId) => {
   });
 
   if (draftGrades.length === 0) {
-    throw new Error('Tidak ada nilai draft untuk difinalisasi');
+    throw new AppError(400, 'Tidak ada nilai draft untuk difinalisasi');
   }
 
   const result = await prisma.finalGrade.updateMany({

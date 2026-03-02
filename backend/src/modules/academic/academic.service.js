@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { AppError } from '../../config/errors.js';
 
 // ======================== SEMESTER STATE MACHINE ========================
 // Simplified lifecycle: DRAFT → OPEN → CLOSED
@@ -130,7 +131,7 @@ const getClosingReadiness = async (semesterId) => {
     where: { id: semesterId },
     select: { id: true, status: true, academicYear: true, semesterType: true },
   });
-  if (!semester) throw new Error('Semester akademik tidak ditemukan');
+  if (!semester) throw new AppError(404, 'Semester akademik tidak ditemukan');
 
   const classes = await prisma.class.findMany({
     where: { academicSemesterId: semesterId },
@@ -248,7 +249,7 @@ const getSemesterById = async (id) => {
     },
   });
 
-  if (!semester) throw new Error('Semester akademik tidak ditemukan');
+  if (!semester) throw new AppError(404, 'Semester akademik tidak ditemukan');
   return semester;
 };
 
@@ -272,7 +273,8 @@ const createSemester = async (data) => {
   });
 
   if (existing) {
-    throw new Error(
+    throw new AppError(
+      400,
       `Semester ${data.semesterType} ${data.academicYear} sudah ada`
     );
   }
@@ -300,10 +302,10 @@ const createSemester = async (data) => {
  */
 const updateSemester = async (id, data) => {
   const semester = await prisma.academicSemester.findUnique({ where: { id } });
-  if (!semester) throw new Error('Semester akademik tidak ditemukan');
+  if (!semester) throw new AppError(404, 'Semester akademik tidak ditemukan');
 
   if (semester.status === 'CLOSED') {
-    throw new Error('Tidak dapat mengubah semester yang sudah CLOSED');
+    throw new AppError(400, 'Tidak dapat mengubah semester yang sudah CLOSED');
   }
 
   return prisma.academicSemester.update({
@@ -331,7 +333,7 @@ const updateSemester = async (id, data) => {
  */
 const updateStatus = async (id, newStatus) => {
   const semester = await prisma.academicSemester.findUnique({ where: { id } });
-  if (!semester) throw new Error('Semester akademik tidak ditemukan');
+  if (!semester) throw new AppError(404, 'Semester akademik tidak ditemukan');
 
   const currentStatus = semester.status;
 
@@ -339,7 +341,8 @@ const updateStatus = async (id, newStatus) => {
   if (!isTransitionAllowed(currentStatus, newStatus)) {
     const allowed = ALLOWED_TRANSITIONS[currentStatus];
     const allowedStr = allowed.length > 0 ? allowed.join(', ') : 'tidak ada';
-    throw new Error(
+    throw new AppError(
+      400,
       `Tidak dapat mengubah status dari ${currentStatus} ke ${newStatus}. ` +
       `Transisi yang valid: ${allowedStr}`
     );
@@ -352,7 +355,8 @@ const updateStatus = async (id, newStatus) => {
       select: { id: true, academicYear: true, semesterType: true },
     });
     if (existingOpen) {
-      throw new Error(
+      throw new AppError(
+        400,
         `Sudah ada semester OPEN (${existingOpen.semesterType} ${existingOpen.academicYear}). ` +
         `Tutup semester tersebut terlebih dahulu sebelum membuka semester baru.`
       );
@@ -363,10 +367,7 @@ const updateStatus = async (id, newStatus) => {
   if (newStatus === 'CLOSED') {
     const blockResult = await checkClosePreconditions(id);
     if (blockResult) {
-      const error = new Error(blockResult.message);
-      error.code = 'PRECONDITION_FAILED';
-      error.details = blockResult.details;
-      throw error;
+      throw new AppError(400, blockResult.message, 'PRECONDITION_FAILED', blockResult.details);
     }
   }
 
@@ -412,17 +413,19 @@ const deleteSemester = async (id) => {
     },
   });
 
-  if (!semester) throw new Error('Semester akademik tidak ditemukan');
+  if (!semester) throw new AppError(404, 'Semester akademik tidak ditemukan');
 
   // Only DRAFT can be deleted
   if (semester.status !== 'DRAFT') {
-    throw new Error(
+    throw new AppError(
+      400,
       `Tidak dapat menghapus semester dengan status ${semester.status}. Hanya semester DRAFT yang dapat dihapus.`
     );
   }
 
   if (semester._count.classes > 0 || semester._count.finalGrades > 0) {
-    throw new Error(
+    throw new AppError(
+      400,
       'Tidak dapat menghapus semester yang sudah memiliki kelas atau nilai.'
     );
   }

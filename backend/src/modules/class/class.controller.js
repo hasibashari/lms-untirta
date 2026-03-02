@@ -1,5 +1,6 @@
 import * as classService from './class.service.js';
-import { sendSuccess, sendError } from '../../utils/response.js';
+import { sendSuccess } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
 
 // ======================== CREATE ========================
 
@@ -17,16 +18,7 @@ export const create = async (req, res) => {
       data: newClass,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('bukan dosen')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('sudah ada')) {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -43,14 +35,15 @@ export const getAll = async (req, res) => {
       academicSemesterId: req.query.academicSemesterId,
       courseId: req.query.courseId,
     };
-    const classes = await classService.getAllClasses(filters);
+    const { data, pagination } = await classService.getAllClasses(filters, req.query);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar kelas offering berhasil diambil',
-      data: classes,
+      data,
+      pagination,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -68,10 +61,7 @@ export const getById = async (req, res) => {
       data: classData,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -92,7 +82,7 @@ export const getMyClasses = async (req, res) => {
       data: classes,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -113,7 +103,7 @@ export const getByCourse = async (req, res) => {
       data: classes,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -136,7 +126,7 @@ export const getOpen = async (req, res) => {
       data: classes,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -156,16 +146,7 @@ export const update = async (req, res) => {
       data: updatedClass,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('bukan dosen')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('sudah ada')) {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -186,10 +167,7 @@ export const toggleEnrollment = async (req, res) => {
       data: updatedClass,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -209,9 +187,6 @@ export const remove = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };

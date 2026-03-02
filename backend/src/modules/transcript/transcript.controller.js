@@ -1,5 +1,7 @@
 import * as transcriptService from './transcript.service.js';
-import { sendSuccess, sendError } from '../../utils/response.js';
+import { sendSuccess } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
+import logger from '../../config/logger.js';
 
 /**
  * Retrieves the student's study results based on legacy course enrollments.
@@ -18,10 +20,7 @@ export const getStudyResults = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -43,10 +42,7 @@ export const getTranscriptByClass = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -65,10 +61,7 @@ export const getAcademicSummary = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -85,11 +78,12 @@ export const getStudentTranscript = async (req, res) => {
 
     // Audit log: record who accessed whose transcript
     const accessor = req.user;
-    console.log(
-      `[TRANSCRIPT_ACCESS] ${accessor.role} ${accessor.id} (${accessor.email || 'unknown'}) ` +
-      `accessed transcript of student ${studentId} (${result.student?.name || 'unknown'}) ` +
-      `at ${new Date().toISOString()}`
-    );
+    logger.info({
+      event: 'TRANSCRIPT_ACCESS',
+      accessorRole: accessor.role,
+      accessorId: accessor.id,
+      studentId,
+    }, 'Transcript accessed');
 
     sendSuccess(res, {
       statusCode: 200,
@@ -97,10 +91,7 @@ export const getStudentTranscript = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -115,13 +106,14 @@ export const getStudentList = async (req, res) => {
     const filters = {
       search: req.query.search,
     };
-    const result = await transcriptService.getStudentList(filters);
+    const { data, pagination } = await transcriptService.getStudentList(filters, req.query);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar mahasiswa berhasil diambil',
-      data: result,
+      data,
+      pagination,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };

@@ -2,6 +2,7 @@ import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
 import { signToken } from '../../config/jwt.js';
 import { ROLES } from '../../config/roles.js';
+import { AppError } from '../../config/errors.js';
 
 /**
  * Registers a new user in the system.
@@ -19,7 +20,7 @@ const registerUser = async ({ email, name, password }) => {
   // 1. Cek duplikasi email
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    throw new Error('Email sudah terdaftar'); // Error ini akan ditangkap Controller
+    throw new AppError(409, 'Email sudah terdaftar'); // Error ini akan ditangkap Controller
   }
 
   // 2. Hash password
@@ -69,13 +70,13 @@ const loginUser = async ({ email, password }) => {
   });
 
   if (!user) {
-    throw new Error('Email atau password salah');
+    throw new AppError(401, 'Email atau password salah');
   }
   // 2. Cek password
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    throw new Error('Email atau password salah');
+    throw new AppError(401, 'Email atau password salah');
   }
 
   // 3. Generate token
@@ -127,7 +128,7 @@ const getUserById = async userId => {
   });
 
   if (!user) {
-    throw new Error('User tidak ditemukan');
+    throw new AppError(404, 'User tidak ditemukan');
   }
 
   return user;

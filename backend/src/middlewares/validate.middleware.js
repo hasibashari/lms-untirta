@@ -1,5 +1,6 @@
 // middlewares/validate.middleware.js
 import { sendError } from '../utils/response.js';
+import logger from '../config/logger.js';
 
 /**
  * Middleware to validate request data against a Zod schema.
@@ -18,7 +19,7 @@ const validate = schema => (req, res, next) => {
     });
     next();
   } catch (err) {
-    console.error(err);
+    logger.debug({ err }, 'Validation failed');
     const errors = err.errors?.map(e => ({ field: e.path[1], message: e.message })) || [];
     return sendError(res, { statusCode: 400, message: 'Validasi gagal', errors });
   }

@@ -1,5 +1,6 @@
 import * as krsService from './krs.service.js';
-import { sendSuccess, sendError } from '../../utils/response.js';
+import { sendSuccess } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
 
 // ======================== NEW KRS (CLASS-BASED) ========================
 
@@ -25,7 +26,7 @@ export const getAvailableClasses = async (req, res) => {
       _meta: result._meta,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -44,30 +45,7 @@ export const enrollClass = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('sudah terdaftar') || error.message.includes('sudah mengambil')) {
-      return sendError(res, { statusCode: 409, message: error.message });
-    }
-    if (error.code === 'SKS_LIMIT_EXCEEDED') {
-      return res.status(409).json({
-        success: false,
-        message: error.message,
-        code: 'SKS_LIMIT_EXCEEDED',
-        details: error.details,
-      });
-    }
-    if (
-      error.message.includes('belum dibuka') ||
-      error.message.includes('penuh')
-    ) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('sudah ditutup') || error.message.includes('belum dimulai') || error.message.includes('sudah berakhir')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -86,13 +64,7 @@ export const dropClass = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak terdaftar')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Tidak dapat')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -114,8 +86,7 @@ export const getMyKRS = async (req, res) => {
       data: krs,
     });
   } catch (error) {
-    console.error('getMyKRS error:', error);
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -138,26 +109,7 @@ export const updateEnrollmentStatus = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Tidak dapat mengubah') || error.message.includes('Kapasitas')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (
-      error.message.includes('bukan Dosen') ||
-      error.message.includes('tidak terdaftar') ||
-      error.message.includes('tidak dapat') ||
-      error.message.includes('wajib memberikan') ||
-      error.message.includes('Wajib memberikan') ||
-      error.message.includes('Hanya Dosen Pembimbing')
-    ) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (error.message.includes('belum dibuka') || error.message.includes('sudah ditutup') || error.message.includes('sudah berakhir')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -178,24 +130,7 @@ export const bulkUpdateEnrollmentStatus = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan') || error.message.includes('bukan mahasiswa')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('tidak dapat') || error.message.includes('Tidak ada') || error.message.includes('Maksimal')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (
-      error.message.includes('bukan') ||
-      error.message.includes('tidak terdaftar') ||
-      error.message.includes('Wajib memberikan') ||
-      error.message.includes('Hanya Dosen Pembimbing')
-    ) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (error.message.includes('belum dibuka') || error.message.includes('sudah ditutup') || error.message.includes('sudah berakhir')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -217,7 +152,7 @@ export const getPendingKRS = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -239,7 +174,7 @@ export const getAdvisoryStudents = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -261,7 +196,7 @@ export const getKrsMonitoring = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -283,16 +218,7 @@ export const reviseEnrollment = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Hanya KRS yang ditolak')) {
-      return sendError(res, { statusCode: 400, message: error.message });
-    }
-    if (error.message.includes('belum dibuka') || error.message.includes('sudah ditutup') || error.message.includes('belum dimulai') || error.message.includes('sudah berakhir')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -312,13 +238,7 @@ export const getApprovalHistory = async (req, res) => {
       data: logs,
     });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('tidak memiliki akses') || error.message.includes('bukan Dosen')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -340,6 +260,6 @@ export const getSksEligibility = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };

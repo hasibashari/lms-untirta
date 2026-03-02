@@ -9,10 +9,13 @@
  * @param {string}  options.message          - Human-readable message
  * @param {*}       [options.data=null]      - Response payload
  */
-export const sendSuccess = (res, { statusCode = 200, message, data = null, _meta }) => {
+export const sendSuccess = (res, { statusCode = 200, message, data = null, pagination, _meta }) => {
   const body = { success: true, message };
   if (data !== null && data !== undefined) {
     body.data = data;
+  }
+  if (pagination) {
+    body.pagination = pagination;
   }
   if (_meta) {
     body._meta = _meta;
@@ -28,11 +31,13 @@ export const sendSuccess = (res, { statusCode = 200, message, data = null, _meta
  * @param {number}   [options.statusCode=500] - HTTP status code
  * @param {string}   options.message          - Human-readable error message
  * @param {Array}    [options.errors]         - Detailed field-level errors (validation)
+ * @param {string}   [options.code]           - Machine-readable error code
+ * @param {object}   [options.details]        - Extra structured data
  */
-export const sendError = (res, { statusCode = 500, message, errors }) => {
+export const sendError = (res, { statusCode = 500, message, errors, code, details }) => {
   const body = { success: false, message };
-  if (errors) {
-    body.errors = errors;
-  }
+  if (errors) body.errors = errors;
+  if (code) body.code = code;
+  if (details) body.details = details;
   return res.status(statusCode).json(body);
 };

@@ -1,4 +1,7 @@
 import prisma from '../../config/prisma.js';
+import { cleanupFile } from '../../services/upload.service.js';
+import { AppError } from '../../config/errors.js';
+import path from 'path';
 
 /**
  * Creates a new course material.
@@ -16,12 +19,12 @@ const createMaterial = async (courseId, teacherId, data) => {
   });
 
   if (!course) {
-    throw new Error('Kelas tidak ditemukan');
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // Validasi Kepemilikan (Kecuali Admin, logic ini bisa diperluas)
   if (course.teacherId !== teacherId) {
-    throw new Error('Akses ditolak: Ini bukan kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
   }
 
   // 2. LOGIC AUTO-ORDERING
@@ -78,7 +81,7 @@ const getMaterials = async (courseId, userId, userRole) => {
       },
     });
     if (!enrollment) {
-      throw new Error('Anda belum terdaftar di kelas ini');
+      throw new AppError(403, 'Anda belum terdaftar di kelas ini');
     }
   }
   // 2. Ambil Materi (Urutkan berdasarkan 'order')
@@ -124,7 +127,7 @@ const getMaterialById = async (materialId, userId, userRole) => {
   });
 
   if (!material) {
-    throw new Error('Materi tidak ditemukan');
+    throw new AppError(404, 'Materi tidak ditemukan');
   }
 
   // 2. Authorization Check:
@@ -132,7 +135,7 @@ const getMaterialById = async (materialId, userId, userRole) => {
   // - Jika user adalah Admin → Allow
   // - Jika user adalah Mahasiswa → Harus terdaftar di kelas
   if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan materi dari kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
   if (userRole === 'MAHASISWA') {
@@ -146,7 +149,7 @@ const getMaterialById = async (materialId, userId, userRole) => {
     });
 
     if (!enrollment) {
-      throw new Error('Anda belum terdaftar di kelas ini');
+      throw new AppError(403, 'Anda belum terdaftar di kelas ini');
     }
   }
 
@@ -195,16 +198,16 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
   });
 
   if (!material) {
-    throw new Error('Materi tidak ditemukan');
+    throw new AppError(404, 'Materi tidak ditemukan');
   }
 
   // 2. Authorization: Hanya Dosen pemilik atau Admin
   if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan materi dari kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
   if (userRole === 'MAHASISWA') {
-    throw new Error('Akses ditolak: Mahasiswa tidak dapat mengedit materi');
+    throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat mengedit materi');
   }
 
   // 3. Update Material
@@ -246,6 +249,7 @@ const deleteMaterial = async (materialId, userId, userRole) => {
     where: { id: materialId },
     select: {
       id: true,
+      fileUrl: true,
       course: {
         select: {
           id: true,
@@ -256,22 +260,29 @@ const deleteMaterial = async (materialId, userId, userRole) => {
   });
 
   if (!material) {
-    throw new Error('Materi tidak ditemukan');
+    throw new AppError(404, 'Materi tidak ditemukan');
   }
 
   // 2. Authorization: Hanya Dosen pemilik atau Admin
   if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
-    throw new Error('Akses ditolak: Ini bukan materi dari kelas Anda');
+    throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
   if (userRole === 'MAHASISWA') {
-    throw new Error('Akses ditolak: Mahasiswa tidak dapat menghapus materi');
+    throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat menghapus materi');
   }
 
   // 3. Delete Material
   await prisma.material.delete({
     where: { id: materialId },
   });
+
+  // 4. Cleanup uploaded file if exists
+  if (material.fileUrl) {
+    const filename = path.basename(new URL(material.fileUrl).pathname);
+    const filePath = path.join(process.cwd(), 'public', 'uploads', filename);
+    cleanupFile(filePath).catch(() => { });
+  }
 
   return { message: 'Materi berhasil dihapus' };
 };

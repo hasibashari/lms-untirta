@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import validate from '../../middlewares/validate.middleware.js';
+import { upload } from '../../middlewares/upload.middleware.js';
 import { getMaterialById, updateMaterial, deleteMaterial } from './material.controller.js';
 import { updateMaterialSchema } from './material.validation.js';
 
@@ -17,12 +18,14 @@ router.get('/:materialId', authenticateToken, getMaterialById);
 /**
  * PUT /api/materials/:materialId
  * Updates an existing material.
- * Middleware: Auth Token, Role: DOSEN/ADMIN, Validation: updateMaterialSchema.
+ * Accepts multipart/form-data with an optional file field ('file').
+ * Middleware: Auth Token, Role: DOSEN/ADMIN, Upload, Validation: updateMaterialSchema.
  */
 router.put(
   '/:materialId',
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
+  upload.single('file'),
   validate(updateMaterialSchema),
   updateMaterial
 );

@@ -1,4 +1,6 @@
 import prisma from '../../config/prisma.js';
+import { AppError } from '../../config/errors.js';
+import { paginate } from '../../utils/pagination.js';
 
 // ========================================================================
 // CLASS SERVICE
@@ -67,7 +69,7 @@ const createClass = async (data) => {
   });
 
   if (!course) {
-    throw new Error('Mata kuliah tidak ditemukan');
+    throw new AppError(404, 'Mata kuliah tidak ditemukan');
   }
 
   // 2. Validasi Lecturer
@@ -77,11 +79,11 @@ const createClass = async (data) => {
   });
 
   if (!lecturer) {
-    throw new Error('Dosen tidak ditemukan');
+    throw new AppError(404, 'Dosen tidak ditemukan');
   }
 
   if (lecturer.role !== 'DOSEN') {
-    throw new Error('User yang dipilih bukan dosen');
+    throw new AppError(400, 'User yang dipilih bukan dosen');
   }
 
   // 3. Validasi AcademicSemester
@@ -91,11 +93,11 @@ const createClass = async (data) => {
   });
 
   if (!semester) {
-    throw new Error('Semester akademik tidak ditemukan');
+    throw new AppError(404, 'Semester akademik tidak ditemukan');
   }
 
   if (semester.status === 'CLOSED') {
-    throw new Error('Tidak dapat menambahkan kelas pada semester yang sudah CLOSED');
+    throw new AppError(400, 'Tidak dapat menambahkan kelas pada semester yang sudah CLOSED');
   }
 
   // 4. Cek duplikasi (unique constraint)
@@ -111,7 +113,7 @@ const createClass = async (data) => {
   });
 
   if (existing) {
-    throw new Error(
+    throw new AppError(409,
       `Kelas ${data.section} untuk mata kuliah ini di semester ${semester.semesterType} ${semester.academicYear} sudah ada`
     );
   }
@@ -139,7 +141,8 @@ const createClass = async (data) => {
  * @param {object} filters - Filter criteria.
  * @returns {Promise<Array<object>>} List of classes with enrollment counts.
  */
-const getAllClasses = async (filters = {}) => {
+const getAllClasses = async (filters = {}, query = {}) => {
+  const { skip, take, meta } = paginate(query);
   const where = {};
 
   if (filters.academicSemesterId) {
@@ -150,23 +153,30 @@ const getAllClasses = async (filters = {}) => {
     where.courseId = filters.courseId;
   }
 
-  return prisma.class.findMany({
-    where,
-    select: {
-      ...classSelect,
-      _count: {
-        select: {
-          krsEnrollments: true,
+  const [classes, total] = await Promise.all([
+    prisma.class.findMany({
+      where,
+      select: {
+        ...classSelect,
+        _count: {
+          select: {
+            krsEnrollments: true,
+          },
         },
       },
-    },
-    orderBy: [
-      { academicSemester: { academicYear: 'desc' } },
-      { academicSemester: { semesterType: 'asc' } },
-      { course: { code: 'asc' } },
-      { section: 'asc' },
-    ],
-  });
+      orderBy: [
+        { academicSemester: { academicYear: 'desc' } },
+        { academicSemester: { semesterType: 'asc' } },
+        { course: { code: 'asc' } },
+        { section: 'asc' },
+      ],
+      skip,
+      take,
+    }),
+    prisma.class.count({ where }),
+  ]);
+
+  return { data: classes, pagination: meta(total) };
 };
 
 /**
@@ -182,7 +192,7 @@ const getClassById = async (classId) => {
   });
 
   if (!classData) {
-    throw new Error('Kelas offering tidak ditemukan');
+    throw new AppError(404, 'Kelas offering tidak ditemukan');
   }
 
   return classData;
@@ -286,11 +296,11 @@ const updateClass = async (classId, data) => {
   });
 
   if (!existingClass) {
-    throw new Error('Kelas offering tidak ditemukan');
+    throw new AppError(404, 'Kelas offering tidak ditemukan');
   }
 
   if (existingClass.academicSemester?.status === 'CLOSED') {
-    throw new Error('Tidak dapat mengubah kelas pada semester yang sudah CLOSED');
+    throw new AppError(400, 'Tidak dapat mengubah kelas pada semester yang sudah CLOSED');
   }
 
   // 2. Validasi lecturer (jika diubah)
@@ -301,11 +311,11 @@ const updateClass = async (classId, data) => {
     });
 
     if (!lecturer) {
-      throw new Error('Dosen tidak ditemukan');
+      throw new AppError(404, 'Dosen tidak ditemukan');
     }
 
     if (lecturer.role !== 'DOSEN') {
-      throw new Error('User yang dipilih bukan dosen');
+      throw new AppError(400, 'User yang dipilih bukan dosen');
     }
   }
 
@@ -316,7 +326,7 @@ const updateClass = async (classId, data) => {
       select: { id: true },
     });
     if (!semester) {
-      throw new Error('Semester akademik tidak ditemukan');
+      throw new AppError(404, 'Semester akademik tidak ditemukan');
     }
   }
 
@@ -341,7 +351,7 @@ const updateClass = async (classId, data) => {
     });
 
     if (duplicate && duplicate.id !== classId) {
-      throw new Error(
+      throw new AppError(409,
         `Kelas ${newSection} untuk mata kuliah ini di semester ini sudah ada`
       );
     }
@@ -371,11 +381,11 @@ const toggleEnrollment = async (classId, isEnrollmentOpen) => {
   });
 
   if (!existingClass) {
-    throw new Error('Kelas offering tidak ditemukan');
+    throw new AppError(404, 'Kelas offering tidak ditemukan');
   }
 
   if (existingClass.academicSemester?.status === 'CLOSED') {
-    throw new Error('Tidak dapat mengubah status enrollment pada semester yang sudah CLOSED');
+    throw new AppError(400, 'Tidak dapat mengubah status enrollment pada semester yang sudah CLOSED');
   }
 
   return prisma.class.update({
@@ -405,11 +415,11 @@ const deleteClass = async (classId) => {
   });
 
   if (!existingClass) {
-    throw new Error('Kelas offering tidak ditemukan');
+    throw new AppError(404, 'Kelas offering tidak ditemukan');
   }
 
   if (existingClass.academicSemester?.status === 'CLOSED') {
-    throw new Error('Tidak dapat menghapus kelas pada semester yang sudah CLOSED');
+    throw new AppError(400, 'Tidak dapat menghapus kelas pada semester yang sudah CLOSED');
   }
 
   await prisma.class.delete({ where: { id: classId } });

@@ -2,6 +2,7 @@ import express from 'express';
 import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
+import { upload } from '../../middlewares/upload.middleware.js';
 import {
   createAssignmentSchema,
   submitAssignmentSchema,
@@ -90,6 +91,7 @@ router.post(
   '/:assignmentId/submit',
   authenticateToken,
   authorizeRole('MAHASISWA'),
+  upload.single('file'),
   validate(submitAssignmentSchema),
   submit
 );

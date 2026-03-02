@@ -1,16 +1,35 @@
 import * as materialService from './material.service.js';
-import { sendSuccess, sendError } from '../../utils/response.js';
+import { sendSuccess } from '../../utils/response.js';
+import { handleError } from '../../utils/errorHandler.js';
+import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
+
+/**
+ * Builds the public URL for an uploaded file.
+ * @param {import('express').Request} req
+ * @param {string} filename - The stored filename (e.g. "uuid.pdf").
+ * @returns {string} Full URL like "http://host/uploads/uuid.pdf"
+ */
+const buildFileUrl = (req, filename) =>
+  `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 
 /**
  * Creates a new course material.
- * Only the teacher of the course or an admin can create material.
+ * Supports optional file upload via multipart/form-data (field name: "file").
  * @param {import('express').Request} req - Express request object. Expects `courseId` in params and material data in body.
  * @param {import('express').Response} res - Express response object.
  */
+
 const createMaterial = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const { title, content, fileUrl, videoUrl } = req.body;
+    const { title, content, videoUrl } = req.body;
+
+    // If a file was uploaded, persist metadata to Redis and generate the URL
+    let fileUrl;
+    if (req.file) {
+      await persistUploadMeta({ userId: req.user.id, file: req.file });
+      fileUrl = buildFileUrl(req, req.file.filename);
+    }
 
     const result = await materialService.createMaterial(
       courseId,
@@ -20,13 +39,8 @@ const createMaterial = async (req, res) => {
 
     sendSuccess(res, { statusCode: 201, message: 'Materi berhasil dibuat', data: result });
   } catch (error) {
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    if (req.file) await cleanupFile(req.file.path);
+    return handleError(res, error);
   }
 };
 
@@ -42,10 +56,7 @@ const getMaterials = async (req, res) => {
     const result = await materialService.getMaterials(courseId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Daftar materi berhasil diambil', data: result });
   } catch (error) {
-    if (error.message.includes('Anda belum terdaftar')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
@@ -61,43 +72,40 @@ const getMaterialById = async (req, res) => {
     const result = await materialService.getMaterialById(materialId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Detail materi berhasil diambil', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Anda belum terdaftar') || error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
 /**
  * Updates an existing course material.
- * Only the teacher of the course or an admin can perform this action.
+ * If a new file is uploaded, it replaces the previous fileUrl.
  * @param {import('express').Request} req - Express request object. Expects `materialId` in params and update data in body.
  * @param {import('express').Response} res - Express response object.
  */
 const updateMaterial = async (req, res) => {
   try {
     const { materialId } = req.params;
-    const { title, content, fileUrl, videoUrl, order } = req.body;
+    const { title, content, videoUrl, order } = req.body;
+
+    // Build update payload — only override fileUrl when a new file is provided
+    const updateData = { title, content, videoUrl, order };
+
+    if (req.file) {
+      await persistUploadMeta({ userId: req.user.id, file: req.file });
+      updateData.fileUrl = buildFileUrl(req, req.file.filename);
+    }
 
     const result = await materialService.updateMaterial(
       materialId,
       req.user.id,
       req.user.role,
-      { title, content, fileUrl, videoUrl, order }
+      updateData
     );
 
     sendSuccess(res, { statusCode: 200, message: 'Materi berhasil diperbarui', data: result });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    if (req.file) await cleanupFile(req.file.path);
+    return handleError(res, error);
   }
 };
 
@@ -119,13 +127,7 @@ const deleteMaterial = async (req, res) => {
 
     sendSuccess(res, { statusCode: 200, message: result.message });
   } catch (error) {
-    if (error.message.includes('tidak ditemukan')) {
-      return sendError(res, { statusCode: 404, message: error.message });
-    }
-    if (error.message.includes('Akses ditolak')) {
-      return sendError(res, { statusCode: 403, message: error.message });
-    }
-    sendError(res, { statusCode: 500, message: 'Internal Server Error' });
+    return handleError(res, error);
   }
 };
 
