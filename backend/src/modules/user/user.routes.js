@@ -11,6 +11,7 @@ import {
   bulkAssignAdvisor,
   getAdvisorSummary,
   getAdvisorStudents,
+  getAdminStats,
 } from './user.controller.js';
 import { createUserSchema, updateDospemSchema, assignAdvisorSchema, bulkAssignAdvisorSchema } from './user.validation.js';
 
@@ -195,6 +196,42 @@ router.get('/advisor-summary', getAdvisorSummary);
  *         $ref: '#/components/responses/NotFound'
  */
 router.get('/advisors/:dosenId/students', getAdvisorStudents);
+
+/**
+ * @swagger
+ * /api/users/stats:
+ *   get:
+ *     summary: Get admin dashboard statistics
+ *     description: Returns aggregated counts (users, courses, dosen, mahasiswa) for the admin dashboard.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         totalUsers:
+ *                           type: integer
+ *                         totalCourses:
+ *                           type: integer
+ *                         totalDosen:
+ *                           type: integer
+ *                         totalMahasiswa:
+ *                           type: integer
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get('/stats', getAdminStats);
 
 /**
  * @swagger

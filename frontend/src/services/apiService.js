@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -25,7 +25,7 @@ api.interceptors.response.use(
   error => {
     const message = error.response?.data?.message || 'Terjadi kesalahan';
 
-    return Promise.reject(message);
+    return Promise.reject(new Error(message));
   }
 );
 

@@ -155,3 +155,18 @@ export const getAdvisorStudents = async (req, res) => {
     return handleError(res, error);
   }
 };
+
+/**
+ * Retrieves aggregated stats for the admin dashboard.
+ * Returns counts of users, courses, dosen, and mahasiswa.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
+export const getAdminStats = async (req, res) => {
+  try {
+    const stats = await userService.getAdminStats();
+    sendSuccess(res, { statusCode: 200, message: 'Statistik dashboard berhasil diambil', data: stats });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};

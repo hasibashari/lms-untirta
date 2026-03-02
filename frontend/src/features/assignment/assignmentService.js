@@ -3,7 +3,7 @@ import api from '../../services/apiService';
 // ========== Assignment CRUD ==========
 
 export const getAssignments = (courseId) => {
-  return api.get(`/courses/${courseId}/assignments`);
+  return api.get(`/assignments/course/${courseId}`);
 };
 
 export const getAssignmentDetail = (assignmentId) => {
@@ -11,7 +11,7 @@ export const getAssignmentDetail = (assignmentId) => {
 };
 
 export const createAssignment = (courseId, payload) => {
-  return api.post(`/courses/${courseId}/assignments`, payload);
+  return api.post(`/assignments/course/${courseId}`, payload);
 };
 
 export const updateAssignment = (assignmentId, payload) => {

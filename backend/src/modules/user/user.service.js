@@ -319,10 +319,27 @@ const getAdvisorStudents = async (advisorId) => {
   };
 };
 
+/**
+ * Returns aggregated counts for admin dashboard stats.
+ * Uses efficient COUNT queries instead of fetching full collections.
+ * @returns {Promise<{totalUsers: number, totalCourses: number, totalDosen: number, totalMahasiswa: number}>}
+ */
+const getAdminStats = async () => {
+  const [totalUsers, totalCourses, totalDosen, totalMahasiswa] = await Promise.all([
+    prisma.user.count(),
+    prisma.course.count(),
+    prisma.user.count({ where: { role: 'DOSEN' } }),
+    prisma.user.count({ where: { role: 'MAHASISWA' } }),
+  ]);
+
+  return { totalUsers, totalCourses, totalDosen, totalMahasiswa };
+};
+
 export {
   createUserByAdmin,
   getAllUsers,
   getUserById,
+  getAdminStats,
   updateDospemStatus,
   assignAdvisor,
   bulkAssignAdvisor,

@@ -43,3 +43,9 @@ export const getAdvisorSummary = () => {
 export const getAdvisorStudents = (dosenId) => {
   return api.get(`/users/advisors/${dosenId}/students`);
 };
+
+// ========== Admin Dashboard Stats ==========
+
+export const getAdminStats = () => {
+  return api.get('/users/stats');
+};

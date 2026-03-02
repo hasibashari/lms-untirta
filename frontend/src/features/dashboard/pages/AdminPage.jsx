@@ -5,8 +5,7 @@ import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'luci
 import { Button } from '@/components/ui/button';
 import Card from '@/components/ui/Card';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
-import { getUsers, getDosen, getMahasiswa } from '../../user/userService';
-import { getAllCourses } from '../../course/courseService';
+import { getAdminStats } from '../../user/userService';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -19,25 +18,20 @@ const AdminDashboard = () => {
     totalMahasiswa: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usersRes, coursesRes, dosenRes, mahasiswaRes] = await Promise.all([
-          getUsers(),
-          getAllCourses().catch(() => ({ data: [] })),
-          getDosen(),
-          getMahasiswa(),
-        ]);
-
+        const res = await getAdminStats();
         setStats({
-          totalUsers: usersRes.data?.length || 0,
-          totalCourses: coursesRes.data?.length || 0,
-          totalDosen: dosenRes.data?.length || 0,
-          totalMahasiswa: mahasiswaRes.data?.length || 0,
+          totalUsers: res.data?.totalUsers || 0,
+          totalCourses: res.data?.totalCourses || 0,
+          totalDosen: res.data?.totalDosen || 0,
+          totalMahasiswa: res.data?.totalMahasiswa || 0,
         });
       } catch (err) {
-        console.error('Failed to fetch stats:', err);
+        setError(err?.message || 'Gagal memuat data dashboard');
       } finally {
         setLoading(false);
       }
@@ -81,6 +75,13 @@ const AdminDashboard = () => {
           Kelola Kelas
         </button>
       </DashboardJumbotron>
+
+      {/* Error Banner */}
+      {error && (
+        <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm'>
+          {error}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
