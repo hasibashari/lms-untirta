@@ -274,7 +274,7 @@ const createSemester = async (data) => {
 
   if (existing) {
     throw new AppError(
-      400,
+      409,
       `Semester ${data.semesterType} ${data.academicYear} sudah ada`
     );
   }

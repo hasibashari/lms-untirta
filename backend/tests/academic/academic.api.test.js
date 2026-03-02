@@ -23,7 +23,7 @@ import request from 'supertest';
 import { getApp } from '../helpers/request.js';
 import { cleanDatabase } from '../helpers/db.js';
 import { createAdmin, createDosen, createMahasiswa } from '../helpers/auth.js';
-import { validSemester } from '../fixtures/academic-semester.fixture.js';
+import { validSemester } from '../fixtures/academic.fixture.js';
 
 const API = '/api/academic-semesters';
 

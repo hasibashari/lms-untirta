@@ -29,9 +29,14 @@ const storage = multer.diskStorage({
     const ext =
       ALLOWED_TYPES[file.mimetype] ||
       path.extname(file.originalname).toLowerCase();
+    // Sanitize original name: replace spaces with dashes, remove non-alphanumeric chars (except dots, dashes, underscores)
+    const sanitizedOriginalName = file.originalname
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.\-_]/g, "");
 
-    // Pure UUID filename — zero collision risk, no user-controlled characters.
-    const storedName = `${uuidv4()}${ext}`;
+    // Recommendation: Combine UUID for uniqueness with sanitized name for readability
+    const storedName = `${uuidv4()}-${sanitizedOriginalName}`;
     cb(null, storedName);
   },
 });
