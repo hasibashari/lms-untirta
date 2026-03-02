@@ -287,7 +287,7 @@ describe('Grade API', () => {
       expect(res.body.message).toMatch(/tidak terdaftar/i);
     });
 
-    it('should return 400 for finalized grade', async () => {
+    it('should return 409 for finalized grade', async () => {
       // Create a finalized grade
       await prisma.finalGrade.create({
         data: {
@@ -306,7 +306,7 @@ describe('Grade API', () => {
         .set('Authorization', `Bearer ${dosenToken}`)
         .send({ studentId: student.id, letterGrade: 'B' });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
       expect(res.body.message).toMatch(/difinalisasi/i);
     });
 
@@ -431,7 +431,7 @@ describe('Grade API', () => {
           ],
         });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
       expect(res.body.message).toMatch(/difinalisasi/i);
     });
 
@@ -528,7 +528,8 @@ describe('Grade API', () => {
         .patch(`${API}/class/${classObj.id}/finalize`)
         .set('Authorization', `Bearer ${dosenToken}`);
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
     });
 
     it('should return 403 for non-owner lecturer', async () => {

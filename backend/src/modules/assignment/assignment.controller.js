@@ -1,7 +1,9 @@
 import * as assignmentService from './assignment.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
+import { AppError } from '../../config/errors.js';
 import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
+import logger from '../../config/logger.js';
 
 const buildFileUrl = (req, filename) =>
   `${req.protocol}://${req.get('host')}/uploads/${filename}`;
@@ -33,11 +35,14 @@ const submit = async (req, res) => {
     const { assignmentId } = req.params;
     const { note } = req.body;
 
-    let fileUrl = null;
-    if (req.file) {
-      await persistUploadMeta({ userId: req.user.id, file: req.file });
-      fileUrl = buildFileUrl(req, req.file.filename);
+    if (!req.file) {
+      throw new AppError(400, 'File tugas wajib diunggah');
     }
+
+    await persistUploadMeta({ userId: req.user.id, file: req.file }).catch((err) =>
+      logger.warn({ err }, 'Failed to persist upload metadata to Redis — continuing'),
+    );
+    const fileUrl = buildFileUrl(req, req.file.filename);
 
     const result = await assignmentService.submitAssignment(assignmentId, req.user.id, {
       fileUrl,

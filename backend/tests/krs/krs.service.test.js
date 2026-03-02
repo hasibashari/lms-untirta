@@ -266,8 +266,9 @@ describe('enrollClass', () => {
   it('should throw when class not found', async () => {
     prismaMock.class.findUnique.mockResolvedValue(null);
 
-    await expect(enrollClass(STUDENT_ID, 'bad-class'))
-      .rejects.toThrow('Kelas offering tidak ditemukan');
+    const error = await enrollClass(STUDENT_ID, 'bad-class').catch(e => e);
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('Kelas offering tidak ditemukan');
   });
 
   it('should throw when enrollment is closed', async () => {
@@ -276,8 +277,10 @@ describe('enrollClass', () => {
       isEnrollmentOpen: false,
     });
 
-    await expect(enrollClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow('Pendaftaran kelas ini belum dibuka');
+    const error = await enrollClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.code).toBe('ENROLLMENT_CLOSED');
+    expect(error.message).toBe('Pendaftaran kelas ini belum dibuka');
   });
 
   it('should throw when semester is not OPEN', async () => {
@@ -286,8 +289,9 @@ describe('enrollClass', () => {
       mockSemester({ status: 'CLOSED', academicYear: '2025/2026', semesterType: 'GANJIL' })
     );
 
-    await expect(enrollClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow(/Masa pengisian KRS.*belum dibuka atau sudah ditutup/);
+    const error = await enrollClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.message).toMatch(/Masa pengisian KRS.*belum dibuka atau sudah ditutup/);
   });
 
   it('should throw when class capacity is full', async () => {
@@ -296,15 +300,18 @@ describe('enrollClass', () => {
       _count: { krsEnrollments: 40 },
     });
 
-    await expect(enrollClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow('Kapasitas kelas sudah penuh');
+    const error = await enrollClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.code).toBe('CLASS_FULL');
+    expect(error.message).toBe('Kapasitas kelas sudah penuh');
   });
 
   it('should throw when student already enrolled in same class', async () => {
     prismaMock.krsEnrollment.findUnique.mockResolvedValue({ id: 'existing' });
 
-    await expect(enrollClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow('Anda sudah terdaftar di kelas ini');
+    const error = await enrollClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(409);
+    expect(error.message).toBe('Anda sudah terdaftar di kelas ini');
   });
 
   it('should throw when student enrolled in another section of same course', async () => {
@@ -313,8 +320,9 @@ describe('enrollClass', () => {
       class: { section: 'B' },
     });
 
-    await expect(enrollClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow('sudah mengambil mata kuliah ini di kelas B');
+    const error = await enrollClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(409);
+    expect(error.message).toMatch(/sudah mengambil mata kuliah ini di kelas B/);
   });
 
   it('should throw when SKS limit exceeded', async () => {
@@ -328,8 +336,10 @@ describe('enrollClass', () => {
       .mockResolvedValueOnce(mockSemester()) // assertEnrollmentPeriodOpen
       .mockResolvedValueOnce({ maxSks: 24 }); // SKS limit
 
-    await expect(enrollClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow(/Total SKS melebihi batas semester/);
+    const error = await enrollClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.code).toBe('SKS_LIMIT_EXCEEDED');
+    expect(error.message).toMatch(/Total SKS melebihi batas semester/);
   });
 
   it('should set error code SKS_LIMIT_EXCEEDED on SKS error', async () => {
@@ -396,8 +406,9 @@ describe('dropClass', () => {
   it('should throw when not enrolled', async () => {
     prismaMock.krsEnrollment.findUnique.mockResolvedValue(null);
 
-    await expect(dropClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow('Anda tidak terdaftar di kelas ini');
+    const error = await dropClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('Anda tidak terdaftar di kelas ini');
   });
 
   it('should throw when enrollment is APPROVED', async () => {
@@ -412,8 +423,9 @@ describe('dropClass', () => {
     });
     prismaMock.academicSemester.findUnique.mockResolvedValue(mockSemester());
 
-    await expect(dropClass(STUDENT_ID, CLASS_ID))
-      .rejects.toThrow('Tidak dapat menghapus mata kuliah yang sudah disetujui');
+    const error = await dropClass(STUDENT_ID, CLASS_ID).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.message).toMatch(/Tidak dapat menghapus mata kuliah yang sudah disetujui/);
   });
 
   it('should throw when semester is not OPEN', async () => {
@@ -559,9 +571,9 @@ describe('updateEnrollmentStatus', () => {
   it('should throw when enrollment not found', async () => {
     prismaMock.krsEnrollment.findUnique.mockResolvedValue(null);
 
-    await expect(
-      updateEnrollmentStatus('bad-id', 'APPROVED', null, dospemUser)
-    ).rejects.toThrow('KRS enrollment tidak ditemukan');
+    const error = await updateEnrollmentStatus('bad-id', 'APPROVED', null, dospemUser).catch(e => e);
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('KRS enrollment tidak ditemukan');
   });
 
   it('should throw on invalid state transition', async () => {
@@ -570,27 +582,27 @@ describe('updateEnrollmentStatus', () => {
       status: 'REJECTED',
     });
 
-    await expect(
-      updateEnrollmentStatus(ENROLLMENT_ID, 'APPROVED', null, dospemUser)
-    ).rejects.toThrow(/Tidak dapat mengubah status/);
+    const error = await updateEnrollmentStatus(ENROLLMENT_ID, 'APPROVED', null, dospemUser).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.message).toMatch(/Tidak dapat mengubah status/);
   });
 
   it('should throw when dosen is not dospem', async () => {
-    await expect(
-      updateEnrollmentStatus(
-        ENROLLMENT_ID, 'APPROVED', null,
-        { id: DOSEN_ID, role: 'DOSEN', isDospem: false }
-      )
-    ).rejects.toThrow('Anda tidak terdaftar sebagai Dosen Pembimbing');
+    const error = await updateEnrollmentStatus(
+      ENROLLMENT_ID, 'APPROVED', null,
+      { id: DOSEN_ID, role: 'DOSEN', isDospem: false }
+    ).catch(e => e);
+    expect(error.statusCode).toBe(403);
+    expect(error.message).toBe('Anda tidak terdaftar sebagai Dosen Pembimbing');
   });
 
   it('should throw when dospem is not advisor of the student', async () => {
-    await expect(
-      updateEnrollmentStatus(
-        ENROLLMENT_ID, 'APPROVED', null,
-        { id: 'other-dosen-id', role: 'DOSEN', isDospem: true }
-      )
-    ).rejects.toThrow('Anda bukan Dosen Pembimbing mahasiswa ini');
+    const error = await updateEnrollmentStatus(
+      ENROLLMENT_ID, 'APPROVED', null,
+      { id: 'other-dosen-id', role: 'DOSEN', isDospem: true }
+    ).catch(e => e);
+    expect(error.statusCode).toBe(403);
+    expect(error.message).toBe('Anda bukan Dosen Pembimbing mahasiswa ini');
   });
 
   it('should throw when admin tries to revoke approval', async () => {
@@ -599,9 +611,9 @@ describe('updateEnrollmentStatus', () => {
       status: 'APPROVED',
     });
 
-    await expect(
-      updateEnrollmentStatus(ENROLLMENT_ID, 'REJECTED', 'Revoke by admin test', adminUser)
-    ).rejects.toThrow('Hanya Dosen Pembimbing yang dapat mencabut persetujuan KRS');
+    const error = await updateEnrollmentStatus(ENROLLMENT_ID, 'REJECTED', 'Revoke by admin test', adminUser).catch(e => e);
+    expect(error.statusCode).toBe(403);
+    expect(error.message).toBe('Hanya Dosen Pembimbing yang dapat mencabut persetujuan KRS');
   });
 
   it('should throw when admin provides short note', async () => {
@@ -638,9 +650,9 @@ describe('updateEnrollmentStatus', () => {
       status: 'APPROVED',
     });
 
-    await expect(
-      updateEnrollmentStatus(ENROLLMENT_ID, 'REJECTED', null, dospemUser)
-    ).rejects.toThrow('Wajib memberikan alasan untuk mencabut persetujuan KRS');
+    const error = await updateEnrollmentStatus(ENROLLMENT_ID, 'REJECTED', null, dospemUser).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.message).toBe('Wajib memberikan alasan untuk mencabut persetujuan KRS');
   });
 
   it('should throw when class capacity full on approval', async () => {
@@ -649,9 +661,9 @@ describe('updateEnrollmentStatus', () => {
       _count: { krsEnrollments: 40 },
     });
 
-    await expect(
-      updateEnrollmentStatus(ENROLLMENT_ID, 'APPROVED', null, dospemUser)
-    ).rejects.toThrow(/Kapasitas kelas sudah penuh/);
+    const error = await updateEnrollmentStatus(ENROLLMENT_ID, 'APPROVED', null, dospemUser).catch(e => e);
+    expect(error.statusCode).toBe(400);
+    expect(error.message).toMatch(/Kapasitas kelas sudah penuh/);
   });
 });
 
