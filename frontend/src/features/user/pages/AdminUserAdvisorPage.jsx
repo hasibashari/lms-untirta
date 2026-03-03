@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import {
-  Loader2, AlertCircle, CheckCircle, UserCheck, Users,
+  Loader2, AlertCircle, UserCheck, Users,
   Search, ChevronDown, ChevronUp, X, Shield, UserPlus,
 } from 'lucide-react';
 import {
@@ -28,7 +29,6 @@ const AdvisorAssignmentPage = () => {
   const [error, setError] = useState(null);
 
   // UI
-  const [toast, setToast] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState(new Set());
@@ -37,8 +37,7 @@ const AdvisorAssignmentPage = () => {
   const [expandedAdvisor, setExpandedAdvisor] = useState(null);
 
   const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    type === 'error' ? toast.error(msg) : toast.success(msg);
   };
 
   // Fetch all data
@@ -176,14 +175,6 @@ const AdvisorAssignmentPage = () => {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium flex items-center gap-2 animate-in slide-in-from-top-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
-          {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
-          {toast.msg}
-        </div>
-      )}
-
       {/* Header */}
       <DashboardJumbotron
         icon={UserCheck}
@@ -328,8 +319,8 @@ const AdvisorAssignmentPage = () => {
                           onClick={() => handleToggleDospem(dosen.id, dosen.isDospem)}
                           disabled={processingId === dosen.id}
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${dosen.isDospem
-                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                              : 'bg-green-50 text-green-600 hover:bg-green-100'
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                            : 'bg-green-50 text-green-600 hover:bg-green-100'
                             }`}
                         >
                           {processingId === dosen.id ? (

@@ -23,7 +23,7 @@ import {
   reviseEnrollment,
 } from '../krsService';
 import { getStudentSemesters } from '@/features/academic/academicService';
-import KrsStatusBadge from '@/components/shared/KrsStatusBadge';
+import KrsStatusBadge from '../components/KrsStatusBadge';
 import { Button } from '@/components/ui/button';
 import StatCard from '@/components/ui/StatCard';
 import InfoBanner from '@/components/ui/InfoBanner';
@@ -244,7 +244,7 @@ const StudyPlan = () => {
         const d = responseData.details;
         showError(
           `Total SKS melebihi batas! Saat ini ${d?.currentSKS || '?'} SKS, ` +
-            `menambah ${d?.courseSKS || '?'} SKS melebihi batas ${d?.maxSKS || '?'} SKS.`,
+          `menambah ${d?.courseSKS || '?'} SKS melebihi batas ${d?.maxSKS || '?'} SKS.`,
         );
       } else {
         showError(responseData?.message || err?.message || 'Gagal menambahkan kelas');

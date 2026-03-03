@@ -3,12 +3,10 @@ import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import { upload } from '../../middlewares/upload.middleware.js';
-import { createCourseSchema, enrollStudentSchema, updateCourseSchema, assignTeacherSchema } from './course.validation.js';
+import { createCourseSchema, updateCourseSchema, assignTeacherSchema } from './course.validation.js';
 import {
-  enrollStudent,
   getMyCourses,
   getStudentsByCourse,
-  getAvailableStudents,
   // Admin Course Management
   adminGetAllCourses,
   adminCreateCourse,
@@ -327,93 +325,6 @@ router.get(
   authorizeRole('DOSEN', 'ADMIN'),
   getStudentsByCourse
 );
-
-/**
- * @swagger
- * /api/courses/{id}/available-students:
- *   get:
- *     summary: List students not yet enrolled in a course
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - $ref: '#/components/parameters/UuidIdParam'
- *     responses:
- *       200:
- *         description: Available students
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/User'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- */
-// UNUSED: No frontend UI consumes this endpoint
-router.get(
-  '/:id/available-students',
-  authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
-  getAvailableStudents
-);
-
-/**
- * @swagger
- * /api/courses/{id}/enroll:
- *   post:
- *     summary: Enroll a student in a course
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - $ref: '#/components/parameters/UuidIdParam'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [studentId]
- *             properties:
- *               studentId:
- *                 type: string
- *                 format: uuid
- *     responses:
- *       201:
- *         description: Student enrolled
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
- *       400:
- *         $ref: '#/components/responses/ValidationFailed'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         description: Student already enrolled
- */
-router.post(
-  '/:id/enroll',
-  authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
-  validate(enrollStudentSchema),
-  enrollStudent
-);
-
-// ^ UNUSED: Enrollment is now handled through class/KRS system
 
 /**
  * @swagger

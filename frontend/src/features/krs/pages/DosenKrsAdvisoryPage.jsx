@@ -1,14 +1,16 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import {
-  Loader2, AlertCircle, CheckCircle, XCircle, Users,
+  Loader2, AlertCircle, XCircle, Users,
   Clock, ChevronDown, ChevronUp, Search, UserCheck, ShieldOff,
 } from 'lucide-react';
 import {
   getAdvisoryStudents, getAdvisoryPendingKRS,
   updateEnrollmentStatus, bulkUpdateEnrollmentStatus,
 } from '../krsService';
+import { getAllSemesters } from '@/features/academic/academicService';
 import SemesterFilter from '@/components/shared/SemesterFilter';
-import KrsStatusBadge from '@/components/shared/KrsStatusBadge';
+import KrsStatusBadge from '../components/KrsStatusBadge';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -26,6 +28,9 @@ const DosenAdvisoryPage = () => {
   // Filter state
   const [academicSemesterId, setAcademicSemesterId] = useState(null);
 
+  // Semester data for filter
+  const [semesters, setSemesters] = useState([]);
+
   // Data state
   const [pendingEnrollments, setPendingEnrollments] = useState([]);
   const [advisoryData, setAdvisoryData] = useState(null);
@@ -42,7 +47,6 @@ const DosenAdvisoryPage = () => {
   const [revokeNoteId, setRevokeNoteId] = useState(null);
   const [revokeNote, setRevokeNote] = useState('');
   const [revokingId, setRevokingId] = useState(null);
-  const [toast, setToast] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStudentAll, setExpandedStudentAll] = useState(null);
 
@@ -88,10 +92,15 @@ const DosenAdvisoryPage = () => {
     }
   }, [activeTab, fetchPending, fetchStudents]);
 
+  useEffect(() => {
+    getAllSemesters()
+      .then(res => setSemesters(res.data?.data || []))
+      .catch(() => setSemesters([]));
+  }, []);
+
   // Show temporary toast
   const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    type === 'error' ? toast.error(msg) : toast.success(msg);
   };
 
   // Group pending enrollments by student
@@ -236,14 +245,6 @@ const DosenAdvisoryPage = () => {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium flex items-center gap-2 animate-in slide-in-from-top-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
-          {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
-          {toast.msg}
-        </div>
-      )}
-
       {/* Header */}
       <DashboardJumbotron
         title="Perwalian Akademik"
@@ -303,6 +304,7 @@ const DosenAdvisoryPage = () => {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
         <SemesterFilter
+          semesters={semesters}
           academicSemesterId={academicSemesterId}
           onAcademicSemesterChange={(val) => setAcademicSemesterId(val === 'all' ? null : val)}
         />

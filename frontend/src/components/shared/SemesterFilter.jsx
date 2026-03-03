@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -6,31 +5,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getAllSemesters } from '@/features/academic/academicService';
 
 /**
  * SemesterFilter — Reusable filter bar for selecting an AcademicSemester.
- * Fetches semester list from API and lets user pick by ID.
+ * Receives semester list via props (fetched by the consumer page).
  * Used across Admin KRS Approval, Transcript, and Class management pages.
  */
 const SemesterFilter = ({
+  semesters = [],
   academicSemesterId,
   onAcademicSemesterChange,
   className = '',
 }) => {
-  const [semesters, setSemesters] = useState([]);
-
-  useEffect(() => {
-    const fetchSemesters = async () => {
-      try {
-        const res = await getAllSemesters();
-        setSemesters(res.data?.data || []);
-      } catch {
-        setSemesters([]);
-      }
-    };
-    fetchSemesters();
-  }, []);
 
   return (
     <div className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 ${className}`}>

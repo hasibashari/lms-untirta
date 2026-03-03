@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
-  Loader2, AlertCircle, CheckCircle, X, ArrowLeft,
+  Loader2, AlertCircle, ArrowLeft,
   Save, Lock, Users, Award,
 } from 'lucide-react';
 import {
@@ -40,7 +41,6 @@ const DosenGradingPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [toast, setToast] = useState(null);
 
   // Track grade edits (studentId -> letterGrade)
   const [gradeEdits, setGradeEdits] = useState({});
@@ -49,8 +49,7 @@ const DosenGradingPage = () => {
   const [finalizing, setFinalizing] = useState(false);
 
   const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    type === 'error' ? toast.error(msg) : toast.success(msg);
   };
 
   const fetchData = useCallback(async () => {
@@ -197,22 +196,6 @@ const DosenGradingPage = () => {
       >
         <ArrowLeft size={16} /> Kembali
       </button>
-
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-700'
-            : 'bg-green-50 border-green-200 text-green-700'
-            }`}
-        >
-          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle size={18} />}
-          <span className="flex-1 text-sm">{toast.msg}</span>
-          <button onClick={() => setToast(null)} className="hover:opacity-70">
-            <X size={16} />
-          </button>
-        </div>
-      )}
 
       {/* Class Header */}
       <div className="bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 text-white rounded-2xl p-6 lg:p-8 relative overflow-hidden">

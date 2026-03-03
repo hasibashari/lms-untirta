@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
-import api from '../../../services/apiService';
+import { getMyClasses } from '@/features/class/classService';
 import DosenGradingPage from './DosenGradingPage';
 
 /**
@@ -19,8 +19,8 @@ const DosenCourseGradesPage = () => {
     const resolve = async () => {
       try {
         // Fetch dosen's classes, then find the one for this course
-        const res = await api.get('/classes/me');
-        const classes = res.data || [];
+        const res = await getMyClasses();
+        const classes = res.data?.data || res.data || [];
         const match = classes.find(
           (c) => c.courseId === courseId || c.courseId === parseInt(courseId)
         );

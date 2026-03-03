@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import {
   BookOpen,
   Plus,
@@ -7,7 +8,6 @@ import {
   Trash2,
   X,
   AlertCircle,
-  CheckCircle,
   Loader2,
   ToggleLeft,
   ToggleRight,
@@ -89,15 +89,13 @@ const AdminClassesPage = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Toast state
-  const [toast, setToast] = useState(null);
-
   // Toggling state
   const [toggling, setToggling] = useState(null);
 
   const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
+    if (type === 'error') toast.error(message);
+    else if (type === 'info') toast(message, { icon: 'ℹ️' });
+    else toast.success(message);
   }, []);
 
   // Fetch all data
@@ -333,20 +331,6 @@ const AdminClassesPage = () => {
           Tambah Kelas
         </Button>
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${toast.type === 'error'
-          ? 'bg-red-50 border-red-200 text-red-700'
-          : toast.type === 'info'
-            ? 'bg-blue-50 border-blue-200 text-blue-700'
-            : 'bg-green-50 border-green-200 text-green-700'
-          }`}>
-          {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-          <span className="flex-1">{toast.message}</span>
-          <button onClick={() => setToast(null)} className="hover:opacity-70"><X size={18} /></button>
-        </div>
-      )}
 
       {/* Stats Cards */}
       {!loading && !error && (

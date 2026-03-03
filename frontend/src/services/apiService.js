@@ -7,6 +7,15 @@ const api = axios.create({
   },
 });
 
+// --- 401 auto-logout hook ---
+// AuthContext registers its logout function here so the interceptor can call it
+// without importing from the React tree (avoids circular dependency).
+let _onUnauthorized = null;
+
+export const setOnUnauthorized = (fn) => {
+  _onUnauthorized = fn;
+};
+
 api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
@@ -27,6 +36,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response.data,
   error => {
+    const status = error.response?.status;
+
+    // Auto-logout on 401 (expired / invalid token)
+    if (status === 401 && _onUnauthorized) {
+      _onUnauthorized();
+      return Promise.reject(new Error('Sesi telah berakhir, silakan login kembali'));
+    }
+
     const message = error.response?.data?.message || 'Terjadi kesalahan';
 
     return Promise.reject(new Error(message));

@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { login as loginAPI, getMe } from '../features/auth/authService';
+import { setOnUnauthorized } from '../services/apiService';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // ===== LOGIN REAL =====
   // Memoized dengan useCallback agar reference stabil
@@ -29,7 +32,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setUser(null);
     setToken(null);
-  }, []);
+    navigate('/login', { replace: true });
+  }, [navigate]);
+
+  // Register logout handler for 401 interceptor (runs once on mount + when logout changes)
+  useEffect(() => {
+    setOnUnauthorized(logout);
+    return () => setOnUnauthorized(null);
+  }, [logout]);
 
   // ===== RESTORE AUTH (AUTO LOGIN) =====
   const restoreAuth = useCallback(async () => {

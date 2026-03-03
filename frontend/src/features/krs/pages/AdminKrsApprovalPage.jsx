@@ -4,8 +4,9 @@ import {
   Clock, BarChart3, ChevronDown, ChevronUp, Search,
 } from 'lucide-react';
 import { getKrsMonitoring } from '../krsService';
+import { getAllSemesters } from '@/features/academic/academicService';
 import SemesterFilter from '@/components/shared/SemesterFilter';
-import KrsStatusBadge from '@/components/shared/KrsStatusBadge';
+import KrsStatusBadge from '../components/KrsStatusBadge';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -20,6 +21,9 @@ const AdminKrsMonitoringPage = () => {
   // Filter state
   const [academicSemesterId, setAcademicSemesterId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // Semester data for filter
+  const [semesters, setSemesters] = useState([]);
 
   // Data state
   const [monitoringData, setMonitoringData] = useState(null);
@@ -49,6 +53,12 @@ const AdminKrsMonitoringPage = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    getAllSemesters()
+      .then(res => setSemesters(res.data?.data || []))
+      .catch(() => setSemesters([]));
+  }, []);
 
   const enrollments = monitoringData?.enrollments || [];
   const summary = monitoringData?.summary || {};
@@ -151,6 +161,7 @@ const AdminKrsMonitoringPage = () => {
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <SemesterFilter
+            semesters={semesters}
             academicSemesterId={academicSemesterId}
             onAcademicSemesterChange={(val) => setAcademicSemesterId(val === 'all' ? null : val)}
           />

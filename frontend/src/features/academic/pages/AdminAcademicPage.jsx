@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import {
-  Loader2, AlertCircle, CheckCircle, X, Calendar, Plus,
+  Loader2, AlertCircle, Calendar, Plus,
   ChevronRight, Trash2, ArrowRight,
 } from 'lucide-react';
 import {
@@ -36,8 +37,6 @@ const AdminAcademicPage = () => {
   const [semesters, setSemesters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [toast, setToast] = useState(null);
-
   // Create form state
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -59,8 +58,7 @@ const AdminAcademicPage = () => {
   const [readinessError, setReadinessError] = useState(null);
 
   const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    type === 'error' ? toast.error(msg) : toast.success(msg);
   };
 
   const fetchData = useCallback(async () => {
@@ -150,7 +148,7 @@ const AdminAcademicPage = () => {
           setReadinessLoading(true);
           getClosingReadiness(transitionModal.semesterId)
             .then((res) => setReadinessData(res.data || res))
-            .catch(() => {})
+            .catch(() => showToast('Gagal memuat data kesiapan penutupan', 'error'))
             .finally(() => setReadinessLoading(false));
         }
       } else {
@@ -184,23 +182,6 @@ const AdminAcademicPage = () => {
         title="Konfigurasi Akademik"
         subtitle="Kelola tahun akademik, semester, dan siklus akademik"
       />
-
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`flex items-center gap-3 p-4 rounded-xl border animate-in slide-in-from-top-2 ${
-            toast.type === 'error'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-green-50 border-green-200 text-green-700'
-          }`}
-        >
-          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle size={18} />}
-          <span className="flex-1 text-sm">{toast.msg}</span>
-          <button onClick={() => setToast(null)} className="hover:opacity-70">
-            <X size={16} />
-          </button>
-        </div>
-      )}
 
       {/* Status Flow Guide */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
@@ -336,9 +317,8 @@ const AdminAcademicPage = () => {
             return (
               <div
                 key={sem.id}
-                className={`bg-white rounded-xl border overflow-hidden ${
-                  sem.isActive ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200'
-                }`}
+                className={`bg-white rounded-xl border overflow-hidden ${sem.isActive ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200'
+                  }`}
               >
                 <div className="p-4 sm:p-5">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -490,11 +470,10 @@ const AdminAcademicPage = () => {
                 )}
 
                 {readinessData && !readinessLoading && (
-                  <div className={`p-3 border rounded-lg space-y-3 ${
-                    readinessData.summary?.isReady
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
-                  }`}>
+                  <div className={`p-3 border rounded-lg space-y-3 ${readinessData.summary?.isReady
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
+                    }`}>
                     <div className="flex items-start gap-2">
                       {readinessData.summary?.isReady ? (
                         <CheckCircle size={16} className="text-green-600 shrink-0 mt-0.5" />
@@ -534,17 +513,15 @@ const AdminAcademicPage = () => {
                         <p className="text-[10px] text-slate-500">Finalized</p>
                       </div>
                       <div className="bg-white/60 rounded-md p-2">
-                        <p className={`text-sm font-bold ${
-                          (readinessData.summary?.totalDraft || 0) > 0 ? 'text-amber-600' : 'text-slate-800'
-                        }`}>
+                        <p className={`text-sm font-bold ${(readinessData.summary?.totalDraft || 0) > 0 ? 'text-amber-600' : 'text-slate-800'
+                          }`}>
                           {readinessData.summary?.totalDraft || 0}
                         </p>
                         <p className="text-[10px] text-slate-500">Draft</p>
                       </div>
                       <div className="bg-white/60 rounded-md p-2">
-                        <p className={`text-sm font-bold ${
-                          (readinessData.summary?.totalMissing || 0) > 0 ? 'text-red-600' : 'text-slate-800'
-                        }`}>
+                        <p className={`text-sm font-bold ${(readinessData.summary?.totalMissing || 0) > 0 ? 'text-red-600' : 'text-slate-800'
+                          }`}>
                           {readinessData.summary?.totalMissing || 0}
                         </p>
                         <p className="text-[10px] text-slate-500">Belum Dinilai</p>

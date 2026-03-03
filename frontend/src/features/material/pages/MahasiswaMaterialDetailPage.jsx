@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -48,7 +49,7 @@ const MaterialDetail = () => {
         );
         setCourse(foundCourse?.course);
       })
-      .catch(err => console.error(err))
+      .catch(err => toast.error(err?.message || 'Gagal memuat detail materi'))
       .finally(() => setLoading(false));
   }, [materialId, courseId]);
 

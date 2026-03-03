@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 
-import AuthBranding from '../features/auth/components/AuthBranding';
+import AuthBranding from '../components/shared/AuthBranding';
 import Navbar from '../components/navigation/Navbar';
 import Footer from '../components/shared/footer/Footer';
 

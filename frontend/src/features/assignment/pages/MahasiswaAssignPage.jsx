@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, Link } from 'react-router-dom';
 import { getAssignments } from '../assignmentService';
 import { getMyCourses } from '../../course/courseService';
@@ -29,7 +30,7 @@ export default function Assignments() {
         const foundCourse = coursesRes.data.find(item => item.course.id === parseInt(courseId));
         setCourse(foundCourse?.course);
       })
-      .catch(err => console.error(err))
+      .catch(err => toast.error(err?.message || 'Gagal memuat data tugas'))
       .finally(() => setLoading(false));
   }, [courseId]);
 
