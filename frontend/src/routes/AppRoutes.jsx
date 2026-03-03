@@ -30,44 +30,44 @@ const DosenDashboard = lazy(() => import('../features/dashboard/pages/DosenPage'
 const MahasiswaDashboard = lazy(() => import('../features/dashboard/pages/MahasiswaPage'));
 
 // User module
-const AdminUsers = lazy(() => import('../features/user/pages/AdminPage'));
-const AdminCreateUser = lazy(() => import('../features/user/pages/AdminCreatePage'));
+const AdminUsers = lazy(() => import('../features/user/pages/AdminUserPage'));
+const AdminCreateUser = lazy(() => import('../features/user/pages/AdminUserCreatePage'));
 
 // Course module
-const AdminCourses = lazy(() => import('../features/course/pages/AdminPage'));
-const DosenCourseHome = lazy(() => import('../features/course/pages/DosenHomePage'));
-const DosenStudents = lazy(() => import('../features/course/pages/MahasiswaPage'));
-const MahasiswaCourseHome = lazy(() => import('../features/course/pages/MahasiswaHomePage'));
-const MahasiswaCourseMaterials = lazy(() => import('../features/course/pages/MaterialMahasiswaPage'));
+const AdminCourses = lazy(() => import('../features/course/pages/AdminCoursePage'));
+const DosenCourseHome = lazy(() => import('../features/course/pages/DosenCoursePage'));
+const DosenStudents = lazy(() => import('../features/course/pages/DosenMahasiswaPage'));
+const MahasiswaCourseHome = lazy(() => import('../features/course/pages/MahasiswaCoursePage'));
+const MahasiswaCourseMaterials = lazy(() => import('../features/material/pages/MahasiswaMaterialPage'));
 
 // Class module
 const AdminClasses = lazy(() => import('../features/class/pages/AdminClassesPage'));
 const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassesPage'));
 const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassesPage'));
 // KRS module
-const MahasiswaStudyPlan = lazy(() => import('../features/krs/pages/MahasiswaPage'));
-const AdminKrsMonitoring = lazy(() => import('../features/krs/pages/AdminApprovalPage'));
-const DosenAdvisory = lazy(() => import('../features/krs/pages/DosenAdvisoryPage'));
+const MahasiswaStudyPlan = lazy(() => import('../features/krs/pages/MahasiswaKrsPage'));
+const AdminKrsMonitoring = lazy(() => import('../features/krs/pages/AdminKrsApprovalPage'));
+const DosenAdvisory = lazy(() => import('../features/krs/pages/DosenKrsAdvisoryPage'));
 
 // Advisor Assignment module
-const AdvisorAssignment = lazy(() => import('../features/user/pages/AdvisorAssignmentPage'));
+const AdvisorAssignment = lazy(() => import('../features/user/pages/AdminUserAdvisorPage'));
 
 // Transcript module
-const MahasiswaStudyResult = lazy(() => import('../features/transcript/pages/MahasiswaPage'));
-const AdminStudentList = lazy(() => import('../features/transcript/pages/AdminStudentListPage'));
-const AdminStudentTranscript = lazy(() => import('../features/transcript/pages/AdminStudentTranscriptPage'));
+const MahasiswaStudyResult = lazy(() => import('../features/transcript/pages/MahasiswaTranscriptPage'));
+const AdminStudentList = lazy(() => import('../features/transcript/pages/AdminMahasiswaListPage'));
+const AdminStudentTranscript = lazy(() => import('../features/transcript/pages/AdminTranscriptMahasiswaPage'));
 
 // Material module
-const DosenMaterials = lazy(() => import('../features/material/pages/DosenPage'));
-const DosenCreateMaterial = lazy(() => import('../features/material/pages/DosenCreatePage'));
-const MahasiswaMaterialDetail = lazy(() => import('../features/material/pages/MahasiswaDetailPage'));
+const DosenMaterials = lazy(() => import('../features/material/pages/DosenMaterialPage'));
+const DosenCreateMaterial = lazy(() => import('../features/material/pages/DosenMaterialCreatePage'));
+const MahasiswaMaterialDetail = lazy(() => import('../features/material/pages/MahasiswaMaterialDetailPage'));
 
 // Academic module
 const AdminAcademic = lazy(() => import('../features/academic/pages/AdminAcademicPage'));
 
 // Grade module
 const DosenGrading = lazy(() => import('../features/grade/pages/DosenGradingPage'));
-const DosenCourseGrades = lazy(() => import('../features/grade/pages/DosenCourseGradesPage'));
+const DosenCourseGrades = lazy(() => import('../features/grade/pages/DosenGradeCoursePage'));
 
 // Assignment module
 const DosenAssignments = lazy(() => import('../features/assignment/pages/DosenPage'));

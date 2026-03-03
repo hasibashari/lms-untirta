@@ -83,6 +83,7 @@ router.get('/me', authenticateToken, getMyCourses);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
+// UNUSED: Frontend uses GET /me and GET /admin/all instead
 router.get('/', authenticateToken, getCourses);
 
 /**
@@ -105,6 +106,7 @@ router.get('/', authenticateToken, getCourses);
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
+// UNUSED: Frontend uses /transcript/study-results via transcriptService instead
 router.get(
   '/study-results',
   authenticateToken,
@@ -422,6 +424,7 @@ router.get(
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// UNUSED: No frontend UI consumes this endpoint
 router.get(
   '/:id/available-students',
   authenticateToken,
@@ -477,6 +480,7 @@ router.get(
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
+// UNUSED: Frontend uses POST /admin route instead
 router.post(
   '/',
   authenticateToken,
@@ -531,6 +535,8 @@ router.post(
   validate(enrollStudentSchema),
   enrollStudent
 );
+
+// ^ UNUSED: Enrollment is now handled through class/KRS system
 
 /**
  * @swagger

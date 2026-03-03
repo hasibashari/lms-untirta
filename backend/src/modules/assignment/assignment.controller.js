@@ -33,16 +33,21 @@ const create = async (req, res) => {
 const submit = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const { note } = req.body;
+    const { note, fileUrl: bodyFileUrl } = req.body;
 
-    if (!req.file) {
-      throw new AppError(400, 'File tugas wajib diunggah');
+    let fileUrl;
+    if (req.file) {
+      // File upload mode (multipart/form-data)
+      await persistUploadMeta({ userId: req.user.id, file: req.file }).catch((err) =>
+        logger.warn({ err }, 'Failed to persist upload metadata to Redis — continuing'),
+      );
+      fileUrl = buildFileUrl(req, req.file.filename);
+    } else if (bodyFileUrl) {
+      // URL mode (application/json)
+      fileUrl = bodyFileUrl;
+    } else {
+      throw new AppError(400, 'File tugas atau URL wajib diberikan');
     }
-
-    await persistUploadMeta({ userId: req.user.id, file: req.file }).catch((err) =>
-      logger.warn({ err }, 'Failed to persist upload metadata to Redis — continuing'),
-    );
-    const fileUrl = buildFileUrl(req, req.file.filename);
 
     const result = await assignmentService.submitAssignment(assignmentId, req.user.id, {
       fileUrl,

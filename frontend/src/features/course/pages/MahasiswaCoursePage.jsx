@@ -8,6 +8,8 @@ import {
   ArrowRight,
   Clock,
   FileText,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { getMyCourses } from '../courseService';
 import { getMaterials } from '../../material/materialService';
@@ -26,9 +28,12 @@ const CourseHome = () => {
   const [materials, setMaterials] = useState([]);
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchData = () => {
     if (!courseId || courseId === 'undefined') return;
+    setLoading(true);
+    setError(null);
 
     Promise.all([
       getAssignments(courseId),
@@ -44,8 +49,15 @@ const CourseHome = () => {
         );
         setCourse(foundCourse?.course);
       })
-      .catch(err => console.error(err))
+      .catch(err => {
+        console.error(err);
+        setError(err.message || 'Gagal memuat data kelas');
+      })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [courseId]);
 
   if (!courseId) {
@@ -62,6 +74,22 @@ const CourseHome = () => {
         <div className="h-8 bg-slate-200 rounded w-1/3"></div>
         <div className="h-40 bg-slate-200 rounded-2xl"></div>
         <div className="h-64 bg-slate-200 rounded-2xl"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <AlertTriangle className="w-12 h-12 text-amber-500" />
+        <p className="text-slate-600 text-center">{error}</p>
+        <button
+          onClick={fetchData}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <RefreshCw size={16} />
+          Coba Lagi
+        </button>
       </div>
     );
   }

@@ -1,24 +1,5 @@
 import api from '../../services/apiService';
 
-// ========== Legacy Course-based Endpoints ==========
-// These use /courses/me which returns enrolled courses (Mahasiswa)
-// or teaching courses (Dosen) based on user role.
-
-/**
- * Get enrolled courses for mahasiswa (legacy, course-based)
- */
-export const getMyCourses = async () => {
-  return api.get('/courses/me');
-};
-
-/**
- * Get assigned courses with stats for dosen (legacy, course-based)
- * Single API call yang include stats (students & materials count)
- */
-export const getMyCoursesWithStats = async () => {
-  return api.get('/courses/me?includeStats=true');
-};
-
 // ========== Class Module Endpoints (/api/classes) ==========
 // Full CRUD for class offerings (kelas yang dibuka per semester)
 

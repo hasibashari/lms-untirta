@@ -35,6 +35,7 @@ export const updateAssignmentSchema = z.object({
  */
 export const submitAssignmentSchema = z.object({
   body: z.object({
+    fileUrl: z.string().url('URL file tidak valid').optional(),
     note: z.string().optional(),
   }),
 });

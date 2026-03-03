@@ -352,7 +352,7 @@ const StudyPlan = () => {
               <span className="text-sm text-slate-500">Tidak ada semester tersedia</span>
             ) : (
               <Select value={selectedSemesterId || ''} onValueChange={handleSemesterChange}>
-                <SelectTrigger className="w-[280px] bg-white">
+                <SelectTrigger className="w-70 bg-white">
                   <SelectValue placeholder="Pilih Semester" />
                 </SelectTrigger>
                 <SelectContent>

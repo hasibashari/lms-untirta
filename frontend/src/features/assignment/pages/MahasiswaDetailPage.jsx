@@ -145,16 +145,16 @@ export default function AssignmentDetail() {
 
     try {
       if (submitType === 'url') {
-        // Submit dengan URL
+        // Submit dengan URL (JSON)
         await submitAssignment(assignmentId, { fileUrl, note });
-        toast.success('Tugas berhasil dikumpulkan!');
       } else {
-        // TODO: Implementasi upload file (butuh backend multer)
-        // Untuk sementara, tampilkan pesan bahwa fitur belum tersedia
-        toast.error('Fitur upload file belum tersedia. Gunakan Link URL untuk sementara.');
-        setSubmitting(false);
-        return;
+        // Submit dengan file upload (FormData)
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        if (note) formData.append('note', note);
+        await submitAssignment(assignmentId, formData);
       }
+      toast.success('Tugas berhasil dikumpulkan!');
 
       // Refresh status
       const res = await getMyAssignmentStatus(assignmentId);

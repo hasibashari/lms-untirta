@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Filter } from 'lucide-react';
-import { getMyCourses } from '../classService';
+import { getMyCourses } from '../../course/courseService';
 import StudentCourseCard from '../components/StudentCourseCard';
 import { Button } from '@/components/ui/button';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';

@@ -6,9 +6,11 @@ import {
   ArrowRight,
   ChevronLeft,
   Hash,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
-import { getMaterials } from '../../material/materialService';
-import { getMyCourses } from '../courseService';
+import { getMaterials } from '../materialService';
+import { getMyCourses } from '../../course/courseService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
 
@@ -22,9 +24,12 @@ const CourseMaterials = () => {
   const [materials, setMaterials] = useState([]);
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchData = () => {
     if (!courseId) return;
+    setLoading(true);
+    setError(null);
 
     Promise.all([getMaterials(courseId), getMyCourses()])
       .then(([materialsRes, coursesRes]) => {
@@ -35,8 +40,15 @@ const CourseMaterials = () => {
         );
         setCourse(foundCourse?.course);
       })
-      .catch(err => console.error(err))
+      .catch(err => {
+        console.error(err);
+        setError(err.message || 'Gagal memuat data materi');
+      })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [courseId]);
 
   if (!courseId) {
@@ -55,6 +67,22 @@ const CourseMaterials = () => {
         {[1, 2, 3].map(i => (
           <div key={i} className="h-20 bg-slate-200 rounded-xl"></div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <AlertTriangle className="w-12 h-12 text-amber-500" />
+        <p className="text-slate-600 text-center">{error}</p>
+        <button
+          onClick={fetchData}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <RefreshCw size={16} />
+          Coba Lagi
+        </button>
       </div>
     );
   }
