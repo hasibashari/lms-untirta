@@ -35,6 +35,12 @@ const MahasiswaLayout = () => {
       icon: BookOpen,
     },
     {
+      label: 'Nilai Saya',
+      to: '/mahasiswa/grades',
+      icon: Award,
+      description: 'Daftar Nilai Tugas',
+    },
+    {
       label: 'Rencana Studi',
       to: '/mahasiswa/study-plan',
       icon: FileText,

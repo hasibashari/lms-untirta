@@ -3,84 +3,6 @@ import { AppError } from '../../config/errors.js';
 import { paginate } from '../../utils/pagination.js';
 
 /**
- * Creates a new course in the database.
- * Checks for unique course code before creation.
- * @param {object} data - Course data (title, description, code).
- * @param {string} teacherId - The ID of the teacher creating the course.
- * @returns {Promise<object>} The created course object.
- * @throws {Error} If the course code is already in use.
- */
-const createCourse = async (data, teacherId) => {
-  // 1. Cek apakah Kode Mata Kuliah (Unique) sudah ada?
-  const existingCourse = await prisma.course.findUnique({
-    where: { code: data.code },
-  });
-
-  if (existingCourse) {
-    throw new AppError(409, 'Kode kelas sudah digunakan');
-  }
-
-  // 2. Simpan ke DB
-  // Perhatikan cara kita menghubungkan teacherId
-  return await prisma.course.create({
-    data: {
-      ...data, // title, description, code
-      teacherId, // Foreign Key ke User
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      code: true,
-      createdAt: true,
-      teacher: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-};
-
-/**
- * Retrieves all courses including teacher information.
- * @returns {Promise<Array<object>>} List of courses.
- */
-const getAllCourses = async (query = {}) => {
-  const { skip, take, meta } = paginate(query);
-  // Kita ingin mengambil data kelas BESERTA nama dosennya
-  const [courses, total] = await Promise.all([
-    prisma.course.findMany({
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        code: true,
-        semester: true,
-        sks: true,
-        createdAt: true,
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take,
-    }),
-    prisma.course.count(),
-  ]);
-
-  return { data: courses, pagination: meta(total) };
-};
-
-/**
  * Adds a student to a course using their email address.
  * Validates course ownership (if teacher) and ensures the user is a student.
  * @param {string} courseId - The ID of the course.
@@ -692,8 +614,6 @@ const adminAssignTeacher = async (courseId, teacherId) => {
 };
 
 export {
-  createCourse,
-  getAllCourses,
   addStudentToCourse,
   addStudentToCourseById,
   getEnrolledCourses,

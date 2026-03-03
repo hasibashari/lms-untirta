@@ -5,9 +5,7 @@ import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import { upload } from '../../middlewares/upload.middleware.js';
 import { createCourseSchema, enrollStudentSchema, updateCourseSchema, assignTeacherSchema } from './course.validation.js';
 import {
-  createCourse,
   enrollStudent,
-  getCourses,
   getMyCourses,
   getStudentsByCourse,
   getAvailableStudents,
@@ -18,9 +16,6 @@ import {
   adminDeleteCourse,
   adminAssignTeacher,
 } from './course.controller.js';
-
-// Transcript legacy route — delegated to transcript module controller
-import { getStudyResults } from '../transcript/transcript.controller.js';
 
 import { createMaterial, getMaterials } from '../material/material.controller.js';
 import { createMaterialSchema } from '../material/material.validation.js';
@@ -53,67 +48,6 @@ const router = express.Router();
  *         $ref: '#/components/responses/Unauthorized'
  */
 router.get('/me', authenticateToken, getMyCourses);
-
-/**
- * @swagger
- * /api/courses:
- *   get:
- *     summary: List all courses
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - $ref: '#/components/parameters/PageParam'
- *       - $ref: '#/components/parameters/LimitParam'
- *     responses:
- *       200:
- *         description: Paginated course list
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/Course'
- *                     pagination:
- *                       $ref: '#/components/schemas/Pagination'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- */
-// UNUSED: Frontend uses GET /me and GET /admin/all instead
-router.get('/', authenticateToken, getCourses);
-
-/**
- * @swagger
- * /api/courses/study-results:
- *   get:
- *     summary: Get study results (student transcript legacy)
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Study results for the authenticated student
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
-// UNUSED: Frontend uses /transcript/study-results via transcriptService instead
-router.get(
-  '/study-results',
-  authenticateToken,
-  authorizeRole('MAHASISWA'),
-  getStudyResults
-);
-
 
 /**
  * @swagger
@@ -430,63 +364,6 @@ router.get(
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
   getAvailableStudents
-);
-
-/**
- * @swagger
- * /api/courses:
- *   post:
- *     summary: Create a course (teacher / admin)
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [title, code, sks]
- *             properties:
- *               title:
- *                 type: string
- *               code:
- *                 type: string
- *               description:
- *                 type: string
- *               semester:
- *                 type: integer
- *                 minimum: 1
- *                 maximum: 8
- *               sks:
- *                 type: integer
- *                 minimum: 1
- *                 maximum: 6
- *     responses:
- *       201:
- *         description: Course created
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       $ref: '#/components/schemas/Course'
- *       400:
- *         $ref: '#/components/responses/ValidationFailed'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
-// UNUSED: Frontend uses POST /admin route instead
-router.post(
-  '/',
-  authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
-  validate(createCourseSchema),
-  createCourse
 );
 
 /**

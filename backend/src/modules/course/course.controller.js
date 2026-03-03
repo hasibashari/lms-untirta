@@ -3,35 +3,6 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 
 /**
- * Creates a new course.
- * Typically used by Teachers or Admins to initialize a new subject.
- * @param {import('express').Request} req - Express request object. Expects course details in body.
- * @param {import('express').Response} res - Express response object.
- */
-export const createCourse = async (req, res) => {
-  try {
-    const newCourse = await courseService.createCourse(req.body, req.user.id);
-    sendSuccess(res, { statusCode: 201, message: 'Kelas berhasil dibuat', data: newCourse });
-  } catch (error) {
-    return handleError(res, error);
-  }
-};
-
-/**
- * Retrieves all courses available in the system.
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- */
-export const getCourses = async (req, res) => {
-  try {
-    const { data, pagination } = await courseService.getAllCourses(req.query);
-    sendSuccess(res, { statusCode: 200, message: 'Daftar kelas berhasil diambil', data, pagination });
-  } catch (error) {
-    return handleError(res, error);
-  }
-};
-
-/**
  * Enrolls a student into a specific course.
  * Supports enrollment by `studentId` or `email`.
  * @param {import('express').Request} req - Express request object. Expects `id` in params and student identifier in body.
@@ -94,11 +65,6 @@ export const getMyCourses = async (req, res) => {
         courses = await courseService.getTeachingCourses(userId);
       }
       message = 'Berhasil mengambil daftar kelas yang diajar';
-    } else if (userRole === 'ADMIN') {
-      const result = await courseService.getAllCourses(req.query);
-      courses = result.data;
-      pagination = result.pagination;
-      message = 'Berhasil mengambil semua daftar kelas';
     } else {
       return sendError(res, { statusCode: 403, message: 'Role tidak dikenali' });
     }

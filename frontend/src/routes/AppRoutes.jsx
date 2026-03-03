@@ -19,15 +19,15 @@ import PageLoader from '../components/shared/PageLoader';
 import Home from '../features/landing/pages/HomePage';
 
 // Auth module
-import Login from '../features/auth/pages/LoginPage';
-import Register from '../features/auth/pages/RegisterPage';
+import Login from '../features/auth/pages/LoginAuthPage';
+import Register from '../features/auth/pages/RegisterAuthPage';
 
 // ----- Lazy-loaded pages (feature-based modules) -----
 
 // Dashboard module
-const AdminDashboard = lazy(() => import('../features/dashboard/pages/AdminPage'));
-const DosenDashboard = lazy(() => import('../features/dashboard/pages/DosenPage'));
-const MahasiswaDashboard = lazy(() => import('../features/dashboard/pages/MahasiswaPage'));
+const AdminDashboard = lazy(() => import('../features/dashboard/pages/AdminDashboardPage'));
+const DosenDashboard = lazy(() => import('../features/dashboard/pages/DosenDashboardPage'));
+const MahasiswaDashboard = lazy(() => import('../features/dashboard/pages/MahasiswaDashboardPage'));
 
 // User module
 const AdminUsers = lazy(() => import('../features/user/pages/AdminUserPage'));
@@ -36,14 +36,14 @@ const AdminCreateUser = lazy(() => import('../features/user/pages/AdminUserCreat
 // Course module
 const AdminCourses = lazy(() => import('../features/course/pages/AdminCoursePage'));
 const DosenCourseHome = lazy(() => import('../features/course/pages/DosenCoursePage'));
-const DosenStudents = lazy(() => import('../features/course/pages/DosenMahasiswaPage'));
+const DosenStudents = lazy(() => import('../features/course/pages/DosenCourseMahasiswaPage'));
 const MahasiswaCourseHome = lazy(() => import('../features/course/pages/MahasiswaCoursePage'));
 const MahasiswaCourseMaterials = lazy(() => import('../features/material/pages/MahasiswaMaterialPage'));
 
 // Class module
-const AdminClasses = lazy(() => import('../features/class/pages/AdminClassesPage'));
-const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassesPage'));
-const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassesPage'));
+const AdminClasses = lazy(() => import('../features/class/pages/AdminClassPage'));
+const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassPage'));
+const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassPage'));
 // KRS module
 const MahasiswaStudyPlan = lazy(() => import('../features/krs/pages/MahasiswaKrsPage'));
 const AdminKrsMonitoring = lazy(() => import('../features/krs/pages/AdminKrsApprovalPage'));
@@ -70,12 +70,13 @@ const DosenGrading = lazy(() => import('../features/grade/pages/DosenGradingPage
 const DosenCourseGrades = lazy(() => import('../features/grade/pages/DosenGradeCoursePage'));
 
 // Assignment module
-const DosenAssignments = lazy(() => import('../features/assignment/pages/DosenPage'));
-const DosenCreateAssignment = lazy(() => import('../features/assignment/pages/DosenCreatePage'));
+const DosenAssignments = lazy(() => import('../features/assignment/pages/DosenAssignPage'));
+const DosenCreateAssignment = lazy(() => import('../features/assignment/pages/DosenAssignCreatePage'));
 const DosenSubmissions = lazy(() => import('../features/assignment/pages/SubmissionDosenListPage'));
 const DosenAllSubmissions = lazy(() => import('../features/assignment/pages/SubmissionDosenAllPage'));
-const MahasiswaAssignments = lazy(() => import('../features/assignment/pages/MahasiswaPage'));
-const MahasiswaAssignmentDetail = lazy(() => import('../features/assignment/pages/MahasiswaDetailPage'));
+const MahasiswaAssignments = lazy(() => import('../features/assignment/pages/MahasiswaAssignPage'));
+const MahasiswaAssignmentDetail = lazy(() => import('../features/assignment/pages/MahasiswaAssignDetailPage'));
+const MahasiswaGrades = lazy(() => import('../features/assignment/pages/MahasiswaGradesPage'));
 
 // Suspense wrapper for lazy-loaded pages
 const Lazy = ({ component: Component }) => (
@@ -147,6 +148,7 @@ function AppRoutes() {
           <Route element={<StudentLayout />}>
             <Route path="/mahasiswa/dashboard" element={<Lazy component={MahasiswaDashboard} />} />
             <Route path="/mahasiswa/classes" element={<Lazy component={MahasiswaMyClasses} />} />
+            <Route path="/mahasiswa/grades" element={<Lazy component={MahasiswaGrades} />} />
             <Route path="/mahasiswa/study-plan" element={<Lazy component={MahasiswaStudyPlan} />} />
             <Route path="/mahasiswa/study-result" element={<Lazy component={MahasiswaStudyResult} />} />
             <Route path="/mahasiswa/courses/:courseId" element={<Lazy component={MahasiswaCourseHome} />} />
@@ -164,4 +166,3 @@ function AppRoutes() {
 }
 
 export default AppRoutes;
-
