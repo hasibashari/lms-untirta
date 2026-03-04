@@ -130,7 +130,7 @@ export default function AllSubmissions() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
               <Inbox size={20} className="text-blue-600" />
@@ -154,7 +154,7 @@ export default function AllSubmissions() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
               <CheckCircle size={20} className="text-green-600" />
@@ -239,7 +239,7 @@ export default function AllSubmissions() {
 
       {/* Submissions List */}
       {submissions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Inbox size={32} className="text-slate-400" />
           </div>
@@ -251,7 +251,7 @@ export default function AllSubmissions() {
           </p>
         </div>
       ) : filteredSubmissions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
           </div>
@@ -273,7 +273,7 @@ export default function AllSubmissions() {
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filteredSubmissions.map((submission) => (
               <Link

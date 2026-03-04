@@ -157,7 +157,7 @@ const CourseHome = () => {
         <Button
           variant="outline"
           onClick={() => navigate(`/mahasiswa/courses/${courseId}/materials`)}
-          className="group flex items-center gap-4 p-5 h-auto justify-start hover:border-blue-300 hover:shadow-lg"
+          className="group flex items-center gap-4 p-5 h-auto justify-start hover:border-primary/50 hover:shadow-lg"
         >
           <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
             <BookOpen size={28} className="text-blue-600" />
@@ -186,7 +186,7 @@ const CourseHome = () => {
       </div>
 
       {/* Silabus Section */}
-      <section className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-xl font-bold text-slate-900">Silabus Materi</h2>
           <p className="text-sm text-slate-500 mt-1">Daftar materi yang akan Anda pelajari</p>
@@ -242,7 +242,7 @@ const CourseHome = () => {
 
       {/* Recent Assignments */}
       {assignments.length > 0 && (
-        <section className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100">
             <h2 className="text-xl font-bold text-slate-900">Tugas Terbaru</h2>
             <p className="text-sm text-slate-500 mt-1">Tugas yang perlu Anda kerjakan</p>

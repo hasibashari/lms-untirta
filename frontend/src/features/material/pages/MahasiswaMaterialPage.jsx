@@ -147,7 +147,7 @@ const CourseMaterials = () => {
 
       {/* Materials List */}
       {materials.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <FileText size={32} className="text-slate-400" />
           </div>
@@ -171,7 +171,7 @@ const CourseMaterials = () => {
                 to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
                 className="group relative block"
               >
-                <div className="flex items-stretch gap-4 sm:gap-6 bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-lg hover:border-blue-200 transition-all">
+                <div className="flex items-stretch gap-4 sm:gap-6 bg-card rounded-xl border border-border shadow-sm p-5 hover:shadow-lg hover:border-primary/50 transition-all">
                   {/* Number Indicator */}
                   <div className="relative z-10 shrink-0">
                     <div className="w-12 h-12 rounded-full bg-blue-50 border-4 border-white shadow text-blue-600 font-bold flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">

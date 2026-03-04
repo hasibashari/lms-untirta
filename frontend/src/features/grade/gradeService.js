@@ -36,13 +36,4 @@ export const finalizeGrades = (classId) => {
   return api.patch(`/grades/class/${classId}/finalize`);
 };
 
-/**
- * [MAHASISWA] Get my finalized grades
- * @param {Object} params - { semesterId? }
- */
-export const getMyGrades = (params = {}) => {
-  const query = new URLSearchParams();
-  if (params.semesterId) query.append('semesterId', params.semesterId);
-  const qs = query.toString();
-  return api.get(`/grades/my-grades${qs ? `?${qs}` : ''}`);
-};
+

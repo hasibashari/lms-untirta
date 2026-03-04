@@ -34,7 +34,7 @@ const StudentCourseCard = ({ enrollment, onClick }) => {
   return (
     <div
       onClick={handleClick}
-      className="group cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
+      className="group cursor-pointer bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
     >
       {/* Header dengan gradient */}
       <div className={`h-24 bg-linear-to-r ${gradientClass} relative`}>

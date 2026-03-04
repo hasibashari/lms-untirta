@@ -11,23 +11,7 @@ export const getStudyResults = (semester) => {
   return api.get(`/transcript/study-results${params}`);
 };
 
-/**
- * [MAHASISWA] Get transcript by class (KrsEnrollment-based)
- * @param {Object} params - { academicSemesterId }
- */
-export const getTranscriptByClass = (params = {}) => {
-  const query = new URLSearchParams();
-  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
-  const qs = query.toString();
-  return api.get(`/transcript/by-class${qs ? `?${qs}` : ''}`);
-};
 
-/**
- * [MAHASISWA] Get combined academic summary (legacy + KRS)
- */
-export const getAcademicSummary = () => {
-  return api.get('/transcript/summary');
-};
 
 /**
  * [DOSEN, ADMIN] Get a specific student's full transcript

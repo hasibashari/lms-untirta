@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Card from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { getAdminStats } from '../../user/userService';
 
@@ -48,10 +48,10 @@ const AdminDashboard = () => {
   ];
 
   const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600',
-    emerald: 'bg-emerald-100 text-emerald-600',
-    violet: 'bg-violet-100 text-violet-600',
-    amber: 'bg-amber-100 text-amber-600',
+    blue: 'bg-primary/10 text-primary',
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+    violet: 'bg-violet-500/10 text-violet-600',
+    amber: 'bg-amber-500/10 text-amber-600',
   };
 
   return (
@@ -70,7 +70,7 @@ const AdminDashboard = () => {
         </button>
         <button
           onClick={() => navigate('/admin/courses')}
-          className="px-4 py-2 text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
         >
           Kelola Kelas
         </button>
@@ -91,17 +91,17 @@ const AdminDashboard = () => {
             <div
               key={stat.label}
               onClick={() => navigate(stat.to)}
-              className='bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-blue-300 transition cursor-pointer'
+              className='bg-card rounded-xl border border-border p-5 hover:shadow-sm hover:border-primary/50 transition cursor-pointer'
             >
               <div className='flex items-center gap-4'>
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClasses[stat.color]}`}>
                   <Icon size={24} />
                 </div>
                 <div>
-                  <p className='text-2xl font-bold text-gray-900'>
+                  <p className='text-2xl font-bold text-card-foreground'>
                     {loading ? '-' : stat.value}
                   </p>
-                  <p className='text-sm text-gray-500'>{stat.label}</p>
+                  <p className='text-sm text-muted-foreground'>{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -110,29 +110,39 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card title='Aksi Cepat'>
-        <div className='flex flex-wrap gap-2'>
-          <Button variant='secondary' onClick={() => navigate('/admin/users')}>
-            Lihat Semua Users
-          </Button>
-          <Button variant='secondary' onClick={() => navigate('/admin/users/new')}>
-            Buat User (Admin/Dosen)
-          </Button>
-          <Button variant='secondary' onClick={() => navigate('/admin/courses')}>
-            Kelola Kelas
-          </Button>
-        </div>
-        <p className='text-sm text-gray-600 mt-4'>
-          Fokus utama admin: manajemen user, pembuatan kelas, dan penugasan dosen ke kelas.
-        </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Aksi Cepat</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className='flex flex-wrap gap-2'>
+            <Button variant='secondary' onClick={() => navigate('/admin/users')}>
+              Lihat Semua Users
+            </Button>
+            <Button variant='secondary' onClick={() => navigate('/admin/users/new')}>
+              Buat User (Admin/Dosen)
+            </Button>
+            <Button variant='secondary' onClick={() => navigate('/admin/courses')}>
+              Kelola Kelas
+            </Button>
+          </div>
+          <p className='text-sm text-muted-foreground mt-4'>
+            Fokus utama admin: manajemen user, pembuatan kelas, dan penugasan dosen ke kelas.
+          </p>
+        </CardContent>
       </Card>
 
       {/* Account Card */}
-      <Card title='Akun'>
-        <p className='text-sm text-gray-700'>Halo, {user?.name}</p>
-        <button onClick={logout} className='text-red-600 hover:underline text-sm mt-3'>
-          Logout
-        </button>
+      <Card>
+        <CardHeader>
+          <CardTitle>Akun</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className='text-sm text-muted-foreground'>Halo, {user?.name}</p>
+          <button onClick={logout} className='text-destructive hover:underline text-sm mt-3'>
+            Logout
+          </button>
+        </CardContent>
       </Card>
     </div>
   );

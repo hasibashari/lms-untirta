@@ -51,9 +51,9 @@ const MahasiswaDashboard = () => {
   ];
 
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
+    blue: 'bg-primary/10 text-primary',
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+    amber: 'bg-amber-500/10 text-amber-600',
   };
 
   // Preview hanya 3 kelas terbaru
@@ -74,7 +74,7 @@ const MahasiswaDashboard = () => {
       >
         <Link
           to="/mahasiswa/classes"
-          className="px-4 py-2 text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
         >
           Lihat Kelas
         </Link>
@@ -87,7 +87,7 @@ const MahasiswaDashboard = () => {
           return (
             <div
               key={stat.label}
-              className={`bg-white rounded-2xl border p-5 hover:shadow-md transition ${stat.highlight ? 'border-amber-300 ring-1 ring-amber-100' : 'border-slate-200'
+              className={`bg-card rounded-xl border p-5 hover:shadow-sm transition ${stat.highlight ? 'border-amber-300 ring-1 ring-amber-100' : 'border-border'
                 }`}
             >
               <div className="flex items-center gap-4">
@@ -95,8 +95,8 @@ const MahasiswaDashboard = () => {
                   <Icon size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{loading ? '-' : stat.value}</p>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-card-foreground">{loading ? '-' : stat.value}</p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -108,38 +108,38 @@ const MahasiswaDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           to="/mahasiswa/study-plan"
-          className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-violet-300 hover:shadow-lg transition-all"
+          className="group flex items-center gap-4 p-5 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all"
         >
-          <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition">
+          <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center group-hover:bg-violet-500/20 transition">
             <ClipboardList size={24} className="text-violet-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900">KRS</h3>
-            <p className="text-sm text-slate-500">Ambil Mata Kuliah</p>
+            <h3 className="font-semibold text-card-foreground">KRS</h3>
+            <p className="text-sm text-muted-foreground">Ambil Mata Kuliah</p>
           </div>
-          <ArrowRight size={20} className="text-slate-400 group-hover:text-violet-600 group-hover:translate-x-1 transition-all" />
+          <ArrowRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </Link>
 
         <Link
           to="/mahasiswa/classes"
-          className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all"
+          className="group flex items-center gap-4 p-5 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all"
         >
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
-            <BookOpen size={24} className="text-blue-600" />
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition">
+            <BookOpen size={24} className="text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900">Kelas Saya</h3>
-            <p className="text-sm text-slate-500">{courses.length} kelas terdaftar</p>
+            <h3 className="font-semibold text-card-foreground">Kelas Saya</h3>
+            <p className="text-sm text-muted-foreground">{courses.length} kelas terdaftar</p>
           </div>
-          <ArrowRight size={20} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+          <ArrowRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </Link>
       </div>
 
 
       {/* Info kecil pengingat kelas */}
       <div className="mt-8">
-        <p className="text-sm text-slate-500 italic">
-          Untuk melihat daftar kelas lengkap, silakan buka menu <span className="font-semibold text-blue-600">Kelas Saya</span>.
+        <p className="text-sm text-muted-foreground italic">
+          Untuk melihat daftar kelas lengkap, silakan buka menu <span className="font-semibold text-primary">Kelas Saya</span>.
         </p>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Sparkles, CheckCircle, Users } from 'lucide-react';
 
 // Import Child Components
-import Badge from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import SearchBar from '@/components/ui/SearchBar';
 import StatsGrid from '@/components/shared/StatsGrid';
 import UserAvatars from '@/components/shared/UserAvatars';
@@ -34,7 +34,7 @@ const HeroSection = () => {
   // Handler untuk search
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log(`Mencari kursus: ${searchQuery}`);
+
     alert(`Mencari kursus: ${searchQuery}`);
   };
 
@@ -74,12 +74,10 @@ const HeroSection = () => {
           <div className="relative z-10 max-w-2xl">
 
             {/* Badge */}
-            <Badge
-              icon={Sparkles}
-              text="Platform Pembelajaran Digital #1"
-              variant="blue"
-              className="mb-6"
-            />
+            <Badge variant="outline" className="mb-6 rounded-full bg-blue-100/50 text-blue-700 border-blue-100 px-3 py-1 gap-2 text-sm font-semibold">
+              <Sparkles size={16} className="text-orange-500" />
+              <span>Platform Pembelajaran Digital #1</span>
+            </Badge>
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-6">

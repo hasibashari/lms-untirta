@@ -163,7 +163,7 @@ export default function Assignments() {
       {loading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6 animate-pulse">
+            <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-6 animate-pulse">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-3">
                   <div className="h-6 bg-slate-200 rounded w-1/3"></div>
@@ -192,7 +192,7 @@ export default function Assignments() {
 
       {/* Empty State */}
       {!loading && !error && assignments.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <ClipboardList size={32} className="text-slate-400" />
           </div>
@@ -215,7 +215,7 @@ export default function Assignments() {
 
       {/* No Search Results */}
       {!loading && !error && assignments.length > 0 && filteredAssignments.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
           </div>
@@ -281,7 +281,7 @@ function AssignmentCard({
   onDelete,
 }) {
   return (
-    <div className="group bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all overflow-hidden">
+    <div className="group bg-card rounded-xl border border-border shadow-sm hover:border-primary/50 hover:shadow-lg transition-all overflow-hidden">
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
           {/* Assignment Info */}

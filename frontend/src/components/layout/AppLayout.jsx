@@ -1,6 +1,4 @@
 import { Outlet, useLocation, Link } from 'react-router-dom';
-
-import { useAuth } from '../contexts/AuthContext';
 import {
   SidebarProvider,
   Sidebar,
@@ -14,36 +12,21 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarRail,
-  useSidebar,
-} from '../components/ui/sidebar';
-import Logo from '../components/ui/Logo';
-import ProfileDropdown from '../components/navigation/ProfileDropdown';
-import { getDashboardNavItems } from '../utils/navigation';
+} from '../ui/sidebar';
+import Logo from '../ui/Logo';
+import ProfileDropdown from '../navigation/ProfileDropdown';
 
-/**
- * SidebarLogoHeader
- * Renders inside SidebarProvider — uses useSidebar() for collapse state.
- * Full logo when expanded, icon-only when collapsed (icon mode).
- */
 const SidebarLogoHeader = () => {
-  const { state } = useSidebar();
-  const isCollapsed = state === 'collapsed';
-
   return (
     <SidebarHeader className="h-16 flex items-center justify-center px-4">
-      {isCollapsed ? (
-        <Logo variant="icon" />
-      ) : (
-        <Logo className="w-full" />
-      )}
+      <Logo className="w-full flex group-data-[collapsible=icon]:hidden transition-opacity duration-200" />
+      <Logo variant="icon" className="hidden group-data-[collapsible=icon]:flex transition-opacity duration-200" />
     </SidebarHeader>
   );
 };
 
-const DashboardLayout = () => {
-  const { user } = useAuth();
+const AppLayout = ({ navItems = [], roleLabel = 'Menu' }) => {
   const location = useLocation();
-  const navItems = getDashboardNavItems(user?.role, user);
 
   const isActive = (path) => {
     const item = navItems.find((i) => i.to === path);
@@ -59,13 +42,12 @@ const DashboardLayout = () => {
 
   return (
     <SidebarProvider>
-      {/* ── Left column: Fixed Sidebar (aside) ── */}
-      <Sidebar collapsible="icon" className="bg-white">
+      <Sidebar collapsible="icon" className="bg-sidebar border-sidebar-border">
         <SidebarLogoHeader />
 
         <SidebarContent className="pt-2">
           <SidebarGroup>
-            <SidebarGroupLabel>Menu</SidebarGroupLabel>
+            <SidebarGroupLabel>{roleLabel}</SidebarGroupLabel>
             <SidebarMenu>
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -79,7 +61,7 @@ const DashboardLayout = () => {
                     >
                       <Link to={item.to}>
                         {Icon && <Icon />}
-                        <span>{item.label}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -92,17 +74,14 @@ const DashboardLayout = () => {
         <SidebarRail />
       </Sidebar>
 
-      {/* ── Right column: Main content area ── */}
-      <SidebarInset className="bg-slate-50">
-        {/* Topbar — inside SidebarInset so it never covers the sidebar */}
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 bg-white/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-white/60 px-4">
-          <SidebarTrigger className="-ml-1 text-slate-500 hover:text-slate-900" />
-          <div className="ml-auto">
+      <SidebarInset className="bg-background min-h-screen">
+        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 bg-background/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/60 px-4">
+          <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+          <div className="ml-auto flex items-center gap-4">
             <ProfileDropdown />
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 w-full p-6 lg:p-8">
           <Outlet />
         </main>
@@ -111,4 +90,4 @@ const DashboardLayout = () => {
   );
 };
 
-export default DashboardLayout;
+export default AppLayout;

@@ -410,7 +410,7 @@ export default function Submissions() {
 
           {/* Empty State */}
           {!loading && !error && assignments.length === 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                 <FileText size={32} className="text-slate-400" />
               </div>
@@ -436,7 +436,7 @@ export default function Submissions() {
                 <button
                   key={assignment.id}
                   onClick={() => navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/submissions`)}
-                  className="w-full text-left bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg p-5 transition-all group"
+                  className="w-full text-left bg-white rounded-xl border border-slate-200 hover:border-primary/50 hover:shadow-lg p-5 transition-all group"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -563,7 +563,7 @@ export default function Submissions() {
 
           {/* Empty State */}
           {!loading && !error && submissions.length === 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                 <Users size={32} className="text-slate-400" />
               </div>
@@ -594,7 +594,7 @@ export default function Submissions() {
 
           {/* No Search Results */}
           {!loading && !error && submissions.length > 0 && filteredSubmissions.length === 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                 <Search size={32} className="text-slate-400" />
               </div>
@@ -812,7 +812,7 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
                     onClick={() => setGrade(q)}
                     className={`px-2.5 py-1 text-xs rounded-lg font-medium transition ${grade === q
                       ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:border-primary/50 hover:bg-blue-50'
                       }`}
                   >
                     {q}

@@ -5,11 +5,12 @@ import { Mail, Lock, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // UI components
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
-import Divider from '@/components/ui/Divider';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import Checkbox from '@/components/ui/Checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 import NavLink from '@/components/ui/NavLink';
 
 export default function Login() {
@@ -64,11 +65,11 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    console.log('Google Login clicked');
+
   };
 
   const handleFacebookLogin = () => {
-    console.log('Facebook Login clicked');
+
   };
 
   return (
@@ -89,33 +90,56 @@ export default function Login() {
           </p>
         )}
 
-        <Input
-          label="Email Institusi / Pribadi"
-          type="email"
-          placeholder="nama@untirta.ac.id"
-          icon={Mail}
-          value={formData.email}
-          onChange={(e) => handleChange(e, 'email')}
-        />
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email Institusi / Pribadi</Label>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <Input
+              id="email"
+              type="email"
+              placeholder="nama@untirta.ac.id"
+              className="pl-10"
+              value={formData.email}
+              onChange={(e) => handleChange(e, 'email')}
+            />
+          </div>
+        </div>
 
         <div>
-          <Input
-            label="Password"
-            isPassword={true}
-            placeholder="Masukkan password Anda"
-            icon={Lock}
-            value={formData.password}
-            onChange={(e) => handleChange(e, 'password')}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Masukkan password Anda"
+                className="pl-10"
+                value={formData.password}
+                onChange={(e) => handleChange(e, 'password')}
+              />
+            </div>
+          </div>
 
           {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between mt-4">
-            <Checkbox
-              id="remember-me"
-              label="Ingat saya"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember-me"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked)}
+              />
+              <label
+                htmlFor="remember-me"
+                className="text-sm font-medium leading-none cursor-pointer text-gray-700"
+              >
+                Ingat saya
+              </label>
+            </div>
 
             <div className="text-sm">
               <a
@@ -135,7 +159,16 @@ export default function Login() {
       </form>
 
       {/* Divider */}
-      <Divider text="Atau masuk dengan" className="my-8" />
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-slate-50 px-2 text-muted-foreground">
+            Atau masuk dengan
+          </span>
+        </div>
+      </div>
 
       {/* Social Login */}
       <SocialLoginButtons

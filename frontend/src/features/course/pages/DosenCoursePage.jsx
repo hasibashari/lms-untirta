@@ -162,7 +162,7 @@ export default function CourseHome() {
       bg: 'bg-blue-50',
       bgHover: 'group-hover:bg-blue-100',
       text: 'text-blue-600',
-      border: 'hover:border-blue-300',
+      border: 'hover:border-primary/50',
     },
     emerald: {
       bg: 'bg-emerald-50',
@@ -260,7 +260,7 @@ export default function CourseHome() {
             return (
               <div
                 key={action.title}
-                className={`group bg-white rounded-2xl border border-slate-200 ${colors.border} hover:shadow-lg transition-all overflow-hidden`}
+                className={`group bg-card rounded-xl border border-border shadow-sm ${colors.border} hover:shadow-lg transition-all overflow-hidden`}
               >
                 <Link
                   to={action.to}
@@ -296,7 +296,7 @@ export default function CourseHome() {
 
       {/* Recent Materials Preview */}
       {materials.length > 0 && (
-        <section className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Materi Terbaru</h2>
@@ -348,7 +348,7 @@ export default function CourseHome() {
 
       {/* Empty State for New Course */}
       {materials.length === 0 && assignments.length === 0 && (
-        <section className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+        <section className="bg-card rounded-xl border border-border shadow-sm p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <FileText size={32} className="text-slate-400" />
           </div>

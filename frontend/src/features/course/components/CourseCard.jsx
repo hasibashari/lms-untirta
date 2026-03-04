@@ -17,15 +17,15 @@ import CourseFooter from './CourseFooter';
 const CourseCard = ({ course }) => {
   const handleWishlist = (e) => {
     e.stopPropagation();
-    console.log('Wishlist clicked:', course.id);
+
   };
 
   const handleDetailClick = () => {
-    console.log('Detail clicked:', course.id);
+
   };
 
   return (
-    <div className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full">
+    <div className="group flex flex-col bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full">
 
       {/* 1. Thumbnail Section */}
       <CourseThumbnail

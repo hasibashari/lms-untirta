@@ -200,7 +200,7 @@ export default function CreateAssignment() {
           )}
 
           {/* Main Form Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <div className="p-6 space-y-6">
               {/* Title Input */}
               <div>
@@ -332,7 +332,7 @@ function AssignmentPreview({ title, description, dueDate }) {
       </div>
 
       {/* Assignment Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm shadow-sm overflow-hidden">
         {/* Header Section */}
         <div className="bg-linear-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
           <div className="flex items-start justify-between">

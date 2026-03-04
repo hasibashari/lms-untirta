@@ -70,10 +70,10 @@ export default function Dashboard() {
   ];
 
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 group-hover:bg-blue-100',
-    emerald: 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100',
-    violet: 'bg-violet-50 text-violet-600 group-hover:bg-violet-100',
-    amber: 'bg-amber-50 text-amber-600 group-hover:bg-amber-100',
+    blue: 'bg-primary/10 text-primary group-hover:bg-primary/20',
+    emerald: 'bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500/20',
+    violet: 'bg-violet-500/10 text-violet-600 group-hover:bg-violet-500/20',
+    amber: 'bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20',
   };
 
   // Preview hanya 3 kelas terbaru
@@ -111,7 +111,7 @@ export default function Dashboard() {
       >
         <Link
           to="/dosen/classes"
-          className="px-4 py-2 text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
         >
           Lihat Kelas
         </Link>
@@ -125,7 +125,7 @@ export default function Dashboard() {
             <Link
               key={stat.label}
               to={stat.to}
-              className={`group bg-white rounded-2xl border p-5 hover:shadow-md transition-all ${stat.highlight ? 'border-amber-300 ring-1 ring-amber-100' : 'border-slate-200 hover:border-blue-300'
+              className={`group bg-card rounded-xl border p-5 hover:shadow-sm transition-all ${stat.highlight ? 'border-amber-300 ring-1 ring-amber-100' : 'border-border hover:border-primary/50'
                 }`}
             >
               <div className="flex items-center gap-4">
@@ -133,8 +133,8 @@ export default function Dashboard() {
                   <Icon size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{loading ? '-' : stat.value}</p>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-card-foreground">{loading ? '-' : stat.value}</p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
               {stat.highlight && stat.value > 0 && (
@@ -152,61 +152,61 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link
           to="/dosen/classes"
-          className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all"
+          className="group flex items-center gap-4 p-5 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all"
         >
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
-            <BookOpen size={24} className="text-blue-600" />
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition">
+            <BookOpen size={24} className="text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900">Kelas Saya</h3>
-            <p className="text-sm text-slate-500">{courses.length} kelas diampu</p>
+            <h3 className="font-semibold text-card-foreground">Kelas Saya</h3>
+            <p className="text-sm text-muted-foreground">{courses.length} kelas diampu</p>
           </div>
-          <ArrowRight size={20} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+          <ArrowRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </Link>
 
         <Link
           to="/dosen/submissions"
-          className={`group flex items-center gap-4 p-5 rounded-2xl border transition-all ${(stats?.pendingGrading || 0) > 0
-            ? 'bg-amber-50 border-amber-200 hover:border-amber-300 hover:shadow-lg'
-            : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'
+          className={`group flex items-center gap-4 p-5 rounded-xl border transition-all ${(stats?.pendingGrading || 0) > 0
+            ? 'bg-amber-50 border-amber-200 hover:border-amber-300 hover:shadow-sm'
+            : 'bg-card border-border hover:border-emerald-500/50 hover:shadow-sm'
             }`}
         >
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${(stats?.pendingGrading || 0) > 0
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition ${(stats?.pendingGrading || 0) > 0
             ? 'bg-amber-100 group-hover:bg-amber-200'
-            : 'bg-emerald-50 group-hover:bg-emerald-100'
+            : 'bg-emerald-500/10 group-hover:bg-emerald-500/20'
             }`}>
             <Inbox size={24} className={(stats?.pendingGrading || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'} />
           </div>
           <div className="flex-1">
-            <h3 className={`font-semibold ${(stats?.pendingGrading || 0) > 0 ? 'text-amber-900' : 'text-slate-900'}`}>
+            <h3 className={`font-semibold ${(stats?.pendingGrading || 0) > 0 ? 'text-amber-900' : 'text-card-foreground'}`}>
               Submissions
             </h3>
-            <p className={`text-sm ${(stats?.pendingGrading || 0) > 0 ? 'text-amber-700' : 'text-slate-500'}`}>
+            <p className={`text-sm ${(stats?.pendingGrading || 0) > 0 ? 'text-amber-700' : 'text-muted-foreground'}`}>
               {(stats?.pendingGrading || 0) > 0 ? `${stats.pendingGrading} perlu dinilai` : 'Semua sudah dinilai'}
             </p>
           </div>
-          <ArrowRight size={20} className={`transition-all group-hover:translate-x-1 ${(stats?.pendingGrading || 0) > 0 ? 'text-amber-400 group-hover:text-amber-600' : 'text-slate-400 group-hover:text-emerald-600'
+          <ArrowRight size={20} className={`transition-all group-hover:translate-x-1 ${(stats?.pendingGrading || 0) > 0 ? 'text-amber-400 group-hover:text-amber-600' : 'text-muted-foreground group-hover:text-emerald-600'
             }`} />
         </Link>
 
         {stats?.recentSubmissions > 0 ? (
-          <div className="flex items-center gap-4 p-5 bg-blue-50 rounded-2xl border border-blue-200">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-              <Bell size={24} className="text-blue-600" />
+          <div className="flex items-center gap-4 p-5 bg-primary/5 rounded-xl border border-primary/20">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Bell size={24} className="text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-blue-900">Submissions Baru</h3>
-              <p className="text-sm text-blue-700">{stats.recentSubmissions} dalam 7 hari terakhir</p>
+              <h3 className="font-semibold text-primary">Submissions Baru</h3>
+              <p className="text-sm text-primary/80">{stats.recentSubmissions} dalam 7 hari terakhir</p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
-              <Clock size={24} className="text-slate-400" />
+          <div className="flex items-center gap-4 p-5 bg-card rounded-xl border border-border">
+            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+              <Clock size={24} className="text-muted-foreground" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-slate-500">Tidak Ada Baru</h3>
-              <p className="text-sm text-slate-400">Belum ada submission</p>
+              <h3 className="font-semibold text-muted-foreground">Tidak Ada Baru</h3>
+              <p className="text-sm text-muted-foreground/80">Belum ada submission</p>
             </div>
           </div>
         )}
@@ -214,62 +214,62 @@ export default function Dashboard() {
 
       {/* Recent Submissions - Notifikasi */}
       {recentSubmissions.length > 0 && (
-        <section className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <section className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="p-5 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Inbox size={20} className="text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Inbox size={20} className="text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold text-slate-900">Submissions Terbaru</h2>
-                <p className="text-sm text-slate-500">Tugas yang baru dikumpulkan mahasiswa</p>
+                <h2 className="font-semibold text-card-foreground">Submissions Terbaru</h2>
+                <p className="text-sm text-muted-foreground">Tugas yang baru dikumpulkan mahasiswa</p>
               </div>
             </div>
             <Link
               to="/dosen/submissions"
-              className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
+              className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
             >
               Lihat Semua
               <ArrowRight size={14} />
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {recentSubmissions.map((submission) => (
               <Link
                 key={submission.id}
                 to={`/dosen/courses/${submission.courseId}/assignments/${submission.assignmentId}/submissions`}
-                className="flex items-center gap-4 p-4 hover:bg-slate-50 transition"
+                className="flex items-center gap-4 p-4 hover:bg-muted/50 transition"
               >
                 {/* Avatar placeholder */}
-                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-medium">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium">
                   {submission.studentName?.charAt(0)?.toUpperCase() || '?'}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-slate-900 truncate">{submission.studentName}</p>
+                    <p className="font-medium text-card-foreground truncate">{submission.studentName}</p>
                     {!submission.isGraded && (
-                      <span className="shrink-0 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                      <span className="shrink-0 px-2 py-0.5 bg-amber-500/10 text-amber-700 text-xs font-medium rounded-full">
                         Belum Dinilai
                       </span>
                     )}
                     {submission.isGraded && (
-                      <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                      <span className="shrink-0 px-2 py-0.5 bg-emerald-500/10 text-emerald-700 text-xs font-medium rounded-full flex items-center gap-1">
                         <CheckCircle size={10} />
                         {submission.grade}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-slate-500 truncate">
+                  <p className="text-sm text-muted-foreground truncate">
                     {submission.assignmentTitle} • {submission.courseName}
                   </p>
                 </div>
 
                 {/* Time */}
                 <div className="shrink-0 text-right">
-                  <p className="text-xs text-slate-400">{formatRelativeTime(submission.submittedAt)}</p>
+                  <p className="text-xs text-muted-foreground/80">{formatRelativeTime(submission.submittedAt)}</p>
                 </div>
               </Link>
             ))}

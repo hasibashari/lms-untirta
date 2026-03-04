@@ -24,16 +24,6 @@ export const getMyKRS = (params = {}) => {
   return api.get(`/krs/my-plan${qs ? `?${qs}` : ''}`);
 };
 
-/**
- * [MAHASISWA] Get SKS eligibility info (IPK → max SKS)
- * @param {Object} params - { academicSemesterId }
- */
-export const getSksEligibility = (params = {}) => {
-  const query = new URLSearchParams();
-  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
-  const qs = query.toString();
-  return api.get(`/krs/sks-eligibility${qs ? `?${qs}` : ''}`);
-};
 
 /**
  * [MAHASISWA] Enroll in a class offering
@@ -59,13 +49,6 @@ export const reviseEnrollment = (enrollmentId) => {
   return api.patch(`/krs/${enrollmentId}/revise`);
 };
 
-/**
- * [ALL] Get approval history for a KRS enrollment
- * @param {string} enrollmentId - UUID of the KRS enrollment
- */
-export const getApprovalHistory = (enrollmentId) => {
-  return api.get(`/krs/${enrollmentId}/history`);
-};
 
 // ========== Dospem Advisory Endpoints ==========
 
@@ -121,12 +104,4 @@ export const getKrsMonitoring = (params = {}) => {
   return api.get(`/krs/monitoring${qs ? `?${qs}` : ''}`);
 };
 
-/**
- * [ADMIN] Get pending KRS (monitoring)
- */
-export const getPendingKRS = (params = {}) => {
-  const query = new URLSearchParams();
-  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
-  const qs = query.toString();
-  return api.get(`/krs/pending${qs ? `?${qs}` : ''}`);
-};
+

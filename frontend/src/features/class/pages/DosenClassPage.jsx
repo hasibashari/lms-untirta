@@ -116,7 +116,7 @@ const MyClasses = () => {
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
+            <div key={i} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden animate-pulse">
               <div className="h-24 bg-slate-200"></div>
               <div className="p-5 space-y-3">
                 <div className="h-5 bg-slate-200 rounded w-3/4"></div>
@@ -143,7 +143,7 @@ const MyClasses = () => {
 
       {/* Empty State */}
       {!loading && !error && courses.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <BookOpen size={32} className="text-slate-400" />
           </div>
@@ -159,7 +159,7 @@ const MyClasses = () => {
 
       {/* No Search Results */}
       {!loading && !error && courses.length > 0 && filteredCourses.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
           </div>
@@ -185,7 +185,7 @@ const MyClasses = () => {
             <div
               key={course.id}
               onClick={() => navigate(`/dosen/courses/${course.id}`)}
-              className="group cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all"
+              className="group cursor-pointer bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all"
               role="button"
               tabIndex={0}
               onKeyDown={e => {

@@ -1,16 +1,16 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   Loader2, AlertCircle, Calendar, Plus,
   ChevronRight, Trash2, ArrowRight,
 } from 'lucide-react';
 import {
-  getAllSemesters,
-  createSemester,
-  updateSemesterStatus,
-  deleteSemester,
-  getClosingReadiness,
-} from '../../academic/academicService';
+  useSemesters,
+  useClosingReadiness,
+  useCreateSemester,
+  useUpdateSemesterStatus,
+  useDeleteSemester
+} from '../hooks/useAcademic';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { Button } from '@/components/ui/button';
 
@@ -34,65 +34,45 @@ const ALLOWED_TRANSITIONS = {
 };
 
 const AdminAcademicPage = () => {
-  const [semesters, setSemesters] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  // Create form state
+  const { data: semesters = [], isLoading: loading, error: fetchError, refetch: fetchData } = useSemesters();
+  const error = fetchError?.message;
+
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
     academicYear: '',
     semesterType: 'GANJIL',
     maxSks: 24,
   });
-  const [creating, setCreating] = useState(false);
+
+  const { mutateAsync: createSem, isPending: creating } = useCreateSemester();
+  const { mutateAsync: updateStatus } = useUpdateSemesterStatus();
+  const { mutateAsync: deleteSem } = useDeleteSemester();
+
   const [processingId, setProcessingId] = useState(null);
 
   // Transition confirmation modal
   const [transitionModal, setTransitionModal] = useState(null);
-  // { semesterId, semesterLabel, fromStatus, toStatus }
   const [transitionSubmitting, setTransitionSubmitting] = useState(false);
 
-  // Closing readiness pre-flight check
-  const [readinessData, setReadinessData] = useState(null);
-  const [readinessLoading, setReadinessLoading] = useState(false);
-  const [readinessError, setReadinessError] = useState(null);
+  // Use the hook for readiness data, enabled only when targetStatus === 'CLOSED'
+  const readinessQueryId = transitionModal?.toStatus === 'CLOSED' ? transitionModal?.semesterId : null;
+  const { data: readinessData, isLoading: readinessLoading, error: readinessErrorData, refetch: refetchReadiness } = useClosingReadiness(readinessQueryId);
+  const readinessError = readinessErrorData?.message;
 
   const showToast = (msg, type = 'success') => {
     type === 'error' ? toast.error(msg) : toast.success(msg);
   };
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await getAllSemesters();
-      setSemesters(res.data || []);
-    } catch (err) {
-      setError(err?.message || 'Gagal memuat data semester');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   // Create semester
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!createForm.academicYear) return;
-    setCreating(true);
     try {
-      await createSemester(createForm);
-      showToast(`Semester ${createForm.semesterType} ${createForm.academicYear} berhasil dibuat`);
+      await createSem(createForm);
       setShowCreate(false);
       setCreateForm({ academicYear: '', semesterType: 'GANJIL', maxSks: 24 });
-      fetchData();
     } catch (err) {
-      showToast(err?.message || 'Gagal membuat semester', 'error');
-    } finally {
-      setCreating(false);
+      // Error is handled in hook onError
     }
   };
 
@@ -108,23 +88,6 @@ const AdminAcademicPage = () => {
       fromStatus: sem.status,
       toStatus: targetStatus,
     });
-    setReadinessData(null);
-    setReadinessError(null);
-
-    // Pre-flight: fetch closing readiness when targeting CLOSED
-    if (targetStatus === 'CLOSED') {
-      setReadinessLoading(true);
-      getClosingReadiness(sem.id)
-        .then((res) => {
-          setReadinessData(res.data || res);
-        })
-        .catch((err) => {
-          setReadinessError(err?.response?.data?.message || err?.message || 'Gagal memuat data kesiapan');
-        })
-        .finally(() => {
-          setReadinessLoading(false);
-        });
-    }
   };
 
   // Execute status transition
@@ -134,23 +97,14 @@ const AdminAcademicPage = () => {
 
     setTransitionSubmitting(true);
     try {
-      await updateSemesterStatus(semesterId, toStatus);
-      showToast(`Status semester berhasil diubah ke ${toStatus}`);
+      await updateStatus({ id: semesterId, status: toStatus });
       setTransitionModal(null);
-      setReadinessData(null);
-      fetchData();
     } catch (err) {
       const responseData = err?.response?.data;
       if (responseData?.code === 'GRADE_COMPLETION_REQUIRED') {
         showToast(responseData.message, 'error');
         // Refresh readiness data
-        if (transitionModal?.semesterId) {
-          setReadinessLoading(true);
-          getClosingReadiness(transitionModal.semesterId)
-            .then((res) => setReadinessData(res.data || res))
-            .catch(() => showToast('Gagal memuat data kesiapan penutupan', 'error'))
-            .finally(() => setReadinessLoading(false));
-        }
+        refetchReadiness();
       } else {
         showToast(responseData?.message || err?.message || 'Gagal mengubah status', 'error');
       }
@@ -164,11 +118,9 @@ const AdminAcademicPage = () => {
     if (!confirm('Yakin hapus semester ini?')) return;
     setProcessingId(id);
     try {
-      await deleteSemester(id);
-      showToast('Semester berhasil dihapus');
-      fetchData();
+      await deleteSem(id);
     } catch (err) {
-      showToast(err?.message || 'Gagal menghapus semester', 'error');
+      // handled by hook
     } finally {
       setProcessingId(null);
     }

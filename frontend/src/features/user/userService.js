@@ -18,9 +18,7 @@ export const getDosen = async () => {
   return api.get('/users?role=DOSEN');
 };
 
-export const getMahasiswa = async () => {
-  return api.get('/users?role=MAHASISWA');
-};
+
 
 // ========== Dospem Management (Admin) ==========
 
@@ -40,9 +38,7 @@ export const getAdvisorSummary = () => {
   return api.get('/users/advisor-summary');
 };
 
-export const getAdvisorStudents = (dosenId) => {
-  return api.get(`/users/advisors/${dosenId}/students`);
-};
+
 
 // ========== Admin Dashboard Stats ==========
 

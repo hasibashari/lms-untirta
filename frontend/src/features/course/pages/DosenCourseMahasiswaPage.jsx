@@ -130,7 +130,7 @@ export default function Students() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse">
+            <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5 animate-pulse">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
                 <div className="flex-1 space-y-2">
@@ -158,7 +158,7 @@ export default function Students() {
 
       {/* Empty State */}
       {!loading && !error && students.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Users size={32} className="text-slate-400" />
           </div>
@@ -173,7 +173,7 @@ export default function Students() {
 
       {/* No Search Results */}
       {!loading && !error && students.length > 0 && filteredStudents.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
           </div>
@@ -231,7 +231,7 @@ function StudentCard({ student, formatDate }) {
     : '??';
 
   return (
-    <div className="group bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all overflow-hidden">
+    <div className="group bg-card rounded-xl border border-border shadow-sm hover:border-primary/50 hover:shadow-lg transition-all overflow-hidden">
       <div className="flex items-center gap-4 p-5">
         {/* Avatar */}
         <div className={`shrink-0 w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold`}>

@@ -2,11 +2,11 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 // Layouts
-import PublicLayout from '../layouts/PublicLayout';
-import AuthLayout from '../layouts/AuthLayout';
-import DashboardLayout from '../layouts/DashboardLayout';
-import StudentLayout from '../layouts/StudentLayout';
-import LearningLayout from '../layouts/LearningLayout';
+import PublicLayout from '../components/layouts/PublicLayout';
+import AuthLayout from '../components/layouts/AuthLayout';
+import DashboardLayout from '../components/layouts/DashboardLayout';
+import StudentLayout from '../components/layouts/StudentLayout';
+import LearningLayout from '../components/layouts/LearningLayout';
 
 // Route guards
 import ProtectedRoute from './ProtectedRoute';
@@ -79,11 +79,15 @@ const MahasiswaAssignmentDetail = lazy(() => import('../features/assignment/page
 const MahasiswaGrades = lazy(() => import('../features/assignment/pages/MahasiswaGradesPage'));
 
 // Suspense wrapper for lazy-loaded pages
-const Lazy = ({ component: Component }) => (
-  <Suspense fallback={<PageLoader />}>
-    <Component />
-  </Suspense>
-);
+const Lazy = (props) => {
+  const C = props.component;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <C />
+    </Suspense>
+  );
+};
+
 
 function AppRoutes() {
   return (

@@ -3,7 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { getUsers } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
-import Card from '../../../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -15,8 +17,6 @@ export default function Users() {
   const flash = location.state?.flash;
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     getUsers()
       .then(res => setUsers(res.data))
       .catch(err => setError(err))
@@ -33,11 +33,11 @@ export default function Users() {
     return role || '-';
   };
 
-  const rolePillClass = role => {
-    if (role === 'ADMIN') return 'bg-gray-900 text-white';
-    if (role === 'DOSEN') return 'bg-blue-100 text-blue-700';
-    if (role === 'MAHASISWA') return 'bg-green-100 text-green-700';
-    return 'bg-gray-100 text-gray-700';
+  const roleVariant = role => {
+    if (role === 'ADMIN') return 'default';
+    if (role === 'DOSEN') return 'secondary';
+    if (role === 'MAHASISWA') return 'outline';
+    return 'outline';
   };
 
   return (
@@ -70,43 +70,43 @@ export default function Users() {
       {error && <p className='text-red-600'>{errorMessage(error)}</p>}
 
       {!loading && !error && users.length === 0 && (
-        <Card title='Belum ada user'>
-          <p className='text-sm text-gray-600'>Mulai dengan membuat Admin/Dosen.</p>
-          <div className='mt-3'>
-            <Button onClick={() => navigate('/admin/users/new')}>Buat User</Button>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Belum ada user</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='text-sm text-gray-600'>Mulai dengan membuat Admin/Dosen.</p>
+            <div className='mt-3'>
+              <Button onClick={() => navigate('/admin/users/new')}>Buat User</Button>
+            </div>
+          </CardContent>
         </Card>
       )}
 
       {!loading && !error && users.length > 0 && (
         <div className='overflow-x-auto bg-white rounded shadow'>
-          <table className='w-full'>
-            <thead className='bg-gray-100 text-sm'>
-              <tr>
-                <th className='p-3 text-left'>Nama</th>
-                <th className='p-3 text-left'>Email</th>
-                <th className='p-3 text-left'>Role</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader className='bg-gray-100 text-sm hover:bg-gray-100'>
+              <TableRow>
+                <TableHead>Nama</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map(u => (
-                <tr key={u.id} className='border-t text-sm'>
-                  <td className='p-3'>{u.name}</td>
-                  <td className='p-3 text-gray-700'>{u.email}</td>
-                  <td className='p-3'>
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${rolePillClass(
-                        u.role
-                      )}`}
-                      title='Role menentukan akses menu dan fitur'
-                    >
+                <TableRow key={u.id} className='text-sm'>
+                  <TableCell className="font-medium">{u.name}</TableCell>
+                  <TableCell className='text-gray-700'>{u.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={roleVariant(u.role)} title='Role menentukan akses menu dan fitur'>
                       {roleLabel(u.role)}
-                    </span>
-                  </td>
-                </tr>
+                    </Badge>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

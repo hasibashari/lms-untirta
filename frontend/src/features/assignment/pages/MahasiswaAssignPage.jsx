@@ -182,7 +182,7 @@ export default function Assignments() {
                   ? 'border-red-200 hover:border-red-300'
                   : isSubmitted
                     ? 'border-green-200 hover:border-green-300'
-                    : 'border-gray-100 hover:border-blue-200'
+                    : 'border-gray-100 hover:border-primary/50'
                   }`}
               >
                 <div className="flex items-start justify-between gap-4">

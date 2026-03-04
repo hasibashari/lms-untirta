@@ -1,5 +1,5 @@
-import { LayoutDashboard, Users, BookOpen, Inbox, FileCheck, GraduationCap, Calendar, UserCheck, Layers } from 'lucide-react';
-import { ROLES } from './constants';
+import { LayoutDashboard, Users, BookOpen, Inbox, FileCheck, GraduationCap, Calendar, UserCheck, Layers, Award, FileText } from 'lucide-react';
+import { ROLES } from '../utils/constants';
 
 const ADMIN_NAV_ITEMS = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard, exact: true },
@@ -25,12 +25,21 @@ const DOSEN_DOSPEM_NAV_ITEMS = [
   { label: 'Submissions', to: '/dosen/submissions', icon: Inbox },
 ];
 
+const MAHASISWA_NAV_ITEMS = [
+  { label: 'Dashboard', to: '/mahasiswa/dashboard', icon: LayoutDashboard, exact: true },
+  { label: 'Kelas Saya', to: '/mahasiswa/classes', icon: BookOpen },
+  { label: 'Nilai Saya', to: '/mahasiswa/grades', icon: Award, description: 'Daftar Nilai Tugas' },
+  { label: 'Rencana Studi', to: '/mahasiswa/study-plan', icon: FileText, description: 'Kartu Rencana Studi' },
+  { label: 'Hasil Studi', to: '/mahasiswa/study-result', icon: GraduationCap, description: 'Transkrip Nilai' },
+];
+
 const NAV_MAP = {
   [ROLES.ADMIN]: ADMIN_NAV_ITEMS,
   [ROLES.DOSEN]: DOSEN_NAV_ITEMS,
+  [ROLES.MAHASISWA]: MAHASISWA_NAV_ITEMS,
 };
 
-export const getDashboardNavItems = (role, user = null) => {
+export const getNavItems = (role, user = null) => {
   if (role === ROLES.DOSEN && user?.isDospem) {
     return DOSEN_DOSPEM_NAV_ITEMS;
   }

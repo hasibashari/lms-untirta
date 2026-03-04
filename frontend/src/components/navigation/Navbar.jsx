@@ -5,8 +5,6 @@ import { Link } from 'react-router-dom';
 // Import Child Components
 import Logo from '../ui/Logo';
 import { Button } from '../ui/button';
-import DesktopNav from './DesktopNav';
-import MobileMenu from './MobileMenu';
 import ProfileDropdown from './ProfileDropdown';
 
 // Import Auth Context
@@ -54,11 +52,23 @@ const Navbar = () => {
 
           {/* Middle Section: Navigation Links (Desktop) */}
           <div className="flex-1 flex justify-center">
-            <DesktopNav
-              navLinks={NAV_LINKS}
-              isAuthenticated={isAuthenticated}
-              user={user}
-            />
+            <div className="hidden md:flex space-x-8">
+              {NAV_LINKS.map((link) => {
+                if (link.requiresAuth && !isAuthenticated) return null;
+                if (link.external) {
+                  return (
+                    <a key={link.name} href={link.to} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                      {link.name}
+                    </a>
+                  );
+                }
+                return (
+                  <Link key={link.name} to={link.to} className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           {/* Right Section: Action Button (Desktop) & Hamburger (Mobile) */}
@@ -88,12 +98,27 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Menu Dropdown */}
-        <MobileMenu
-          isOpen={isMobileMenuOpen}
-          setIsOpen={setIsMobileMenuOpen}
-          navLinks={NAV_LINKS}
-          isAuthenticated={isAuthenticated}
-        />
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-100 bg-white shadow-lg">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              {NAV_LINKS.map((link) => {
+                if (link.requiresAuth && !isAuthenticated) return null;
+                if (link.external) {
+                  return (
+                    <a key={link.name} href={link.to} target="_blank" rel="noopener noreferrer" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors">
+                      {link.name}
+                    </a>
+                  );
+                }
+                return (
+                  <Link key={link.name} to={link.to} onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors">
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );

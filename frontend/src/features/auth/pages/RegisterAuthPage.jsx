@@ -5,11 +5,12 @@ import { User, Mail, Lock } from 'lucide-react';
 import { register as registerAPI } from '../authService';
 
 // UI components
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
-import Divider from '@/components/ui/Divider';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import Checkbox from '@/components/ui/Checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 import NavLink from '@/components/ui/NavLink';
 
 export default function Register() {
@@ -69,11 +70,11 @@ export default function Register() {
   };
 
   const handleGoogleRegister = () => {
-    console.log('Google Register clicked');
+
   };
 
   const handleFacebookRegister = () => {
-    console.log('Facebook Register clicked');
+
   };
 
   return (
@@ -94,59 +95,91 @@ export default function Register() {
           </p>
         )}
 
-        <Input
-          label="Nama Lengkap"
-          type="text"
-          placeholder="Contoh: Budi Santoso"
-          icon={User}
-          value={formData.fullName}
-          onChange={(e) => handleChange(e, 'fullName')}
-        />
+        <div className="space-y-1.5">
+          <Label htmlFor="fullName">Nama Lengkap</Label>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <User className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Contoh: Budi Santoso"
+              className="pl-10"
+              value={formData.fullName}
+              onChange={(e) => handleChange(e, 'fullName')}
+            />
+          </div>
+        </div>
 
-        <Input
-          label="Alamat Email"
-          type="email"
-          placeholder="nama@untirta.ac.id"
-          icon={Mail}
-          value={formData.email}
-          onChange={(e) => handleChange(e, 'email')}
-        />
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Alamat Email</Label>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <Input
+              id="email"
+              type="email"
+              placeholder="nama@untirta.ac.id"
+              className="pl-10"
+              value={formData.email}
+              onChange={(e) => handleChange(e, 'email')}
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Input
-            label="Password"
-            isPassword={true}
-            placeholder="Minimal 8 karakter"
-            icon={Lock}
-            value={formData.password}
-            onChange={(e) => handleChange(e, 'password')}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Minimal 8 karakter"
+                className="pl-10"
+                value={formData.password}
+                onChange={(e) => handleChange(e, 'password')}
+              />
+            </div>
+          </div>
 
-          <Input
-            label="Konfirmasi Password"
-            isPassword={true}
-            placeholder="Ulangi password"
-            icon={Lock}
-            value={formData.confirmPassword}
-            onChange={(e) => handleChange(e, 'confirmPassword')}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+              </div>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Ulangi password"
+                className="pl-10"
+                value={formData.confirmPassword}
+                onChange={(e) => handleChange(e, 'confirmPassword')}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Terms Checkbox */}
-        <Checkbox
-          checked={agreedToTerms}
-          onChange={(e) => setAgreedToTerms(e.target.checked)}
-          required={true}
-          label={
-            <span className="text-sm text-gray-600">
-              Saya menyetujui{' '}
-              <a href="/terms" className="text-primary-600 hover:text-primary-700 font-medium">
-                Syarat & Ketentuan
-              </a>{' '}
-              yang berlaku
-            </span>
-          }
-        />
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="terms"
+            checked={agreedToTerms}
+            onCheckedChange={(checked) => setAgreedToTerms(checked)}
+            required={true}
+          />
+          <label
+            htmlFor="terms"
+            className="text-sm font-medium leading-none cursor-pointer text-gray-700 hover:text-gray-900"
+          >
+            Saya menyetujui <a href="/terms" className="text-primary-600 hover:text-primary-700 font-medium">Syarat & Ketentuan</a> yang berlaku
+          </label>
+        </div>
 
         {/* Submit Button */}
         <Button type="submit" loading={isLoading} showArrow fullWidth variant="default" className="mt-6 py-3">
@@ -155,7 +188,16 @@ export default function Register() {
       </form>
 
       {/* Divider */}
-      <Divider text="Atau daftar dengan" className="my-8" />
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-slate-50 px-2 text-muted-foreground">
+            Atau daftar dengan
+          </span>
+        </div>
+      </div>
 
       {/* Social Login */}
       <SocialLoginButtons

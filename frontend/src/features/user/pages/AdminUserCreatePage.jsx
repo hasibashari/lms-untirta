@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { createUser } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
-import Input from '../../../components/ui/Input';
-import Card from '../../../components/ui/Card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function CreateUser() {
   const navigate = useNavigate();
@@ -64,66 +65,77 @@ export default function CreateUser() {
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          {error && (
-            <p className='text-sm text-red-600'>{errorMessage(error)}</p>
-          )}
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className='space-y-4'>
+            {error && (
+              <p className='text-sm text-red-600'>{errorMessage(error)}</p>
+            )}
 
-          <Input
-            label='Nama'
-            name='name'
-            placeholder='Nama lengkap'
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Nama <span className="text-red-500">*</span></Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Nama lengkap"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <Input
-            label='Email'
-            name='email'
-            placeholder='email@kampus.ac.id'
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Input
+                id="email"
+                name="email"
+                placeholder="email@kampus.ac.id"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className='space-y-1'>
-            <label className='text-sm font-medium text-gray-700'>Role</label>
-            <select
-              name='role'
-              className='w-full px-3 py-2 border rounded'
-              value={form.role}
-              onChange={handleChange}
-            >
-              <option value='DOSEN'>Dosen</option>
-              <option value='ADMIN'>Admin</option>
-            </select>
-            <p className='text-xs text-gray-500'>Role menentukan akses menu dan fitur.</p>
-          </div>
+            <div className='space-y-1'>
+              <label className='text-sm font-medium text-gray-700'>Role</label>
+              <select
+                name='role'
+                className='w-full px-3 py-2 border rounded'
+                value={form.role}
+                onChange={handleChange}
+              >
+                <option value='DOSEN'>Dosen</option>
+                <option value='ADMIN'>Admin</option>
+              </select>
+              <p className='text-xs text-gray-500'>Role menentukan akses menu dan fitur.</p>
+            </div>
 
-          <Input
-            label='Password'
-            name='password'
-            placeholder='Minimal 8 karakter (sesuaikan kebijakan)'
-            type='password'
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+              <Input
+                id="password"
+                name="password"
+                placeholder="Minimal 8 karakter (sesuaikan kebijakan)"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className='flex gap-2'>
-            <Button type='submit' disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
-            </Button>
-            <Button
-              type='button'
-              variant='secondary'
-              onClick={() => navigate('/admin/users')}
-            >
-              Batal
-            </Button>
-          </div>
-        </form>
+            <div className='flex gap-2'>
+              <Button type='submit' disabled={loading}>
+                {loading ? 'Menyimpan...' : 'Simpan'}
+              </Button>
+              <Button
+                type='button'
+                variant='secondary'
+                onClick={() => navigate('/admin/users')}
+              >
+                Batal
+              </Button>
+            </div>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

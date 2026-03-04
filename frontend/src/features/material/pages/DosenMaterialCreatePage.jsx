@@ -277,7 +277,7 @@ export default function CreateMaterial() {
         /* ========== EDIT MODE ========== */
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title & Order */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Title */}
               <div className="md:col-span-3">
@@ -335,7 +335,7 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
 
 ```javascript
 // Contoh kode
-console.log('Hello World');
+
 ```
 
 > Ini adalah kutipan
@@ -346,7 +346,7 @@ console.log('Hello World');
           </div>
 
           {/* Lampiran & Resource - Multiple Attachments */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-1">
@@ -508,7 +508,7 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
       </div>
 
       {/* Material Card - Seperti tampilan edukasi */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm shadow-sm overflow-hidden">
         {/* Header Section */}
         <div className="bg-linear-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
           <div className="flex items-start justify-between">

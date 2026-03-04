@@ -109,7 +109,7 @@ export default function Materials() {
 
         <Link
           to={`/dosen/courses/${courseId}/materials/new`}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition shadow-lg shadow-blue-200"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition shadow-md"
         >
           <Plus size={20} />
           Tambah Materi
@@ -140,7 +140,7 @@ export default function Materials() {
       {loading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse">
+            <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5 animate-pulse">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-slate-200 rounded-xl"></div>
                 <div className="flex-1 space-y-2">
@@ -168,7 +168,7 @@ export default function Materials() {
 
       {/* Empty State */}
       {!loading && !error && materials.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <FileText size={32} className="text-slate-400" />
           </div>
@@ -180,7 +180,7 @@ export default function Materials() {
           </p>
           <Link
             to={`/dosen/courses/${courseId}/materials/new`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition"
           >
             <Plus size={18} />
             Tambah Materi Pertama
@@ -190,7 +190,7 @@ export default function Materials() {
 
       {/* No Search Results */}
       {!loading && !error && materials.length > 0 && filteredMaterials.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
           </div>
@@ -234,12 +234,12 @@ export default function Materials() {
           />
 
           {/* Modal Content */}
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden">
+          <div className="relative bg-card rounded-xl shadow-lg border border-border w-full max-w-3xl my-8 overflow-hidden">
             {/* Modal Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between p-5 border-b border-slate-200 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Eye size={20} className="text-blue-600" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Eye size={20} className="text-primary" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Preview Materi</h2>
@@ -335,9 +335,9 @@ export default function Materials() {
 
       {/* Quick Tips */}
       {!loading && materials.length > 0 && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
-          <h4 className="font-semibold text-blue-900 mb-2">💡 Tips</h4>
-          <ul className="text-sm text-blue-800 space-y-1">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
+          <h4 className="font-semibold text-primary mb-2">💡 Tips</h4>
+          <ul className="text-sm text-foreground space-y-1">
             <li>• Gunakan format Markdown untuk membuat konten yang terstruktur</li>
             <li>• Klik tombol <span className="font-semibold">👁 Preview</span> untuk melihat tampilan materi</li>
             <li>• Materi akan tampil sesuai urutan yang Anda tentukan</li>
@@ -370,7 +370,7 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
   const badges = getBadgeInfo();
 
   return (
-    <div className="group bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all overflow-hidden">
+    <div className="group bg-card rounded-xl border border-border shadow-sm hover:border-primary/50 hover:shadow-lg transition-all overflow-hidden">
       <div className="flex items-center gap-4 p-5">
         {/* Drag Handle (for future reordering) */}
         <div className="hidden sm:flex shrink-0 text-slate-300 cursor-grab">
@@ -378,7 +378,7 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
         </div>
 
         {/* Order Number */}
-        <div className="shrink-0 w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-bold flex items-center justify-center text-lg">
+        <div className="shrink-0 w-12 h-12 rounded-lg bg-primary/10 text-primary font-bold flex items-center justify-center text-lg">
           {material.order || index + 1}
         </div>
 
@@ -426,7 +426,7 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
           {/* Preview Button */}
           <button
             onClick={onPreview}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition"
             title="Preview Materi"
           >
             <Eye size={16} />

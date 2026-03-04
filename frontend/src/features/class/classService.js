@@ -10,12 +10,6 @@ export const getMyClasses = async () => {
   return api.get('/classes/me');
 };
 
-/**
- * [MAHASISWA, ADMIN] Get open classes available for enrollment
- */
-export const getOpenClasses = async () => {
-  return api.get('/classes/open');
-};
 
 /**
  * [ADMIN, DOSEN] Get all class offerings with optional filters
@@ -29,19 +23,7 @@ export const getAllClasses = async (params = {}) => {
   return api.get(`/classes${qs ? `?${qs}` : ''}`);
 };
 
-/**
- * Get class offerings for a specific course
- */
-export const getClassesByCourse = async (courseId) => {
-  return api.get(`/classes/course/${courseId}`);
-};
 
-/**
- * Get a single class offering by ID
- */
-export const getClassById = async (classId) => {
-  return api.get(`/classes/${classId}`);
-};
 
 /**
  * [ADMIN] Create a new class offering

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
@@ -37,14 +38,19 @@ api.interceptors.response.use(
   response => response.data,
   error => {
     const status = error.response?.status;
+    const message = error.response?.data?.message || error.message || 'Terjadi kesalahan jaringan';
 
     // Auto-logout on 401 (expired / invalid token)
     if (status === 401 && _onUnauthorized) {
       _onUnauthorized();
-      return Promise.reject(new Error('Sesi telah berakhir, silakan login kembali'));
+      toast.error('Sesi telah berakhir, silakan login kembali');
+      return Promise.reject(new Error('Sesi telah berakhir'));
     }
 
-    const message = error.response?.data?.message || 'Terjadi kesalahan';
+    // Default global error handler for other statuses
+    if (status !== 401) {
+      toast.error(message);
+    }
 
     return Promise.reject(new Error(message));
   }

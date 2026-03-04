@@ -9,19 +9,7 @@ export const getAllSemesters = () => {
   return api.get('/academic-semesters');
 };
 
-/**
- * [ALL] Get the active semester
- */
-export const getActiveSemester = () => {
-  return api.get('/academic-semesters/active');
-};
 
-/**
- * [ALL] Get semester by ID
- */
-export const getSemesterById = (id) => {
-  return api.get(`/academic-semesters/${id}`);
-};
 
 /**
  * [ADMIN] Create a new academic semester
@@ -31,13 +19,6 @@ export const createSemester = (payload) => {
   return api.post('/academic-semesters', payload);
 };
 
-/**
- * [ADMIN] Update academic semester dates
- * @param {Object} payload - { startDate?, endDate? }
- */
-export const updateSemester = (id, payload) => {
-  return api.put(`/academic-semesters/${id}`, payload);
-};
 
 /**
  * [ADMIN] Update semester status
