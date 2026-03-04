@@ -41,7 +41,7 @@ const MahasiswaCourseHome = lazy(() => import('../features/course/pages/Mahasisw
 const MahasiswaCourseMaterials = lazy(() => import('../features/material/pages/MahasiswaMaterialPage'));
 
 // Class module
-const AdminClasses = lazy(() => import('../features/class/pages/AdminClassPage'));
+const AdminClasses = lazy(() => import('../features/class/pages/AdminClassOfferingPage'));
 const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassPage'));
 const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassPage'));
 // KRS module

@@ -46,8 +46,8 @@ const AdvisorAssignmentPage = () => {
     setError(null);
     try {
       const [dosenRes, studentRes, summaryRes] = await Promise.all([
-        getUsers({ role: 'DOSEN' }),
-        getUsers({ role: 'MAHASISWA' }),
+        getUsers({ role: 'DOSEN', limit: 100 }),
+        getUsers({ role: 'MAHASISWA', limit: 100 }),
         getAdvisorSummary().catch(() => ({ data: [] })),
       ]);
       setDosenList(dosenRes.data || []);
@@ -266,81 +266,138 @@ const AdvisorAssignmentPage = () => {
       ) : activeTab === 'advisors' ? (
         /* ============ ADVISORS TAB ============ */
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Dosen</TableHead>
-                  <TableHead className="text-center">Status Dospem</TableHead>
-                  <TableHead className="text-center">Jumlah Mahasiswa</TableHead>
-                  <TableHead className="text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDosen.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-slate-400 py-10">
-                      Tidak ada dosen ditemukan
-                    </TableCell>
-                  </TableRow>
-                ) : filteredDosen.map(dosen => {
-                  const studentCount = dosen._count?.advisedStudents || dosen.advisedStudentCount || 0;
-                  return (
-                    <TableRow key={dosen.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
-                            {dosen.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{dosen.name}</p>
-                            <p className="text-xs text-slate-500">{dosen.email}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {/* Mobile Card View */}
+            <div className="lg:hidden divide-y divide-slate-100">
+              {filteredDosen.length === 0 ? (
+                <div className="text-center text-slate-400 py-10 text-sm">Tidak ada dosen ditemukan</div>
+              ) : filteredDosen.map((dosen, index) => {
+                const studentCount = dosen.advisedStudentCount || 0;
+                return (
+                  <div key={dosen.id} className="p-4 hover:bg-slate-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                          {dosen.name?.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-slate-900 truncate">{dosen.name}</p>
+                          <p className="text-xs text-slate-500 truncate">{dosen.email}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {dosen.isDospem ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                <UserCheck size={12} /> Aktif
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full text-xs">Tidak aktif</span>
+                            )}
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                              {studentCount} mahasiswa
+                            </span>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {dosen.isDospem ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                            <UserCheck size={12} /> Aktif
-                          </span>
+                      </div>
+                      <button
+                        onClick={() => handleToggleDospem(dosen.id, dosen.isDospem)}
+                        disabled={processingId === dosen.id}
+                        className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${dosen.isDospem
+                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                          : 'bg-green-50 text-green-600 hover:bg-green-100'
+                          }`}
+                      >
+                        {processingId === dosen.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : dosen.isDospem ? (
+                          <><X size={12} /> Nonaktifkan</>
                         ) : (
-                          <span className="text-xs text-slate-400">Tidak aktif</span>
+                          <><UserCheck size={12} /> Aktifkan</>
                         )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {studentCount > 0 ? (
-                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">{studentCount}</span>
-                        ) : (
-                          <span className="text-slate-400">0</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <button
-                          onClick={() => handleToggleDospem(dosen.id, dosen.isDospem)}
-                          disabled={processingId === dosen.id}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${dosen.isDospem
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                            : 'bg-green-50 text-green-600 hover:bg-green-100'
-                            }`}
-                        >
-                          {processingId === dosen.id ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : dosen.isDospem ? (
-                            <>
-                              <X size={12} /> Nonaktifkan
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck size={12} /> Aktifkan
-                            </>
-                          )}
-                        </button>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="w-12 text-center">No.</TableHead>
+                    <TableHead>Dosen</TableHead>
+                    <TableHead className="text-center">Status Dospem</TableHead>
+                    <TableHead className="text-center">Jumlah Mahasiswa</TableHead>
+                    <TableHead className="w-28 text-center">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDosen.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-slate-400 py-10">
+                        Tidak ada dosen ditemukan
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  ) : filteredDosen.map((dosen, index) => {
+                    const studentCount = dosen.advisedStudentCount || 0;
+                    return (
+                      <TableRow key={dosen.id} className="hover:bg-slate-50">
+                        <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
+                              {dosen.name?.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{dosen.name}</p>
+                              <p className="text-xs text-slate-500">{dosen.email}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {dosen.isDospem ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                              <UserCheck size={12} /> Aktif
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400">Tidak aktif</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {studentCount > 0 ? (
+                            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">{studentCount}</span>
+                          ) : (
+                            <span className="text-slate-400">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            onClick={() => handleToggleDospem(dosen.id, dosen.isDospem)}
+                            disabled={processingId === dosen.id}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${dosen.isDospem
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-green-50 text-green-600 hover:bg-green-100'
+                              }`}
+                          >
+                            {processingId === dosen.id ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : dosen.isDospem ? (
+                              <>
+                                <X size={12} /> Nonaktifkan
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck size={12} /> Aktifkan
+                              </>
+                            )}
+                          </button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Advisor Summary Cards */}
@@ -361,7 +418,7 @@ const AdvisorAssignmentPage = () => {
                         </div>
                         <div>
                           <p className="font-medium text-sm">{advisor.name}</p>
-                          <p className="text-xs text-slate-500">{advisor.studentCount || 0} mahasiswa</p>
+                          <p className="text-xs text-slate-500">{advisor.advisedStudentCount || 0} mahasiswa</p>
                         </div>
                       </div>
                       {expandedAdvisor === advisor.id ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
@@ -422,83 +479,146 @@ const AdvisorAssignmentPage = () => {
             </div>
           )}
 
-          <div className="bg-white rounded-xl border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {/* Mobile Card View */}
+            <div className="lg:hidden divide-y divide-slate-100">
+              {filteredStudents.length === 0 ? (
+                <div className="text-center text-slate-400 py-10 text-sm">Tidak ada mahasiswa ditemukan</div>
+              ) : filteredStudents.map(student => (
+                <div key={student.id} className="p-4 hover:bg-slate-50">
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
-                      checked={filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.has(s.id))}
-                      onChange={toggleSelectAllStudents}
-                      className="rounded"
+                      checked={selectedStudents.has(student.id)}
+                      onChange={() => toggleStudent(student.id)}
+                      className="rounded mt-1"
                     />
-                  </TableHead>
-                  <TableHead>Mahasiswa</TableHead>
-                  <TableHead>Dosen Pembimbing</TableHead>
-                  <TableHead className="text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStudents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-slate-400 py-10">
-                      Tidak ada mahasiswa ditemukan
-                    </TableCell>
-                  </TableRow>
-                ) : filteredStudents.map(student => (
-                  <TableRow key={student.id}>
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.has(student.id)}
-                        onChange={() => toggleStudent(student.id)}
-                        className="rounded"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-xs">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-sm shrink-0">
                           {student.name?.charAt(0)}
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{student.name}</p>
-                          <p className="text-xs text-slate-500">{student.email}</p>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-slate-900 truncate">{student.name}</p>
+                          <p className="text-xs text-slate-500 truncate">{student.email}</p>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {student.advisor ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-xs font-bold">
-                            {student.advisor.name?.charAt(0)}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-slate-500">Pembimbing:</span>
+                        {student.advisor ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-[10px] font-bold">
+                              {student.advisor.name?.charAt(0)}
+                            </div>
+                            <span className="text-xs text-slate-700">{student.advisor.name}</span>
                           </div>
-                          <span className="text-sm">{student.advisor.name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Belum ditetapkan</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <select
-                        value={student.advisorId || ''}
-                        onChange={(e) => handleAssignAdvisor(student.id, e.target.value)}
-                        disabled={processingId === student.id}
-                        className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 w-36"
-                      >
-                        <option value="">— Tidak ada —</option>
-                        {activeDospem.map(d => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                      </select>
-                      {processingId === student.id && (
-                        <Loader2 size={14} className="inline ml-2 animate-spin text-blue-600" />
-                      )}
-                    </TableCell>
+                        ) : (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Belum ditetapkan</span>
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <select
+                          value={student.advisorId || ''}
+                          onChange={(e) => handleAssignAdvisor(student.id, e.target.value)}
+                          disabled={processingId === student.id}
+                          className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 w-full"
+                        >
+                          <option value="">— Tidak ada —</option>
+                          {activeDospem.map(d => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                        {processingId === student.id && (
+                          <Loader2 size={14} className="inline ml-2 animate-spin text-blue-600" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.has(s.id))}
+                        onChange={toggleSelectAllStudents}
+                        className="rounded"
+                      />
+                    </TableHead>
+                    <TableHead className="w-12 text-center">No.</TableHead>
+                    <TableHead>Mahasiswa</TableHead>
+                    <TableHead>Dosen Pembimbing</TableHead>
+                    <TableHead className="w-40 text-center">Aksi</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredStudents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-slate-400 py-10">
+                        Tidak ada mahasiswa ditemukan
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredStudents.map((student, index) => (
+                    <TableRow key={student.id} className="hover:bg-slate-50">
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.has(student.id)}
+                          onChange={() => toggleStudent(student.id)}
+                          className="rounded"
+                        />
+                      </TableCell>
+                      <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-xs">
+                            {student.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{student.name}</p>
+                            <p className="text-xs text-slate-500">{student.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {student.advisor ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-xs font-bold">
+                              {student.advisor.name?.charAt(0)}
+                            </div>
+                            <span className="text-sm">{student.advisor.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Belum ditetapkan</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <select
+                          value={student.advisorId || ''}
+                          onChange={(e) => handleAssignAdvisor(student.id, e.target.value)}
+                          disabled={processingId === student.id}
+                          className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 w-36"
+                        >
+                          <option value="">— Tidak ada —</option>
+                          {activeDospem.map(d => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                        {processingId === student.id && (
+                          <Loader2 size={14} className="inline ml-2 animate-spin text-blue-600" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
       )}

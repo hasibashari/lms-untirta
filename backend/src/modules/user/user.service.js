@@ -271,6 +271,14 @@ const getAdvisorSummary = async () => {
       id: true,
       name: true,
       email: true,
+      advisedStudents: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+        orderBy: { name: 'asc' },
+      },
       _count: {
         select: {
           advisedStudents: true,
@@ -285,6 +293,7 @@ const getAdvisorSummary = async () => {
     name: a.name,
     email: a.email,
     advisedStudentCount: a._count.advisedStudents,
+    students: a.advisedStudents,
   }));
 };
 

@@ -79,7 +79,7 @@ const Navbar = () => {
                 <ProfileDropdown />
               ) : (
                 <Link to="/login">
-                  <Button variant="primary" size="md" showArrow>
+                  <Button variant="default" size="sm" showArrow>
                     Masuk
                   </Button>
                 </Link>

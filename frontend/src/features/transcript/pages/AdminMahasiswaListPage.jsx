@@ -128,7 +128,7 @@ const AdminStudentListPage = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead className="w-12">No.</TableHead>
+                  <TableHead className="w-12 text-center">No.</TableHead>
                   <TableHead>Nama Mahasiswa</TableHead>
                   <TableHead>NIM</TableHead>
                   <TableHead>Email</TableHead>
@@ -144,7 +144,7 @@ const AdminStudentListPage = () => {
                     className="hover:bg-slate-50 cursor-pointer"
                     onClick={() => navigate(`/admin/transcript/${student.id}`)}
                   >
-                    <TableCell className="text-slate-500 text-sm">{index + 1}</TableCell>
+                    <TableCell className="text-center text-slate-500 text-sm">{index + 1}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -168,7 +168,9 @@ const AdminStudentListPage = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <ChevronRight size={16} className="text-slate-400" />
+                      <div className="flex items-center justify-center">
+                        <ChevronRight size={16} className="text-slate-400" />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

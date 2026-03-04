@@ -10,6 +10,8 @@ export const getUsers = (params = {}) => {
   const query = new URLSearchParams();
   if (params.role) query.append('role', params.role);
   if (params.isDospem !== undefined) query.append('isDospem', params.isDospem);
+  if (params.limit) query.append('limit', params.limit);
+  if (params.page) query.append('page', params.page);
   const qs = query.toString();
   return api.get(`/users${qs ? `?${qs}` : ''}`);
 };

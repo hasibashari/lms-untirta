@@ -84,29 +84,81 @@ export default function Users() {
       )}
 
       {!loading && !error && users.length > 0 && (
-        <div className='overflow-x-auto bg-white rounded shadow'>
-          <Table>
-            <TableHeader className='bg-gray-100 text-sm hover:bg-gray-100'>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map(u => (
-                <TableRow key={u.id} className='text-sm'>
-                  <TableCell className="font-medium">{u.name}</TableCell>
-                  <TableCell className='text-gray-700'>{u.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={roleVariant(u.role)} title='Role menentukan akses menu dan fitur'>
-                      {roleLabel(u.role)}
-                    </Badge>
-                  </TableCell>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          {/* Mobile Card View */}
+          <div className="lg:hidden divide-y divide-slate-100">
+            {users.map(u => (
+              <div
+                key={u.id}
+                className="p-4 hover:bg-slate-50 cursor-pointer transition flex items-center gap-3"
+                onClick={() => navigate(`/admin/users/${u.id}/edit`)}
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <span className="text-blue-700 font-bold text-sm">
+                    {u.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 truncate">{u.name}</p>
+                  <p className="text-sm text-slate-500 truncate">{u.email}</p>
+                </div>
+                <Badge variant={roleVariant(u.role)}>{roleLabel(u.role)}</Badge>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="w-12 text-center">No.</TableHead>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users.map((u, index) => (
+                  <TableRow
+                    key={u.id}
+                    className="hover:bg-slate-50 cursor-pointer"
+                    onClick={() => navigate(`/admin/users/${u.id}/edit`)}
+                  >
+                    <TableCell className="text-center text-slate-500 text-sm">{index + 1}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                          <span className="text-blue-700 font-bold text-xs">
+                            {u.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="font-medium text-slate-900">{u.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-slate-600">{u.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={roleVariant(u.role)} title="Role menentukan akses menu dan fitur">
+                        {roleLabel(u.role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/users/${u.id}/edit`); }}
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
     </div>
