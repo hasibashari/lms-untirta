@@ -35,6 +35,9 @@ const LearningSidebar = ({
     m => m.id === parseInt(currentMaterialId) || m.id === currentMaterialId
   );
 
+  const completedCount = Math.max(0, currentIndex);
+  const progressPercentage = materials.length > 0 ? Math.round((completedCount / materials.length) * 100) : 0;
+
   return (
     <>
       {/* Mobile Overlay - only show on mobile when open */}
@@ -82,9 +85,24 @@ const LearningSidebar = ({
               <h2 className="font-bold text-sidebar-foreground line-clamp-2">
                 {course?.title || 'Nama Kelas'}
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {materials.length} Materi
-              </p>
+
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Progress Belajar</span>
+                  <span className="text-xs font-bold text-primary">
+                    {progressPercentage}%
+                  </span>
+                </div>
+                <div className="w-full bg-sidebar-accent rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-primary h-1.5 rounded-full transition-all duration-500"
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5 font-medium">
+                  {completedCount} dari {materials.length} materi selesai
+                </p>
+              </div>
             </>
           )}
         </div>
