@@ -466,10 +466,11 @@ describe('getStudentList', () => {
       },
     ];
     prismaMock.user.findMany.mockResolvedValue(mockStudents);
+    prismaMock.user.count.mockResolvedValue(1);
 
     const result = await getStudentList();
-    expect(result).toHaveLength(1);
-    expect(result[0]).toEqual(expect.objectContaining({
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]).toEqual(expect.objectContaining({
       id: 'student-1',
       name: 'Student One',
       totalEnrollments: 2,
@@ -497,8 +498,9 @@ describe('getStudentList', () => {
 
   it('should return empty array when no students found', async () => {
     prismaMock.user.findMany.mockResolvedValue([]);
+    prismaMock.user.count.mockResolvedValue(0);
     const result = await getStudentList();
-    expect(result).toEqual([]);
+    expect(result.data).toEqual([]);
   });
 });
 

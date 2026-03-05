@@ -65,6 +65,11 @@ export const getMyCourses = async (req, res) => {
         courses = await courseService.getTeachingCourses(userId);
       }
       message = 'Berhasil mengambil daftar kelas yang diajar';
+    } else if (userRole === 'ADMIN') {
+      const result = await courseService.adminGetAllCourses(req.query);
+      courses = result.data;
+      pagination = result.pagination;
+      message = 'Berhasil mengambil semua kelas';
     } else {
       return sendError(res, { statusCode: 403, message: 'Role tidak dikenali' });
     }

@@ -207,7 +207,7 @@ const MaterialDetail = () => {
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="max-w-[150px] md:max-w-xs truncate">
+                    <BreadcrumbPage className="max-w-37.5 md:max-w-xs truncate">
                       {material.title}
                     </BreadcrumbPage>
                   </BreadcrumbItem>

@@ -45,17 +45,17 @@ describe('Auth Token Security', () => {
     expect(res.body.success).toBe(false);
   });
 
-  it('should return 403 for a completely invalid/malformed JWT', async () => {
+  it('should return 401 for a completely invalid/malformed JWT', async () => {
     const res = await request
       .get('/api/users')
       .set('Authorization', 'Bearer not.a.valid.jwt');
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/tidak valid|kadaluwarsa/i);
   });
 
-  it('should return 403 for a JWT signed with the wrong secret', async () => {
+  it('should return 401 for a JWT signed with the wrong secret', async () => {
     const fakeToken = jwt.sign({ userId: 'some-id' }, 'wrong-secret-key', {
       expiresIn: '1h',
     });
@@ -64,12 +64,12 @@ describe('Auth Token Security', () => {
       .get('/api/users')
       .set('Authorization', `Bearer ${fakeToken}`);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/tidak valid|kadaluwarsa/i);
   });
 
-  it('should return 403 for an expired JWT', async () => {
+  it('should return 401 for an expired JWT', async () => {
     const expiredToken = jwt.sign(
       { userId: 'some-id' },
       process.env.JWT_SECRET,
@@ -80,7 +80,7 @@ describe('Auth Token Security', () => {
       .get('/api/users')
       .set('Authorization', `Bearer ${expiredToken}`);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/tidak valid|kadaluwarsa/i);
   });

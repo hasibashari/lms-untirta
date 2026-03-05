@@ -1,15 +1,50 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as loginAPI, getMe } from '../features/auth/authService';
 import { setOnUnauthorized } from '../services/apiService';
+import { isTokenExpired, getTokenRemainingMs } from '../utils/token';
 
 const AuthContext = createContext(null);
+
+// Auto-logout 30 seconds before the token actually expires
+const EXPIRY_BUFFER_MS = 30_000;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const expiryTimerRef = useRef(null);
+
+  // ===== AUTO-LOGOUT TIMER =====
+  const clearExpiryTimer = useCallback(() => {
+    if (expiryTimerRef.current) {
+      clearTimeout(expiryTimerRef.current);
+      expiryTimerRef.current = null;
+    }
+  }, []);
+
+  // ===== LOGOUT =====
+  // Memoized dengan useCallback agar reference stabil
+  const logout = useCallback(() => {
+    clearExpiryTimer();
+    localStorage.removeItem('token');
+    setUser(null);
+    setToken(null);
+    navigate('/login', { replace: true });
+  }, [navigate, clearExpiryTimer]);
+
+  const scheduleAutoLogout = useCallback((jwt) => {
+    clearExpiryTimer();
+    const remaining = getTokenRemainingMs(jwt) - EXPIRY_BUFFER_MS;
+    if (remaining <= 0) {
+      logout();
+      return;
+    }
+    expiryTimerRef.current = setTimeout(() => {
+      logout();
+    }, remaining);
+  }, [clearExpiryTimer, logout]);
 
   // ===== LOGIN REAL =====
   // Memoized dengan useCallback agar reference stabil
@@ -22,18 +57,10 @@ export const AuthProvider = ({ children }) => {
 
     setToken(newToken);
     setUser(newUser);
+    scheduleAutoLogout(newToken);
 
     return newUser; // penting untuk redirect berdasarkan role
-  }, []);
-
-  // ===== LOGOUT =====
-  // Memoized dengan useCallback agar reference stabil
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setToken(null);
-    navigate('/login', { replace: true });
-  }, [navigate]);
+  }, [scheduleAutoLogout]);
 
   // Register logout handler for 401 interceptor (runs once on mount + when logout changes)
   useEffect(() => {
@@ -45,15 +72,19 @@ export const AuthProvider = ({ children }) => {
   const restoreAuth = useCallback(async () => {
     const storedToken = localStorage.getItem('token');
 
-    if (!storedToken) {
+    if (!storedToken || isTokenExpired(storedToken)) {
+      localStorage.removeItem('token');
       setLoading(false);
       return;
     }
 
     try {
-      const res = await getMe();
+      // _skipAuthRedirect prevents the 401 interceptor from showing a toast
+      // and triggering navigate during silent restore
+      const res = await getMe({ _skipAuthRedirect: true });
       setUser(res.data);
       setToken(storedToken);
+      scheduleAutoLogout(storedToken);
     } catch (error) {
       localStorage.removeItem('token');
       setUser(null);
@@ -61,11 +92,16 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [scheduleAutoLogout]);
 
   useEffect(() => {
     restoreAuth();
   }, [restoreAuth]);
+
+  // Cleanup expiry timer on unmount
+  useEffect(() => {
+    return () => clearExpiryTimer();
+  }, [clearExpiryTimer]);
 
   // ===== MEMOIZED CONTEXT VALUE =====
   // Mencegah re-render semua consumers ketika AuthProvider re-render

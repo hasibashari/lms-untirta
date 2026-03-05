@@ -288,13 +288,14 @@ describe('ClassService', () => {
     it('should return all classes without filters', async () => {
       const classes = [baseClassResult];
       prismaMock.class.findMany.mockResolvedValue(classes);
+      prismaMock.class.count.mockResolvedValue(1);
 
       const result = await getAllClasses();
 
       expect(prismaMock.class.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: {} })
       );
-      expect(result).toEqual(classes);
+      expect(result.data).toEqual(classes);
     });
 
     it('should apply academicSemesterId filter', async () => {

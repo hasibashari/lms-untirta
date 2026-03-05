@@ -38,8 +38,6 @@ jest.unstable_mockModule('../../src/config/prisma.js', () => ({
 
 // ─── Import AFTER mocking ────────────────────────────────────
 const {
-  createCourse,
-  getAllCourses,
   addStudentToCourse,
   addStudentToCourseById,
   getEnrolledCourses,
@@ -89,63 +87,6 @@ const baseTeacher = {
 describe('CourseService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // createCourse
-  // ═══════════════════════════════════════════════════════════
-  describe('createCourse', () => {
-    const input = { title: 'Pemrograman Web', description: 'Web dasar', code: 'IF-101' };
-
-    it('should create a course successfully', async () => {
-      prismaMock.course.findUnique.mockResolvedValue(null);
-      prismaMock.course.create.mockResolvedValue({
-        id: COURSE_ID,
-        ...input,
-        createdAt: new Date(),
-        teacher: { id: TEACHER_ID, name: 'Dosen' },
-      });
-
-      const result = await createCourse(input, TEACHER_ID);
-
-      expect(prismaMock.course.findUnique).toHaveBeenCalledWith({
-        where: { code: input.code },
-      });
-      expect(prismaMock.course.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            title: input.title,
-            code: input.code,
-            teacherId: TEACHER_ID,
-          }),
-        })
-      );
-      expect(result.id).toBe(COURSE_ID);
-    });
-
-    it('should throw when course code already exists', async () => {
-      prismaMock.course.findUnique.mockResolvedValue(baseCourse);
-
-      await expect(createCourse(input, TEACHER_ID)).rejects.toThrow(
-        'Kode kelas sudah digunakan'
-      );
-      expect(prismaMock.course.create).not.toHaveBeenCalled();
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // getAllCourses
-  // ═══════════════════════════════════════════════════════════
-  describe('getAllCourses', () => {
-    it('should return all courses', async () => {
-      const courses = [baseCourse];
-      prismaMock.course.findMany.mockResolvedValue(courses);
-
-      const result = await getAllCourses();
-
-      expect(prismaMock.course.findMany).toHaveBeenCalled();
-      expect(result).toEqual(courses);
-    });
   });
 
   // ═══════════════════════════════════════════════════════════
@@ -473,11 +414,13 @@ describe('CourseService', () => {
         },
       ];
       prismaMock.course.findMany.mockResolvedValue(courses);
+      prismaMock.course.count.mockResolvedValue(1);
 
       const result = await adminGetAllCourses();
 
-      expect(result).toHaveLength(1);
-      expect(result[0]._count.students).toBe(10);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]._count.students).toBe(10);
+      expect(result.pagination).toBeDefined();
     });
   });
 

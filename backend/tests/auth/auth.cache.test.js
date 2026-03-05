@@ -11,7 +11,7 @@
  *   ✓ Redis unavailable → falls back to DB gracefully
  *   ✓ Redis read error → falls back to DB gracefully
  *   ✓ Redis write error → user still returned (fire-and-forget cache)
- *   ✓ Invalid/expired token → 403
+ *   ✓ Invalid/expired token → 401
  *   ✓ Missing token → 401
  *   ✓ User deleted from DB → 401
  */
@@ -207,21 +207,21 @@ describe('authenticateToken — Redis cache behaviour', () => {
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  it('should return 403 when token is invalid', async () => {
+  it('should return 401 when token is invalid', async () => {
     const { req, res, next } = mockReqRes('invalid.jwt.token');
     await authenticateToken(req, res, next);
 
     expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  it('should return 403 when token is expired', async () => {
+  it('should return 401 when token is expired', async () => {
     const expired = jwt.sign({ userId: fakeUser.id }, TEST_SECRET, { expiresIn: '-1s' });
     const { req, res, next } = mockReqRes(expired);
     await authenticateToken(req, res, next);
 
     expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.status).toHaveBeenCalledWith(401);
   });
 
   // ─── User Deleted ─────────────────────────────────────

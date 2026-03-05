@@ -15,6 +15,11 @@ export const createMaterialSchema = z.object({
       v => (v === '' ? undefined : v),
       z.url('Format link video tidak valid').optional()
     ),
+
+    fileUrl: z.preprocess(
+      v => (v === '' ? undefined : v),
+      z.url('Format link file tidak valid').optional()
+    ),
   }),
 });
 
@@ -31,6 +36,11 @@ export const updateMaterialSchema = z.object({
     videoUrl: z.preprocess(
       v => (v === '' ? undefined : v),
       z.url('Format link video tidak valid').optional()
+    ),
+
+    fileUrl: z.preprocess(
+      v => (v === '' ? undefined : v),
+      z.url('Format link file tidak valid').optional()
     ),
 
     order: z.preprocess(

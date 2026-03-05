@@ -8,6 +8,6 @@ export const register = async (payload) => {
   return api.post('/auth/register', payload);
 };
 
-export const getMe = async () => {
-  return api.get('/auth/me');
+export const getMe = async (config = {}) => {
+  return api.get('/auth/me', config);
 };

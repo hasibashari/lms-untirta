@@ -41,7 +41,8 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || error.message || 'Terjadi kesalahan jaringan';
 
     // Auto-logout on 401 (expired / invalid token)
-    if (status === 401 && _onUnauthorized) {
+    // Skip if the request explicitly opted out (e.g. silent auth restore)
+    if (status === 401 && _onUnauthorized && !error.config?._skipAuthRedirect) {
       _onUnauthorized();
       toast.error('Sesi telah berakhir, silakan login kembali');
       return Promise.reject(new Error('Sesi telah berakhir'));

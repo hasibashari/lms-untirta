@@ -170,12 +170,12 @@ describe('Auth API — /api/auth', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should return 403 with invalid token', async () => {
+    it('should return 401 with invalid token', async () => {
       const res = await request(app)
         .get('/api/auth/me')
         .set('Authorization', 'Bearer invalid-token-xyz');
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(401);
     });
   });
 });

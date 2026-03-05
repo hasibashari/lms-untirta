@@ -3,10 +3,12 @@ import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import { upload } from '../../middlewares/upload.middleware.js';
-import { createCourseSchema, updateCourseSchema, assignTeacherSchema } from './course.validation.js';
+import { createCourseSchema, updateCourseSchema, assignTeacherSchema, enrollStudentSchema } from './course.validation.js';
 import {
   getMyCourses,
   getStudentsByCourse,
+  getAvailableStudents,
+  enrollStudent,
   // Admin Course Management
   adminGetAllCourses,
   adminCreateCourse,
@@ -319,11 +321,26 @@ router.patch(
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+router.post(
+  '/:id/enroll',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  validate(enrollStudentSchema),
+  enrollStudent
+);
+
 router.get(
   '/:id/students',
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
   getStudentsByCourse
+);
+
+router.get(
+  '/:id/available-students',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  getAvailableStudents
 );
 
 /**

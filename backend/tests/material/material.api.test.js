@@ -173,19 +173,19 @@ describe('POST /api/courses/:courseId/materials', () => {
     expect(res.body.data.order).toBe(2);
   });
 
-  it('should create material with fileUrl and videoUrl', async () => {
+  it('should create material with videoUrl (fileUrl requires file upload)', async () => {
     const res = await request(app)
       .post(`${COURSE_API}/${course.id}/materials`)
       .set('Authorization', `Bearer ${dosenToken}`)
       .send({
         title: 'Materi Video',
-        fileUrl: 'https://example.com/file.pdf',
         videoUrl: 'https://youtube.com/watch?v=abc',
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.fileUrl).toBe('https://example.com/file.pdf');
     expect(res.body.data.videoUrl).toBe('https://youtube.com/watch?v=abc');
+    // fileUrl is only set via multipart file upload, not JSON body
+    expect(res.body.data.fileUrl).toBeNull();
   });
 
   it('should create material for ADMIN', async () => {

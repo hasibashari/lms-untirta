@@ -66,6 +66,9 @@ export const authenticateToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    return sendError(res, { statusCode: 403, message: 'Token tidak valid atau kadaluwarsa.' });
+    if (err.name === 'TokenExpiredError') {
+      return sendError(res, { statusCode: 401, message: 'Token telah kadaluwarsa' });
+    }
+    return sendError(res, { statusCode: 401, message: 'Token tidak valid' });
   }
 };

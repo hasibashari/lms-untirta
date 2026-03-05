@@ -50,8 +50,8 @@ describe('Course API — /api/courses', () => {
   async function seedCourse(teacherId, overrides = {}) {
     const payload = validCourse(teacherId, overrides);
     const res = await request(app)
-      .post('/api/courses')
-      .set('Authorization', `Bearer ${dosenToken}`)
+      .post('/api/courses/admin')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send(payload);
     return res.body.data;
   }
@@ -60,20 +60,20 @@ describe('Course API — /api/courses', () => {
   // Authentication & Authorization Guards
   // ═══════════════════════════════════════════════════════════
   describe('Auth Guards', () => {
-    it('should return 401 without token on GET /api/courses', async () => {
-      const res = await request(app).get('/api/courses');
+    it('should return 401 without token on GET /api/courses/admin/all', async () => {
+      const res = await request(app).get('/api/courses/admin/all');
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
     });
 
-    it('should return 401 without token on POST /api/courses', async () => {
-      const res = await request(app).post('/api/courses').send({});
+    it('should return 401 without token on POST /api/courses/admin', async () => {
+      const res = await request(app).post('/api/courses/admin').send({});
       expect(res.status).toBe(401);
     });
 
-    it('should return 403 for MAHASISWA on POST /api/courses', async () => {
+    it('should return 403 for MAHASISWA on POST /api/courses/admin', async () => {
       const res = await request(app)
-        .post('/api/courses')
+        .post('/api/courses/admin')
         .set('Authorization', `Bearer ${mhsToken}`)
         .send(validCourse(dosen.id));
       expect(res.status).toBe(403);
@@ -95,15 +95,15 @@ describe('Course API — /api/courses', () => {
   });
 
   // ═══════════════════════════════════════════════════════════
-  // POST /api/courses — Create Course
+  // POST /api/courses/admin — Create Course (Admin)
   // ═══════════════════════════════════════════════════════════
-  describe('POST /api/courses', () => {
-    it('should create a course as DOSEN', async () => {
+  describe('POST /api/courses/admin', () => {
+    it('should create a course as ADMIN', async () => {
       const payload = validCourse(dosen.id);
 
       const res = await request(app)
-        .post('/api/courses')
-        .set('Authorization', `Bearer ${dosenToken}`)
+        .post('/api/courses/admin')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(payload);
 
       expect(res.status).toBe(201);
@@ -121,14 +121,14 @@ describe('Course API — /api/courses', () => {
 
       // First creation
       await request(app)
-        .post('/api/courses')
-        .set('Authorization', `Bearer ${dosenToken}`)
+        .post('/api/courses/admin')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(payload);
 
       // Duplicate
       const res = await request(app)
-        .post('/api/courses')
-        .set('Authorization', `Bearer ${dosenToken}`)
+        .post('/api/courses/admin')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ ...payload, title: 'Different Title' });
 
       expect(res.status).toBe(409);
@@ -137,8 +137,8 @@ describe('Course API — /api/courses', () => {
 
     it('should reject invalid payload (missing title)', async () => {
       const res = await request(app)
-        .post('/api/courses')
-        .set('Authorization', `Bearer ${dosenToken}`)
+        .post('/api/courses/admin')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ code: 'IF-101' }); // no title
 
       expect(res.status).toBe(400);
@@ -147,16 +147,16 @@ describe('Course API — /api/courses', () => {
   });
 
   // ═══════════════════════════════════════════════════════════
-  // GET /api/courses — List Courses
+  // GET /api/courses/admin/all — List All Courses (Admin)
   // ═══════════════════════════════════════════════════════════
-  describe('GET /api/courses', () => {
+  describe('GET /api/courses/admin/all', () => {
     it('should return all courses', async () => {
       await seedCourse(dosen.id, { code: 'LIST-001' });
       await seedCourse(dosen.id, { code: 'LIST-002', title: 'Course 2' });
 
       const res = await request(app)
-        .get('/api/courses')
-        .set('Authorization', `Bearer ${dosenToken}`);
+        .get('/api/courses/admin/all')
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(2);
@@ -254,7 +254,7 @@ describe('Course API — /api/courses', () => {
         .set('Authorization', `Bearer ${dosenToken}`)
         .send({ email: mhs.email });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
       expect(res.body.message).toContain('sudah terdaftar');
     });
 

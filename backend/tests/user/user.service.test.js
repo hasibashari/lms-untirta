@@ -129,6 +129,7 @@ describe('UserService', () => {
         },
       ];
       prismaMock.user.findMany.mockResolvedValue(mockUsers);
+      prismaMock.user.count.mockResolvedValue(1);
 
       const result = await getAllUsers(undefined, undefined);
 
@@ -138,7 +139,7 @@ describe('UserService', () => {
           orderBy: { name: 'asc' },
         })
       );
-      expect(result[0]).toEqual(
+      expect(result.data[0]).toEqual(
         expect.objectContaining({
           id: '1',
           advisedStudentCount: 3,

@@ -2,7 +2,14 @@
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
+import fs from "fs";
 import { AppError } from "../config/errors.js";
+
+// ── Upload directory ──────────────────────────────────────────────────
+const UPLOAD_DIR = "public/uploads/";
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 // ── Allowed MIME types ────────────────────────────────────────────────
 // Extend this map as needed. The key is the trusted MIME type,

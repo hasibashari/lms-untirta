@@ -435,7 +435,7 @@ describe('KRS API — /api/krs', () => {
 
       const res = await updateStatus(enrollmentId, 'APPROVED', 'short', adminToken);
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(400);
     });
 
     it('should return 404 when enrollment not found', async () => {
