@@ -15,12 +15,14 @@ const ADMIN_NAV_ITEMS = [
 const DOSEN_NAV_ITEMS = [
   { label: 'Dashboard', to: '/dosen/dashboard', icon: LayoutDashboard, exact: true },
   { label: 'Kelas Saya', to: '/dosen/classes', icon: BookOpen, aliases: ['/dosen/courses'] },
+  { label: 'Input Nilai Akhir', to: '/dosen/grades', icon: Award },
   { label: 'Submissions', to: '/dosen/submissions', icon: Inbox },
 ];
 
 const DOSEN_DOSPEM_NAV_ITEMS = [
   { label: 'Dashboard', to: '/dosen/dashboard', icon: LayoutDashboard, exact: true },
   { label: 'Kelas Saya', to: '/dosen/classes', icon: BookOpen, aliases: ['/dosen/courses'] },
+  { label: 'Input Nilai Akhir', to: '/dosen/grades', icon: Award },
   { label: 'Perwalian', to: '/dosen/advisory', icon: UserCheck },
   { label: 'Submissions', to: '/dosen/submissions', icon: Inbox },
 ];

@@ -7,7 +7,7 @@ import {
   Loader2,
   FileText,
 } from 'lucide-react';
-import { getStudyResults } from '../transcriptService';
+import { getTranscriptByClass } from '../transcriptService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import CourseBadge from '@/components/ui/CourseBadge';
@@ -49,7 +49,7 @@ const StudyResult = () => {
       setError(null);
 
       try {
-        const res = await getStudyResults();
+        const res = await getTranscriptByClass();
         // API returns { student: {...}, courses: [...], summary: {...} }
         const resData = res?.data;
         if (resData?.student) {
@@ -199,6 +199,11 @@ const StudyResult = () => {
                       <div className="flex flex-wrap items-center gap-1.5 mb-2">
                         <CourseBadge variant="purple">{result.sks || result.course?.sks || 3} SKS</CourseBadge>
                       </div>
+                      {result.semester && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Semester {result.semester}
+                        </p>
+                      )}
                       {(result.teacherName || result.course?.teacher?.name) && (
                         <p className="text-sm text-slate-600">Dosen: {result.teacherName || result.course?.teacher?.name}</p>
                       )}
@@ -232,6 +237,7 @@ const StudyResult = () => {
                     <TableHead className="w-16 text-center">No.</TableHead>
                     <TableHead className="w-32">Kode Jadwal</TableHead>
                     <TableHead>Mata Kuliah</TableHead>
+                    <TableHead>Semester</TableHead>
                     <TableHead>Dosen</TableHead>
                     <TableHead className="w-24 text-center">Nilai</TableHead>
                     <TableHead className="w-20 text-center">Mutu</TableHead>
@@ -258,6 +264,15 @@ const StudyResult = () => {
                             <CourseBadge variant="purple">{result.sks || result.course?.sks || 3} SKS</CourseBadge>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {result.semester ? (
+                          <span className="text-slate-600 text-sm">
+                            Semester {result.semester}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {(result.teacherName || result.course?.teacher?.name) ? (

@@ -436,7 +436,7 @@ const enrollClass = async (studentId, classId) => {
     });
 
     return {
-      enrollmentId: enrollment.id,
+      id: enrollment.id,
       status: enrollment.status,
       createdAt: enrollment.createdAt,
       class: enrollment.class,
@@ -589,7 +589,7 @@ const getMyKRS = async (studentId, filters = {}) => {
 
   return {
     enrollments: enrollments.map(e => ({
-      enrollmentId: e.id,
+      id: e.id,
       status: e.status,
       note: e.note,
       submittedAt: e.submittedAt,
@@ -1027,6 +1027,7 @@ const getPendingKRS = async (filters = {}, currentUser = null) => {
               id: true,
               title: true,
               code: true,
+              semester: true,
               sks: true,
             },
           },
@@ -1222,6 +1223,7 @@ const getAdvisoryStudents = async (dosenId, filters = {}) => {
                   id: true,
                   title: true,
                   code: true,
+                  semester: true,
                   sks: true,
                 },
               },

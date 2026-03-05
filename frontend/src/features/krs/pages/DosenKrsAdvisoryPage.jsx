@@ -406,6 +406,7 @@ const DosenAdvisoryPage = () => {
                               <TableHead>Kode</TableHead>
                               <TableHead>Mata Kuliah</TableHead>
                               <TableHead>Kelas</TableHead>
+                              <TableHead>Semester</TableHead>
                               <TableHead className="text-center">SKS</TableHead>
                               <TableHead>Dosen</TableHead>
                               <TableHead className="text-right">Aksi</TableHead>
@@ -425,6 +426,11 @@ const DosenAdvisoryPage = () => {
                                 <TableCell className="font-mono text-xs">{enrollment.class?.course?.code}</TableCell>
                                 <TableCell className="font-medium">{enrollment.class?.course?.title}</TableCell>
                                 <TableCell>{enrollment.class?.section}</TableCell>
+                                <TableCell className="text-sm text-slate-500">
+                                  {enrollment.class?.course?.semester
+                                    ? `Semester ${enrollment.class.course.semester}`
+                                    : '-'}
+                                </TableCell>
                                 <TableCell className="text-center">{enrollment.class?.course?.sks || 3}</TableCell>
                                 <TableCell className="text-sm text-slate-500">{enrollment.class?.lecturer?.name || '-'}</TableCell>
                                 <TableCell className="text-right">
@@ -563,6 +569,7 @@ const DosenAdvisoryPage = () => {
                                 <TableHead>Kode</TableHead>
                                 <TableHead>Mata Kuliah</TableHead>
                                 <TableHead>Kelas</TableHead>
+                                <TableHead>Semester</TableHead>
                                 <TableHead className="text-center">SKS</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
@@ -578,6 +585,11 @@ const DosenAdvisoryPage = () => {
                                     <TableCell className="font-mono text-xs">{enrollment.class?.course?.code}</TableCell>
                                     <TableCell className="font-medium">{enrollment.class?.course?.title}</TableCell>
                                     <TableCell>{enrollment.class?.section}</TableCell>
+                                    <TableCell className="text-sm text-slate-500">
+                                      {enrollment.class?.course?.semester
+                                        ? `Semester ${enrollment.class.course.semester}`
+                                        : '-'}
+                                    </TableCell>
                                     <TableCell className="text-center">{enrollment.class?.course?.sks || 3}</TableCell>
                                     <TableCell>
                                       <KrsStatusBadge status={enrollment.status} />

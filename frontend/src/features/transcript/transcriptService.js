@@ -11,6 +11,15 @@ export const getStudyResults = (semester) => {
   return api.get(`/transcript/study-results${params}`);
 };
 
+/**
+ * [MAHASISWA] Get transcript by class enrollment (KRS system, includes semester info)
+ * @param {string} academicSemesterId - Optional academic semester ID filter
+ */
+export const getTranscriptByClass = (academicSemesterId) => {
+  const params = academicSemesterId ? `?academicSemesterId=${academicSemesterId}` : '';
+  return api.get(`/transcript/by-class${params}`);
+};
+
 
 
 /**

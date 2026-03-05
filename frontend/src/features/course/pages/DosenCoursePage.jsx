@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   BookOpen,
   ClipboardList,
@@ -147,13 +147,6 @@ export default function CourseHome() {
       icon: Inbox,
       color: 'orange',
       to: `/dosen/courses/${courseId}/submissions`,
-    },
-    {
-      title: 'Input Nilai Akhir',
-      description: 'Kelola nilai akhir mahasiswa',
-      icon: Award,
-      color: 'amber',
-      to: `/dosen/courses/${courseId}/grades`,
     },
   ];
 

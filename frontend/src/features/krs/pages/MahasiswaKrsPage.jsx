@@ -605,6 +605,11 @@ const StudyPlan = () => {
                           <h4 className="font-semibold text-slate-900 mb-2">
                             {cls.course?.title}
                           </h4>
+                          {cls.course?.semester && (
+                            <CourseBadge variant="info" className="mb-2">
+                              Semester {cls.course.semester}
+                            </CourseBadge>
+                          )}
                           <div className="flex flex-wrap items-center gap-1.5 mb-2">
                             <CourseBadge variant="success">
                               {cls.course?.sks || 3} SKS
@@ -649,6 +654,7 @@ const StudyPlan = () => {
                       <TableHead className="w-16 text-center">No.</TableHead>
                       <TableHead>Mata Kuliah</TableHead>
                       <TableHead>Kelas</TableHead>
+                      <TableHead>Semester</TableHead>
                       <TableHead>Dosen</TableHead>
                       <TableHead className="text-center">Kapasitas</TableHead>
                       <TableHead className="w-20 text-center">Opsi</TableHead>
@@ -683,6 +689,15 @@ const StudyPlan = () => {
                           </TableCell>
                           <TableCell>
                             <CourseBadge variant="purple">{cls.name || 'Kelas'}</CourseBadge>
+                          </TableCell>
+                          <TableCell>
+                            {cls.course?.semester ? (
+                              <CourseBadge variant="info">
+                                Semester {cls.course.semester}
+                              </CourseBadge>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {cls.lecturer ? (
@@ -856,6 +871,11 @@ const StudyPlan = () => {
                         <CourseBadge variant="purple">
                           {enrollment.class?.name || 'Kelas'}
                         </CourseBadge>
+                        {enrollment.class?.course?.semester && (
+                          <CourseBadge variant="info">
+                            Semester {enrollment.class.course.semester}
+                          </CourseBadge>
+                        )}
                         <KrsStatusBadge status={enrollment.status} />
                       </div>
                       {enrollment.class?.lecturer?.name && (
@@ -863,8 +883,8 @@ const StudyPlan = () => {
                           Dosen: {enrollment.class.lecturer.name}
                         </p>
                       )}
-                      {enrollment.status === 'REJECTED' && enrollment.notes && (
-                        <p className="text-xs text-red-600 mt-1">Catatan: {enrollment.notes}</p>
+                      {enrollment.status === 'REJECTED' && enrollment.note && (
+                        <p className="text-xs text-red-600 mt-1">Catatan: {enrollment.note}</p>
                       )}
                     </div>
                     {!isReadOnly && (
@@ -917,6 +937,7 @@ const StudyPlan = () => {
                   <TableHead className="w-16 text-center">No.</TableHead>
                   <TableHead>Mata Kuliah</TableHead>
                   <TableHead>Kelas</TableHead>
+                  <TableHead>Semester</TableHead>
                   <TableHead>Dosen</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                   {!isReadOnly && <TableHead className="w-28 text-center">Opsi</TableHead>}
@@ -956,6 +977,15 @@ const StudyPlan = () => {
                         <CourseBadge variant="purple">
                           {enrollment.class?.name || 'Kelas'}
                         </CourseBadge>
+                      </TableCell>
+                      <TableCell>
+                        {enrollment.class?.course?.semester ? (
+                          <span className="text-slate-600 text-sm">
+                            Semester {enrollment.class.course.semester}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell>
                         {enrollment.class?.lecturer?.name ? (

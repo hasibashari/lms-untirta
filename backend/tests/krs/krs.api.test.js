@@ -216,7 +216,7 @@ describe('KRS API — /api/krs', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.status).toBe('PENDING');
-      expect(res.body.data.enrollmentId).toBeDefined();
+      expect(res.body.data.id).toBeDefined();
     });
 
     it('should return 400 when enrollment is closed', async () => {
@@ -329,7 +329,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 400 when enrollment is approved', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Approve via direct DB update for setup
       await prisma.krsEnrollment.update({
@@ -392,7 +392,7 @@ describe('KRS API — /api/krs', () => {
     it('should approve enrollment by dospem', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await updateStatus(enrollmentId, 'APPROVED', null, dosenToken);
 
@@ -404,7 +404,7 @@ describe('KRS API — /api/krs', () => {
     it('should reject enrollment by dospem', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await updateStatus(
         enrollmentId, 'REJECTED', 'Matakuliah tidak sesuai', dosenToken
@@ -417,7 +417,7 @@ describe('KRS API — /api/krs', () => {
     it('should approve enrollment by admin with sufficient note', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await updateStatus(
         enrollmentId, 'APPROVED',
@@ -431,7 +431,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 403 when admin note is too short', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await updateStatus(enrollmentId, 'APPROVED', 'short', adminToken);
 
@@ -450,7 +450,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 403 when dosen is not dospem', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Create a non-dospem dosen
       const { token: nonDospemToken } = await createDosen({ isDospem: false });
@@ -463,7 +463,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 403 when dospem is not advisor of the student', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Create another dospem that is NOT advisor of mhs
       const { token: otherDospemToken } = await createDosen({ isDospem: true });
@@ -476,7 +476,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 400 on invalid state transition', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Reject it first
       await updateStatus(enrollmentId, 'REJECTED', 'Not ok', dosenToken);
@@ -490,7 +490,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 403 when admin tries to revoke approval', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Approve first
       await updateStatus(enrollmentId, 'APPROVED', null, dosenToken);
@@ -520,7 +520,7 @@ describe('KRS API — /api/krs', () => {
     it('should bulk approve enrollments by dospem', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await request(app)
         .patch('/api/krs/advisory/bulk-status')
@@ -538,7 +538,7 @@ describe('KRS API — /api/krs', () => {
     it('should bulk reject enrollments with note', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await request(app)
         .patch('/api/krs/advisory/bulk-status')
@@ -618,7 +618,7 @@ describe('KRS API — /api/krs', () => {
     it('should revise a rejected enrollment', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Reject it first
       await updateStatus(enrollmentId, 'REJECTED', 'Needs revision', dosenToken);
@@ -645,7 +645,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 400 when enrollment is not REJECTED', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Try revise a PENDING enrollment
       const res = await request(app)
@@ -663,7 +663,7 @@ describe('KRS API — /api/krs', () => {
     it('should return approval history for student own enrollment', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Create some history by approving
       await updateStatus(enrollmentId, 'APPROVED', null, dosenToken);
@@ -680,7 +680,7 @@ describe('KRS API — /api/krs', () => {
     it('should return history for dospem (advisor)', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await request(app)
         .get(`/api/krs/${enrollmentId}/history`)
@@ -692,7 +692,7 @@ describe('KRS API — /api/krs', () => {
     it('should return history for admin', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       const res = await request(app)
         .get(`/api/krs/${enrollmentId}/history`)
@@ -712,7 +712,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 403 when another student accesses', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Create another student
       const { token: otherMhsToken } = await createMahasiswa();
@@ -727,7 +727,7 @@ describe('KRS API — /api/krs', () => {
     it('should return 403 when non-advisor dosen accesses', async () => {
       const { classOffering } = await seedScenario();
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // Create another dosen that is NOT the advisor
       const { token: otherDosenToken } = await createDosen();
@@ -821,7 +821,7 @@ describe('KRS API — /api/krs', () => {
       // 1. Enroll
       const enrollRes = await enrollStudent(classOffering.id);
       expect(enrollRes.status).toBe(201);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // 2. Check pending (dosen sees it)
       const pendingRes = await request(app)
@@ -851,7 +851,7 @@ describe('KRS API — /api/krs', () => {
 
       // 1. Enroll
       const enrollRes = await enrollStudent(classOffering.id);
-      const enrollmentId = enrollRes.body.data.enrollmentId;
+      const enrollmentId = enrollRes.body.data.id;
 
       // 2. Reject
       await updateStatus(enrollmentId, 'REJECTED', 'Please revise', dosenToken);

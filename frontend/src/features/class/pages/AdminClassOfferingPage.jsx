@@ -554,6 +554,11 @@ const AdminClassesPage = () => {
                         }`}>
                         {cls.isEnrollmentOpen ? 'Buka' : 'Tutup'}
                       </span>
+                      {cls.course?.semester && (
+                        <span className="px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full">
+                          Semester {cls.course.semester}
+                        </span>
+                      )}
                       <span className="px-2 py-0.5 bg-slate-50 text-slate-600 text-xs rounded-full">
                         {getSemesterLabel(cls.academicSemester)}
                       </span>
@@ -631,6 +636,11 @@ const AdminClassesPage = () => {
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">{cls.lecturer?.name || '-'}</TableCell>
                     <TableCell>
+                      {cls.course?.semester && (
+                        <span className="mr-1 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full">
+                          Semester {cls.course.semester}
+                        </span>
+                      )}
                       <span className="text-sm text-slate-600">{getSemesterLabel(cls.academicSemester)}</span>
                       {cls.academicSemester?.status && (
                         <span className={`ml-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${cls.academicSemester.status === 'OPEN' ? 'bg-green-50 text-green-700' :

@@ -250,7 +250,7 @@ describe('enrollClass', () => {
   it('should enroll student successfully', async () => {
     const result = await enrollClass(STUDENT_ID, CLASS_ID);
 
-    expect(result.enrollmentId).toBe(ENROLLMENT_ID);
+    expect(result.id).toBe(ENROLLMENT_ID);
     expect(result.status).toBe('PENDING');
     expect(prismaMock.krsEnrollment.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -458,7 +458,7 @@ describe('getMyKRS', () => {
     const result = await getMyKRS(STUDENT_ID);
 
     expect(result.enrollments).toHaveLength(1);
-    expect(result.enrollments[0].enrollmentId).toBe(ENROLLMENT_ID);
+    expect(result.enrollments[0].id).toBe(ENROLLMENT_ID);
     expect(result.summary.totalCourses).toBe(1);
     expect(result.summary.totalSKS).toBe(3);
     expect(result.summary.maxSKS).toBe(24);
