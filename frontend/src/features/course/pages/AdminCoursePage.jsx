@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   Plus,
   Search,
-  Users,
-  User,
-  Calendar,
-  Edit,
-  Trash2,
   X,
   AlertCircle,
   CheckCircle,
   Loader2,
+  Edit,
+  Trash2,
 } from 'lucide-react';
+import CourseCard from '../components/CourseCard';
 import { getAllCourses, createCourse, updateCourse, deleteCourse } from '../courseService';
 import { getDosen } from '../../user/userService';
 import { Button } from '@/components/ui/button';
@@ -28,8 +25,6 @@ import { Button } from '@/components/ui/button';
  * - Menghapus kelas
  */
 const Courses = () => {
-  const navigate = useNavigate();
-
   // State data
   const [courses, setCourses] = useState([]);
   const [dosenList, setDosenList] = useState([]);
@@ -294,62 +289,32 @@ const Courses = () => {
       {!loading && !error && filteredCourses.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCourses.map(course => (
-            <div
+            <CourseCard
               key={course.id}
-              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{course.title}</h3>
-                  <p className="text-sm text-gray-500">{course.code}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenEdit(course)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"
-                    title="Edit"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(course)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"
-                    title="Hapus"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Calendar size={14} />
-                  <span>Semester {course.semester || '-'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <User size={14} />
-                  <span>{course.teacher?.name || 'Belum ada dosen'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Users size={14} />
-                  <span>{course._count?.students || 0} mahasiswa</span>
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                  {course.sks || 3} SKS
-                </span>
-                {course.schedule && (
-                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
-                    {course.schedule}
-                  </span>
-                )}
-              </div>
-            </div>
+              title={course.title}
+              code={course.code}
+              teacher={{ name: course.teacher?.name || 'Belum ada dosen' }}
+              semester={course.semester}
+              sks={course.sks}
+              studentsCount={course._count?.students || 0}
+              schedule={course.schedule}
+              description={course.description}
+              showActionsOnHover={false}
+              actions={[
+                {
+                  icon: Edit,
+                  label: 'Edit',
+                  color: 'blue',
+                  onClick: () => handleOpenEdit(course),
+                },
+                {
+                  icon: Trash2,
+                  label: 'Hapus',
+                  color: 'red',
+                  onClick: () => setDeleteConfirm(course),
+                },
+              ]}
+            />
           ))}
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Users, FileText, Info } from 'lucide-react';
+import CourseCard from '../../course/components/CourseCard';
 import { getMyCoursesWithStats } from '../../course/courseService';
 
 /**
@@ -182,51 +183,19 @@ const MyClasses = () => {
       {!loading && !error && filteredCourses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course) => (
-            <div
+            <CourseCard
               key={course.id}
+              title={course.title}
+              code={course.code}
+              teacher={{ name: course.teacher?.name || 'Anda' }}
+              semester={course.semester}
+              sks={course.sks}
+              studentsCount={course._count?.students ?? course.studentsCount ?? 0}
+              materialsCount={course._count?.materials ?? course.materialsCount ?? 0}
+              schedule={course.schedule}
+              description={course.description}
               onClick={() => navigate(`/dosen/courses/${course.id}`)}
-              className="group cursor-pointer bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all"
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  navigate(`/dosen/courses/${course.id}`);
-                }
-              }}
-            >
-              {/* Course Header */}
-              <div className="h-24 bg-linear-to-br from-blue-500 to-blue-600 p-4 flex items-end">
-                <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1">
-                  <span className="text-white text-sm font-medium">{course.code}</span>
-                </div>
-              </div>
-
-              {/* Course Body */}
-              <div className="p-5">
-                <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition mb-2 line-clamp-2">
-                  {course.title}
-                </h3>
-
-                {/* Semester badge (if available) */}
-                {course.semester && (
-                  <p className="text-sm text-slate-500 mb-2">
-                    Semester {course.semester}
-                  </p>
-                )}
-
-                {/* Stats - sekarang langsung dari course object */}
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 text-blue-800 font-semibold">
-                    <Users size={14} className="text-blue-500" />
-                    <span>{course._count?.students ?? course.studentsCount ?? 0} siswa</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-1 text-violet-800 font-semibold">
-                    <FileText size={14} className="text-violet-500" />
-                    <span>{course._count?.materials ?? course.materialsCount ?? 0} materi</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            />
           ))}
         </div>
       )}

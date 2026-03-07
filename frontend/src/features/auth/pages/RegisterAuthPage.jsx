@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { User, Mail, Lock } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 import { register as registerAPI } from '../authService';
 
@@ -33,6 +33,8 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e, field) => {
     setFormData({ ...formData, [field]: e.target.value });
@@ -136,14 +138,25 @@ export default function Register() {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Minimal 8 karakter"
-                className="pl-10"
-                value={formData.password}
-                onChange={(e) => handleChange(e, 'password')}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Minimal 8 karakter"
+                  className="pl-10 pr-10"
+                  value={formData.password}
+                  onChange={(e) => handleChange(e, 'password')}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -153,14 +166,25 @@ export default function Register() {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
               </div>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Ulangi password"
-                className="pl-10"
-                value={formData.confirmPassword}
-                onChange={(e) => handleChange(e, 'confirmPassword')}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Ulangi password"
+                  className="pl-10 pr-10"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleChange(e, 'confirmPassword')}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={showConfirmPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Filter } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
-import StudentCourseCard from '../components/StudentCourseCard';
+import CourseCard from '../../course/components/CourseCard';
 import { Button } from '@/components/ui/button';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 
@@ -146,10 +146,18 @@ const MyClasses = () => {
       {!loading && !error && filteredCourses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((enrollment) => (
-            <StudentCourseCard
+            <CourseCard
               key={enrollment.enrollmentId}
-              enrollment={enrollment}
-              onClick={(courseId) => navigate(`/mahasiswa/courses/${courseId}`)}
+              title={enrollment.course.title}
+              code={enrollment.course.code}
+              teacher={{ name: enrollment.course.teacher?.name || '-' }}
+              semester={enrollment.course.semester}
+              sks={enrollment.course.sks}
+              studentsCount={enrollment.course._count?.students ?? enrollment.course.studentsCount ?? 0}
+              materialsCount={enrollment.course._count?.materials ?? enrollment.course.materialsCount ?? 0}
+              schedule={enrollment.course.schedule}
+              description={enrollment.course.description}
+              onClick={() => navigate(`/mahasiswa/courses/${enrollment.course.id}`)}
             />
           ))}
         </div>

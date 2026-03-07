@@ -66,6 +66,7 @@ const MahasiswaMaterialDetail = lazy(() => import('../features/material/pages/Ma
 const AdminAcademic = lazy(() => import('../features/academic/pages/AdminAcademicPage'));
 
 // Grade module
+const DosenGradeList = lazy(() => import('../features/grade/pages/DosenGradeListPage'));
 const DosenGrading = lazy(() => import('../features/grade/pages/DosenGradingPage'));
 const DosenCourseGrades = lazy(() => import('../features/grade/pages/DosenGradeCoursePage'));
 
@@ -129,6 +130,7 @@ function AppRoutes() {
             <Route path="/dosen/advisory" element={<Lazy component={DosenAdvisory} />} />
             <Route path="/dosen/classes" element={<Lazy component={DosenMyClasses} />} />
             <Route path="/dosen/submissions" element={<Lazy component={DosenAllSubmissions} />} />
+            <Route path="/dosen/grades" element={<Lazy component={DosenGradeList} />} />
             <Route path="/dosen/classes/:classId/grades" element={<Lazy component={DosenGrading} />} />
             <Route path="/dosen/courses/:courseId/grades" element={<Lazy component={DosenCourseGrades} />} />
             <Route path="/dosen/courses/:courseId" element={<Lazy component={DosenCourseHome} />} />
