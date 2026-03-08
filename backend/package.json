@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "test": "NODE_OPTIONS='--experimental-vm-modules' npx jest",
+    "test:docker": "./scripts/test.sh",
+    "test:docker:coverage": "./scripts/test.sh --coverage",
     "test:watch": "NODE_OPTIONS='--experimental-vm-modules' npx jest --watch",
     "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' npx jest --coverage",
     "test:unit": "NODE_OPTIONS='--experimental-vm-modules' npx jest --testPathPatterns='service\\.test'",
-    "test:integration": "NODE_OPTIONS='--experimental-vm-modules' npx jest --testPathPatterns='api\\.test'"
+    "test:integration": "NODE_OPTIONS='--experimental-vm-modules' npx jest --testPathPatterns='api\\.test'",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d",
+    "test:db:down": "docker compose -f docker-compose.test.yml down -v"
   },
   "keywords": [],
   "author": "",

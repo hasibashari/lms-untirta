@@ -229,6 +229,10 @@ const StudyPlan = () => {
     setTimeout(() => setActionError(null), 6000);
   };
 
+  const handlePrintKrs = () => {
+    window.print();
+  };
+
   // ===== ACTIONS (only when OPEN) =====
   const handleEnroll = async (classId) => {
     if (isReadOnly) return;
@@ -836,11 +840,23 @@ const StudyPlan = () => {
 
           {/* Action Bar — only for OPEN */}
           {!isReadOnly && (
-            <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3">
-              <Button variant="secondary" className="gap-2">
-                <Printer size={16} />
-                <span>Cetak KRS</span>
-              </Button>
+            <div className="p-4 border-b border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Aksi Rencana Studi</p>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    Cetak ringkasan KRS semester yang sedang dipilih.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 w-full sm:w-auto"
+                  onClick={handlePrintKrs}
+                >
+                  <Printer size={16} />
+                  <span>Cetak KRS</span>
+                </Button>
+              </div>
             </div>
           )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Award,
   Printer,
@@ -28,6 +28,7 @@ import {
  */
 const StudyResult = () => {
   const { user } = useAuth();
+  const statsRef = useRef(null);
 
   // State untuk data
   const [studyResults, setStudyResults] = useState([]);
@@ -94,9 +95,23 @@ const StudyResult = () => {
     };
   }, [studyResults]);
 
+  const hasData = studyResults.length > 0;
+
   // Handle print transcript
   const handlePrintTranscript = () => {
     window.print();
+  };
+
+  // KHS print uses the same printable view on this page.
+  const handlePrintKhs = () => {
+    window.print();
+  };
+
+  // Bring user attention to IPS/IPK summary section.
+  const handleShowIpsSummary = () => {
+    if (statsRef.current) {
+      statsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   return (
@@ -111,15 +126,27 @@ const StudyResult = () => {
         </p>
       </div>
 
-      {/* Print Transcript Button Card */}
+      {/* Action Card */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-6">
-        <Button
-          onClick={handlePrintTranscript}
-          className="bg-violet-600 hover:bg-violet-700 text-white gap-2"
-        >
-          <Printer size={16} />
-          <span>Cetak Transkrip Sementara</span>
-        </Button>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Aksi Dokumen</p>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Cetak dokumen akademik dan lihat ringkasan IP/IPK.
+            </p>
+          </div>
+          <div className="w-full sm:w-auto">
+            <Button
+              onClick={handlePrintTranscript}
+              disabled={loading || !hasData}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white gap-2"
+              showArrow
+            >
+              <FileText size={16} />
+              <span>Cetak Transkrip Nilai</span>
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* ============ SECTION: DAFTAR HASIL STUDI ============ */}
@@ -130,24 +157,30 @@ const StudyResult = () => {
         />
 
         {/* Action Buttons */}
-        <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* KHS Button */}
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
-          >
-            <Printer size={16} />
-            <span>KHS</span>
-          </Button>
+        <div className="p-4 border-b border-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-w-2xl">
+            {/* KHS Button */}
+            <Button
+              variant="outline"
+              onClick={handlePrintKhs}
+              disabled={loading || !hasData}
+              className="h-10 justify-start border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <Printer size={16} />
+              <span>Cetak KHS</span>
+            </Button>
 
-          {/* Hitung IPS Button */}
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 border-cyan-200 text-cyan-600 hover:bg-cyan-50"
-          >
-            <Calculator size={16} />
-            <span>Hitung IPS</span>
-          </Button>
+            {/* Hitung IPS Button */}
+            <Button
+              variant="outline"
+              onClick={handleShowIpsSummary}
+              disabled={loading || !hasData}
+              className="h-10 justify-start border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+            >
+              <Calculator size={16} />
+              <span>Hitung IPS</span>
+            </Button>
+          </div>
         </div>
 
         {/* Loading State */}
@@ -300,7 +333,7 @@ const StudyResult = () => {
             </div>
 
             {/* IP Row */}
-            <div className="px-4 sm:px-6 py-4 bg-blue-50 border-t border-slate-200">
+            <div ref={statsRef} className="px-4 sm:px-6 py-4 bg-blue-50 border-t border-slate-200">
               <div className="flex justify-center">
                 <span className="text-slate-700">
                   <span className="font-semibold">IP</span> : <span className="font-bold text-lg">{stats.ips}</span>
