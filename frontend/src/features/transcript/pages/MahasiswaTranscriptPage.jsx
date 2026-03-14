@@ -1,24 +1,11 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import {
-  Award,
-  Printer,
-  Calculator,
-  AlertCircle,
-  Loader2,
-  FileText,
-} from 'lucide-react';
-import { getTranscriptByClass } from '../transcriptService';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import CourseBadge from '@/components/ui/CourseBadge';
-import SectionHeader from '@/components/ui/SectionHeader';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Loader2, AlertCircle, Award, TrendingUp, Printer, GraduationCap, BookOpen, ChevronDown, ChevronUp
+} from 'lucide-react';
+import { getStudentTranscript } from '../transcriptService';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 
 /**
@@ -26,334 +13,363 @@ import {
  * Menampilkan hasil studi berdasarkan data KRS dengan nilai
  * Layout mengikuti referensi SIAKAD
  */
-const StudyResult = () => {
-  const { user } = useAuth();
-  const statsRef = useRef(null);
 
-  // State untuk data
-  const [studyResults, setStudyResults] = useState([]);
-  const [studentIdentity, setStudentIdentity] = useState(null);
+const getGradeColor = (grade) => {
+  if (!grade || grade === '-') return 'text-slate-400';
+  if (grade === 'A' || grade === 'A-') return 'text-green-600';
+  if (grade.startsWith('B')) return 'text-blue-600';
+  if (grade.startsWith('C')) return 'text-amber-600';
+  return 'text-red-600';
+};
+
+const getGradeBg = (grade) => {
+  if (!grade || grade === '-') return 'bg-slate-50';
+  if (grade === 'A' || grade === 'A-') return 'bg-green-50';
+  if (grade.startsWith('B')) return 'bg-blue-50';
+  if (grade.startsWith('C')) return 'bg-amber-50';
+  return 'bg-red-50';
+};
+
+const MahasiswaTranscriptPage = () => {
+  const { user } = useAuth();
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedSemester, setExpandedSemester] = useState(null);
 
-  // Resolve student display info from API response + auth context
-  const studentInfo = useMemo(() => {
-    const name = studentIdentity?.name || user?.name || '-';
-    const nim = studentIdentity?.nim || user?.nim || user?.email || '-';
-    return { name, nim };
-  }, [studentIdentity, user]);
-
-  // Fetch study results (using KRS data with grades)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTranscript = async () => {
       setLoading(true);
       setError(null);
-
       try {
-        const res = await getTranscriptByClass();
-        // API returns { student: {...}, courses: [...], summary: {...} }
-        const resData = res?.data;
-        if (resData?.student) {
-          setStudentIdentity(resData.student);
-        }
-        const data = resData?.courses || resData || [];
-        setStudyResults(Array.isArray(data) ? data : []);
+        const res = await getStudentTranscript(user.id);
+        setData(res.data);
       } catch (err) {
-        setError(err?.message || 'Gagal memuat data');
+        setError(err?.message || 'Gagal memuat transkrip');
       } finally {
         setLoading(false);
       }
     };
+    if (user?.id) fetchTranscript();
+  }, [user]);
 
-    fetchData();
-  }, []);
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const data = Array.isArray(studyResults) ? studyResults : [];
-    const resultsWithGrade = data.filter(r => r.averageScore !== null && r.averageScore !== undefined);
-
-    const totalSKSxGrade = resultsWithGrade.reduce((sum, r) => {
-      return sum + ((r.gradePoint || 0) * (r.sks || 3));
-    }, 0);
-
-    const totalSKS = resultsWithGrade.reduce((sum, r) => sum + (r.sks || 3), 0);
-    const ips = totalSKS > 0 ? (totalSKSxGrade / totalSKS).toFixed(2) : '0.00';
-
-    // IPK kumulatif: dihitung dari seluruh mata kuliah yang ada di data
-    // (same as IPS when viewing a single semester; cumulative when showing all)
-    const allWithGrade = data.filter(r => r.averageScore !== null && r.averageScore !== undefined);
-    const cumulativeSKSxGrade = allWithGrade.reduce((sum, r) => sum + ((r.gradePoint || 0) * (r.sks || 3)), 0);
-    const cumulativeSKS = allWithGrade.reduce((sum, r) => sum + (r.sks || 3), 0);
-    const ipk = cumulativeSKS > 0 ? (cumulativeSKSxGrade / cumulativeSKS).toFixed(2) : '0.00';
-
-    return {
-      ips,
-      ipk,
-      totalSKS,
-      totalCourses: data.length,
-    };
-  }, [studyResults]);
-
-  const hasData = studyResults.length > 0;
-
-  // Handle print transcript
-  const handlePrintTranscript = () => {
-    window.print();
-  };
-
-  // KHS print uses the same printable view on this page.
-  const handlePrintKhs = () => {
-    window.print();
-  };
-
-  // Bring user attention to IPS/IPK summary section.
-  const handleShowIpsSummary = () => {
-    if (statsRef.current) {
-      statsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Group courses by semester
+  const semesterGroups = useMemo(() => {
+    if (!data?.courses) return [];
+    const map = new Map();
+    for (const course of data.courses) {
+      const key = course.semester || 0;
+      if (!map.has(key)) {
+        map.set(key, { semester: key, courses: [], totalSKS: 0, totalPoints: 0, completed: 0 });
+      }
+      const group = map.get(key);
+      group.courses.push(course);
+      if (course.averageScore !== null) {
+        group.totalSKS += course.sks;
+        group.totalPoints += course.gradePoint * course.sks;
+        group.completed++;
+      }
     }
-  };
+    return Array.from(map.values())
+      .sort((a, b) => a.semester - b.semester)
+      .map(g => ({
+        ...g,
+        ips: g.totalSKS > 0
+          ? Math.round((g.totalPoints / g.totalSKS) * 100) / 100
+          : 0,
+      }));
+  }, [data]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-3" />
+          <p className="text-slate-500">Memuat transkrip...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
+          <p className="text-red-600 font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const { student, summary } = data;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
-          Hasil Studi
-        </h1>
-        <p className="text-slate-500 mt-1 text-sm sm:text-base">
-          Dashboard &gt; Hasil Studi
-        </p>
-      </div>
-
-      {/* Action Card */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">Aksi Dokumen</p>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Cetak dokumen akademik dan lihat ringkasan IP/IPK.
-            </p>
+    <div className="space-y-6">
+      {/* Student Profile Header */}
+      <div className="bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 text-white rounded-2xl p-6 lg:p-8 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-32 bg-white/5 rounded-full blur-3xl" />
+        </div>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <span className="text-2xl font-bold">{student.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold">{student.name}</h1>
+              {student.nim && (
+                <p className="text-blue-100 text-sm font-mono">{student.nim}</p>
+              )}
+              <p className="text-blue-100/80 text-sm">{student.email}</p>
+            </div>
           </div>
-          <div className="w-full sm:w-auto">
-            <Button
-              onClick={handlePrintTranscript}
-              disabled={loading || !hasData}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white gap-2"
-              showArrow
-            >
-              <FileText size={16} />
-              <span>Cetak Transkrip Nilai</span>
-            </Button>
-          </div>
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-lg text-sm font-medium transition"
+          >
+            <Printer size={16} /> Cetak Transkrip
+          </button>
         </div>
       </div>
 
-      {/* ============ SECTION: DAFTAR HASIL STUDI ============ */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-        <SectionHeader
-          title="DAFTAR HASIL STUDI"
-          subtitle={`${studentInfo.name} (${studentInfo.nim})`}
-        />
-
-        {/* Action Buttons */}
-        <div className="p-4 border-b border-slate-200">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-w-2xl">
-            {/* KHS Button */}
-            <Button
-              variant="outline"
-              onClick={handlePrintKhs}
-              disabled={loading || !hasData}
-              className="h-10 justify-start border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <Printer size={16} />
-              <span>Cetak KHS</span>
-            </Button>
-
-            {/* Hitung IPS Button */}
-            <Button
-              variant="outline"
-              onClick={handleShowIpsSummary}
-              disabled={loading || !hasData}
-              className="h-10 justify-start border-cyan-200 text-cyan-700 hover:bg-cyan-50"
-            >
-              <Calculator size={16} />
-              <span>Hitung IPS</span>
-            </Button>
+      {/* Academic Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Award size={18} className="text-emerald-600" />
+            </div>
           </div>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{summary.ipk.toFixed(2)}</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">IPK (Cumulative GPA)</p>
         </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="p-8 sm:p-12 text-center">
-            <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-3" />
-            <p className="text-slate-500">Memuat data hasil studi...</p>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+              <BookOpen size={18} className="text-blue-600" />
+            </div>
           </div>
-        )}
-
-        {/* Error State */}
-        {!loading && error && (
-          <div className="p-8 sm:p-12 text-center">
-            <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
-            <p className="text-red-600 font-medium">{error}</p>
-            <Button
-              variant="link"
-              onClick={() => window.location.reload()}
-              className="mt-3 text-sm text-red-600"
-            >
-              Coba lagi
-            </Button>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{summary.totalSKS}</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">Total SKS Selesai</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
+              <GraduationCap size={18} className="text-violet-600" />
+            </div>
           </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !error && studyResults.length === 0 && (
-          <div className="p-8 sm:p-12 text-center">
-            <Award size={32} className="text-slate-400 mx-auto mb-3" />
-            <p className="text-slate-600 font-medium">Belum ada data hasil studi</p>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{summary.completedCourses}</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">MK Selesai</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
+              <TrendingUp size={18} className="text-amber-600" />
+            </div>
           </div>
-        )}
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900">
+            {summary.ipk >= 3.5 ? 'Cum Laude' : summary.ipk >= 3.0 ? 'Sangat Baik' : summary.ipk >= 2.5 ? 'Baik' : 'Cukup'}
+          </p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">Predikat</p>
+        </div>
+      </div>
 
-        {/* Results Table */}
-        {!loading && !error && studyResults.length > 0 && (
-          <>
-            {/* Mobile Card View */}
-            <div className="lg:hidden divide-y divide-slate-100">
-              {studyResults.map((result, index) => (
-                <div key={result.courseId || result.id || index} className="p-4 hover:bg-slate-50">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-slate-500 font-medium text-sm">#{index + 1}</span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-slate-500 text-sm font-mono">{result.courseCode || result.course?.code}</span>
-                      </div>
-                      <h4 className="font-semibold text-slate-900 mb-2">{result.courseName || result.course?.title}</h4>
-                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        <CourseBadge variant="purple">{result.sks || result.course?.sks || 3} SKS</CourseBadge>
-                      </div>
-                      {result.semester && (
-                        <p className="text-xs text-blue-600 mt-1">
-                          Semester {result.semester}
-                        </p>
-                      )}
-                      {(result.teacherName || result.course?.teacher?.name) && (
-                        <p className="text-sm text-slate-600">Dosen: {result.teacherName || result.course?.teacher?.name}</p>
-                      )}
-                      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
-                        <div>
-                          <p className="text-xs text-slate-500">Nilai</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {result.averageScore !== null && result.averageScore !== undefined
-                              ? result.averageScore
-                              : '-'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500">Mutu</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {result.letterGrade || '-'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+      {/* Semester-by-Semester Breakdown */}
+      <div className="space-y-3">
+        <h3 className="font-semibold text-slate-900 text-lg">Nilai per Semester</h3>
+        {semesterGroups.map(group => {
+          const isExpanded = expandedSemester === group.semester;
+          return (
+            <div key={group.semester} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div
+                className="flex items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-slate-50 transition"
+                onClick={() => setExpandedSemester(isExpanded ? null : group.semester)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <span className="text-blue-700 font-bold text-sm">{group.semester}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">Semester {group.semester}</p>
+                    <p className="text-sm text-slate-500">{group.courses.length} mata kuliah</p>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="w-16 text-center">No.</TableHead>
-                    <TableHead className="w-32">Kode Jadwal</TableHead>
-                    <TableHead>Mata Kuliah</TableHead>
-                    <TableHead>Semester</TableHead>
-                    <TableHead>Dosen</TableHead>
-                    <TableHead className="w-24 text-center">Nilai</TableHead>
-                    <TableHead className="w-20 text-center">Mutu</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {studyResults.map((result, index) => (
-                    <TableRow key={result.courseId || result.id || index} className="hover:bg-slate-50">
-                      <TableCell className="text-center text-slate-600 font-medium">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell className="text-slate-700 font-mono text-sm">
-                        {result.scheduleCode || result.courseCode || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <div>
-                            <span className="font-semibold text-slate-900">{result.courseName || result.course?.title}</span>
-                            {(result.courseCode || result.course?.code) && (
-                              <span className="text-slate-500 ml-1">({result.courseCode || result.course?.code})</span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <CourseBadge variant="purple">{result.sks || result.course?.sks || 3} SKS</CourseBadge>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {result.semester ? (
-                          <span className="text-slate-600 text-sm">
-                            Semester {result.semester}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {(result.teacherName || result.course?.teacher?.name) ? (
-                          <span className="text-slate-600">1. {result.teacherName || result.course?.teacher?.name}</span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-slate-900 font-medium">
-                          {result.averageScore !== null && result.averageScore !== undefined
-                            ? result.averageScore
-                            : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-slate-900 font-medium">
-                          {result.letterGrade || '-'}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* IP Row */}
-            <div ref={statsRef} className="px-4 sm:px-6 py-4 bg-blue-50 border-t border-slate-200">
-              <div className="flex justify-center">
-                <span className="text-slate-700">
-                  <span className="font-semibold">IP</span> : <span className="font-bold text-lg">{stats.ips}</span>
-                </span>
+                <div className="flex items-center gap-4">
+                  <div className="hidden sm:flex items-center gap-3">
+                    <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                      {group.totalSKS} SKS
+                    </span>
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
+                      IPS: {group.ips.toFixed(2)}
+                    </span>
+                  </div>
+                  {isExpanded ? (
+                    <ChevronUp size={18} className="text-slate-400" />
+                  ) : (
+                    <ChevronDown size={18} className="text-slate-400" />
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* IPK Row */}
-            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
-              <div className="flex justify-center">
-                <span className="text-slate-700">
-                  <span className="font-semibold">IPK</span> : <span className="font-bold text-lg">{stats.ipk}</span>
-                </span>
-              </div>
+              {/* Mobile stats */}
+              {!isExpanded && (
+                <div className="flex sm:hidden items-center gap-2 px-4 pb-3">
+                  <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                    {group.totalSKS} SKS
+                  </span>
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
+                    IPS: {group.ips.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+              {isExpanded && (
+                <div className="border-t border-slate-100">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/50">
+                          <TableHead className="w-12">No.</TableHead>
+                          <TableHead>Kode</TableHead>
+                          <TableHead>Mata Kuliah</TableHead>
+                          <TableHead className="text-center">SKS</TableHead>
+                          <TableHead className="text-center">Nilai</TableHead>
+                          <TableHead className="text-center">Huruf</TableHead>
+                          <TableHead className="text-center">Bobot</TableHead>
+                          <TableHead>Dosen</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.courses.map((course, idx) => (
+                          <TableRow key={course.courseId} className="hover:bg-slate-50">
+                            <TableCell className="text-slate-500 text-sm">{idx + 1}</TableCell>
+                            <TableCell className="font-mono text-sm text-slate-600">
+                              {course.courseCode}
+                            </TableCell>
+                            <TableCell>
+                              <p className="font-medium text-slate-900">{course.courseName}</p>
+                              {course.source === 'krs' && course.section && (
+                                <p className="text-xs text-slate-400">
+                                  Kelas {course.section} | {course.academicYear} {course.semesterType}
+                                </p>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center font-medium">{course.sks}</TableCell>
+                            <TableCell className="text-center">
+                              {course.averageScore !== null ? (
+                                <span className="font-medium">{course.averageScore}</span>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${getGradeBg(course.letterGrade)} ${getGradeColor(course.letterGrade)}`}
+                              >
+                                {course.letterGrade}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center text-sm font-medium text-slate-700">
+                              {course.gradePoint.toFixed(1)}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-600">
+                              {course.teacherName}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-sm">
+                    <span className="text-slate-600">
+                      Total: <strong>{group.courses.length}</strong> MK | <strong>{group.totalSKS}</strong> SKS
+                    </span>
+                    <span className="font-semibold text-emerald-700">
+                      IPS: {group.ips.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          </>
-        )}
+          );
+        })}
       </div>
+
+      {/* Full transcript table (all courses) */}
+      {data.courses.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-900">Rekap Seluruh Nilai</h3>
+            <p className="text-sm text-slate-500 mt-1">
+              Total {data.courses.length} mata kuliah — IPK {summary.ipk.toFixed(2)}
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="w-12">No.</TableHead>
+                  <TableHead>Kode</TableHead>
+                  <TableHead>Mata Kuliah</TableHead>
+                  <TableHead className="text-center">Smt</TableHead>
+                  <TableHead className="text-center">SKS</TableHead>
+                  <TableHead className="text-center">Nilai</TableHead>
+                  <TableHead className="text-center">Huruf</TableHead>
+                  <TableHead className="text-center">Bobot</TableHead>
+                  <TableHead>Dosen</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.courses.map((course, idx) => (
+                  <TableRow key={`${course.courseId}-${course.source || idx}`} className="hover:bg-slate-50">
+                    <TableCell className="text-slate-500 text-sm">{idx + 1}</TableCell>
+                    <TableCell className="font-mono text-sm text-slate-600">
+                      {course.courseCode}
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-900">{course.courseName}</TableCell>
+                    <TableCell className="text-center text-sm">{course.semester || '-'}</TableCell>
+                    <TableCell className="text-center font-medium">{course.sks}</TableCell>
+                    <TableCell className="text-center">
+                      {course.averageScore !== null ? (
+                        <span className="font-medium">{course.averageScore}</span>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${getGradeBg(course.letterGrade)} ${getGradeColor(course.letterGrade)}`}
+                      >
+                        {course.letterGrade}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center text-sm font-medium text-slate-700">
+                      {course.gradePoint.toFixed(1)}
+                    </TableCell>
+                    <TableCell className="text-sm text-slate-600">{course.teacherName}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-6 text-sm">
+                <span className="text-slate-600">Total MK: <strong className="text-slate-900">{summary.totalCourses}</strong></span>
+                <span className="text-slate-600">Total SKS: <strong className="text-slate-900">{summary.totalSKS}</strong></span>
+                <span className="text-slate-600">MK Selesai: <strong className="text-slate-900">{summary.completedCourses}</strong></span>
+              </div>
+              <div className="text-lg font-bold text-emerald-700">IPK: {summary.ipk.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default StudyResult;
+export default MahasiswaTranscriptPage;

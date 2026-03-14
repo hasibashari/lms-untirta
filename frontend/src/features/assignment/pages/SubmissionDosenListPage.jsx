@@ -160,83 +160,50 @@ function FilePreviewCard({ url }) {
     }
   };
 
+  // Download handler with token
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Token tidak ditemukan');
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Gagal mengunduh file');
+      const blob = await res.blob();
+      const fileName = fileInfo.name || 'file';
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(link.href);
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengunduh file');
+    }
+  };
+
   return (
     <div className={`rounded-lg border ${colorClasses[fileInfo.color]} overflow-hidden`}>
-      {/* File Info Header */}
       <div className="p-3 flex items-center gap-3">
         {/* Icon */}
         <div className={`shrink-0 w-10 h-10 rounded-lg ${iconBgClasses[fileInfo.color]} flex items-center justify-center`}>
           <IconComponent size={20} />
         </div>
-
         {/* File Name & Type */}
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{fileInfo.name}</p>
           <p className="text-xs opacity-70 capitalize">{fileInfo.type === 'google' ? 'Google Drive' : fileInfo.type}</p>
         </div>
-
-        {/* Action Buttons */}
-        <div className="shrink-0 flex items-center gap-1">
-          {/* Preview Button (if available) */}
-          {fileInfo.previewUrl && (
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className={`p-2 rounded-lg hover:bg-white/50 transition ${showPreview ? 'bg-white/50' : ''}`}
-              title={showPreview ? 'Tutup Preview' : 'Lihat Preview'}
-            >
-              <Eye size={16} />
-            </button>
-          )}
-
-          {/* Copy Link Button */}
-          <button
-            onClick={handleCopy}
-            className="p-2 rounded-lg hover:bg-white/50 transition"
-            title="Salin Link"
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-          </button>
-
-          {/* Open in New Tab Button */}
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-lg hover:bg-white/50 transition"
-            title="Buka di Tab Baru"
-          >
-            <ExternalLink size={16} />
-          </a>
-        </div>
-      </div>
-
-      {/* Preview Section */}
-      {showPreview && fileInfo.previewUrl && (
-        <div className="border-t border-current/10">
-          {fileInfo.type === 'image' ? (
-            <div className="p-3 bg-white/50">
-              <img
-                src={fileInfo.previewUrl}
-                alt={fileInfo.name}
-                className="max-h-64 w-auto mx-auto rounded-lg shadow-sm"
-              />
-            </div>
-          ) : (
-            <div className="aspect-video bg-white">
-              <iframe
-                src={fileInfo.previewUrl}
-                className="w-full h-full"
-                allow="autoplay"
-                title="File Preview"
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* URL Display (truncated) */}
-      <div className="px-3 pb-3">
-        <p className="text-xs opacity-60 truncate font-mono">{url}</p>
+        {/* Download Button Only */}
+        <button
+          onClick={handleDownload}
+          className="p-2 rounded-lg hover:bg-white/50 transition"
+          title="Download File"
+        >
+          <Download size={16} />
+        </button>
       </div>
     </div>
   );
