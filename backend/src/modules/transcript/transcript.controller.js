@@ -74,6 +74,13 @@ export const getAcademicSummary = async (req, res) => {
 export const getStudentTranscript = async (req, res) => {
   try {
     const { studentId } = req.params;
+
+    if (req.user.role === 'MAHASISWA' && req.user.id !== studentId) {
+      const error = new Error('Akses Ditolak: Anda hanya dapat melihat transkrip Anda sendiri.');
+      error.statusCode = 403;
+      throw error;
+    }
+
     const result = await transcriptService.getFullStudentTranscript(studentId);
 
     // Audit log: record who accessed whose transcript

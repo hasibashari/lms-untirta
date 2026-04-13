@@ -1,5 +1,5 @@
 import { useAuth } from '../../contexts/AuthContext';
-import AppLayout from '../layout/AppLayout';
+import AppLayout from './AppLayout';
 import { getNavItems } from '../../config/navigation';
 
 export default function StudentLayout() {

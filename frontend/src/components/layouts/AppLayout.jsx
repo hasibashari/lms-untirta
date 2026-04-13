@@ -75,7 +75,7 @@ const AppLayout = ({ navItems = [], roleLabel = 'Menu' }) => {
       </Sidebar>
 
       <SidebarInset className="bg-background min-h-screen">
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 bg-background/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/60 px-4">
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-3 bg-background/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/60 px-4">
           <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
           <div className="ml-auto flex items-center gap-4">
             <ProfileDropdown />

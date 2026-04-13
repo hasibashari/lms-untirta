@@ -216,7 +216,7 @@ router.get(
  * /api/transcript/student/{studentId}:
  *   get:
  *     summary: Get student transcript
- *     description: Retrieves the full transcript of a specific student by their ID. Accessible by lecturers and admins.
+ *     description: Retrieves the full transcript of a specific student by their ID. Accessible by lecturers, admins, and the student themselves.
  *     tags: [Transcript]
  *     security:
  *       - bearerAuth: []
@@ -270,7 +270,7 @@ router.get(
 router.get(
   '/student/:studentId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN', 'ADMIN', 'MAHASISWA'),
   validate(studentTranscriptParamsSchema),
   getStudentTranscript
 );

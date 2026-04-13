@@ -94,19 +94,8 @@ const CourseHome = () => {
     );
   }
 
-  // Generate warna gradient berdasarkan course id
-  const gradients = [
-    'from-blue-500 to-blue-600',
-    'from-emerald-500 to-emerald-600',
-    'from-violet-500 to-violet-600',
-    'from-orange-500 to-orange-600',
-    'from-pink-500 to-pink-600',
-    'from-cyan-500 to-cyan-600',
-  ];
-  const gradientClass = course?.id ? gradients[course.id % gradients.length] : gradients[0];
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 pb-10">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -115,89 +104,96 @@ const CourseHome = () => {
         ]}
       />
 
-      {/* Course Header Card */}
-      <div className={`bg-linear-to-r ${gradientClass} rounded-2xl overflow-hidden`}>
-        <div className="relative p-6 lg:p-8">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <div className="relative z-10">
+      {/* Course Header Card - Blue Dominant Theme */}
+      <div className="bg-linear-to-br from-blue-700 to-blue-800 rounded-2xl overflow-hidden relative shadow-md">
+        {/* Subtle decorative pattern or glow */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none"></div>
+        
+        <div className="relative p-6 lg:p-8 z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
+          <div className="flex-1 min-w-0">
             {/* Course Code Badge */}
-            <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium px-3 py-1 rounded-full mb-4">
-              <Hash size={14} />
+            <span className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors border border-white/20 backdrop-blur-md text-white text-xs font-semibold px-3 py-1 rounded-md mb-4 shadow-sm">
+              <Hash size={12} />
               {course?.code || 'KELAS'}
             </span>
 
             {/* Title */}
-            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3">
+            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2 tracking-tight drop-shadow-sm wrap-break-word">
               {course?.title || 'Nama Kelas'}
             </h1>
 
-            {/* Instructor */}
-            <div className="flex items-center gap-3 text-white/90">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <User size={20} />
-              </div>
-              <div>
-                <p className="font-medium">{course?.teacher?.name || 'Dosen'}</p>
-                <p className="text-sm text-white/70">Dosen Pengampu</p>
-              </div>
-            </div>
-
             {/* Description (if available) */}
             {course?.description && (
-              <p className="mt-4 text-white/80 max-w-2xl">
+              <p className="text-blue-50 text-sm max-w-2xl leading-relaxed mt-2 mb-2 line-clamp-3 md:line-clamp-none">
                 {course.description}
               </p>
             )}
+          </div>
+          
+          <div className="w-full md:w-72 lg:w-80 shrink-0 flex items-center gap-4 p-4 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-inner transition-colors hover:bg-white/15">
+            <div className="shrink-0 w-12 h-12 rounded-full bg-blue-600/50 border border-blue-400/50 flex items-center justify-center text-white shadow-sm">
+              <User size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-wider text-blue-200 font-semibold mb-1">Dosen Pengampu</p>
+              <p className="font-semibold text-white drop-shadow-sm truncate text-sm sm:text-base" title={course?.teacher?.name || 'Belum Diatur'}>
+                {course?.teacher?.name || 'Belum Diatur'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Button
-          variant="outline"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
           onClick={() => navigate(`/mahasiswa/courses/${courseId}/materials`)}
-          className="group flex items-center gap-4 p-5 h-auto justify-start hover:border-primary/50 hover:shadow-lg"
+          className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:bg-slate-50 transition-all cursor-pointer"
         >
-          <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
-            <BookOpen size={28} className="text-blue-600" />
+          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-105 transition-all duration-300">
+            <BookOpen size={24} className="text-indigo-600" />
           </div>
-          <div className="flex-1 text-left">
-            <h3 className="font-semibold text-slate-900">Materi Pembelajaran</h3>
-            <p className="text-sm text-slate-500">{materials.length} materi tersedia</p>
+          <div className="flex-1">
+            <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">Materi Pembelajaran</h3>
+            <p className="text-sm text-slate-500 mt-0.5">{materials.length} materi tersedia</p>
           </div>
-          <ArrowRight size={20} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-        </Button>
+          <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
+            <ArrowRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+          </div>
+        </div>
 
-        <Button
-          variant="outline"
+        <div
           onClick={() => navigate(`/mahasiswa/courses/${courseId}/assignments`)}
-          className="group flex items-center gap-4 p-5 h-auto justify-start hover:border-green-300 hover:shadow-lg"
+          className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:bg-slate-50 transition-all cursor-pointer"
         >
-          <div className="w-14 h-14 rounded-xl bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition">
-            <ClipboardList size={28} className="text-green-600" />
+          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-105 transition-all duration-300">
+            <ClipboardList size={24} className="text-indigo-600" />
           </div>
-          <div className="flex-1 text-left">
-            <h3 className="font-semibold text-slate-900">Tugas</h3>
-            <p className="text-sm text-slate-500">{assignments.length} tugas tersedia</p>
+          <div className="flex-1">
+            <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">Tugas Akademik</h3>
+            <p className="text-sm text-slate-500 mt-0.5">{assignments.length} tugas tersedia</p>
           </div>
-          <ArrowRight size={20} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-        </Button>
+          <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
+            <ArrowRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+          </div>
+        </div>
       </div>
 
       {/* Silabus Section */}
-      <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100">
-          <h2 className="text-xl font-bold text-slate-900">Silabus Materi</h2>
-          <p className="text-sm text-slate-500 mt-1">Daftar materi yang akan Anda pelajari</p>
+      <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+          <h2 className="text-lg font-bold text-slate-900">Silabus Materi</h2>
+          <p className="text-sm text-slate-500 mt-1">Daftar perjalanan pembelajaran Anda di kelas ini</p>
         </div>
 
         {materials.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-              <FileText size={28} className="text-slate-400" />
+          <div className="p-10 text-center flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
+              <FileText size={28} className="text-slate-300" />
             </div>
-            <p className="text-slate-500">Belum ada materi di kelas ini</p>
+            <p className="text-slate-500 font-medium">Belum ada materi di kelas ini</p>
+            <p className="text-sm text-slate-400 mt-1">Materi akan muncul setelah dosen mengunggahnya</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -205,22 +201,22 @@ const CourseHome = () => {
               <Link
                 key={material.id}
                 to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
-                className="flex items-center gap-4 p-5 hover:bg-slate-50 transition group"
+                className="flex items-center gap-4 p-4 sm:p-5 hover:bg-slate-50 transition-colors group"
               >
-                {/* Number/Progress indicator */}
-                <div className="shrink-0 w-10 h-10 rounded-full bg-blue-50 text-blue-600 font-bold flex items-center justify-center">
+                {/* Number indicator */}
+                <div className="shrink-0 w-8 h-8 rounded bg-slate-100 border border-slate-200 text-slate-600 font-semibold text-sm flex items-center justify-center group-hover:bg-indigo-50 group-hover:border-indigo-200 group-hover:text-indigo-700 transition-colors">
                   {material.order || index + 1}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-900 group-hover:text-blue-600 transition truncate">
+                  <h3 className="font-medium text-slate-800 group-hover:text-indigo-700 transition-colors truncate">
                     {material.title}
                   </h3>
                 </div>
 
                 {/* Arrow */}
-                <ArrowRight size={18} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                <ArrowRight size={18} className="text-slate-300 group-hover:text-indigo-500 group-hover:-rotate-45 transition-all opacity-0 group-hover:opacity-100" />
               </Link>
             ))}
           </div>
@@ -228,12 +224,12 @@ const CourseHome = () => {
 
         {/* View All Link */}
         {materials.length > 0 && (
-          <div className="p-4 bg-slate-50 border-t border-slate-100">
+          <div className="p-4 bg-slate-50/50 border-t border-slate-100">
             <Link
               to={`/mahasiswa/courses/${courseId}/materials`}
-              className="flex items-center justify-center gap-2 text-blue-600 font-medium hover:underline"
+              className="flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-indigo-600 font-medium transition-colors"
             >
-              Lihat Semua Materi
+              Lihat Seluruh Materi
               <ArrowRight size={16} />
             </Link>
           </div>
@@ -242,38 +238,46 @@ const CourseHome = () => {
 
       {/* Recent Assignments */}
       {assignments.length > 0 && (
-        <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900">Tugas Terbaru</h2>
-            <p className="text-sm text-slate-500 mt-1">Tugas yang perlu Anda kerjakan</p>
+        <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Tugas Terbaru</h2>
+              <p className="text-sm text-slate-500 mt-1">Evaluasi yang perlu Anda perhatikan</p>
+            </div>
+            <Link
+              to={`/mahasiswa/courses/${courseId}/assignments`}
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
+            >
+              Lihat Semua
+            </Link>
           </div>
 
           <div className="divide-y divide-slate-100">
-            {assignments.slice(0, 3).map((assignment) => (
+            {assignments.slice(0, 4).map((assignment) => (
               <div
                 key={assignment.id}
                 onClick={() =>
                   navigate(`/mahasiswa/courses/${courseId}/assignments/${assignment.id}`)
                 }
-                className="flex items-center gap-4 p-5 hover:bg-slate-50 transition cursor-pointer group"
+                className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-5 hover:bg-slate-50 transition-colors cursor-pointer group"
               >
                 {/* Icon */}
-                <div className="shrink-0 w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 text-slate-500 hidden sm:flex items-center justify-center group-hover:bg-indigo-50 group-hover:border-indigo-200 group-hover:text-indigo-600 transition-colors">
                   <ClipboardList size={20} />
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-900 group-hover:text-green-600 transition truncate">
+                  <h3 className="font-medium text-slate-800 group-hover:text-indigo-700 transition-colors truncate">
                     {assignment.title}
                   </h3>
-                  <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
-                    <Clock size={14} />
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1.5">
+                    <Clock size={14} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
                     <span>
-                      Deadline: {new Date(assignment.dueDate).toLocaleDateString('id-ID', {
+                      Tenggat: {new Date(assignment.dueDate).toLocaleDateString('id-ID', {
                         weekday: 'long',
                         year: 'numeric',
-                        month: 'long',
+                        month: 'short',
                         day: 'numeric',
                       })}
                     </span>
@@ -281,28 +285,18 @@ const CourseHome = () => {
                 </div>
 
                 {/* Status Badge */}
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${assignment.status === 'submitted'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-amber-100 text-amber-700'
+                <div className="shrink-0 mt-2 sm:mt-0">
+                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${
+                    assignment.status === 'submitted'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
                   }`}>
-                  {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
-                </span>
+                    {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
-
-          {assignments.length > 3 && (
-            <div className="p-4 bg-slate-50 border-t border-slate-100">
-              <Button
-                variant="link"
-                onClick={() => navigate(`/mahasiswa/courses/${courseId}/assignments`)}
-                className="flex items-center justify-center gap-2 w-full text-green-600 font-medium"
-              >
-                Lihat Semua Tugas ({assignments.length})
-                <ArrowRight size={16} />
-              </Button>
-            </div>
-          )}
         </section>
       )}
     </div>

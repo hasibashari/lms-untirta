@@ -1,41 +1,21 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  Loader2, AlertCircle, Award, TrendingUp, Printer, GraduationCap, BookOpen, ChevronDown, ChevronUp
-} from 'lucide-react';
+import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
 import { getStudentTranscript } from '../transcriptService';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+import CourseBadge from '@/components/ui/CourseBadge';
 
 /**
- * StudyResult (Hasil Studi / Academic Transcript)
- * Menampilkan hasil studi berdasarkan data KRS dengan nilai
- * Layout mengikuti referensi SIAKAD
+ * MahasiswaTranscriptPage
+ * 
+ * Menampilkan Daftar Hasil Studi per semester dengan desain tabel modern
+ * mengikuti spesifikasi UI terbaru: kartu per semester, badge SKS, 
+ * dan tampilan IP/IPK di dalam tabel.
  */
-
-const getGradeColor = (grade) => {
-  if (!grade || grade === '-') return 'text-slate-400';
-  if (grade === 'A' || grade === 'A-') return 'text-green-600';
-  if (grade.startsWith('B')) return 'text-blue-600';
-  if (grade.startsWith('C')) return 'text-amber-600';
-  return 'text-red-600';
-};
-
-const getGradeBg = (grade) => {
-  if (!grade || grade === '-') return 'bg-slate-50';
-  if (grade === 'A' || grade === 'A-') return 'bg-green-50';
-  if (grade.startsWith('B')) return 'bg-blue-50';
-  if (grade.startsWith('C')) return 'bg-amber-50';
-  return 'bg-red-50';
-};
-
 const MahasiswaTranscriptPage = () => {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedSemester, setExpandedSemester] = useState(null);
 
   useEffect(() => {
     const fetchTranscript = async () => {
@@ -53,39 +33,12 @@ const MahasiswaTranscriptPage = () => {
     if (user?.id) fetchTranscript();
   }, [user]);
 
-  // Group courses by semester
-  const semesterGroups = useMemo(() => {
-    if (!data?.courses) return [];
-    const map = new Map();
-    for (const course of data.courses) {
-      const key = course.semester || 0;
-      if (!map.has(key)) {
-        map.set(key, { semester: key, courses: [], totalSKS: 0, totalPoints: 0, completed: 0 });
-      }
-      const group = map.get(key);
-      group.courses.push(course);
-      if (course.averageScore !== null) {
-        group.totalSKS += course.sks;
-        group.totalPoints += course.gradePoint * course.sks;
-        group.completed++;
-      }
-    }
-    return Array.from(map.values())
-      .sort((a, b) => a.semester - b.semester)
-      .map(g => ({
-        ...g,
-        ips: g.totalSKS > 0
-          ? Math.round((g.totalPoints / g.totalSKS) * 100) / 100
-          : 0,
-      }));
-  }, [data]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
-          <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-3" />
-          <p className="text-slate-500">Memuat transkrip...</p>
+          <Loader2 size={32} className="animate-spin text-indigo-600 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Memuat Hasil Studi...</p>
         </div>
       </div>
     );
@@ -93,280 +46,176 @@ const MahasiswaTranscriptPage = () => {
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
-          <p className="text-red-600 font-medium">{error}</p>
-        </div>
+      <div className="bg-white rounded-xl border border-red-200 p-12 text-center max-w-2xl mx-auto">
+        <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
+        <p className="text-red-700 font-medium">{error}</p>
       </div>
     );
   }
 
   if (!data) return null;
 
-  const { student, summary } = data;
+  const { student, summary, courses } = data;
+
+  // Sorting courses valid only
+  const sortedCourses = [...(courses || [])].sort((a, b) => {
+    if (a.semester !== b.semester) return (a.semester || 0) - (b.semester || 0);
+    return (a.courseCode || '').localeCompare(b.courseCode || '');
+  });
+  const validCourses = sortedCourses.filter(c => c.letterGrade && c.letterGrade !== '-');
+
+  // Calculate generic total for header
+  let calculatedTotalSks = 0;
+  validCourses.forEach(c => calculatedTotalSks += c.sks);
+
+  // Group courses by semester
+  const groupedCourses = {};
+  validCourses.forEach((course) => {
+    const sem = course.semester || 1;
+    if (!groupedCourses[sem]) {
+      groupedCourses[sem] = [];
+    }
+    groupedCourses[sem].push(course);
+  });
+
+  const semestersList = Object.keys(groupedCourses).sort((a, b) => Number(a) - Number(b));
+  let cumulativeSks = 0;
+  let cumulativeMutu = 0;
+
+  const semesterDataList = semestersList.map((sem) => {
+    const coursesInSem = groupedCourses[sem];
+    let semSks = 0;
+    let semMutu = 0;
+
+    coursesInSem.forEach((c) => {
+      semSks += c.sks;
+      semMutu += c.sks * (c.gradePoint || 0);
+    });
+
+    cumulativeSks += semSks;
+    cumulativeMutu += semMutu;
+
+    const ip = semSks > 0 ? semMutu / semSks : 0;
+    const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
+
+    // Convert semester number to odd/even (Gasal/Genap)
+    const isGasal = Number(sem) % 2 !== 0;
+    const semesterType = isGasal ? 'Gasal' : 'Genap';
+    const semesterTitle = `Semester ${sem} - ${semesterType}`;
+
+    return {
+      semester: sem,
+      semesterTitle,
+      courses: coursesInSem,
+      ip,
+      ipk,
+    };
+  }).reverse(); // Display latest semester first
 
   return (
-    <div className="space-y-6">
-      {/* Student Profile Header */}
-      <div className="bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 text-white rounded-2xl p-6 lg:p-8 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-32 bg-white/5 rounded-full blur-3xl" />
-        </div>
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <span className="text-2xl font-bold">{student.name.charAt(0).toUpperCase()}</span>
-            </div>
-            <div>
-              <h1 className="text-xl lg:text-2xl font-bold">{student.name}</h1>
-              {student.nim && (
-                <p className="text-blue-100 text-sm font-mono">{student.nim}</p>
-              )}
-              <p className="text-blue-100/80 text-sm">{student.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-lg text-sm font-medium transition"
-          >
-            <Printer size={16} /> Cetak Transkrip
-          </button>
-        </div>
-      </div>
-
-      {/* Academic Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <Award size={18} className="text-emerald-600" />
-            </div>
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{summary.ipk.toFixed(2)}</p>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">IPK (Cumulative GPA)</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-              <BookOpen size={18} className="text-blue-600" />
-            </div>
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{summary.totalSKS}</p>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">Total SKS Selesai</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
-              <GraduationCap size={18} className="text-violet-600" />
-            </div>
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{summary.completedCourses}</p>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">MK Selesai</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
-              <TrendingUp size={18} className="text-amber-600" />
-            </div>
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-900">
-            {summary.ipk >= 3.5 ? 'Cum Laude' : summary.ipk >= 3.0 ? 'Sangat Baik' : summary.ipk >= 2.5 ? 'Baik' : 'Cukup'}
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {/* Page Header / Action Buttons */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
+        <div>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Kartu Hasil Studi (KHS)</h1>
+          <p className="text-slate-500 mt-1 text-sm sm:text-base">
+            Mahasiswa: <span className="font-semibold text-slate-700">{student?.name || '-'}</span> |  
+            Total SKS: <span className="font-semibold text-slate-700">{calculatedTotalSks} SKS</span> | 
+            IPK: <span className="font-semibold text-slate-700">{summary?.ipk?.toFixed(2) || '0.00'}</span>
           </p>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">Predikat</p>
         </div>
+        <button
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg shadow-sm font-medium transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none"
+        >
+          <Printer size={18} /> Cetak Semua KHS
+        </button>
       </div>
 
-      {/* Semester-by-Semester Breakdown */}
-      <div className="space-y-3">
-        <h3 className="font-semibold text-slate-900 text-lg">Nilai per Semester</h3>
-        {semesterGroups.map(group => {
-          const isExpanded = expandedSemester === group.semester;
-          return (
-            <div key={group.semester} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <div
-                className="flex items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-slate-50 transition"
-                onClick={() => setExpandedSemester(isExpanded ? null : group.semester)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <span className="text-blue-700 font-bold text-sm">{group.semester}</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Semester {group.semester}</p>
-                    <p className="text-sm text-slate-500">{group.courses.length} mata kuliah</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="hidden sm:flex items-center gap-3">
-                    <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                      {group.totalSKS} SKS
-                    </span>
-                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
-                      IPS: {group.ips.toFixed(2)}
-                    </span>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronUp size={18} className="text-slate-400" />
-                  ) : (
-                    <ChevronDown size={18} className="text-slate-400" />
-                  )}
-                </div>
+      {semesterDataList.length === 0 ? (
+         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center max-w-2xl mx-auto text-slate-500 italic">
+             Belum ada data nilai akademik yang tersedia.
+         </div>
+      ) : (
+        semesterDataList.map((semData) => (
+          <div key={semData.semester} className="bg-white p-6 sm:p-8 shadow-sm rounded-xl border border-slate-200 mb-8 print:shadow-none print:border-none print:p-0 print:mb-12">
+            
+            {/* Header KHS */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Daftar Hasil Studi</h2>
+                <p className="text-slate-500 text-sm mt-1">{semData.semesterTitle}</p>
               </div>
-
-              {/* Mobile stats */}
-              {!isExpanded && (
-                <div className="flex sm:hidden items-center gap-2 px-4 pb-3">
-                  <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                    {group.totalSKS} SKS
-                  </span>
-                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
-                    IPS: {group.ips.toFixed(2)}
-                  </span>
-                </div>
-              )}
-
-              {isExpanded && (
-                <div className="border-t border-slate-100">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50/50">
-                          <TableHead className="w-12">No.</TableHead>
-                          <TableHead>Kode</TableHead>
-                          <TableHead>Mata Kuliah</TableHead>
-                          <TableHead className="text-center">SKS</TableHead>
-                          <TableHead className="text-center">Nilai</TableHead>
-                          <TableHead className="text-center">Huruf</TableHead>
-                          <TableHead className="text-center">Bobot</TableHead>
-                          <TableHead>Dosen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {group.courses.map((course, idx) => (
-                          <TableRow key={course.courseId} className="hover:bg-slate-50">
-                            <TableCell className="text-slate-500 text-sm">{idx + 1}</TableCell>
-                            <TableCell className="font-mono text-sm text-slate-600">
-                              {course.courseCode}
-                            </TableCell>
-                            <TableCell>
-                              <p className="font-medium text-slate-900">{course.courseName}</p>
-                              {course.source === 'krs' && course.section && (
-                                <p className="text-xs text-slate-400">
-                                  Kelas {course.section} | {course.academicYear} {course.semesterType}
-                                </p>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center font-medium">{course.sks}</TableCell>
-                            <TableCell className="text-center">
-                              {course.averageScore !== null ? (
-                                <span className="font-medium">{course.averageScore}</span>
-                              ) : (
-                                <span className="text-slate-400">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span
-                                className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${getGradeBg(course.letterGrade)} ${getGradeColor(course.letterGrade)}`}
-                              >
-                                {course.letterGrade}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center text-sm font-medium text-slate-700">
-                              {course.gradePoint.toFixed(1)}
-                            </TableCell>
-                            <TableCell className="text-sm text-slate-600">
-                              {course.teacherName}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <div className="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-sm">
-                    <span className="text-slate-600">
-                      Total: <strong>{group.courses.length}</strong> MK | <strong>{group.totalSKS}</strong> SKS
-                    </span>
-                    <span className="font-semibold text-emerald-700">
-                      IPS: {group.ips.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Full transcript table (all courses) */}
-      {data.courses.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-900">Rekap Seluruh Nilai</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Total {data.courses.length} mata kuliah — IPK {summary.ipk.toFixed(2)}
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="w-12">No.</TableHead>
-                  <TableHead>Kode</TableHead>
-                  <TableHead>Mata Kuliah</TableHead>
-                  <TableHead className="text-center">Smt</TableHead>
-                  <TableHead className="text-center">SKS</TableHead>
-                  <TableHead className="text-center">Nilai</TableHead>
-                  <TableHead className="text-center">Huruf</TableHead>
-                  <TableHead className="text-center">Bobot</TableHead>
-                  <TableHead>Dosen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.courses.map((course, idx) => (
-                  <TableRow key={`${course.courseId}-${course.source || idx}`} className="hover:bg-slate-50">
-                    <TableCell className="text-slate-500 text-sm">{idx + 1}</TableCell>
-                    <TableCell className="font-mono text-sm text-slate-600">
-                      {course.courseCode}
-                    </TableCell>
-                    <TableCell className="font-medium text-slate-900">{course.courseName}</TableCell>
-                    <TableCell className="text-center text-sm">{course.semester || '-'}</TableCell>
-                    <TableCell className="text-center font-medium">{course.sks}</TableCell>
-                    <TableCell className="text-center">
-                      {course.averageScore !== null ? (
-                        <span className="font-medium">{course.averageScore}</span>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span
-                        className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${getGradeBg(course.letterGrade)} ${getGradeColor(course.letterGrade)}`}
-                      >
-                        {course.letterGrade}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center text-sm font-medium text-slate-700">
-                      {course.gradePoint.toFixed(1)}
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-600">{course.teacherName}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="flex items-center gap-6 text-sm">
-                <span className="text-slate-600">Total MK: <strong className="text-slate-900">{summary.totalCourses}</strong></span>
-                <span className="text-slate-600">Total SKS: <strong className="text-slate-900">{summary.totalSKS}</strong></span>
-                <span className="text-slate-600">MK Selesai: <strong className="text-slate-900">{summary.completedCourses}</strong></span>
+              <div className="flex gap-3 mt-4 sm:mt-0 print:hidden">
+                <button 
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 border border-cyan-300 text-cyan-600 hover:bg-cyan-50 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  <Printer size={16} /> KHS
+                </button>
+                <button className="flex items-center gap-2 border border-indigo-300 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  <RefreshCw size={16} /> Hitung IPS
+                </button>
               </div>
-              <div className="text-lg font-bold text-emerald-700">IPK: {summary.ipk.toFixed(2)}</div>
             </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-[700px]">
+                <thead>
+                  <tr className="border-y border-slate-200 text-slate-500">
+                    <th className="px-4 py-4 font-semibold w-16 text-center">No.</th>
+                    <th className="px-4 py-4 font-semibold w-32">Kode Jadwal</th>
+                    <th className="px-4 py-4 font-semibold w-auto">Mata Kuliah</th>
+                    <th className="px-4 py-4 font-semibold w-64">Dosen</th>
+                    <th className="px-4 py-4 font-semibold w-24 text-center">Nilai</th>
+                    <th className="px-4 py-4 font-semibold w-24 text-center">Mutu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {semData.courses.map((course, idx) => (
+                    <tr key={`${course.courseCode}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50/50 print:border-slate-200">
+                      <td className="px-4 py-5 text-slate-600 text-center">{idx + 1}</td>
+                      <td className="px-4 py-5 font-mono text-slate-500 text-xs sm:text-sm">
+                        {course.scheduleCode || course.courseCode || '-'}
+                      </td>
+                      <td className="px-4 py-5 text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <span>{course.courseName} <span className="text-slate-400">({course.courseCode})</span></span>
+                          <CourseBadge variant="indigo">
+                            {course.sks} SKS
+                          </CourseBadge>
+                        </div>
+                      </td>
+                      <td className="px-4 py-5 text-slate-500">
+                        {course.lecturer || course.dosen ? `1. ${course.lecturer || course.dosen}` : ''}
+                      </td>
+                      <td className="px-4 py-5 text-slate-600 text-center">
+                        {course.score ?? (course.gradePoint?.toFixed(2) || '-')}
+                      </td>
+                      <td className="px-4 py-5 text-slate-700 font-medium text-center">
+                        {course.letterGrade || '-'}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Footer Stats per Semester inside Table */}
+                  <tr className="bg-slate-50 border-b border-slate-200 print:bg-transparent">
+                    <td colSpan={6} className="px-4 py-5 text-center font-mono font-bold text-slate-600 tracking-widest text-sm">
+                      IP : {semData.ip.toFixed(2)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-slate-200">
+                    <td colSpan={6} className="px-4 py-5 text-center font-mono font-bold text-slate-600 tracking-widest text-sm">
+                      IPK : {semData.ipk.toFixed(2)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
           </div>
-        </div>
+        ))
       )}
     </div>
   );

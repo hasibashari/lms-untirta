@@ -615,7 +615,7 @@ const StudyPlan = () => {
                             </CourseBadge>
                           )}
                           <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                            <CourseBadge variant="success">
+                            <CourseBadge variant="indigo">
                               {cls.course?.sks || 3} SKS
                             </CourseBadge>
                             <CourseBadge variant="purple">{cls.name || 'Kelas'}</CourseBadge>
@@ -682,7 +682,7 @@ const StudyPlan = () => {
                                 <span className="text-slate-500 ml-1">({cls.course?.code})</span>
                               </div>
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <CourseBadge variant="success">
+                                <CourseBadge variant="indigo">
                                   {cls.course?.sks || 3} SKS
                                 </CourseBadge>
                                 <CourseBadge variant="teal">
@@ -850,7 +850,7 @@ const StudyPlan = () => {
                 </div>
                 <Button
                   variant="outline"
-                  className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 w-full sm:w-auto"
+                  className="gap-2 border-cyan-300 text-cyan-600 hover:bg-cyan-50 w-full sm:w-auto"
                   onClick={handlePrintKrs}
                 >
                   <Printer size={16} />
@@ -881,7 +881,7 @@ const StudyPlan = () => {
                         {enrollment.class?.course?.title}
                       </h4>
                       <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        <CourseBadge variant="success">
+                        <CourseBadge variant="indigo">
                           {enrollment.class?.course?.sks || 3} SKS
                         </CourseBadge>
                         <CourseBadge variant="purple">
@@ -980,7 +980,7 @@ const StudyPlan = () => {
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <CourseBadge variant="success">
+                            <CourseBadge variant="indigo">
                               {enrollment.class?.course?.sks || 3} SKS
                             </CourseBadge>
                           </div>

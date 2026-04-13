@@ -131,7 +131,7 @@ export const TESTIMONIALS = [
  */
 export const PARTNERS = [
   { name: "Kemendikbud Ristek", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/400px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png" },
-  { name: "Universitas Indonesia", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/0/0f/Makara_of_Universitas_Indonesia.svg/1108px-Makara_of_Universitas_Indonesia.svg.png" },
+  { name: "Universitas Indonesia", logo: "https://upload.wikimedia.org/wikipedia/id/thumb/0/0f/Makara_of_Universitas_Indonesia.svg/960px-Makara_of_Universitas_Indonesia.svg.png" },
   { name: "Institut Teknologi Bandung", logo: "https://upload.wikimedia.org/wikipedia/id/9/95/Logo_Institut_Teknologi_Bandung.png" },
   { name: "Universitas Gadjah Mada", logo: "https://upload.wikimedia.org/wikipedia/commons/6/6a/UNIVERSITAS_GADJAH_MADA%2C_YOGYAKARTA.png" },
   { name: "Institut Pertanian Bogor", logo: "https://upload.wikimedia.org/wikipedia/id/0/0f/Logo_IPB.png" },

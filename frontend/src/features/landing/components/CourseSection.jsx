@@ -1,5 +1,5 @@
 import { MoreHorizontal } from 'lucide-react';
-import CourseCard from '@/features/course/components/CourseCard';
+import PublicCourseCard from './PublicCourseCard';
 
 /**
  * CourseSection Component
@@ -49,7 +49,7 @@ const CourseSection = ({
         {/* Responsive Grid: 1 col (mobile), 2 cols (tablet), 3 cols (desktop), 4 cols (large) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <PublicCourseCard key={course.id} course={course} />
           ))}
         </div>
 

@@ -20,6 +20,7 @@ const CourseBadge = ({
     warning: 'bg-amber-500 text-white',
     info: 'bg-cyan-500 text-white',
     purple: 'bg-purple-500 text-white',
+    indigo: 'bg-indigo-500 text-white',
     teal: 'bg-teal-500 text-white',
     gray: 'bg-slate-500 text-white',
     outline: 'bg-white text-slate-600 border border-slate-300',
@@ -29,6 +30,7 @@ const CourseBadge = ({
     'warning-soft': 'bg-amber-100 text-amber-700',
     'info-soft': 'bg-cyan-100 text-cyan-700',
     'purple-soft': 'bg-purple-100 text-purple-700',
+    'indigo-soft': 'bg-indigo-100 text-indigo-700',
     'teal-soft': 'bg-teal-100 text-teal-700',
     'gray-soft': 'bg-slate-100 text-slate-700',
   };
