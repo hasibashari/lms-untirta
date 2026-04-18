@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -121,9 +122,10 @@ export default function Users() {
                     variant="destructive"
                     size="sm"
                     className="h-7 w-7 p-0 lg:hidden"
+                    title="Hapus"
                     onClick={(e) => handleDelete(u.id, u.name, e)}
                   >
-                    X
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -171,16 +173,20 @@ export default function Users() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-8 w-8 p-0"
+                          title="Edit"
                           onClick={(e) => { e.stopPropagation(); navigate(`/admin/users/${u.id}/edit`); }}
                         >
-                          Edit
+                          <Pencil className="h-4 w-4 text-blue-600" />
                         </Button>
                         <Button
                           variant="destructive"
                           size="sm"
+                          className="h-8 w-8 p-0"
+                          title="Hapus"
                           onClick={(e) => handleDelete(u.id, u.name, e)}
                         >
-                          Hapus
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
