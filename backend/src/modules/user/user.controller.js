@@ -68,6 +68,37 @@ export const getUserById = async (req, res) => {
   }
 };
 
+/**
+ * Updates an existing user by ID.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedUser = await userService.updateUser(id, req.body);
+    sendSuccess(res, { statusCode: 200, message: 'Berhasil mengubah user', data: updatedUser });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+/**
+ * Deletes a user by ID.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ */
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedUser = await userService.deleteUser(id);
+    sendSuccess(res, { statusCode: 200, message: 'Berhasil menghapus user', data: deletedUser });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+
 // ======================== DOSPEM MANAGEMENT ========================
 
 /**

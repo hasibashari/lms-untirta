@@ -130,6 +130,61 @@ const getUserById = async userId => {
   return user;
 };
 
+/**
+ * Updates an existing user by ID.
+ * @param {string} userId - The ID of the user.
+ * @param {object} data - Data to update.
+ * @returns {Promise<object>} The updated user.
+ */
+const updateUser = async (userId, data) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User tidak ditemukan');
+  }
+
+  // Cek duplikasi email jika email diubah
+  if (data.email && data.email !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) {
+      throw new AppError(409, 'Email sudah terdaftar');
+    }
+  }
+
+  // Jika password disertakan, hash password
+  const updateData = { ...data };
+  if (updateData.password) {
+    updateData.password = await bcrypt.hash(updateData.password, 10);
+  }
+
+  return await prisma.user.update({
+    where: { id: userId },
+    data: updateData,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+};
+
+/**
+ * Deletes a user by ID.
+ * @param {string} userId - The ID of the user.
+ * @returns {Promise<object>} The deleted user.
+ */
+const deleteUser = async (userId) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User tidak ditemukan');
+  }
+
+  return await prisma.user.delete({
+    where: { id: userId },
+    select: { id: true, name: true }
+  });
+};
+
 // ======================== DOSPEM MANAGEMENT ========================
 
 /**
@@ -348,6 +403,8 @@ export {
   createUserByAdmin,
   getAllUsers,
   getUserById,
+  updateUser,
+  deleteUser,
   getAdminStats,
   updateDospemStatus,
   assignAdvisor,

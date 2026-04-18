@@ -2,7 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   Loader2, AlertCircle, Calendar, Plus,
-  ChevronRight, Trash2, ArrowRight,
+  ChevronRight, Trash2, ArrowRight, X, CheckCircle,
 } from 'lucide-react';
 import {
   useSemesters,
@@ -275,16 +275,16 @@ const AdminAcademicPage = () => {
                 <div className="p-4 sm:p-5">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     {/* Semester Info */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                         <Calendar size={22} className="text-blue-600" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-slate-900 truncate">
                           {sem.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}{' '}
                           {sem.academicYear}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
                             {cfg.label}
                           </span>
@@ -356,12 +356,12 @@ const AdminAcademicPage = () => {
           />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
             {/* Header */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-semibold text-slate-900 truncate">
                   Konfirmasi Perubahan Status
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 mt-1 truncate">
                   {transitionModal.semesterLabel}
                 </p>
               </div>
@@ -490,13 +490,15 @@ const AdminAcademicPage = () => {
                             .map((cls) => (
                               <div
                                 key={cls.classId}
-                                className="flex items-center justify-between bg-white/80 rounded px-2 py-1.5 text-xs"
+                                className="flex items-start justify-between gap-2 bg-white/80 rounded px-2 py-1.5 text-xs"
                               >
-                                <div className="min-w-0">
-                                  <span className="font-mono text-slate-500">{cls.courseCode}</span>
-                                  <span className="text-slate-400 mx-1">&middot;</span>
-                                  <span className="text-slate-700">{cls.courseTitle}</span>
-                                  <span className="text-slate-400 mx-1">({cls.section})</span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate">
+                                    <span className="font-mono text-slate-500">{cls.courseCode}</span>
+                                    <span className="text-slate-400 mx-1">&middot;</span>
+                                    <span className="text-slate-700">{cls.courseTitle}</span>
+                                    <span className="text-slate-400 mx-1">({cls.section})</span>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                   {cls.missingGrades > 0 && (

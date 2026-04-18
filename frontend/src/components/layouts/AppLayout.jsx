@@ -15,6 +15,7 @@ import {
 } from '../ui/sidebar';
 import Logo from '../ui/Logo';
 import ProfileDropdown from '../navigation/ProfileDropdown';
+import { ChatWidget } from '../../features/chatbot';
 
 const SidebarLogoHeader = () => {
   return (
@@ -85,6 +86,7 @@ const AppLayout = ({ navItems = [], roleLabel = 'Menu' }) => {
         <main className="flex-1 w-full p-6 lg:p-8">
           <Outlet />
         </main>
+        <ChatWidget />
       </SidebarInset>
     </SidebarProvider>
   );

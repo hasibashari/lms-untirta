@@ -12,6 +12,8 @@ import {
   getAdvisorSummary,
   getAdvisorStudents,
   getAdminStats,
+  updateUser,
+  deleteUser,
 } from './user.controller.js';
 import { createUserSchema, updateDospemSchema, assignAdvisorSchema, bulkAssignAdvisorSchema } from './user.validation.js';
 
@@ -262,6 +264,58 @@ router.get('/stats', getAdminStats);
  *         $ref: '#/components/responses/NotFound'
  */
 router.get('/:id', getUserById);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   put:
+ *     summary: Update a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               role:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.put('/:id', updateUser);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: User deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.delete('/:id', deleteUser);
 
 /**
  * @swagger

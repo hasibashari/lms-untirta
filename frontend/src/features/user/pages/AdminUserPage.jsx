@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getUsers } from '../userService';
+import { getUsers, deleteUser } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -22,6 +22,19 @@ export default function Users() {
       .catch(err => setError(err))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (id, name, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus user ${name}?`)) return;
+
+    try {
+      await deleteUser(id);
+      setUsers(users.filter(u => u.id !== id));
+      // Optional: you can show a success toast here if needed
+    } catch (err) {
+      alert('Gagal menghapus user: ' + (err?.response?.data?.message || err?.message || 'Terjadi kesalahan sistem.'));
+    }
+  };
 
   const errorMessage = err =>
     err?.response?.data?.message || err?.message || 'Terjadi kesalahan.';
@@ -102,7 +115,17 @@ export default function Users() {
                   <p className="font-semibold text-slate-900 truncate">{u.name}</p>
                   <p className="text-sm text-slate-500 truncate">{u.email}</p>
                 </div>
-                <Badge variant={roleVariant(u.role)}>{roleLabel(u.role)}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={roleVariant(u.role)}>{roleLabel(u.role)}</Badge>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-7 w-7 p-0 lg:hidden"
+                    onClick={(e) => handleDelete(u.id, u.name, e)}
+                  >
+                    X
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -144,13 +167,20 @@ export default function Users() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={(e) => { e.stopPropagation(); navigate(`/admin/users/${u.id}/edit`); }}
                         >
                           Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => handleDelete(u.id, u.name, e)}
+                        >
+                          Hapus
                         </Button>
                       </div>
                     </TableCell>

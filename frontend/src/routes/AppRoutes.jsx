@@ -32,6 +32,7 @@ const MahasiswaDashboard = lazy(() => import('../features/dashboard/pages/Mahasi
 // User module
 const AdminUsers = lazy(() => import('../features/user/pages/AdminUserPage'));
 const AdminCreateUser = lazy(() => import('../features/user/pages/AdminUserCreatePage'));
+const AdminEditUser = lazy(() => import('../features/user/pages/AdminUserEditPage'));
 
 // Course module
 const AdminCourses = lazy(() => import('../features/course/pages/AdminCoursePage'));
@@ -111,6 +112,7 @@ function AppRoutes() {
             <Route path="/admin/dashboard" element={<Lazy component={AdminDashboard} />} />
             <Route path="/admin/users" element={<Lazy component={AdminUsers} />} />
             <Route path="/admin/users/new" element={<Lazy component={AdminCreateUser} />} />
+            <Route path="/admin/users/:id/edit" element={<Lazy component={AdminEditUser} />} />
             <Route path="/admin/courses" element={<Lazy component={AdminCourses} />} />
             <Route path="/admin/classes" element={<Lazy component={AdminClasses} />} />
             <Route path="/admin/krs" element={<Lazy component={AdminKrsMonitoring} />} />

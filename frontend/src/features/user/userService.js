@@ -6,6 +6,18 @@ export const createUser = async (payload) => {
   return api.post('/users', payload);
 };
 
+export const getUserById = (userId) => {
+  return api.get(`/users/${userId}`);
+};
+
+export const updateUser = (userId, payload) => {
+  return api.put(`/users/${userId}`, payload);
+};
+
+export const deleteUser = (userId) => {
+  return api.delete(`/users/${userId}`);
+};
+
 export const getUsers = (params = {}) => {
   const query = new URLSearchParams();
   if (params.role) query.append('role', params.role);

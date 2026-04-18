@@ -17,6 +17,7 @@ import {
   Building,
   Clock,
   Layers,
+  CheckCircle,
 } from 'lucide-react';
 import {
   getAllClasses,
@@ -336,46 +337,46 @@ const AdminClassesPage = () => {
       {!loading && !error && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                 <Layers size={20} className="text-blue-600" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-                <p className="text-xs text-slate-500">Total Kelas</p>
+                <p className="text-xs text-slate-500 truncate">Total Kelas</p>
               </div>
             </div>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
                 <ToggleRight size={20} className="text-green-600" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-2xl font-bold text-green-700">{stats.open}</p>
-                <p className="text-xs text-slate-500">Pendaftaran Dibuka</p>
+                <p className="text-xs text-slate-500 truncate">Pendaftaran Dibuka</p>
               </div>
             </div>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center shrink-0">
                 <Calendar size={20} className="text-amber-600" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-2xl font-bold text-slate-900">{stats.activeSemClasses}</p>
-                <p className="text-xs text-slate-500">Kelas Semester Aktif</p>
+                <p className="text-xs text-slate-500 truncate">Kelas Semester Aktif</p>
               </div>
             </div>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center shrink-0">
                 <GraduationCap size={20} className="text-teal-600" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-2xl font-bold text-teal-700">{stats.activeSemOpen}</p>
-                <p className="text-xs text-slate-500">KRS-Ready (Aktif+Buka)</p>
+                <p className="text-xs text-slate-500 truncate">KRS-Ready (Aktif+Buka)</p>
               </div>
             </div>
           </div>
@@ -386,7 +387,7 @@ const AdminClassesPage = () => {
       {!loading && activeSemester && stats.activeSemClasses === 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
-          <div className="text-sm text-amber-800">
+          <div className="text-sm text-amber-800 min-w-0 flex-1">
             <strong>Semester aktif belum memiliki kelas offering.</strong>{' '}
             Semester <strong>{getSemesterLabel(activeSemester)}</strong> (status: {activeSemester.status}) tidak memiliki kelas.
             Tambahkan kelas offering agar mahasiswa dapat melakukan pendaftaran KRS.
@@ -396,15 +397,15 @@ const AdminClassesPage = () => {
 
       {/* Warning: Active semester has classes but none open */}
       {!loading && activeSemester && stats.activeSemClasses > 0 && stats.activeSemOpen === 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 flex-wrap sm:flex-nowrap">
           <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
-          <div className="text-sm text-amber-800">
+          <div className="text-sm text-amber-800 min-w-0 flex-1">
             <strong>Semua kelas di semester aktif masih ditutup pendaftarannya.</strong>{' '}
             Terdapat {stats.activeSemClasses} kelas di semester {getSemesterLabel(activeSemester)}, tetapi belum ada yang dibuka untuk KRS.
             <Button
               variant="outline"
               size="sm"
-              className="ml-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+              className="mt-3 sm:mt-0 sm:ml-2 border-amber-300 text-amber-700 hover:bg-amber-100 whitespace-nowrap inline-flex"
               onClick={() => handleBulkToggle(true)}
               disabled={toggling === 'bulk'}
             >
@@ -454,13 +455,13 @@ const AdminClassesPage = () => {
 
       {/* Count */}
       {!loading && !error && (
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <BookOpen size={16} />
-            <span>{filteredClasses.length} dari {classes.length} kelas offering</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-gray-500">
+          <div className="flex items-center gap-2 min-w-0">
+            <BookOpen size={16} className="shrink-0" />
+            <span className="truncate">{filteredClasses.length} dari {classes.length} kelas offering</span>
           </div>
           {activeSemester && stats.activeSemClasses > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -469,7 +470,7 @@ const AdminClassesPage = () => {
                 className="text-green-700 border-green-200 hover:bg-green-50 text-xs"
               >
                 <ToggleRight size={14} className="mr-1" />
-                Buka Semua Aktif
+                Buka Semua
               </Button>
               <Button
                 variant="outline"
@@ -479,7 +480,7 @@ const AdminClassesPage = () => {
                 className="text-red-700 border-red-200 hover:bg-red-50 text-xs"
               >
                 <ToggleLeft size={14} className="mr-1" />
-                Tutup Semua Aktif
+                Tutup Semua
               </Button>
             </div>
           )}
@@ -543,28 +544,28 @@ const AdminClassesPage = () => {
                       <span className="text-slate-300">•</span>
                       <span className="text-sm font-medium text-blue-600">Kelas {cls.section}</span>
                     </div>
-                    <h4 className="font-semibold text-slate-900 mb-2">{cls.course?.title}</h4>
+                    <h4 className="font-semibold text-slate-900 mb-2 truncate">{cls.course?.title}</h4>
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full shrink-0">
                         {cls.course?.sks || 3} SKS
                       </span>
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${cls.isEnrollmentOpen
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full shrink-0 ${cls.isEnrollmentOpen
                         ? 'bg-green-50 text-green-700 border border-green-200'
                         : 'bg-red-50 text-red-700 border border-red-200'
                         }`}>
                         {cls.isEnrollmentOpen ? 'Buka' : 'Tutup'}
                       </span>
                       {cls.course?.semester && (
-                        <span className="px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full">
+                        <span className="px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full shrink-0">
                           Semester {cls.course.semester}
                         </span>
                       )}
-                      <span className="px-2 py-0.5 bg-slate-50 text-slate-600 text-xs rounded-full">
+                      <span className="px-2 py-0.5 bg-slate-50 text-slate-600 text-xs rounded-full shrink-0 truncate">
                         {getSemesterLabel(cls.academicSemester)}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-600">Dosen: {cls.lecturer?.name || '-'}</p>
-                    {cls.schedule && <p className="text-xs text-slate-500 mt-1"><Clock size={12} className="inline mr-1" />{cls.schedule}</p>}
+                    <p className="text-sm text-slate-600 truncate">Dosen: {cls.lecturer?.name || '-'}</p>
+                    {cls.schedule && <p className="text-xs text-slate-500 mt-1 truncate"><Clock size={12} className="inline mr-1" />{cls.schedule}</p>}
                     <p className="text-xs text-slate-500 mt-1">
                       <Users size={12} className="inline mr-1" />
                       {cls._count?.krsEnrollments || 0}/{cls.capacity} mahasiswa
@@ -603,84 +604,102 @@ const AdminClassesPage = () => {
           <div className="hidden lg:block overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-slate-50 whitespace-nowrap">
                   <TableHead className="w-12 text-center">No.</TableHead>
-                  <TableHead>Mata Kuliah</TableHead>
-                  <TableHead>Kelas</TableHead>
-                  <TableHead>Dosen</TableHead>
+                  <TableHead>Mata Kuliah & Kelas</TableHead>
+                  <TableHead>Dosen & Jadwal</TableHead>
                   <TableHead>Semester</TableHead>
-                  <TableHead>Jadwal</TableHead>
-                  <TableHead className="text-center">Kapasitas</TableHead>
-                  <TableHead className="text-center">Pendaftaran</TableHead>
-                  <TableHead className="w-28 text-center">Aksi</TableHead>
+                  <TableHead className="text-center">Status & Kapasitas</TableHead>
+                  <TableHead className="w-24 text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClasses.map((cls, index) => (
                   <TableRow key={cls.id} className="hover:bg-slate-50">
                     <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
+                    
+                    {/* Collapsed: Mata Kuliah & Kelas */}
                     <TableCell>
-                      <div>
-                        <span className="font-semibold text-slate-900">{cls.course?.title}</span>
-                        <br />
-                        <span className="text-xs text-slate-500 font-mono">{cls.course?.code}</span>
-                        <span className="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded">
-                          {cls.course?.sks || 3} SKS
+                      <div className="min-w-0 max-w-[180px] sm:max-w-xs xl:max-w-sm">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-semibold text-slate-900 truncate" title={cls.course?.title}>{cls.course?.title}</span>
+                          <span className="shrink-0 px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">
+                            Kelas {cls.section}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-slate-500 font-mono truncate">{cls.course?.code}</span>
+                          <span className="shrink-0 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded">
+                            {cls.course?.sks || 3} SKS
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Collapsed: Dosen & Jadwal */}
+                    <TableCell>
+                      <div className="min-w-0 max-w-[140px] sm:max-w-[200px]">
+                        <div className="text-sm font-medium text-slate-700 truncate" title={cls.lecturer?.name || '-'}>
+                          {cls.lecturer?.name || '-'}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1 truncate" title={`${cls.schedule} • ${cls.room}`}>
+                          {cls.schedule || '-'}
+                          {cls.room && <span className="ml-2 whitespace-nowrap"><Building size={10} className="inline mr-0.5 mb-0.5" />{cls.room}</span>}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Semester */}
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start min-w-0 max-w-[130px]">
+                        <span className="text-sm text-slate-600 truncate w-full" title={getSemesterLabel(cls.academicSemester)}>
+                          {getSemesterLabel(cls.academicSemester)}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {cls.course?.semester && (
+                            <span className="px-1.5 py-0.5 bg-yellow-50 text-yellow-700 text-[10px] font-medium rounded">
+                              Sem {cls.course.semester}
+                            </span>
+                          )}
+                          {cls.academicSemester?.status && (
+                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${cls.academicSemester.status === 'OPEN' ? 'bg-green-50 text-green-700' :
+                              cls.academicSemester.status === 'DRAFT' ? 'bg-slate-100 text-slate-600' :
+                                'bg-blue-50 text-blue-600'
+                              }`}>
+                              {cls.academicSemester.status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Collapsed: Pendaftaran & Kapasitas */}
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => handleToggleEnrollment(cls)}
+                          disabled={toggling === cls.id}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${cls.isEnrollmentOpen
+                            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                            : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                            }`}
+                        >
+                          {toggling === cls.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : cls.isEnrollmentOpen ? (
+                            <ToggleRight size={14} />
+                          ) : (
+                            <ToggleLeft size={14} />
+                          )}
+                          <span className="truncate">{cls.isEnrollmentOpen ? 'Buka' : 'Tutup'}</span>
+                        </button>
+                        <span className="text-xs text-slate-500 whitespace-nowrap">
+                          {cls._count?.krsEnrollments || 0} / {cls.capacity} Kuota
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">
-                        Kelas {cls.section}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-600">{cls.lecturer?.name || '-'}</TableCell>
-                    <TableCell>
-                      {cls.course?.semester && (
-                        <span className="mr-1 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full">
-                          Semester {cls.course.semester}
-                        </span>
-                      )}
-                      <span className="text-sm text-slate-600">{getSemesterLabel(cls.academicSemester)}</span>
-                      {cls.academicSemester?.status && (
-                        <span className={`ml-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${cls.academicSemester.status === 'OPEN' ? 'bg-green-50 text-green-700' :
-                          cls.academicSemester.status === 'DRAFT' ? 'bg-slate-100 text-slate-600' :
-                            'bg-blue-50 text-blue-600'
-                          }`}>
-                          {cls.academicSemester.status}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-slate-600">
-                        {cls.schedule || '-'}
-                        {cls.room && <div className="text-xs text-slate-400"><Building size={10} className="inline mr-0.5" />{cls.room}</div>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-sm text-slate-600">
-                        {cls._count?.krsEnrollments || 0}/{cls.capacity}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <button
-                        onClick={() => handleToggleEnrollment(cls)}
-                        disabled={toggling === cls.id}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${cls.isEnrollmentOpen
-                          ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
-                          : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                          }`}
-                      >
-                        {toggling === cls.id ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : cls.isEnrollmentOpen ? (
-                          <ToggleRight size={14} />
-                        ) : (
-                          <ToggleLeft size={14} />
-                        )}
-                        {cls.isEnrollmentOpen ? 'Buka' : 'Tutup'}
-                      </button>
-                    </TableCell>
+
+                    {/* Aksi */}
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
                         <button
