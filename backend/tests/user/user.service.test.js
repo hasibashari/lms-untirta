@@ -1,18 +1,18 @@
 /**
- * User Service — Unit Tests
+ * User gRPC Service — Unit Tests
  *
- * Tests the business logic in user.service.js in isolation.
+ * Tests gRPC handlers in user.grpc-service.js in isolation.
  * Prisma is fully mocked — no database calls are made.
  *
  * What we test:
- *   ✓ createUserByAdmin — success, duplicate email
- *   ✓ getAllUsers — filtering, mapping
- *   ✓ getUserById — found, not found
- *   ✓ updateDospemStatus — success, not found, wrong role
- *   ✓ assignAdvisor — success, validation errors
- *   ✓ bulkAssignAdvisor — success, validation errors
- *   ✓ getAdvisorSummary — mapping
- *   ✓ getAdvisorStudents — success, not found
+ *   ✓ CreateUserByAdmin — success, duplicate email
+ *   ✓ GetAllUsers — filtering, mapping
+ *   ✓ GetUserById — found, not found
+ *   ✓ UpdateDospemStatus — success, not found, wrong role
+ *   ✓ AssignAdvisor — success, validation errors
+ *   ✓ BulkAssignAdvisor — success, validation errors
+ *   ✓ GetAdvisorSummary — mapping
+ *   ✓ GetAdvisorStudents — success, not found
  *
  * Mocking Strategy:
  *   jest.unstable_mockModule() replaces ../../config/prisma.js BEFORE
@@ -20,6 +20,7 @@
  */
 
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import grpc from '@grpc/grpc-js';
 import { createPrismaMock } from '../helpers/prisma-mock.js';
 
 // ─── Mock Setup ──────────────────────────────────────────────
@@ -40,16 +41,16 @@ jest.unstable_mockModule('bcryptjs', () => ({
 }));
 
 // ─── Import AFTER mocking ────────────────────────────────────
-const {
-  createUserByAdmin,
-  getAllUsers,
-  getUserById,
-  updateDospemStatus,
-  assignAdvisor,
-  bulkAssignAdvisor,
-  getAdvisorSummary,
-  getAdvisorStudents,
-} = await import('../../src/modules/user/user.service.js');
+const { userService } = await import('../../src/modules/user/user.grpc-service.js');
+
+const invokeGrpc = (method, request = {}) => {
+  return new Promise((resolve, reject) => {
+    userService[method]({ request }, (error, response) => {
+      if (error) return reject(error);
+      resolve(response);
+    });
+  });
+};
 
 // ─── Tests ───────────────────────────────────────────────────
 
@@ -59,9 +60,9 @@ describe('UserService', () => {
   });
 
   // ═══════════════════════════════════════════════════════════
-  // createUserByAdmin
+  // CreateUserByAdmin
   // ═══════════════════════════════════════════════════════════
-  describe('createUserByAdmin', () => {
+  describe('CreateUserByAdmin', () => {
     const input = {
       email: 'dosen@test.com',
       password: 'password123',
@@ -79,7 +80,7 @@ describe('UserService', () => {
         createdAt: new Date(),
       });
 
-      const result = await createUserByAdmin(input);
+      const result = await invokeGrpc('CreateUserByAdmin', input);
 
       expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
         where: { email: input.email },
@@ -111,15 +112,18 @@ describe('UserService', () => {
     it('should throw on duplicate email', async () => {
       prismaMock.user.findUnique.mockResolvedValue({ id: 'existing' });
 
-      await expect(createUserByAdmin(input)).rejects.toThrow('Email sudah terdaftar');
+      await expect(invokeGrpc('CreateUserByAdmin', input)).rejects.toMatchObject({
+        code: grpc.status.ALREADY_EXISTS,
+        details: 'Email sudah terdaftar',
+      });
       expect(prismaMock.user.create).not.toHaveBeenCalled();
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // getAllUsers
+  // GetAllUsers
   // ═══════════════════════════════════════════════════════════
-  describe('getAllUsers', () => {
+  describe('GetAllUsers', () => {
     it('should return all users without filter', async () => {
       const mockUsers = [
         {
@@ -131,7 +135,7 @@ describe('UserService', () => {
       prismaMock.user.findMany.mockResolvedValue(mockUsers);
       prismaMock.user.count.mockResolvedValue(1);
 
-      const result = await getAllUsers(undefined, undefined);
+      const result = await invokeGrpc('GetAllUsers', {});
 
       expect(prismaMock.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -145,12 +149,20 @@ describe('UserService', () => {
           advisedStudentCount: 3,
         })
       );
+      expect(result.pagination).toEqual(
+        expect.objectContaining({
+          page: 1,
+          limit: 20,
+          total: 1,
+          totalPages: 1,
+        })
+      );
     });
 
     it('should filter by role', async () => {
       prismaMock.user.findMany.mockResolvedValue([]);
 
-      await getAllUsers('DOSEN', undefined);
+      await invokeGrpc('GetAllUsers', { role: 'DOSEN' });
 
       expect(prismaMock.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -162,7 +174,7 @@ describe('UserService', () => {
     it('should filter by isDospem', async () => {
       prismaMock.user.findMany.mockResolvedValue([]);
 
-      await getAllUsers(undefined, true);
+      await invokeGrpc('GetAllUsers', { isDospem: true });
 
       expect(prismaMock.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -173,16 +185,33 @@ describe('UserService', () => {
   });
 
   // ═══════════════════════════════════════════════════════════
-  // getUserById
+  // GetUserById
   // ═══════════════════════════════════════════════════════════
-  describe('getUserById', () => {
+  describe('GetUserById', () => {
     it('should return user when found', async () => {
-      const mockUser = { id: 'uuid-1', name: 'Test', email: 'test@test.com', role: 'ADMIN' };
+      const mockUser = {
+        id: 'uuid-1',
+        name: 'Test',
+        email: 'test@test.com',
+        role: 'ADMIN',
+        isDospem: false,
+        advisorId: null,
+        advisor: null,
+        _count: { advisedStudents: 0 },
+      };
       prismaMock.user.findUnique.mockResolvedValue(mockUser);
 
-      const result = await getUserById('uuid-1');
+      const result = await invokeGrpc('GetUserById', { id: 'uuid-1' });
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: 'uuid-1',
+          name: 'Test',
+          email: 'test@test.com',
+          role: 'ADMIN',
+          advisedStudentCount: 0,
+        })
+      );
       expect(prismaMock.user.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'uuid-1' },
@@ -190,26 +219,27 @@ describe('UserService', () => {
       );
     });
 
-    it('should return null when user not found', async () => {
+    it('should return NOT_FOUND when user not found', async () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
-      const result = await getUserById('nonexistent');
-
-      expect(result).toBeNull();
+      await expect(invokeGrpc('GetUserById', { id: 'nonexistent' })).rejects.toMatchObject({
+        code: grpc.status.NOT_FOUND,
+        details: 'User tidak ditemukan',
+      });
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // updateDospemStatus
+  // UpdateDospemStatus
   // ═══════════════════════════════════════════════════════════
-  describe('updateDospemStatus', () => {
+  describe('UpdateDospemStatus', () => {
     it('should update dospem status for a DOSEN', async () => {
       prismaMock.user.findUnique.mockResolvedValue({ id: 'uuid-1', role: 'DOSEN' });
       prismaMock.user.update.mockResolvedValue({
         id: 'uuid-1', name: 'Dr. B', email: 'b@test.com', role: 'DOSEN', isDospem: true,
       });
 
-      const result = await updateDospemStatus('uuid-1', true);
+      const result = await invokeGrpc('UpdateDospemStatus', { id: 'uuid-1', isDospem: true });
 
       expect(result.isDospem).toBe(true);
       expect(prismaMock.user.update).toHaveBeenCalledWith(
@@ -223,22 +253,25 @@ describe('UserService', () => {
     it('should throw if user not found', async () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
-      await expect(updateDospemStatus('nonexistent', true))
-        .rejects.toThrow('User tidak ditemukan');
+      await expect(invokeGrpc('UpdateDospemStatus', { id: 'nonexistent', isDospem: true }))
+        .rejects.toMatchObject({ code: grpc.status.NOT_FOUND, details: 'User tidak ditemukan' });
     });
 
     it('should throw if user is not DOSEN', async () => {
       prismaMock.user.findUnique.mockResolvedValue({ id: 'uuid-1', role: 'MAHASISWA' });
 
-      await expect(updateDospemStatus('uuid-1', true))
-        .rejects.toThrow('Hanya dosen yang dapat dijadikan Dosen Pembimbing');
+      await expect(invokeGrpc('UpdateDospemStatus', { id: 'uuid-1', isDospem: true }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Hanya dosen yang dapat dijadikan Dosen Pembimbing',
+        });
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // assignAdvisor
+  // AssignAdvisor
   // ═══════════════════════════════════════════════════════════
-  describe('assignAdvisor', () => {
+  describe('AssignAdvisor', () => {
     it('should assign advisor to a student', async () => {
       prismaMock.user.findUnique
         .mockResolvedValueOnce({ id: 'student-1', role: 'MAHASISWA', advisorId: null }) // student
@@ -250,7 +283,7 @@ describe('UserService', () => {
         advisor: { id: 'dosen-1', name: 'Dr. Budi', email: 'budi@test.com' },
       });
 
-      const result = await assignAdvisor('student-1', 'dosen-1');
+      const result = await invokeGrpc('AssignAdvisor', { studentId: 'student-1', advisorId: 'dosen-1' });
 
       expect(result.advisorId).toBe('dosen-1');
     });
@@ -258,15 +291,18 @@ describe('UserService', () => {
     it('should throw if student not found', async () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
-      await expect(assignAdvisor('nonexistent', 'dosen-1'))
-        .rejects.toThrow('Mahasiswa tidak ditemukan');
+      await expect(invokeGrpc('AssignAdvisor', { studentId: 'nonexistent', advisorId: 'dosen-1' }))
+        .rejects.toMatchObject({ code: grpc.status.NOT_FOUND, details: 'Mahasiswa tidak ditemukan' });
     });
 
     it('should throw if user is not MAHASISWA', async () => {
       prismaMock.user.findUnique.mockResolvedValue({ id: 'dosen-1', role: 'DOSEN' });
 
-      await expect(assignAdvisor('dosen-1', 'dosen-2'))
-        .rejects.toThrow('Hanya mahasiswa yang dapat memiliki Dosen Pembimbing');
+      await expect(invokeGrpc('AssignAdvisor', { studentId: 'dosen-1', advisorId: 'dosen-2' }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Hanya mahasiswa yang dapat memiliki Dosen Pembimbing',
+        });
     });
 
     it('should throw if advisor is not isDospem', async () => {
@@ -274,8 +310,11 @@ describe('UserService', () => {
         .mockResolvedValueOnce({ id: 'student-1', role: 'MAHASISWA', advisorId: null })
         .mockResolvedValueOnce({ id: 'dosen-1', role: 'DOSEN', isDospem: false });
 
-      await expect(assignAdvisor('student-1', 'dosen-1'))
-        .rejects.toThrow('Dosen ini belum ditunjuk sebagai Dosen Pembimbing');
+      await expect(invokeGrpc('AssignAdvisor', { studentId: 'student-1', advisorId: 'dosen-1' }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Dosen ini belum ditunjuk sebagai Dosen Pembimbing',
+        });
     });
 
     it('should allow unassigning advisor (null)', async () => {
@@ -286,69 +325,83 @@ describe('UserService', () => {
         id: 'student-1', advisorId: null, advisor: null,
       });
 
-      const result = await assignAdvisor('student-1', null);
+      const result = await invokeGrpc('AssignAdvisor', { studentId: 'student-1', advisorId: null });
 
       expect(result.advisorId).toBeNull();
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // bulkAssignAdvisor
+  // BulkAssignAdvisor
   // ═══════════════════════════════════════════════════════════
-  describe('bulkAssignAdvisor', () => {
+  describe('BulkAssignAdvisor', () => {
     it('should bulk assign advisor', async () => {
       const studentIds = ['s-1', 's-2'];
       prismaMock.user.findUnique.mockResolvedValue({ id: 'dosen-1', role: 'DOSEN', isDospem: true });
       prismaMock.user.findMany.mockResolvedValue([{ id: 's-1' }, { id: 's-2' }]);
       prismaMock.user.updateMany.mockResolvedValue({ count: 2 });
 
-      const result = await bulkAssignAdvisor(studentIds, 'dosen-1');
+      const result = await invokeGrpc('BulkAssignAdvisor', { studentIds, advisorId: 'dosen-1' });
 
       expect(result.updatedCount).toBe(2);
     });
 
     it('should throw if no students provided', async () => {
-      await expect(bulkAssignAdvisor([], 'dosen-1'))
-        .rejects.toThrow('Tidak ada mahasiswa yang dipilih');
+      await expect(invokeGrpc('BulkAssignAdvisor', { studentIds: [], advisorId: 'dosen-1' }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Tidak ada mahasiswa yang dipilih',
+        });
     });
 
     it('should throw if more than 50 students', async () => {
       const ids = Array.from({ length: 51 }, (_, i) => `s-${i}`);
 
-      await expect(bulkAssignAdvisor(ids, 'dosen-1'))
-        .rejects.toThrow('Maksimal 50 mahasiswa per batch');
+      await expect(invokeGrpc('BulkAssignAdvisor', { studentIds: ids, advisorId: 'dosen-1' }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Maksimal 50 mahasiswa per batch',
+        });
     });
 
     it('should throw if some students are invalid', async () => {
       prismaMock.user.findUnique.mockResolvedValue({ id: 'dosen-1', role: 'DOSEN', isDospem: true });
       prismaMock.user.findMany.mockResolvedValue([{ id: 's-1' }]); // only 1 found, 2 expected
 
-      await expect(bulkAssignAdvisor(['s-1', 's-invalid'], 'dosen-1'))
-        .rejects.toThrow('Beberapa user bukan mahasiswa atau tidak ditemukan');
+      await expect(invokeGrpc('BulkAssignAdvisor', { studentIds: ['s-1', 's-invalid'], advisorId: 'dosen-1' }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Beberapa user bukan mahasiswa atau tidak ditemukan',
+        });
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // getAdvisorSummary
+  // GetAdvisorSummary
   // ═══════════════════════════════════════════════════════════
-  describe('getAdvisorSummary', () => {
+  describe('GetAdvisorSummary', () => {
     it('should return mapped advisor list', async () => {
       prismaMock.user.findMany.mockResolvedValue([
         { id: '1', name: 'Dr. A', email: 'a@test.com', _count: { advisedStudents: 5 } },
       ]);
 
-      const result = await getAdvisorSummary();
+      const result = await invokeGrpc('GetAdvisorSummary', {});
 
-      expect(result).toEqual([
-        { id: '1', name: 'Dr. A', email: 'a@test.com', advisedStudentCount: 5 },
+      expect(result.data).toEqual([
+        expect.objectContaining({
+          id: '1',
+          name: 'Dr. A',
+          email: 'a@test.com',
+          advisedStudentCount: 5,
+        }),
       ]);
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // getAdvisorStudents
+  // GetAdvisorStudents
   // ═══════════════════════════════════════════════════════════
-  describe('getAdvisorStudents', () => {
+  describe('GetAdvisorStudents', () => {
     it('should return advisor and student list', async () => {
       prismaMock.user.findUnique.mockResolvedValue({
         id: 'dosen-1', role: 'DOSEN', isDospem: true, name: 'Dr. A',
@@ -357,7 +410,7 @@ describe('UserService', () => {
         { id: 's-1', name: 'Student A', email: 'sa@test.com' },
       ]);
 
-      const result = await getAdvisorStudents('dosen-1');
+      const result = await invokeGrpc('GetAdvisorStudents', { advisorId: 'dosen-1' });
 
       expect(result.advisor).toEqual({ id: 'dosen-1', name: 'Dr. A' });
       expect(result.students).toHaveLength(1);
@@ -366,8 +419,8 @@ describe('UserService', () => {
     it('should throw if advisor not found', async () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
-      await expect(getAdvisorStudents('nonexistent'))
-        .rejects.toThrow('Dosen tidak ditemukan');
+      await expect(invokeGrpc('GetAdvisorStudents', { advisorId: 'nonexistent' }))
+        .rejects.toMatchObject({ code: grpc.status.NOT_FOUND, details: 'Dosen tidak ditemukan' });
     });
 
     it('should throw if dosen is not dospem', async () => {
@@ -375,8 +428,11 @@ describe('UserService', () => {
         id: 'dosen-1', role: 'DOSEN', isDospem: false, name: 'Dr. B',
       });
 
-      await expect(getAdvisorStudents('dosen-1'))
-        .rejects.toThrow('Dosen ini bukan Dosen Pembimbing');
+      await expect(invokeGrpc('GetAdvisorStudents', { advisorId: 'dosen-1' }))
+        .rejects.toMatchObject({
+          code: grpc.status.INVALID_ARGUMENT,
+          details: 'Dosen ini bukan Dosen Pembimbing',
+        });
     });
   });
 });

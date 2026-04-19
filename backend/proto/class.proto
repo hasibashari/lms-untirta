@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package classPackage;
+
+service ClassService {
+  rpc CreateClass (CreateClassRequest) returns (ClassResponse);
+  rpc GetAllClasses (GetAllClassesRequest) returns (ListClassesResponse);
+  rpc GetClassById (GetClassByIdRequest) returns (ClassResponse);
+  rpc GetClassesByLecturer (GetClassesByLecturerRequest) returns (ListClassesResponse);
+  rpc GetClassesByCourse (GetClassesByCourseRequest) returns (ListClassesResponse);
+  rpc GetOpenClasses (GetOpenClassesRequest) returns (ListClassesResponse);
+  rpc UpdateClass (UpdateClassRequest) returns (ClassResponse);
+  rpc ToggleEnrollment (ToggleEnrollmentRequest) returns (ClassResponse);
+  rpc DeleteClass (DeleteClassRequest) returns (DeleteClassResponse);
+}
+
+// Common types
+message AcademicSemester {
+  string id = 1;
+  int32 academicYear = 2;
+  string semesterType = 3;
+  string status = 4;
+}
+
+message Course {
+  string id = 1;
+  string title = 2;
+  string code = 3;
+  int32 sks = 4;
+  int32 semester = 5;
+}
+
+message Lecturer {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message Class {
+  string id = 1;
+  string section = 2;
+  string schedule = 3;
+  string room = 4;
+  int32 capacity = 5;
+  bool isEnrollmentOpen = 6;
+  string academicSemesterId = 7;
+  string createdAt = 8;
+  string updatedAt = 9;
+  AcademicSemester academicSemester = 10;
+  Course course = 11;
+  Lecturer lecturer = 12;
+  int32 krsEnrollmentsCount = 13;
+}
+
+message PaginationMeta {
+  int32 total = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  int32 totalPages = 4;
+}
+
+// Request & Response messages
+
+message CreateClassRequest {
+  string courseId = 1;
+  string lecturerId = 2;
+  string academicSemesterId = 3;
+  string section = 4;
+  string schedule = 5;
+  string room = 6;
+  int32 capacity = 7;
+  bool isEnrollmentOpen = 8;
+}
+
+message ClassResponse {
+  string message = 1;
+  Class class = 2;
+}
+
+message GetAllClassesRequest {
+  string page = 1;
+  string limit = 2;
+  string academicSemesterId = 3;
+  string courseId = 4;
+}
+
+message ListClassesResponse {
+  string message = 1;
+  repeated Class classes = 2;
+  PaginationMeta pagination = 3;
+}
+
+message GetClassByIdRequest {
+  string id = 1;
+}
+
+message GetClassesByLecturerRequest {
+  string lecturerId = 1;
+  string academicSemesterId = 2;
+}
+
+message GetClassesByCourseRequest {
+  string courseId = 1;
+  string academicSemesterId = 2;
+}
+
+message GetOpenClassesRequest {
+  string academicSemesterId = 1;
+  string courseId = 2;
+}
+
+message UpdateClassRequest {
+  string id = 1;
+  string courseId = 2; // optional fields
+  string lecturerId = 3;
+  string academicSemesterId = 4;
+  string section = 5;
+  string schedule = 6;
+  string room = 7;
+  int32 capacity = 8;
+  // Note: boolean update might have issues with default false in proto3 if we need to set false vs not updated. 
+  // We'll map accordingly in the logic.
+  optional bool isEnrollmentOpen = 9;
+}
+
+message ToggleEnrollmentRequest {
+  string id = 1;
+  bool isEnrollmentOpen = 2;
+}
+
+message DeleteClassRequest {
+  string id = 1;
+}
+
+message DeleteClassResponse {
+  string message = 1;
+  string deletedId = 2;
+}

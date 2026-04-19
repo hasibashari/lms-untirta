@@ -1,6 +1,7 @@
 import app from './app.js';
 import { initRedis, closeRedis } from './config/redis.js';
 import logger from './config/logger.js';
+import { startGrpcServer } from './grpc/server.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -29,6 +30,8 @@ const start = async () => {
   const server = app.listen(PORT, () => {
     logger.info(`Server running at http://localhost:${PORT}`);
   });
+
+  const grpcServer = startGrpcServer();
 
   // ── Graceful shutdown ────────────────────────────────────────────
   const shutdown = async (signal) => {

@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package academic;
+
+service AcademicService {
+  rpc GetAllSemesters (EmptyConfig) returns (SemesterListResponse);
+  rpc GetActiveSemester (EmptyConfig) returns (SemesterResponse);
+  rpc GetSemesterById (SemesterIdRequest) returns (SemesterResponse);
+  rpc CreateSemester (CreateSemesterRequest) returns (SemesterResponse);
+  rpc UpdateSemester (UpdateSemesterRequest) returns (SemesterResponse);
+  rpc UpdateStatus (UpdateStatusRequest) returns (SemesterResponse);
+  rpc DeleteSemester (SemesterIdRequest) returns (DeleteSemesterResponse);
+  rpc GetClosingReadiness (SemesterIdRequest) returns (ClosingReadinessResponse);
+  rpc GetStudentSemesters (StudentIdRequest) returns (SemesterListResponse);
+}
+
+message EmptyConfig {}
+
+message CountDetails {
+  int32 classes = 1;
+  int32 finalGrades = 2;
+}
+
+message Semester {
+  string id = 1;
+  string academicYear = 2;
+  string semesterType = 3;
+  string startDate = 4;
+  string endDate = 5;
+  int32 maxSks = 6;
+  string status = 7;
+  bool isActive = 8;
+  string createdAt = 9;
+  string updatedAt = 10;
+  CountDetails _count = 11;
+}
+
+message SemesterResponse {
+  Semester semester = 1;
+}
+
+message SemesterListResponse {
+  repeated Semester semesters = 1;
+}
+
+message SemesterIdRequest {
+  string id = 1;
+}
+
+message CreateSemesterRequest {
+  string academicYear = 1;
+  string semesterType = 2;
+  string startDate = 3;
+  string endDate = 4;
+  int32 maxSks = 5;
+}
+
+message UpdateSemesterRequest {
+  string id = 1;
+  string startDate = 2;
+  string endDate = 3;
+  int32 maxSks = 4;
+}
+
+message UpdateStatusRequest {
+  string id = 1;
+  string newStatus = 2;
+}
+
+message DeleteSemesterResponse {
+  string id = 1;
+  string message = 2;
+}
+
+message ClassDetail {
+  string classId = 1;
+  string courseCode = 2;
+  string courseTitle = 3;
+  string section = 4;
+  string lecturerName = 5;
+  int32 enrolledStudents = 6;
+  int32 totalGrades = 7;
+  int32 draftCount = 8;
+  int32 finalizedCount = 9;
+  int32 missingGrades = 10;
+  bool isReady = 11;
+}
+
+message ReadinessSummary {
+  int32 totalClasses = 1;
+  int32 readyClasses = 2;
+  int32 totalEnrolled = 3;
+  int32 totalGraded = 4;
+  int32 totalDraft = 5;
+  int32 totalFinalized = 6;
+  int32 totalMissing = 7;
+  bool isReady = 8;
+  int32 willAutoFinalize = 9;
+}
+
+message ClosingReadinessResponse {
+  Semester semester = 1;
+  ReadinessSummary summary = 2;
+  repeated ClassDetail classes = 3;
+}
+
+message StudentIdRequest {
+  string studentId = 1;
+}

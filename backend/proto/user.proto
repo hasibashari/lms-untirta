@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package user;
+
+service UserService {
+  rpc CreateUserByAdmin (CreateUserRequest) returns (UserResponse) {}
+  rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse) {}
+  rpc GetUserById (UserIdRequest) returns (UserDetailResponse) {}
+  rpc UpdateUser (UpdateUserRequest) returns (UserResponse) {}
+  rpc DeleteUser (UserIdRequest) returns (UserResponse) {}
+  
+  // Dospem Management
+  rpc UpdateDospemStatus (UpdateDospemStatusRequest) returns (UserResponse) {}
+  rpc AssignAdvisor (AssignAdvisorRequest) returns (AssignAdvisorResponse) {}
+  rpc BulkAssignAdvisor (BulkAssignAdvisorRequest) returns (BulkAssignAdvisorResponse) {}
+  rpc GetAdvisorSummary (Empty) returns (AdvisorSummaryResponse) {}
+  rpc GetAdvisorStudents (AdvisorIdRequest) returns (AdvisorStudentsResponse) {}
+  
+  // Stats
+  rpc GetAdminStats (Empty) returns (AdminStatsResponse) {}
+}
+
+message Empty {}
+
+message CreateUserRequest {
+  string email = 1;
+  string name = 2;
+  string password = 3;
+  string role = 4;
+}
+
+message UserResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  optional bool isDospem = 5;
+  optional string createdAt = 6;
+}
+
+message GetAllUsersRequest {
+  optional string role = 1;
+  optional bool isDospem = 2;
+  int32 skip = 3;
+  int32 take = 4;
+}
+
+message AdvisorBasic {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message UserDetailResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  bool isDospem = 5;
+  optional string advisorId = 6;
+  AdvisorBasic advisor = 7;
+  int32 advisedStudentCount = 8;
+}
+
+message PaginationMeta {
+  int32 total = 1;
+  int32 skip = 2;
+  int32 take = 3;
+  int32 page = 4;
+  int32 totalPages = 5;
+  bool hasNext = 6;
+  bool hasPrevious = 7;
+}
+
+message GetAllUsersResponse {
+  repeated UserDetailResponse data = 1;
+  PaginationMeta pagination = 2;
+}
+
+message UserIdRequest {
+  string id = 1;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string email = 2;
+  optional string name = 3;
+  optional string password = 4;
+  optional string role = 5;
+}
+
+message UpdateDospemStatusRequest {
+  string id = 1;
+  bool isDospem = 2;
+}
+
+message AssignAdvisorRequest {
+  string studentId = 1;
+  optional string advisorId = 2;
+}
+
+message AssignAdvisorResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  optional string advisorId = 5;
+  AdvisorBasic advisor = 6;
+}
+
+message BulkAssignAdvisorRequest {
+  repeated string studentIds = 1;
+  optional string advisorId = 2;
+}
+
+message BulkAssignAdvisorResponse {
+  string message = 1;
+  int32 updatedCount = 2;
+}
+
+message AdvisorSummaryItem {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  int32 advisedStudentCount = 4;
+  repeated AdvisorBasic students = 5;
+}
+
+message AdvisorSummaryResponse {
+  repeated AdvisorSummaryItem data = 1;
+}
+
+message AdvisorIdRequest {
+  string advisorId = 1;
+}
+
+message AdvisorStudentsResponse {
+  AdvisorBasic advisor = 1;
+  repeated AdvisorBasic students = 2;
+}
+
+message AdminStatsResponse {
+  int32 totalUsers = 1;
+  int32 totalCourses = 2;
+  int32 totalDosen = 3;
+  int32 totalMahasiswa = 4;
+}

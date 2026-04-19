@@ -1,0 +1,173 @@
+syntax = "proto3";
+
+package course;
+
+service CourseService {
+  // Student Enrollment
+  rpc AddStudentToCourse (AddStudentEmailRequest) returns (EnrollmentResponse) {}
+  rpc AddStudentToCourseById (AddStudentIdRequest) returns (EnrollmentResponse) {}
+  
+  // Queries
+  rpc GetEnrolledCourses (StudentIdRequest) returns (EnrolledCoursesResponse) {}
+  rpc GetTeachingCourses (TeacherIdRequest) returns (TeachingCoursesResponse) {}
+  rpc GetTeachingCoursesWithStats (TeacherIdRequest) returns (TeachingCoursesStatsResponse) {}
+  rpc GetStudentsByCourse (CourseAccessRequest) returns (CourseStudentsResponse) {}
+  rpc GetAvailableStudentsForCourse (CourseAccessRequest) returns (AvailableStudentsResponse) {}
+  
+  // Admin Management
+  rpc AdminGetAllCourses (PaginationRequest) returns (AdminCoursesResponse) {}
+  rpc AdminCreateCourse (CreateCourseRequest) returns (CourseDetail) {}
+  rpc AdminUpdateCourse (UpdateCourseRequest) returns (CourseDetail) {}
+  rpc AdminDeleteCourse (CourseIdRequest) returns (DeleteCourseResponse) {}
+  rpc AdminAssignTeacher (AssignTeacherRequest) returns (CourseDetail) {}
+}
+
+message AddStudentEmailRequest {
+  string courseId = 1;
+  string studentEmail = 2;
+  string teacherId = 3;
+  string teacherRole = 4;
+}
+
+message AddStudentIdRequest {
+  string courseId = 1;
+  string studentId = 2;
+  string teacherId = 3;
+  string teacherRole = 4;
+}
+
+message BasicUser {
+  string id = 1;
+  string name = 2;
+  optional string email = 3;
+}
+
+message EnrollmentResponse {
+  string enrollmentId = 1;
+  string enrolledAt = 2;
+  BasicUser student = 3;
+}
+
+message StudentIdRequest {
+  string studentId = 1;
+}
+
+message EnrolledCourseItem {
+  string enrollmentId = 1;
+  string joinedAt = 2;
+  CourseBasic course = 3;
+}
+
+message CourseBasic {
+  string id = 1;
+  string title = 2;
+  string code = 3;
+  optional BasicUser teacher = 4;
+}
+
+message EnrolledCoursesResponse {
+  repeated EnrolledCourseItem courses = 1;
+}
+
+message TeacherIdRequest {
+  string teacherId = 1;
+}
+
+message TeachingCoursesResponse {
+  repeated CourseBasic courses = 1;
+}
+
+message CourseStats {
+  string id = 1;
+  string title = 2;
+  string code = 3;
+  string createdAt = 4;
+  int32 studentsCount = 5;
+  int32 materialsCount = 6;
+}
+
+message TeachingCoursesStatsResponse {
+  repeated CourseStats courses = 1;
+}
+
+message CourseAccessRequest {
+  string courseId = 1;
+  string userId = 2;
+  string userRole = 3;
+}
+
+message CourseStudentsResponse {
+  repeated EnrollmentResponse enrollments = 1;
+}
+
+message AvailableStudentsResponse {
+  repeated BasicUser students = 1;
+}
+
+message PaginationRequest {
+  int32 skip = 1;
+  int32 take = 2;
+}
+
+message PaginationMeta {
+  int32 total = 1;
+  int32 skip = 2;
+  int32 take = 3;
+  int32 page = 4;
+  int32 totalPages = 5;
+  bool hasNext = 6;
+  bool hasPrevious = 7;
+}
+
+message CourseDetail {
+  string id = 1;
+  string title = 2;
+  optional string description = 3;
+  string code = 4;
+  optional string semester = 5;
+  int32 sks = 6;
+  optional string createdAt = 7;
+  optional string teacherId = 8;
+  optional BasicUser teacher = 9;
+  optional int32 studentsCount = 10;
+  optional int32 materialsCount = 11;
+  optional int32 assignmentsCount = 12;
+}
+
+message AdminCoursesResponse {
+  repeated CourseDetail data = 1;
+  PaginationMeta pagination = 2;
+}
+
+message CreateCourseRequest {
+  string title = 1;
+  optional string description = 2;
+  string code = 3;
+  optional string semester = 4;
+  optional int32 sks = 5;
+  optional string teacherId = 6;
+}
+
+message UpdateCourseRequest {
+  string courseId = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional string code = 4;
+  optional string semester = 5;
+  optional int32 sks = 6;
+  optional string teacherId = 7;
+}
+
+message CourseIdRequest {
+  string courseId = 1;
+}
+
+message DeleteCourseResponse {
+  string message = 1;
+  int32 deletedEnrollments = 2;
+}
+
+message AssignTeacherRequest {
+  string courseId = 1;
+  string teacherId = 2;
+}

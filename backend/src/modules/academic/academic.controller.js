@@ -1,171 +1,159 @@
-import * as semesterService from './academic.service.js';
-import { sendSuccess } from '../../utils/response.js';
+import academicClient from '../../grpc/clients/academic.client.js';
+import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
+import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
 
-/**
- * Retrieves all academic semesters ordered by academic year.
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- */
+const promisifyGrpc = (client, method, arg) => {
+  return new Promise((resolve, reject) => {
+    client[method](arg, (err, response) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(response);
+      }
+    });
+  });
+};
+
 export const getAll = async (req, res) => {
   try {
-    const semesters = await semesterService.getAllSemesters();
+    const result = await promisifyGrpc(academicClient, 'GetAllSemesters', {});
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar semester akademik berhasil diambil',
-      data: semesters,
+      data: result.semesters,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Retrieves the currently active academic semester (status: OPEN).
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- */
 export const getActive = async (req, res) => {
   try {
-    const semester = await semesterService.getActiveSemester();
+    const result = await promisifyGrpc(academicClient, 'GetActiveSemester', {});
     sendSuccess(res, {
       statusCode: 200,
-      message: semester
-        ? 'Semester aktif berhasil diambil'
-        : 'Tidak ada semester aktif',
-      data: semester,
+      message: result.semester ? 'Semester aktif berhasil diambil' : 'Tidak ada semester aktif',
+      data: result.semester,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Retrieves details of a specific academic semester by ID.
- * @param {import('express').Request} req - Express request object. Expects `id` in params.
- * @param {import('express').Response} res - Express response object.
- */
 export const getById = async (req, res) => {
   try {
-    const semester = await semesterService.getSemesterById(req.params.id);
+    const result = await promisifyGrpc(academicClient, 'GetSemesterById', { id: req.params.id });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Detail semester berhasil diambil',
-      data: semester,
+      data: result.semester,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Creates a new academic semester.
- * @param {import('express').Request} req - Express request object. Expects semester details in body.
- * @param {import('express').Response} res - Express response object.
- */
 export const create = async (req, res) => {
   try {
-    const semester = await semesterService.createSemester(req.body);
+    const result = await promisifyGrpc(academicClient, 'CreateSemester', req.body);
     sendSuccess(res, {
       statusCode: 201,
-      message: `Semester ${semester.semesterType} ${semester.academicYear} berhasil dibuat`,
-      data: semester,
+      message: `Semester ${result.semester.semesterType} ${result.semester.academicYear} berhasil dibuat`,
+      data: result.semester,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Updates an existing academic semester.
- * @param {import('express').Request} req - Express request object. Expects `id` in params and update data in body.
- * @param {import('express').Response} res - Express response object.
- */
 export const update = async (req, res) => {
   try {
-    const semester = await semesterService.updateSemester(req.params.id, req.body);
+    const result = await promisifyGrpc(academicClient, 'UpdateSemester', { id: req.params.id, ...req.body });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Semester berhasil diperbarui',
-      data: semester,
+      data: result.semester,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Updates the status of an academic semester (e.g., DRAFT -> OPEN -> CLOSED).
- * @param {import('express').Request} req - Express request object. Expects `id` in params and `status` in body.
- * @param {import('express').Response} res - Express response object.
- */
 export const updateStatus = async (req, res) => {
   try {
-    const semester = await semesterService.updateStatus(
-      req.params.id,
-      req.body.status,
-    );
+    const result = await promisifyGrpc(academicClient, 'UpdateStatus', { id: req.params.id, newStatus: req.body.status });
     sendSuccess(res, {
       statusCode: 200,
       message: `Status semester berhasil diubah ke ${req.body.status}`,
-      data: semester,
+      data: result.semester,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Checks if a semester is ready to be closed.
- * Returns a summary of grading progress and any blocking issues.
- * @param {import('express').Request} req - Express request object. Expects `id` in params.
- * @param {import('express').Response} res - Express response object.
- */
 export const getClosingReadiness = async (req, res) => {
   try {
-    const readiness = await semesterService.getClosingReadiness(req.params.id);
+    const result = await promisifyGrpc(academicClient, 'GetClosingReadiness', { id: req.params.id });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Status kesiapan penutupan semester berhasil diambil',
-      data: readiness,
+      data: result,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Deletes a DRAFT academic semester.
- * @param {import('express').Request} req - Express request object. Expects `id` in params.
- * @param {import('express').Response} res - Express response object.
- */
 export const remove = async (req, res) => {
   try {
-    await semesterService.deleteSemester(req.params.id);
+    const result = await promisifyGrpc(academicClient, 'DeleteSemester', { id: req.params.id });
     sendSuccess(res, {
       statusCode: 200,
-      message: 'Semester berhasil dihapus',
+      message: result.message,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-/**
- * Retrieves the list of semesters relevant to the authenticated student.
- * Includes semesters where the student has enrolled, plus the currently active semester.
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- */
 export const getStudentSemesters = async (req, res) => {
   try {
-    const semesters = await semesterService.getStudentSemesters(req.user.id);
+    const result = await promisifyGrpc(academicClient, 'GetStudentSemesters', { studentId: req.user.id });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar semester mahasiswa berhasil diambil',
-      data: semesters,
+      data: result.semesters,
     });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };

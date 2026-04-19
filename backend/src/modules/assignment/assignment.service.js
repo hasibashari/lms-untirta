@@ -1,18 +1,7 @@
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../config/errors.js';
 
-/**
- * Creates a new assignment for a specific course.
- * This function validates that the course exists and the user creating the assignment is the course's designated teacher.
- * @param {string} courseId - The ID of the course to add the assignment to.
- * @param {string} teacherId - The ID of the user (teacher) creating the assignment.
- * @param {object} data - The assignment data.
- * @param {string} data.title - The title of the assignment.
- * @param {string} [data.description] - The description or instructions for the assignment.
- * @param {string|Date} data.dueDate - The due date for the assignment.
- * @returns {Promise<object>} The newly created assignment object.
- * @throws {Error} If the course is not found or if the user is not the teacher of the course.
- */
+// ======= CREATE ASSIGNMENT =======
 const createAssignment = async (courseId, teacherId, data) => {
   // Cek kepemilikan kelas
   const course = await prisma.course.findUnique({ where: { id: courseId } });
@@ -42,19 +31,7 @@ const createAssignment = async (courseId, teacherId, data) => {
   });
 };
 
-/**
- * Submits a student's work for a specific assignment.
- * It checks for assignment validity, duplicate submissions, and whether the submission is late.
- * @param {string} assignmentId - The ID of the assignment being submitted.
- * @param {string} studentId - The ID of the student submitting the work.
- * @param {object} data - The submission data.
- * @param {string} data.fileUrl - The URL to the submitted file.
- * @param {string} [data.note] - An optional note from the student.
- * @returns {Promise<object>} The submission result, including status and lateness information.
- * @throws {Error} If the assignment is not found.
- * @throws {Error} If the student has already submitted for this assignment.
- * @note This function currently does not verify if the student is enrolled in the course.
- */
+// ======= SUBMIT ASSIGNMENT =======
 const submitAssignment = async (assignmentId, studentId, data) => {
   // Cek validitas Tugas
   const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
@@ -107,12 +84,7 @@ const submitAssignment = async (assignmentId, studentId, data) => {
   };
 };
 
-/**
- * Retrieves the basic details of a single assignment.
- * This is a lightweight query intended for fetching core assignment information without related data like submissions.
- * @param {string} assignmentId - The ID of the assignment to retrieve.
- * @returns {Promise<object|null>} The assignment object if found, otherwise null.
- */
+// ======= GET ASSIGNMENT DETAIL =======
 const getAssignmentDetail = async assignmentId => {
   return await prisma.assignment.findUnique({
     where: { id: assignmentId },
@@ -126,16 +98,7 @@ const getAssignmentDetail = async assignmentId => {
   });
 };
 
-/**
- * Fetches all assignments for a specific course, tailored to the user's role.
- * It validates course existence and student enrollment. For students, it includes a submission status
- * (`submitted`, `overdue`, `pending`) for each assignment based on their submission history.
- * @param {string} courseId - The ID of the course.
- * @param {string} userId - The ID of the user requesting the assignments.
- * @param {string} userRole - The role of the user ('MAHASISWA' or 'DOSEN').
- * @returns {Promise<Array<object>>} A list of assignments with their status.
- * @throws {Error} If the course is not found or if a student is not enrolled in the course.
- */
+// ======= GET ASSIGNMENTS BY COURSE =======
 const getAssignmentsByCourse = async (courseId, userId, userRole) => {
   // 1. Validasi: Pastikan Course exists
   const course = await prisma.course.findUnique({
@@ -198,15 +161,7 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
   });
 };
 
-/**
- * Gets detailed information for one assignment, including the current student's submission status.
- * It combines assignment details with the specific submission data for the requesting student,
- * calculating the overall status (`graded`, `submitted`, `overdue`, `pending`).
- * @param {string} assignmentId - The ID of the assignment.
- * @param {string} studentId - The ID of the student viewing the assignment.
- * @returns {Promise<object>} A comprehensive object with assignment and submission details.
- * @throws {Error} If the assignment is not found or the student is not enrolled in the course.
- */
+// ======= GET ASSIGNMENT WITH STUDENT SUBMISSION =======
 const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
   // 1. Ambil detail assignment
   const assignment = await prisma.assignment.findUnique({
@@ -283,15 +238,7 @@ const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
   };
 };
 
-/**
- * Retrieves all student submissions for a given assignment.
- * This function is intended for teachers and includes authorization to ensure the requester
- * is the teacher of the course associated with the assignment.
- * @param {string} assignmentId - The ID of the assignment.
- * @param {string} teacherId - The ID of the teacher requesting the submissions.
- * @returns {Promise<Array<object>>} A list of submission objects, each including student information.
- * @throws {Error} If the assignment is not found or if the teacher does not have access.
- */
+// ======= GET SUBMISSIONS BY ASSIGNMENT =======
 const getSubmissionsByAssignment = async (assignmentId, teacherId) => {
   // Validasi: Pastikan tugas ini milik dosen tersebut
   const assignment = await prisma.assignment.findUnique({
@@ -332,13 +279,7 @@ const getSubmissionsByAssignment = async (assignmentId, teacherId) => {
   });
 };
 
-/**
- * Fetches a consolidated list of all grades for a student across all their enrolled courses.
- * It iterates through all of a student's enrollments and their associated assignments
- * to build a flat list of all tasks, their status, and grades.
- * @param {string} studentId - The ID of the student whose grades are being requested.
- * @returns {Promise<Array<object>>} An array of objects, each representing a graded assignment from a course.
- */
+// ======= GET ALL STUDENT GRADES =======
 const getAllMyGrades = async (studentId) => {
   // Ambil semua enrollment mahasiswa
   const enrollments = await prisma.enrollment.findMany({
@@ -411,14 +352,7 @@ const getAllMyGrades = async (studentId) => {
   return result;
 };
 
-/**
- * Calculates and returns key statistics for a student's dashboard.
- * Uses optimized, parallel database queries to count total courses, total assignments,
- * pending tasks, and graded assignments for the student.
- * @param {string} studentId - The ID of the student.
- * @returns {Promise<object>} An object containing dashboard statistics.
- */
-
+// ======= GET STUDENT DASHBOARD STATS =======
 const getMyDashboardStats = async (studentId) => {
   // 1. Get enrolled course IDs with a lightweight query
   const enrollments = await prisma.enrollment.findMany({
@@ -462,18 +396,7 @@ const getMyDashboardStats = async (studentId) => {
   };
 };
 
-/**
- * Applies a grade and feedback to a student's submission.
- * It performs a multi-level authorization check to ensure the user is the teacher
- * of the course to which the submission belongs before updating the record.
- * @param {string} submissionId - The ID of the submission to be graded.
- * @param {string} teacherId - The ID of the teacher performing the grading.
- * @param {object} data - The grading data.
- * @param {number} data.grade - The numerical grade (e.g., 0-100).
- * @param {string} [data.feedback] - Optional textual feedback for the student.
- * @returns {Promise<object>} The updated submission object with the new grade and feedback.
- * @throws {Error} If the submission is not found or if the user is not the authorized teacher.
- */
+// ======= GRADE STUDENT SUBMISSION =======
 const gradeSubmission = async (submissionId, teacherId, data) => {
   // Validasi Kepemilikan (Sedikit kompleks karena harus naik 2 level: Submission -> Assignment -> Course -> Teacher)
   const submission = await prisma.submission.findUnique({
@@ -516,13 +439,7 @@ const gradeSubmission = async (submissionId, teacherId, data) => {
   });
 };
 
-/**
- * Calculates and returns key statistics for a teacher's dashboard.
- * Uses optimized `_count` and parallel queries to aggregate data across all of the teacher's courses,
- * such as total students, materials, assignments, and submissions needing grading.
- * @param {string} teacherId - The ID of the teacher.
- * @returns {Promise<object>} An object containing dashboard statistics for the teacher.
- */
+// ======= GET TEACHER DASHBOARD STATS =======
 const getTeacherDashboardStats = async (teacherId) => {
   // 1. Get course IDs and basic counts with _count (single query, no full data load)
   const courses = await prisma.course.findMany({
@@ -580,14 +497,7 @@ const getTeacherDashboardStats = async (teacherId) => {
   };
 };
 
-/**
- * Fetches a list of the most recent submissions across all of a teacher's courses.
- * This is useful for a "Recent Activity" or notification feed on the teacher's dashboard.
- * The data is transformed to provide a clean, flat structure for the frontend.
- * @param {string} teacherId - The ID of the teacher.
- * @param {number} [limit=10] - The maximum number of recent submissions to return.
- * @returns {Promise<Array<object>>} An array of recent submission objects with student and course context.
- */
+// ======= GET RECENT SUBMISSIONS FOR TEACHER =======
 const getRecentSubmissionsForTeacher = async (teacherId, limit = 10) => {
   // Ambil submissions terbaru dari semua kelas dosen
   const submissions = await prisma.submission.findMany({
@@ -644,19 +554,7 @@ const getRecentSubmissionsForTeacher = async (teacherId, limit = 10) => {
   }));
 };
 
-/**
- * Updates the details of an existing assignment.
- * It verifies that the user is either the teacher who created the assignment or an admin before applying the updates.
- * @param {string} assignmentId - The ID of the assignment to update.
- * @param {string} userId - The ID of the user performing the update.
- * @param {string} userRole - The role of the user ('DOSEN' or 'ADMIN').
- * @param {object} data - The data to update.
- * @param {string} [data.title] - The new title.
- * @param {string} [data.description] - The new description.
- * @param {string|Date} [data.dueDate] - The new due date.
- * @returns {Promise<object>} The updated assignment object.
- * @throws {Error} If the assignment is not found or if the user lacks permission.
- */
+// ======= UPDATE ASSIGNMENT =======
 const updateAssignment = async (assignmentId, userId, userRole, data) => {
   // 1. Cari assignment beserta informasi course-nya
   const assignment = await prisma.assignment.findUnique({
@@ -704,16 +602,7 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
   });
 };
 
-/**
- * Deletes an assignment and its associated submissions.
- * This is a destructive action that verifies the user is the course teacher or an admin.
- * The database schema is expected to handle cascading deletes for related submissions.
- * @param {string} assignmentId - The ID of the assignment to delete.
- * @param {string} userId - The ID of the user performing the deletion.
- * @param {string} userRole - The role of the user ('DOSEN' or 'ADMIN').
- * @returns {Promise<object>} An object with a success message and the count of deleted submissions.
- * @throws {Error} If the assignment is not found or if the user lacks permission.
- */
+// ======= DELETE ASSIGNMENT =======
 const deleteAssignment = async (assignmentId, userId, userRole) => {
   // 1. Cari assignment beserta informasi course-nya
   const assignment = await prisma.assignment.findUnique({

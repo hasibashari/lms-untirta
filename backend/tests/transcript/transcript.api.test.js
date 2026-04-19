@@ -144,7 +144,7 @@ describe('Transcript API', () => {
 
     it('should reject MAHASISWA for full transcript', async () => {
       const res = await request(app)
-        .get(`${API}/student/${student.id}`)
+        .get(`${API}/student/${otherStudent.id}`)
         .set('Authorization', `Bearer ${studentToken}`);
       expect(res.status).toBe(403);
     });

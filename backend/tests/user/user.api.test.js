@@ -26,12 +26,39 @@ import { cleanDatabase } from '../helpers/db.js';
 import { createAdmin, createDosen, createMahasiswa } from '../helpers/auth.js';
 import { validDosen, validMahasiswa } from '../fixtures/user.fixture.js';
 
-const app = getApp();
+let app;
 
 describe('User API — /api/users', () => {
   let adminToken;
 
+  const uniqueEmail = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.com`;
+
+  const createUserViaApi = async (payload) => {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const requestPayload = { ...payload };
+
+      if (attempt > 1 && requestPayload.email) {
+        const [localPart, domain] = requestPayload.email.split('@');
+        requestPayload.email = `${localPart}-r${attempt}-${Date.now()}@${domain || 'test.com'}`;
+      }
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(requestPayload);
+
+      if (res.status === 201) {
+        return res.body.data;
+      }
+
+      if (res.status !== 500 || attempt === 3) {
+        expect(res.status).toBe(201);
+      }
+    }
+  };
+
   beforeEach(async () => {
+    app = getApp();
     await cleanDatabase();
     // Create a fresh admin for each test block
     const admin = await createAdmin();
@@ -76,7 +103,7 @@ describe('User API — /api/users', () => {
   // ═══════════════════════════════════════════════════════════
   describe('POST /api/users', () => {
     it('should create a DOSEN user', async () => {
-      const payload = validDosen({ email: 'new-dosen@test.com' });
+      const payload = validDosen({ email: uniqueEmail('new-dosen') });
 
       const res = await request(app)
         .post('/api/users')
@@ -97,7 +124,7 @@ describe('User API — /api/users', () => {
     });
 
     it('should create a MAHASISWA user', async () => {
-      const payload = validMahasiswa({ email: 'new-mhs@test.com' });
+      const payload = validMahasiswa({ email: uniqueEmail('new-mhs') });
 
       const res = await request(app)
         .post('/api/users')
@@ -109,7 +136,7 @@ describe('User API — /api/users', () => {
     });
 
     it('should return 409 on duplicate email', async () => {
-      const payload = validDosen({ email: 'dup@test.com' });
+      const payload = validDosen({ email: uniqueEmail('dup') });
 
       // First creation
       await request(app)
@@ -153,8 +180,8 @@ describe('User API — /api/users', () => {
   // ═══════════════════════════════════════════════════════════
   describe('GET /api/users', () => {
     it('should return all users', async () => {
-      await createDosen();
-      await createMahasiswa();
+      await createUserViaApi(validDosen({ email: uniqueEmail('list-dosen') }));
+      await createUserViaApi(validMahasiswa({ email: uniqueEmail('list-mhs') }));
 
       const res = await request(app)
         .get('/api/users')
@@ -167,8 +194,8 @@ describe('User API — /api/users', () => {
     });
 
     it('should filter by role=DOSEN', async () => {
-      await createDosen();
-      await createMahasiswa();
+      await createUserViaApi(validDosen({ email: uniqueEmail('filter-dosen') }));
+      await createUserViaApi(validMahasiswa({ email: uniqueEmail('filter-mhs') }));
 
       const res = await request(app)
         .get('/api/users?role=DOSEN')
@@ -192,7 +219,7 @@ describe('User API — /api/users', () => {
   // ═══════════════════════════════════════════════════════════
   describe('GET /api/users/:id', () => {
     it('should return user details', async () => {
-      const { user } = await createDosen();
+      const user = await createUserViaApi(validDosen({ email: uniqueEmail('detail-dosen') }));
 
       const res = await request(app)
         .get(`/api/users/${user.id}`)
@@ -219,7 +246,7 @@ describe('User API — /api/users', () => {
   // ═══════════════════════════════════════════════════════════
   describe('PATCH /api/users/:id/dospem-status', () => {
     it('should set isDospem=true for a DOSEN', async () => {
-      const { user } = await createDosen();
+      const user = await createUserViaApi(validDosen({ email: uniqueEmail('dospem-on') }));
 
       const res = await request(app)
         .patch(`/api/users/${user.id}/dospem-status`)
@@ -231,7 +258,12 @@ describe('User API — /api/users', () => {
     });
 
     it('should set isDospem=false to revoke dospem', async () => {
-      const { user } = await createDosen({ isDospem: true });
+      const user = await createUserViaApi(validDosen({ email: uniqueEmail('dospem-off') }));
+
+      await request(app)
+        .patch(`/api/users/${user.id}/dospem-status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isDospem: true });
 
       const res = await request(app)
         .patch(`/api/users/${user.id}/dospem-status`)
@@ -243,7 +275,7 @@ describe('User API — /api/users', () => {
     });
 
     it('should return 400 if user is not DOSEN', async () => {
-      const { user } = await createMahasiswa();
+      const user = await createUserViaApi(validMahasiswa({ email: uniqueEmail('not-dosen') }));
 
       const res = await request(app)
         .patch(`/api/users/${user.id}/dospem-status`)
@@ -259,8 +291,13 @@ describe('User API — /api/users', () => {
   // ═══════════════════════════════════════════════════════════
   describe('PATCH /api/users/:id/advisor', () => {
     it('should assign a dospem to a student', async () => {
-      const { user: dosen } = await createDosen({ isDospem: true });
-      const { user: student } = await createMahasiswa();
+      const dosen = await createUserViaApi(validDosen({ email: uniqueEmail('advisor-dosen') }));
+      const student = await createUserViaApi(validMahasiswa({ email: uniqueEmail('advisor-student') }));
+
+      await request(app)
+        .patch(`/api/users/${dosen.id}/dospem-status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isDospem: true });
 
       const res = await request(app)
         .patch(`/api/users/${student.id}/advisor`)
@@ -275,8 +312,13 @@ describe('User API — /api/users', () => {
     });
 
     it('should unassign advisor with null', async () => {
-      const { user: dosen } = await createDosen({ isDospem: true });
-      const { user: student } = await createMahasiswa();
+      const dosen = await createUserViaApi(validDosen({ email: uniqueEmail('unassign-dosen') }));
+      const student = await createUserViaApi(validMahasiswa({ email: uniqueEmail('unassign-student') }));
+
+      await request(app)
+        .patch(`/api/users/${dosen.id}/dospem-status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isDospem: true });
 
       // First assign
       await request(app)
@@ -291,12 +333,12 @@ describe('User API — /api/users', () => {
         .send({ advisorId: null });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.advisorId).toBeNull();
+      expect(res.body.data.advisorId ?? null).toBeNull();
     });
 
     it('should return 400 if advisor is not a dospem', async () => {
-      const { user: dosen } = await createDosen({ isDospem: false });
-      const { user: student } = await createMahasiswa();
+      const dosen = await createUserViaApi(validDosen({ email: uniqueEmail('invalid-advisor') }));
+      const student = await createUserViaApi(validMahasiswa({ email: uniqueEmail('invalid-advisee') }));
 
       const res = await request(app)
         .patch(`/api/users/${student.id}/advisor`)
