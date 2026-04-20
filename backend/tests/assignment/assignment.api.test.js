@@ -60,6 +60,18 @@ const seedAssignment = async (courseId, overrides = {}) => {
   });
 };
 
+/** Seed a submission */
+const seedSubmission = async (assignmentId, studentId, overrides = {}) => {
+  return prisma.submission.create({
+    data: {
+      assignmentId,
+      studentId,
+      fileUrl: 'https://example.com/file.pdf',
+      ...overrides,
+    },
+  });
+};
+
 beforeEach(async () => {
   app = getApp();
   await cleanDatabase();
@@ -198,6 +210,20 @@ describe('GET /course/:courseId', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0]).toHaveProperty('status');
+  });
+
+  it('200 — mahasiswa sees graded status and grade when assignment is graded', async () => {
+    await seedEnrollment(course.id);
+    const assignment = await seedAssignment(course.id);
+    await seedSubmission(assignment.id, mhsUser.id, { grade: 88 });
+
+    const res = await request(app)
+      .get(`${API}/course/${course.id}`)
+      .set('Authorization', `Bearer ${mhsToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data[0].status).toBe('graded');
+    expect(res.body.data[0].grade).toBe(88);
   });
 
   it('403 — non-enrolled mahasiswa cannot list', async () => {

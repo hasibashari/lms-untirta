@@ -147,31 +147,41 @@ describe('getAssignmentWithMySubmission', () => {
   });
 
   it('should return graded status when submission has grade', async () => {
+    const submittedAt = new Date();
+
     prismaMock.assignment.findUnique.mockResolvedValue(assignmentWithCourse);
     prismaMock.enrollment.findUnique.mockResolvedValue({ id: 'enr-1' });
     prismaMock.submission.findUnique.mockResolvedValue({
-      id: SUBMISSION_ID, fileUrl: 'url', note: 'n', submittedAt: new Date(),
+      id: SUBMISSION_ID, fileUrl: 'url', note: 'n', submittedAt,
       grade: 85, feedback: 'Good',
     });
 
     const result = await getAssignmentWithMySubmission(ASSIGNMENT_ID, STUDENT_ID);
 
     expect(result.status).toBe('graded');
+    expect(result.submittedAt).toEqual(submittedAt);
+    expect(result.fileUrl).toBe('url');
+    expect(result.note).toBe('n');
     expect(result.grade).toBe(85);
     expect(result.feedback).toBe('Good');
   });
 
   it('should return submitted status when submission exists but not graded', async () => {
+    const submittedAt = new Date();
+
     prismaMock.assignment.findUnique.mockResolvedValue(assignmentWithCourse);
     prismaMock.enrollment.findUnique.mockResolvedValue({ id: 'enr-1' });
     prismaMock.submission.findUnique.mockResolvedValue({
-      id: SUBMISSION_ID, fileUrl: 'url', note: 'n', submittedAt: new Date(),
+      id: SUBMISSION_ID, fileUrl: 'url', note: 'n', submittedAt,
       grade: null, feedback: null,
     });
 
     const result = await getAssignmentWithMySubmission(ASSIGNMENT_ID, STUDENT_ID);
 
     expect(result.status).toBe('submitted');
+    expect(result.submittedAt).toEqual(submittedAt);
+    expect(result.fileUrl).toBe('url');
+    expect(result.note).toBe('n');
     expect(result.grade).toBeNull();
   });
 
@@ -185,6 +195,9 @@ describe('getAssignmentWithMySubmission', () => {
 
     expect(result.status).toBe('overdue');
     expect(result.isOverdue).toBe(true);
+    expect(result.submittedAt).toBeNull();
+    expect(result.fileUrl).toBeNull();
+    expect(result.note).toBeNull();
   });
 
   it('should return pending status when no submission and before deadline', async () => {
@@ -196,6 +209,9 @@ describe('getAssignmentWithMySubmission', () => {
 
     expect(result.status).toBe('pending');
     expect(result.isOverdue).toBe(false);
+    expect(result.submittedAt).toBeNull();
+    expect(result.fileUrl).toBeNull();
+    expect(result.note).toBeNull();
   });
 });
 

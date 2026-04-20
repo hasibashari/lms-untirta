@@ -246,7 +246,10 @@ describe('GET /:assignmentId/me', () => {
   });
 
   it('200 — returns submitted status after submission', async () => {
-    await seedSubmission(assignment.id, mhsUser.id);
+    await seedSubmission(assignment.id, mhsUser.id, {
+      fileUrl: 'https://example.com/submitted.pdf',
+      note: 'Ini catatan tugas saya',
+    });
 
     const res = await request(app)
       .get(`${API}/${assignment.id}/me`)
@@ -254,10 +257,18 @@ describe('GET /:assignmentId/me', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('submitted');
+    expect(res.body.data.fileUrl).toBe('https://example.com/submitted.pdf');
+    expect(res.body.data.note).toBe('Ini catatan tugas saya');
+    expect(res.body.data.submittedAt).toBeTruthy();
   });
 
   it('200 — returns graded status after grading', async () => {
-    await seedSubmission(assignment.id, mhsUser.id, { grade: 90, feedback: 'Excellent' });
+    await seedSubmission(assignment.id, mhsUser.id, {
+      fileUrl: 'https://example.com/graded.pdf',
+      note: 'Sudah final',
+      grade: 90,
+      feedback: 'Excellent',
+    });
 
     const res = await request(app)
       .get(`${API}/${assignment.id}/me`)
@@ -266,6 +277,9 @@ describe('GET /:assignmentId/me', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('graded');
     expect(res.body.data.grade).toBe(90);
+    expect(res.body.data.fileUrl).toBe('https://example.com/graded.pdf');
+    expect(res.body.data.note).toBe('Sudah final');
+    expect(res.body.data.submittedAt).toBeTruthy();
   });
 
   it('403 — not enrolled', async () => {

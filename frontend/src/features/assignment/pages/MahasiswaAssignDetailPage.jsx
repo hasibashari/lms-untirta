@@ -18,6 +18,7 @@ import {
   Award,
   MessageSquare,
   Info,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -63,6 +64,19 @@ export default function AssignmentDetail() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const getFileNameFromUrl = (url) => {
+    if (!url) return '-';
+
+    try {
+      const parsed = new URL(url);
+      const filename = parsed.pathname.split('/').filter(Boolean).pop();
+      return filename ? decodeURIComponent(filename) : url;
+    } catch {
+      const filename = url.split('/').filter(Boolean).pop();
+      return filename ? decodeURIComponent(filename) : url;
+    }
   };
 
   // Helper: Cek status deadline - Fix: Ganti 'orange' ke 'amber' untuk Tailwind valid
@@ -195,7 +209,6 @@ export default function AssignmentDetail() {
 
   // Fix: Cek status dengan lowercase karena backend return 'submitted', 'graded', 'pending', 'overdue'
   const isSubmitted = status.status === 'submitted' || status.status === 'graded';
-  const isGraded = status.status === 'graded';
   const isLate = deadlineStatus?.type === 'late';
 
   return (
@@ -288,6 +301,52 @@ export default function AssignmentDetail() {
                     <p className="text-gray-700">{status.feedback}</p>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Submission detail mahasiswa */}
+          {isSubmitted && (
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <h3 className="text-sm font-medium text-gray-500">Pengumpulan Anda</h3>
+
+              {status.submittedAt && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span>Dikumpulkan: {formatDate(status.submittedAt)}</span>
+                </div>
+              )}
+
+              {status.fileUrl && (
+                <div className="flex items-start gap-2 text-sm text-gray-700">
+                  <LinkIcon className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-gray-500">File/Link tugas</p>
+                    <a
+                      href={status.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:underline break-all"
+                    >
+                      {getFileNameFromUrl(status.fileUrl)}
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {status.note && (
+                <div className="flex items-start gap-2 text-sm text-gray-700">
+                  <MessageSquare className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-gray-500">Catatan Anda</p>
+                    <p className="whitespace-pre-wrap">{status.note}</p>
+                  </div>
+                </div>
+              )}
+
+              {!status.fileUrl && !status.note && !status.submittedAt && (
+                <p className="text-sm text-gray-500">Detail pengumpulan belum tersedia.</p>
               )}
             </div>
           )}

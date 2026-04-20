@@ -38,6 +38,7 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
         },
         select: {
           id: true,
+          grade: true,
         },
       },
     },
@@ -55,7 +56,14 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
       id: assignment.id,
       title: assignment.title,
       dueDate: assignment.dueDate,
-      status: mySubmission ? 'submitted' : now > assignment.dueDate ? 'overdue' : 'pending',
+      status: mySubmission
+        ? mySubmission.grade !== null
+          ? 'graded'
+          : 'submitted'
+        : now > assignment.dueDate
+          ? 'overdue'
+          : 'pending',
+      grade: mySubmission ? mySubmission.grade : null,
     };
   });
 };

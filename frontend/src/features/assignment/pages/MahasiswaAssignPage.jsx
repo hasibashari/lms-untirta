@@ -170,6 +170,7 @@ export default function Assignments() {
         <div className="space-y-3">
           {filteredAssignments.map((assignment) => {
             // Fix: Backend return lowercase status ('submitted', 'graded', 'pending', 'overdue')
+            const isGraded = assignment.status === 'graded';
             const isSubmitted = assignment.status === 'submitted' || assignment.status === 'graded';
             const isLate = new Date(assignment.dueDate) < new Date() && !isSubmitted;
             const timeRemaining = getTimeRemaining(assignment.dueDate);
@@ -193,7 +194,7 @@ export default function Assignments() {
                       {isSubmitted ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                           <CheckCircle className="w-3 h-3" />
-                          Dikumpulkan
+                          {isGraded ? 'Sudah dinilai' : 'Dikumpulkan'}
                         </span>
                       ) : isLate ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
@@ -222,7 +223,7 @@ export default function Assignments() {
                     </div>
 
                     {/* Nilai jika sudah dikumpulkan dan dinilai */}
-                    {isSubmitted && assignment.grade !== null && (
+                    {isSubmitted && assignment.grade !== null && assignment.grade !== undefined && (
                       <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-blue-50 rounded-lg">
                         <span className="text-sm text-blue-600">Nilai:</span>
                         <span className="font-bold text-blue-700">{assignment.grade}</span>

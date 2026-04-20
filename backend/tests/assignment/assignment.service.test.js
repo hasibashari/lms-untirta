@@ -9,7 +9,7 @@
  *   ✓ getAssignmentDetail — found / not found
  *   ✓ updateAssignment   — DOSEN ownership, MAHASISWA restriction, ADMIN override, dueDate coercion
  *   ✓ deleteAssignment   — DOSEN ownership, MAHASISWA restriction, ADMIN override, count report
- *   ✓ getAssignmentsByCourse — enrollment check, status derivation (submitted/overdue/pending)
+ *   ✓ getAssignmentsByCourse — enrollment check, status derivation (graded/submitted/overdue/pending)
  */
 
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
@@ -285,12 +285,26 @@ describe('getAssignmentsByCourse', () => {
     prismaMock.course.findUnique.mockResolvedValue(baseCourse);
     prismaMock.enrollment.findUnique.mockResolvedValue({ id: 'enr-1' });
     prismaMock.assignment.findMany.mockResolvedValue([
-      { id: ASSIGNMENT_ID, title: 'T1', dueDate: futureDueDate, submissions: [{ id: 'sub-1' }] },
+      { id: ASSIGNMENT_ID, title: 'T1', dueDate: futureDueDate, submissions: [{ id: 'sub-1', grade: null }] },
     ]);
 
     const result = await getAssignmentsByCourse(COURSE_ID, STUDENT_ID, 'MAHASISWA');
 
     expect(result[0].status).toBe('submitted');
+    expect(result[0].grade).toBeNull();
+  });
+
+  it('should return graded status and score when submission has grade', async () => {
+    prismaMock.course.findUnique.mockResolvedValue(baseCourse);
+    prismaMock.enrollment.findUnique.mockResolvedValue({ id: 'enr-1' });
+    prismaMock.assignment.findMany.mockResolvedValue([
+      { id: ASSIGNMENT_ID, title: 'T1', dueDate: futureDueDate, submissions: [{ id: 'sub-1', grade: 92 }] },
+    ]);
+
+    const result = await getAssignmentsByCourse(COURSE_ID, STUDENT_ID, 'MAHASISWA');
+
+    expect(result[0].status).toBe('graded');
+    expect(result[0].grade).toBe(92);
   });
 
   it('should return overdue status when past deadline with no submission', async () => {

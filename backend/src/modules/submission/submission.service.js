@@ -118,6 +118,9 @@ const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
       : now > assignment.dueDate
         ? 'overdue'
         : 'pending',
+    submittedAt: mySubmission ? mySubmission.submittedAt : null,
+    fileUrl: mySubmission ? mySubmission.fileUrl : null,
+    note: mySubmission ? mySubmission.note : null,
     grade: mySubmission ? mySubmission.grade : null,
     feedback: mySubmission ? mySubmission.feedback : null,
   };
