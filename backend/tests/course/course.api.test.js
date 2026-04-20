@@ -61,7 +61,7 @@ describe('Course API — /api/courses', () => {
     const allCoursesRes = await request(app)
       .get('/api/courses/admin/all')
       .set('Authorization', `Bearer ${adminToken}`);
-    
+
     courseSeedTeacherId = allCoursesRes.body?.data?.find(c => c.teacher?.id)?.teacher?.id || dosen.id;
   });
 
@@ -128,11 +128,6 @@ describe('Course API — /api/courses', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send(payload);
 
-      if (res.status === 503 || (res.status === 500 && res.body.message?.includes('gRPC'))) {
-        // Handle gRPC service unavailability in test environments
-        expect(res.body.message).toMatch(/Service Unavailable|gRPC/i);
-        return;
-      }
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual(
@@ -251,10 +246,10 @@ describe('Course API — /api/courses', () => {
       const availableRes = await request(app)
         .get(`/api/courses/${courseId}/available-students`)
         .set('Authorization', `Bearer ${adminToken}`);
-      
+
       // Fallback to the created student if gRPC/Available list is empty in test env
       enrollTargetStudent = availableRes.body?.data?.[0] || mhs;
-      
+
       if (!enrollTargetStudent) {
         throw new Error('Tidak ada mahasiswa tersedia untuk enrollment test');
       }

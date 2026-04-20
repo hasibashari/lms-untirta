@@ -34,27 +34,13 @@ describe('User API — /api/users', () => {
   const uniqueEmail = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.com`;
 
   const createUserViaApi = async (payload) => {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
-      const requestPayload = { ...payload };
+    const res = await request(app)
+      .post('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload);
 
-      if (attempt > 1 && requestPayload.email) {
-        const [localPart, domain] = requestPayload.email.split('@');
-        requestPayload.email = `${localPart}-r${attempt}-${Date.now()}@${domain || 'test.com'}`;
-      }
-
-      const res = await request(app)
-        .post('/api/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(requestPayload);
-
-      if (res.status === 201) {
-        return res.body.data;
-      }
-
-      if (res.status !== 500 || attempt === 3) {
-        expect(res.status).toBe(201);
-      }
-    }
+    expect(res.status).toBe(201);
+    return res.body.data;
   };
 
   beforeEach(async () => {

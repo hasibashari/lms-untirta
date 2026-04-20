@@ -218,6 +218,13 @@ export const courseService = {
       const existingCourse = await prisma.course.findUnique({ where: { code: data.code } });
       if (existingCourse) return callback({ code: grpc.status.ALREADY_EXISTS, details: 'Kode kelas sudah digunakan' });
 
+      const semesterValue = data.semester === undefined || data.semester === null || data.semester === ''
+        ? null
+        : Number.parseInt(data.semester, 10);
+      if (data.semester !== undefined && data.semester !== null && data.semester !== '' && Number.isNaN(semesterValue)) {
+        return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Semester tidak valid' });
+      }
+
       if (data.teacherId) {
         const teacher = await prisma.user.findUnique({ where: { id: data.teacherId } });
         if (!teacher) return callback({ code: grpc.status.NOT_FOUND, details: 'Dosen tidak ditemukan' });
@@ -227,7 +234,7 @@ export const courseService = {
       const created = await prisma.course.create({
         data: {
           title: data.title, description: data.description, code: data.code,
-          semester: data.semester || null, sks: data.sks || 3, teacherId: data.teacherId || null,
+          semester: semesterValue, sks: data.sks || 3, teacherId: data.teacherId || null,
         },
         select: {
           id: true, title: true, description: true, code: true, semester: true, sks: true, createdAt: true,
@@ -248,6 +255,18 @@ export const courseService = {
       const course = await prisma.course.findUnique({ where: { id: courseId } });
       if (!course) return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
 
+      let semesterValue;
+      if (data.semester !== undefined) {
+        if (data.semester === '') {
+          semesterValue = undefined;
+        } else {
+          semesterValue = Number.parseInt(data.semester, 10);
+          if (Number.isNaN(semesterValue)) {
+            return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Semester tidak valid' });
+          }
+        }
+      }
+
       if (data.code && data.code !== course.code) {
         const existingCourse = await prisma.course.findUnique({ where: { code: data.code } });
         if (existingCourse) return callback({ code: grpc.status.ALREADY_EXISTS, details: 'Kode kelas sudah digunakan' });
@@ -265,7 +284,7 @@ export const courseService = {
           title: data.title !== '' ? data.title : undefined,
           description: data.description !== '' ? data.description : undefined,
           code: data.code !== '' ? data.code : undefined,
-          semester: data.semester !== '' ? data.semester : undefined,
+          semester: semesterValue,
           sks: data.sks !== 0 ? data.sks : undefined,
           teacherId: data.teacherId !== '' ? data.teacherId : undefined,
         },

@@ -15,13 +15,33 @@
 import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { afterAll } from '@jest/globals';
+import { beforeAll, afterAll, expect } from '@jest/globals';
 import prisma from './helpers/prisma.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, '..', '.env.test') });
 
+let grpcServer;
+
+// Mulai server gRPC sebelum test agar Express API Gateway bisa terhubung
+beforeAll(async () => {
+  const testPath = expect.getState().testPath || '';
+  const shouldStartGrpcServer = testPath.endsWith('.api.test.js');
+
+  if (!shouldStartGrpcServer) {
+    return;
+  }
+
+  const { startGrpcServer } = await import('../src/grpc/server.js');
+  grpcServer = startGrpcServer();
+  // Berikan sedikit jeda waktu agar server berhasil bind ke port 50051
+  await new Promise((resolve) => setTimeout(resolve, 200));
+});
+
 // Disconnect Prisma after each test file to prevent connection leaks
 afterAll(async () => {
+  if (grpcServer) {
+    await new Promise((resolve) => grpcServer.tryShutdown(resolve));
+  }
   await prisma.$disconnect();
 });
