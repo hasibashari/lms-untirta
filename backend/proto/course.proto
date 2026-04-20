@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package course;
 
+// Course Service untuk mengelola data mata kuliah, termasuk pendaftaran mahasiswa, pengelolaan dosen pengajar, dan operasi CRUD untuk mata kuliah.
 service CourseService {
   // Student Enrollment
   rpc AddStudentToCourse (AddStudentEmailRequest) returns (EnrollmentResponse) {}

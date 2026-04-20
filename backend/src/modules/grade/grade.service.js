@@ -19,14 +19,6 @@ const getGradePoint = (letterGrade) => GRADE_POINTS[letterGrade] ?? 0;
 
 // ======================== GET CLASS STUDENTS FOR GRADING ========================
 
-/**
- * Retrieves students and their current grades for a specific class.
- * Validates that the requester is the lecturer of the class.
- * @param {string} classId - The ID of the class.
- * @param {string} lecturerId - The ID of the lecturer.
- * @returns {Promise<object>} Object containing class info, student list with grades, and summary stats.
- * @throws {Error} If class not found or access denied.
- */
 const getClassStudentsForGrading = async (classId, lecturerId) => {
   // Verify lecturer owns this class
   const classData = await prisma.class.findUnique({
@@ -96,15 +88,6 @@ const getClassStudentsForGrading = async (classId, lecturerId) => {
 
 // ======================== INPUT SINGLE GRADE ========================
 
-/**
- * Inputs or updates a grade for a single student.
- * Validates enrollment, semester status, and prevents modification of finalized grades.
- * @param {string} classId - The ID of the class.
- * @param {string} lecturerId - The ID of the lecturer.
- * @param {object} data - Grade data (studentId, letterGrade, numericScore, note).
- * @returns {Promise<object>} The created or updated grade record.
- * @throws {Error} If validation fails or grades are already finalized.
- */
 const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numericScore, note }) => {
   // Verify lecturer owns this class
   const classData = await prisma.class.findUnique({
@@ -187,14 +170,6 @@ const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numeric
 
 // ======================== BULK INPUT GRADES ========================
 
-/**
- * Inputs or updates grades for multiple students in a transaction.
- * @param {string} classId - The ID of the class.
- * @param {string} lecturerId - The ID of the lecturer.
- * @param {Array<object>} grades - Array of grade objects.
- * @returns {Promise<object>} Summary of the operation.
- * @throws {Error} If any student is not enrolled or grades are finalized.
- */
 const bulkInputGrades = async (classId, lecturerId, grades) => {
   const classData = await prisma.class.findUnique({
     where: { id: classId },
@@ -284,14 +259,6 @@ const bulkInputGrades = async (classId, lecturerId, grades) => {
 
 // ======================== FINALIZE GRADES ========================
 
-/**
- * Finalizes all draft grades for a class.
- * Changes status from DRAFT to FINALIZED. Requires semester to be OPEN.
- * @param {string} classId - The ID of the class.
- * @param {string} lecturerId - The ID of the lecturer.
- * @returns {Promise<object>} Summary of finalized grades.
- * @throws {Error} If no draft grades exist or semester is not OPEN.
- */
 const finalizeGrades = async (classId, lecturerId) => {
   const classData = await prisma.class.findUnique({
     where: { id: classId },
@@ -343,13 +310,6 @@ const finalizeGrades = async (classId, lecturerId) => {
 
 // ======================== GET MY GRADES (STUDENT) ========================
 
-/**
- * Retrieves grades for a student.
- * Filters to show only finalized grades or grades from closed semesters.
- * @param {string} studentId - The ID of the student.
- * @param {object} filters - Optional filters (e.g., academicSemesterId).
- * @returns {Promise<object>} List of grades and GPA summary.
- */
 const getMyGrades = async (studentId, filters = {}) => {
   const where = {
     studentId,

@@ -49,7 +49,14 @@ const mapClassItemMessage = (item) => {
   };
 };
 
+// Service utama untuk operasi CRUD dan query pada entitas Class melalui gRPC
 const ClassService = {
+  /**
+   * Membuat kelas baru.
+   * Validasi: course, lecturer, semester harus ada dan valid, tidak boleh duplikat section pada semester & course yang sama.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   CreateClass: async (call, callback) => {
     try {
       const data = call.request;
@@ -109,10 +116,15 @@ const ClassService = {
     }
   },
 
+  /**
+   * Mengambil daftar kelas dengan pagination dan filter opsional (semester, course).
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   GetAllClasses: async (call, callback) => {
     try {
       const { page, limit, academicSemesterId, courseId } = call.request;
-      
+
       const pageNum = parseInt(page) || 1;
       const limitNum = parseInt(limit) || 10;
       const skip = (pageNum - 1) * limitNum;
@@ -161,6 +173,11 @@ const ClassService = {
     }
   },
 
+  /**
+   * Mengambil detail kelas berdasarkan ID.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   GetClassById: async (call, callback) => {
     try {
       const classData = await prisma.class.findUnique({
@@ -168,7 +185,7 @@ const ClassService = {
         select: {
           ...classSelect,
           _count: {
-             select: { krsEnrollments: true }
+            select: { krsEnrollments: true }
           }
         },
       });
@@ -184,6 +201,11 @@ const ClassService = {
     }
   },
 
+  /**
+   * Mengambil daftar kelas yang diampu oleh dosen tertentu, bisa difilter per semester.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   GetClassesByLecturer: async (call, callback) => {
     try {
       const { lecturerId, academicSemesterId } = call.request;
@@ -213,6 +235,11 @@ const ClassService = {
     }
   },
 
+  /**
+   * Mengambil daftar kelas untuk mata kuliah tertentu, bisa difilter per semester.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   GetClassesByCourse: async (call, callback) => {
     try {
       const { courseId, academicSemesterId } = call.request;
@@ -241,6 +268,12 @@ const ClassService = {
     }
   },
 
+  /**
+   * Mengambil daftar kelas yang enrollment-nya sedang dibuka (isEnrollmentOpen = true).
+   * Bisa difilter per course/semester.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   GetOpenClasses: async (call, callback) => {
     try {
       const { courseId, academicSemesterId } = call.request;
@@ -269,6 +302,12 @@ const ClassService = {
     }
   },
 
+  /**
+   * Memperbarui data kelas (hanya jika semester belum CLOSED).
+   * Validasi: dosen & semester valid, tidak duplikat section pada semester & course yang sama.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   UpdateClass: async (call, callback) => {
     try {
       const classId = call.request.id;
@@ -343,9 +382,9 @@ const ClassService = {
       });
       // Protobuf `optional bool isEnrollmentOpen` creates a field that allows us to check for presence but in grpc-js it will just be undefined if not sent.
       if (data.isEnrollmentOpen !== undefined) {
-         await prisma.class.update({ where: {id: classId}, data: {isEnrollmentOpen: data.isEnrollmentOpen} });
-         // Merge into updatedClass for returning. (It's okay to do this two step as it's edge case)
-         updatedClass.isEnrollmentOpen = data.isEnrollmentOpen;
+        await prisma.class.update({ where: { id: classId }, data: { isEnrollmentOpen: data.isEnrollmentOpen } });
+        // Merge into updatedClass for returning. (It's okay to do this two step as it's edge case)
+        updatedClass.isEnrollmentOpen = data.isEnrollmentOpen;
       }
 
 
@@ -358,6 +397,11 @@ const ClassService = {
     }
   },
 
+  /**
+   * Mengubah status enrollment kelas (buka/tutup pendaftaran), hanya jika semester belum CLOSED.
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   ToggleEnrollment: async (call, callback) => {
     try {
       const classId = call.request.id;
@@ -389,6 +433,11 @@ const ClassService = {
     }
   },
 
+  /**
+   * Menghapus kelas (hanya jika semester belum CLOSED).
+   * @param {Object} call - Request gRPC
+   * @param {Function} callback - Callback gRPC
+   */
   DeleteClass: async (call, callback) => {
     try {
       const classId = call.request.id;

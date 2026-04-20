@@ -3,6 +3,7 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import { processChat } from "./chat.service.js";
 import logger from "../../config/logger.js";
 
+// Validasi input untuk pesan chat
 const chatSchema = z.object({
   message: z.string().min(1, "Pesan tidak boleh kosong").max(1000, "Pesan terlalu panjang")
 });

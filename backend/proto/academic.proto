@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package academic;
 
+// Akademik Service untuk mengelola data semester, termasuk CRUD dan status penutupan semester.
 service AcademicService {
   rpc GetAllSemesters (EmptyConfig) returns (SemesterListResponse);
   rpc GetActiveSemester (EmptyConfig) returns (SemesterResponse);
@@ -14,13 +15,16 @@ service AcademicService {
   rpc GetStudentSemesters (StudentIdRequest) returns (SemesterListResponse);
 }
 
+// Pesan kosong untuk permintaan yang tidak memerlukan parameter.
 message EmptyConfig {}
 
+// Model data untuk menghitung jumlah kelas dan penilaian terkait dalam suatu semester.
 message CountDetails {
   int32 classes = 1;
   int32 finalGrades = 2;
 }
 
+// Model data untuk semester, termasuk informasi dasar dan statistik terkait kelas dan penilaian.
 message Semester {
   string id = 1;
   string academicYear = 2;

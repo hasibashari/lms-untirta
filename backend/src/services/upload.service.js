@@ -1,7 +1,6 @@
 // src/services/upload.service.js
 //
-// Thin service layer that bridges Multer's file output with Redis metadata
-// storage. Keeps middleware and Redis logic decoupled.
+// Service untuk mengelola metadata upload file menggunakan Redis. Metadata mencakup informasi seperti nama asli, nama yang disimpan, ukuran, tipe MIME, path, dan timestamp. Metadata disimpan dengan TTL untuk otomatis kedaluwarsa. Service ini juga menyediakan fungsi untuk mengambil metadata, menghapus upload (termasuk file fisik), dan daftar semua upload untuk pengguna tertentu.
 
 import { promises as fs } from "fs";
 import path from "path";
@@ -14,14 +13,7 @@ const DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
 // ── Key helpers ───────────────────────────────────────────────────────
 
-/**
- * Build a namespaced Redis key for a single upload.
- * Pattern: `upload:{userId}:{uuid}`
- *
- * @param {string|number} userId
- * @param {string} uuid - The UUID portion of the stored filename (without ext).
- * @returns {string}
- */
+// Membuat key Redis untuk metadata upload berdasarkan userId dan UUID file.
 const buildKey = (userId, uuid) => `${UPLOAD_PREFIX}:${userId}:${uuid}`;
 
 /**
@@ -33,16 +25,7 @@ const buildUserPattern = (userId) => `${UPLOAD_PREFIX}:${userId}:*`;
 
 // ── Public API ────────────────────────────────────────────────────────
 
-/**
- * Persist upload metadata to Redis after Multer has written the file.
- *
- * @param {object} params
- * @param {string|number} params.userId   - Authenticated user ID.
- * @param {object}        params.file     - The `req.file` object from Multer.
- * @param {number}        [params.ttl]    - TTL in seconds (default 24 h).
- * @returns {Promise<object>} The metadata that was stored.
- * @throws If Redis SET fails.
- */
+// Simpan metadata upload ke Redis dengan TTL. Metadata mencakup nama asli, nama yang disimpan, ukuran, tipe MIME, path, dan timestamp.
 export const persistUploadMeta = async ({
   userId,
   file,
@@ -73,13 +56,7 @@ export const persistUploadMeta = async ({
   return { key, ...metadata };
 };
 
-/**
- * Retrieve upload metadata from Redis.
- *
- * @param {string|number} userId
- * @param {string} uuid
- * @returns {Promise<object|null>} Metadata hash or null if expired / not found.
- */
+// Ambil metadata upload dari Redis berdasarkan userId dan UUID. Mengembalikan null jika tidak ditemukan atau sudah kedaluwarsa.
 export const getUploadMeta = async (userId, uuid) => {
   const key = buildKey(userId, uuid);
   const data = await redisClient.hGetAll(key);
@@ -89,14 +66,7 @@ export const getUploadMeta = async (userId, uuid) => {
   return data;
 };
 
-/**
- * Delete upload metadata from Redis **and** remove the file from disk.
- * Silently ignores missing files (already cleaned up or expired).
- *
- * @param {string|number} userId
- * @param {string} uuid
- * @returns {Promise<boolean>} true if the key existed and was deleted.
- */
+// Hapus metadata upload dari Redis dan coba hapus file fisiknya. Mengembalikan true jika metadata berhasil dihapus, false jika tidak ditemukan.
 export const deleteUpload = async (userId, uuid) => {
   const key = buildKey(userId, uuid);
   const meta = await redisClient.hGetAll(key);
@@ -114,13 +84,7 @@ export const deleteUpload = async (userId, uuid) => {
   return deleted > 0;
 };
 
-/**
- * List all upload metadata keys for a given user (paginated via SCAN).
- * Use sparingly — primarily for admin dashboards or cleanup jobs.
- *
- * @param {string|number} userId
- * @returns {Promise<string[]>} Array of Redis keys.
- */
+// Daftar semua metadata upload untuk pengguna tertentu. Menggunakan SCAN untuk iterasi yang efisien, mengembalikan array kunci yang cocok.
 export const listUserUploads = async (userId) => {
   const pattern = buildUserPattern(userId);
   const keys = [];
@@ -132,12 +96,7 @@ export const listUserUploads = async (userId) => {
   return keys;
 };
 
-/**
- * Safely remove the physical file when an error occurs after Multer has
- * already written it to disk. Call this in controller catch blocks.
- *
- * @param {string|undefined} filePath - Absolute or relative path to the file.
- */
+// Bersihkan file fisik yang terkait dengan metadata upload. Digunakan untuk pembersihan manual atau penanganan kesalahan. Tidak mempengaruhi metadata Redis.
 export const cleanupFile = async (filePath) => {
   if (!filePath) return;
   try {

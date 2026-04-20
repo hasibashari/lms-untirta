@@ -1,10 +1,6 @@
 import prisma from "../../config/prisma.js";
 
-/**
- * Retrieves context tailored for the AI based on the particular user
- * @param {Object} user 
- * @param {string} userMessage
- */
+// Mengambil konteks yang relevan untuk chatbot berdasarkan peran pengguna dan data LMS yang tersedia, seperti kelas aktif untuk mahasiswa atau kelas yang diajar untuk dosen.
 export const getContextForUser = async (user, userMessage) => {
   let context = {};
 
@@ -42,6 +38,7 @@ export const getContextForUser = async (user, userMessage) => {
       }
     });
 
+    // Format data kelas aktif untuk konteks chatbot
     const activeClasses = enrollments.map(e => ({
       MataKuliah: e.class.course.title,
       Kode: e.class.course.code,

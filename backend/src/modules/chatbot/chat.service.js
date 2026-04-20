@@ -2,11 +2,7 @@ import { getContextForUser } from "./context.service.js";
 import { generateChatResponse } from "./gemini.service.js";
 import prisma from "../../config/prisma.js";
 
-/**
- * Handle chat logic
- * @param {string} userId 
- * @param {string} message 
- */
+// Memproses pesan chat dari pengguna dengan mengambil konteks yang relevan berdasarkan peran dan data LMS, kemudian menghasilkan respons menggunakan model Gemini.
 export const processChat = async (userId, message) => {
   // Ambil profil user
   const user = await prisma.user.findUnique({

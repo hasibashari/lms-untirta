@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package user;
 
+// User Service untuk mengelola data pengguna, termasuk operasi CRUD, pengelolaan dosen pembimbing, dan statistik admin.
 service UserService {
   rpc CreateUserByAdmin (CreateUserRequest) returns (UserResponse) {}
   rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse) {}

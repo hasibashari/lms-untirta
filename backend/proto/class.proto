@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package classPackage;
 
+// Kelas Service untuk mengelola data kelas, termasuk CRUD, pengelolaan pendaftaran, dan filter berdasarkan dosen atau mata kuliah.
 service ClassService {
   rpc CreateClass (CreateClassRequest) returns (ClassResponse);
   rpc GetAllClasses (GetAllClassesRequest) returns (ListClassesResponse);
