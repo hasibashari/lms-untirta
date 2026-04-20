@@ -28,9 +28,9 @@ import {
 import toast from 'react-hot-toast';
 import {
   getSubmissions,
-  getAssignments,
   gradeSubmission,
-} from '../assignmentService';
+} from '../submissionService';
+import { getAssignments } from '../../assignment/assignmentService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 
 /**

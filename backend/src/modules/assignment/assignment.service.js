@@ -1,106 +1,8 @@
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../config/errors.js';
 
-// ======= CREATE ASSIGNMENT =======
-const createAssignment = async (courseId, teacherId, data) => {
-  // Cek kepemilikan kelas
-  const course = await prisma.course.findUnique({ where: { id: courseId } });
-
-  if (!course) {
-    throw new AppError(404, 'Kelas tidak ditemukan');
-  }
-
-  if (course.teacherId !== teacherId) {
-    throw new AppError(403, 'Akses ditolak');
-  }
-
-  return prisma.assignment.create({
-    data: {
-      title: data.title,
-      description: data.description,
-      dueDate: new Date(data.dueDate), // Konversi String ke Date Object
-      courseId,
-    },
-    // SAFE PROJECTION ✅
-    select: {
-      id: true,
-      title: true,
-      dueDate: true,
-      courseId: true,
-    },
-  });
-};
-
-// ======= SUBMIT ASSIGNMENT =======
-const submitAssignment = async (assignmentId, studentId, data) => {
-  // Cek validitas Tugas
-  const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
-
-  if (!assignment) {
-    throw new AppError(404, 'Tugas tidak ditemukan');
-  }
-
-  // TODO Cek apakah mahasiswa terdaftar di kelas tsb? (Skip dulu biar ringkas, tapi idealnya dicek)
-
-  // * Cek Deadline - Tetap izinkan submit tapi tandai sebagai terlambat
-  const isLate = new Date() > assignment.dueDate;
-
-  // Cek apakah sudah pernah submit?
-  const existingSubmission = await prisma.submission.findUnique({
-    where: {
-      assignmentId_studentId: {
-        assignmentId,
-        studentId,
-      },
-    },
-  });
-
-  if (existingSubmission) {
-    throw new AppError(409, 'Anda sudah mengumpulkan tugas ini');
-  }
-
-  const submission = await prisma.submission.create({
-    data: {
-      assignmentId,
-      studentId,
-      fileUrl: data.fileUrl,
-      note: data.note,
-    },
-    select: {
-      id: true,
-      assignmentId: true,
-      submittedAt: true,
-      fileUrl: true,
-    },
-  });
-
-  return {
-    id: submission.id,
-    assignmentId: submission.assignmentId,
-    submittedAt: submission.submittedAt,
-    fileUrl: submission.fileUrl,
-    status: 'Submitted',
-    isLate, // Informasi apakah terlambat
-  };
-};
-
-// ======= GET ASSIGNMENT DETAIL =======
-const getAssignmentDetail = async assignmentId => {
-  return await prisma.assignment.findUnique({
-    where: { id: assignmentId },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      dueDate: true,
-      // Kita tidak load submissions di sini agar ringan
-    },
-  });
-};
-
-// ======= GET ASSIGNMENTS BY COURSE =======
+// ======= GET ASSIGNMENTS BY COURSE (WITH SUBMISSION STATUS) =======
 const getAssignmentsByCourse = async (courseId, userId, userRole) => {
-  // 1. Validasi: Pastikan Course exists
   const course = await prisma.course.findUnique({
     where: { id: courseId },
   });
@@ -109,13 +11,12 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
     throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
-  // 2. Authorization: Mahasiswa harus terdaftar di kelas
   if (userRole === 'MAHASISWA') {
     const enrollment = await prisma.enrollment.findUnique({
       where: {
         userId_courseId: {
-          userId: userId,
-          courseId: courseId,
+          userId,
+          courseId,
         },
       },
     });
@@ -125,7 +26,6 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
     }
   }
 
-  // 3. Ambil daftar assignments
   const assignments = await prisma.assignment.findMany({
     where: { courseId },
     select: {
@@ -134,7 +34,7 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
       dueDate: true,
       submissions: {
         where: {
-          studentId: userId, // Cek submission milik mahasiswa ini
+          studentId: userId,
         },
         select: {
           id: true,
@@ -142,11 +42,10 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
       },
     },
     orderBy: {
-      dueDate: 'asc', // Urutkan dari deadline paling dekat
+      dueDate: 'asc',
     },
   });
 
-  // 4. Transform data untuk menambahkan status deadline
   const now = new Date();
 
   return assignments.map(assignment => {
@@ -161,402 +60,49 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
   });
 };
 
-// ======= GET ASSIGNMENT WITH STUDENT SUBMISSION =======
-const getAssignmentWithMySubmission = async (assignmentId, studentId) => {
-  // 1. Ambil detail assignment
-  const assignment = await prisma.assignment.findUnique({
+// ======= CREATE ASSIGNMENT =======
+const createAssignment = async (courseId, teacherId, data) => {
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+
+  if (!course) {
+    throw new AppError(404, 'Kelas tidak ditemukan');
+  }
+
+  if (course.teacherId !== teacherId) {
+    throw new AppError(403, 'Akses ditolak');
+  }
+
+  return prisma.assignment.create({
+    data: {
+      title: data.title,
+      description: data.description,
+      dueDate: new Date(data.dueDate),
+      courseId,
+    },
+    select: {
+      id: true,
+      title: true,
+      dueDate: true,
+      courseId: true,
+    },
+  });
+};
+
+// ======= GET ASSIGNMENT DETAIL =======
+const getAssignmentDetail = async assignmentId => {
+  return prisma.assignment.findUnique({
     where: { id: assignmentId },
     select: {
       id: true,
       title: true,
       description: true,
       dueDate: true,
-      courseId: true,
-      course: {
-        select: {
-          id: true,
-          title: true,
-          code: true,
-        },
-      },
     },
   });
-
-  if (!assignment) {
-    throw new AppError(404, 'Tugas tidak ditemukan');
-  }
-
-  // 2. Cek apakah mahasiswa terdaftar di kelas
-  const enrollment = await prisma.enrollment.findUnique({
-    where: {
-      userId_courseId: {
-        userId: studentId,
-        courseId: assignment.courseId,
-      },
-    },
-  });
-
-  if (!enrollment) {
-    throw new AppError(403, 'Anda belum terdaftar di kelas ini');
-  }
-
-  // 3. Cari submission mahasiswa ini (jika ada)
-  const mySubmission = await prisma.submission.findUnique({
-    where: {
-      assignmentId_studentId: {
-        assignmentId,
-        studentId,
-      },
-    },
-    select: {
-      id: true,
-      fileUrl: true,
-      note: true,
-      submittedAt: true,
-      grade: true,
-      feedback: true,
-    },
-  });
-
-  // 4. Return data lengkap
-  const now = new Date();
-
-  return {
-    id: assignment.id,
-    title: assignment.title,
-    dueDate: assignment.dueDate,
-    isOverdue: now > assignment.dueDate,
-    status: mySubmission
-      ? mySubmission.grade !== null
-        ? 'graded'
-        : 'submitted'
-      : now > assignment.dueDate
-        ? 'overdue'
-        : 'pending',
-    grade: mySubmission ? mySubmission.grade : null,
-    feedback: mySubmission ? mySubmission.feedback : null,
-  };
-};
-
-// ======= GET SUBMISSIONS BY ASSIGNMENT =======
-const getSubmissionsByAssignment = async (assignmentId, teacherId) => {
-  // Validasi: Pastikan tugas ini milik dosen tersebut
-  const assignment = await prisma.assignment.findUnique({
-    where: { id: assignmentId },
-    select: {
-      id: true,
-      course: {
-        select: {
-          teacherId: true,
-        },
-      },
-    },
-  });
-  if (!assignment) {
-    throw new AppError(404, 'Tugas tidak ditemukan');
-  }
-  if (assignment.course.teacherId !== teacherId) {
-    throw new AppError(403, 'Akses ditolak');
-  }
-  // Ambil submission beserta nama mahasiswany
-  return await prisma.submission.findMany({
-    where: { assignmentId },
-    select: {
-      id: true,
-      submittedAt: true,
-      fileUrl: true,
-      note: true,
-      grade: true, // Biar dosen tau mana yang belum dinilai
-      student: {
-        // JOIN ke tabel User
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-    orderBy: { submittedAt: 'desc' },
-  });
-};
-
-// ======= GET ALL STUDENT GRADES =======
-const getAllMyGrades = async (studentId) => {
-  // Ambil semua enrollment mahasiswa
-  const enrollments = await prisma.enrollment.findMany({
-    where: { userId: studentId },
-    select: {
-      course: {
-        select: {
-          id: true,
-          title: true,
-          code: true,
-          teacher: {
-            select: {
-              name: true,
-            },
-          },
-          assignments: {
-            select: {
-              id: true,
-              title: true,
-              dueDate: true,
-              submissions: {
-                where: { studentId },
-                select: {
-                  id: true,
-                  grade: true,
-                  feedback: true,
-                  submittedAt: true,
-                },
-              },
-            },
-            orderBy: { dueDate: 'desc' },
-          },
-        },
-      },
-    },
-  });
-
-  // Transform data
-  const result = [];
-
-  for (const enrollment of enrollments) {
-    const course = enrollment.course;
-
-    for (const assignment of course.assignments) {
-      const submission = assignment.submissions[0] || null;
-      const now = new Date();
-
-      result.push({
-        courseId: course.id,
-        courseName: course.title,
-        courseCode: course.code,
-        teacherName: course.teacher?.name || 'Unknown',
-        assignmentId: assignment.id,
-        assignmentTitle: assignment.title,
-        dueDate: assignment.dueDate,
-        status: submission
-          ? submission.grade !== null
-            ? 'graded'
-            : 'submitted'
-          : now > assignment.dueDate
-            ? 'overdue'
-            : 'pending',
-        grade: submission?.grade || null,
-        feedback: submission?.feedback || null,
-        submittedAt: submission?.submittedAt || null,
-      });
-    }
-  }
-
-  return result;
-};
-
-// ======= GET STUDENT DASHBOARD STATS =======
-const getMyDashboardStats = async (studentId) => {
-  // 1. Get enrolled course IDs with a lightweight query
-  const enrollments = await prisma.enrollment.findMany({
-    where: { userId: studentId },
-    select: { courseId: true },
-  });
-
-  const courseIds = enrollments.map(e => e.courseId);
-
-  // 2. Use parallel count queries instead of loading full nested data
-  const now = new Date();
-
-  const [totalAssignments, pendingAssignments, gradedAssignments] = await Promise.all([
-    // Total assignments across enrolled courses
-    prisma.assignment.count({
-      where: { courseId: { in: courseIds } },
-    }),
-    // Pending: not submitted + not overdue
-    prisma.assignment.count({
-      where: {
-        courseId: { in: courseIds },
-        dueDate: { gte: now },
-        submissions: { none: { studentId } },
-      },
-    }),
-    // Graded submissions
-    prisma.submission.count({
-      where: {
-        studentId,
-        assignment: { courseId: { in: courseIds } },
-        grade: { not: null },
-      },
-    }),
-  ]);
-
-  return {
-    totalCourses: enrollments.length,
-    totalAssignments,
-    pendingAssignments,
-    gradedAssignments,
-  };
-};
-
-// ======= GRADE STUDENT SUBMISSION =======
-const gradeSubmission = async (submissionId, teacherId, data) => {
-  // Validasi Kepemilikan (Sedikit kompleks karena harus naik 2 level: Submission -> Assignment -> Course -> Teacher)
-  const submission = await prisma.submission.findUnique({
-    where: { id: submissionId },
-    select: {
-      id: true,
-      assignment: {
-        select: {
-          course: {
-            select: {
-              teacherId: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!submission) {
-    throw new AppError(404, 'Submission tidak ditemukan');
-  }
-  // Cek apakah user yang request adalah Dosen pemilik kelas
-  if (submission.assignment.course.teacherId !== teacherId) {
-    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
-  }
-
-  // Update Nilai
-  return await prisma.submission.update({
-    where: { id: submissionId },
-    data: {
-      grade: data.grade,
-      feedback: data.feedback,
-    },
-    select: {
-      id: true,
-      grade: true,
-      feedback: true,
-      studentId: true,
-    },
-  });
-};
-
-// ======= GET TEACHER DASHBOARD STATS =======
-const getTeacherDashboardStats = async (teacherId) => {
-  // 1. Get course IDs and basic counts with _count (single query, no full data load)
-  const courses = await prisma.course.findMany({
-    where: { teacherId },
-    select: {
-      id: true,
-      _count: {
-        select: {
-          students: true,
-          materials: true,
-          assignments: true,
-        },
-      },
-    },
-  });
-
-  const courseIds = courses.map(c => c.id);
-
-  let totalStudents = 0;
-  let totalMaterials = 0;
-  let totalAssignments = 0;
-
-  for (const course of courses) {
-    totalStudents += course._count.students;
-    totalMaterials += course._count.materials;
-    totalAssignments += course._count.assignments;
-  }
-
-  // 2. Use parallel count queries for submission stats instead of nested loops
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  const [pendingGrading, recentSubmissions] = await Promise.all([
-    prisma.submission.count({
-      where: {
-        assignment: { courseId: { in: courseIds } },
-        grade: null,
-      },
-    }),
-    prisma.submission.count({
-      where: {
-        assignment: { courseId: { in: courseIds } },
-        submittedAt: { gte: sevenDaysAgo },
-      },
-    }),
-  ]);
-
-  return {
-    totalCourses: courses.length,
-    totalStudents,
-    totalMaterials,
-    totalAssignments,
-    pendingGrading,
-    recentSubmissions,
-  };
-};
-
-// ======= GET RECENT SUBMISSIONS FOR TEACHER =======
-const getRecentSubmissionsForTeacher = async (teacherId, limit = 10) => {
-  // Ambil submissions terbaru dari semua kelas dosen
-  const submissions = await prisma.submission.findMany({
-    where: {
-      assignment: {
-        course: {
-          teacherId,
-        },
-      },
-    },
-    select: {
-      id: true,
-      submittedAt: true,
-      grade: true,
-      student: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      assignment: {
-        select: {
-          id: true,
-          title: true,
-          course: {
-            select: {
-              id: true,
-              title: true,
-              code: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      submittedAt: 'desc',
-    },
-    take: limit,
-  });
-
-  return submissions.map(sub => ({
-    id: sub.id,
-    studentName: sub.student.name,
-    studentEmail: sub.student.email,
-    assignmentId: sub.assignment.id,
-    assignmentTitle: sub.assignment.title,
-    courseId: sub.assignment.course.id,
-    courseName: sub.assignment.course.title,
-    courseCode: sub.assignment.course.code,
-    submittedAt: sub.submittedAt,
-    isGraded: sub.grade !== null,
-    grade: sub.grade,
-  }));
 };
 
 // ======= UPDATE ASSIGNMENT =======
 const updateAssignment = async (assignmentId, userId, userRole, data) => {
-  // 1. Cari assignment beserta informasi course-nya
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     select: {
@@ -574,7 +120,6 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
     throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
-  // 2. Authorization: Hanya Dosen pemilik atau Admin
   if (userRole === 'DOSEN' && assignment.course.teacherId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan tugas dari kelas Anda');
   }
@@ -583,8 +128,7 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
     throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat mengedit tugas');
   }
 
-  // 3. Update Assignment
-  return await prisma.assignment.update({
+  return prisma.assignment.update({
     where: { id: assignmentId },
     data: {
       title: data.title,
@@ -604,7 +148,6 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
 
 // ======= DELETE ASSIGNMENT =======
 const deleteAssignment = async (assignmentId, userId, userRole) => {
-  // 1. Cari assignment beserta informasi course-nya
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     select: {
@@ -627,7 +170,6 @@ const deleteAssignment = async (assignmentId, userId, userRole) => {
     throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
-  // 2. Authorization: Hanya Dosen pemilik atau Admin
   if (userRole === 'DOSEN' && assignment.course.teacherId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan tugas dari kelas Anda');
   }
@@ -636,7 +178,6 @@ const deleteAssignment = async (assignmentId, userId, userRole) => {
     throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat menghapus tugas');
   }
 
-  // 3. Delete Assignment (submissions akan cascade delete)
   await prisma.assignment.delete({
     where: { id: assignmentId },
   });
@@ -648,17 +189,9 @@ const deleteAssignment = async (assignmentId, userId, userRole) => {
 };
 
 export {
-  createAssignment,
-  submitAssignment,
-  getAssignmentDetail,
   getAssignmentsByCourse,
-  getAssignmentWithMySubmission,
-  getSubmissionsByAssignment,
-  getAllMyGrades,
-  getMyDashboardStats,
-  getTeacherDashboardStats,
-  getRecentSubmissionsForTeacher,
-  gradeSubmission,
+  createAssignment,
+  getAssignmentDetail,
   updateAssignment,
   deleteAssignment,
 };

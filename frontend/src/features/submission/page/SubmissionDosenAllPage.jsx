@@ -11,7 +11,7 @@ import {
   ArrowRight,
   User,
 } from 'lucide-react';
-import { getRecentSubmissions } from '../assignmentService';
+import { getRecentSubmissions } from '../submissionService';
 import { getMyCourses } from '../../course/courseService';
 
 /**

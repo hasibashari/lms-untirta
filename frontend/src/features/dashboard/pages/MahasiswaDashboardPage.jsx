@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, ClipboardList, ArrowRight, Award, Clock, LayoutDashboard } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
-import { getMyDashboardStats } from '../../assignment/assignmentService';
+import { getMyDashboardStats } from '../../submission/submissionService';
 import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
 
 /**

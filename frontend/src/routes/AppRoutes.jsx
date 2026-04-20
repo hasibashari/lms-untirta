@@ -74,11 +74,13 @@ const DosenCourseGrades = lazy(() => import('../features/grade/pages/DosenGradeC
 // Assignment module
 const DosenAssignments = lazy(() => import('../features/assignment/pages/DosenAssignPage'));
 const DosenCreateAssignment = lazy(() => import('../features/assignment/pages/DosenAssignCreatePage'));
-const DosenSubmissions = lazy(() => import('../features/assignment/pages/SubmissionDosenListPage'));
-const DosenAllSubmissions = lazy(() => import('../features/assignment/pages/SubmissionDosenAllPage'));
 const MahasiswaAssignments = lazy(() => import('../features/assignment/pages/MahasiswaAssignPage'));
 const MahasiswaAssignmentDetail = lazy(() => import('../features/assignment/pages/MahasiswaAssignDetailPage'));
-const MahasiswaGrades = lazy(() => import('../features/assignment/pages/MahasiswaGradesPage'));
+
+// Submission module
+const DosenSubmissions = lazy(() => import('../features/submission/page/SubmissionDosenListPage'));
+const DosenAllSubmissions = lazy(() => import('../features/submission/page/SubmissionDosenAllPage'));
+const MahasiswaGrades = lazy(() => import('../features/submission/page/MahasiswaGradesPage'));
 
 // Suspense wrapper for lazy-loaded pages
 const Lazy = (props) => {

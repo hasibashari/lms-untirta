@@ -13,6 +13,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import courseRoutes from './modules/course/course.routes.js';
 import userRoutes from './modules/user/user.routes.js';
 import assignmentRoutes from './modules/assignment/assignment.routes.js';
+import submissionRoutes from './modules/submission/submission.routes.js';
 import materialRoutes from './modules/material/material.routes.js';
 import classRoutes from './modules/class/class.routes.js';
 import krsRoutes from './modules/krs/krs.routes.js';
@@ -65,6 +66,7 @@ import chatRoutes from './modules/chatbot/chat.routes.js';
 app.use('/api/auth', authRoutes); // Login/Register
 app.use('/api/courses', courseRoutes); // Kelas
 app.use('/api/users', userRoutes); // User Management (Admin Only)
+app.use('/api/submissions', submissionRoutes); // Submission Routes
 app.use('/api/assignments', assignmentRoutes); // Assignment Routes
 app.use('/api/materials', materialRoutes); // Material Routes (Detail)
 app.use('/api/classes', classRoutes); // Class Offering Routes

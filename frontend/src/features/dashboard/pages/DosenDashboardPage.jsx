@@ -13,7 +13,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
-import { getTeacherDashboardStats, getRecentSubmissions } from '../../assignment/assignmentService';
+import { getTeacherDashboardStats, getRecentSubmissions } from '../../submission/submissionService';
 import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
 
 /**

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getMyAssignmentStatus, getAssignmentDetail, submitAssignment } from '../assignmentService';
+import { getAssignmentDetail } from '../assignmentService';
+import { getMyAssignmentStatus, submitAssignment } from '../../submission/submissionService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import BackButton from '../../../components/navigation/BackButton';
 import toast from 'react-hot-toast';

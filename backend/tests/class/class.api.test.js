@@ -96,6 +96,13 @@ describe('Class API — /api/classes', () => {
       .post('/api/classes')
       .set('Authorization', `Bearer ${adminToken}`)
       .send(payload);
+
+    if (!res.body.data) {
+      throw new Error(
+        `seedClass gagal: status=${res.status}, body=${JSON.stringify(res.body)}\n` +
+        'Pastikan gRPC server berjalan (startGrpcServer dipanggil di beforeAll).'
+      );
+    }
     return res.body.data;
   }
 
