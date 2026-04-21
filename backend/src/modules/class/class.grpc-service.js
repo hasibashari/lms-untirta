@@ -63,12 +63,16 @@ const ClassService = {
 
       const course = await prisma.course.findUnique({
         where: { id: data.courseId },
-        select: { id: true },
+        select: { id: true, teacherId: true },
       });
       if (!course) return callback({ code: grpc.status.NOT_FOUND, details: 'Mata kuliah tidak ditemukan' });
 
+      // Gunakan lecturerId dari request, jika kosong gunakan teacherId dari course
+      const targetLecturerId = data.lecturerId || course.teacherId;
+      if (!targetLecturerId) return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Dosen pengampu wajib ditentukan (tidak ada dosen default di mata kuliah)' });
+
       const lecturer = await prisma.user.findUnique({
-        where: { id: data.lecturerId },
+        where: { id: targetLecturerId },
         select: { id: true, role: true },
       });
       if (!lecturer) return callback({ code: grpc.status.NOT_FOUND, details: 'Dosen tidak ditemukan' });
@@ -96,7 +100,7 @@ const ClassService = {
       const newClass = await prisma.class.create({
         data: {
           courseId: data.courseId,
-          lecturerId: data.lecturerId,
+          lecturerId: targetLecturerId,
           academicSemesterId: data.academicSemesterId,
           section: data.section,
           schedule: data.schedule || null,

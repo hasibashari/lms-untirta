@@ -11,6 +11,7 @@ import {
   Code,
   Link as LinkIcon,
   Image,
+  Video,
   Eye,
   Edit3,
   HelpCircle,
@@ -71,6 +72,7 @@ const MarkdownEditor = ({
     { icon: Code, label: 'Code', action: () => insertMarkdown('`', '`', 'kode') },
     { icon: LinkIcon, label: 'Link', action: () => insertMarkdown('[', '](url)', 'teks link') },
     { icon: Image, label: 'Image', action: () => insertMarkdown('![', '](url)', 'alt text') },
+    { icon: Video, label: 'Video (YouTube/Vimeo)', action: () => insertMarkdown('\nhttps://www.youtube.com/watch?v=', '\n', 'VIDEO_ID') },
   ];
 
   return (
@@ -107,6 +109,7 @@ const MarkdownEditor = ({
             <div><code className="bg-blue-100 px-1 rounded">`kode`</code> → <code>Inline code</code></div>
             <div><code className="bg-blue-100 px-1 rounded">[teks](url)</code> → Link</div>
             <div><code className="bg-blue-100 px-1 rounded">![alt](url)</code> → Image</div>
+            <div><code className="bg-blue-100 px-1 rounded">https://url</code> → Video Embed</div>
             <div><code className="bg-blue-100 px-1 rounded">&gt; teks</code> → Blockquote</div>
           </div>
         </div>

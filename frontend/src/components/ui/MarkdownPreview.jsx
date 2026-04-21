@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import ReactPlayer from 'react-player';
 
 /**
  * MarkdownPreview - Komponen untuk render Markdown ke HTML
@@ -9,6 +10,111 @@ import remarkGfm from 'remark-gfm';
  * Menggunakan react-markdown untuk konsistensi dengan Tailwind prose
  */
 const MarkdownPreview = ({ content, className = '' }) => {
+  // Fungsi untuk mengubah link YouTube biasa menjadi link Embed
+  const getYoutubeEmbed = (url) => {
+    if (!url) return null;
+    let videoId = '';
+    const v = url.trim();
+    
+    if (v.includes('youtu.be/')) {
+      videoId = v.split('youtu.be/')[1].split(/[?#]/)[0];
+    } else if (v.includes('youtube.com/watch')) {
+      const urlObj = new URL(v);
+      videoId = urlObj.searchParams.get('v');
+    } else if (v.includes('youtube.com/embed/')) {
+      videoId = v.split('youtube.com/embed/')[1].split(/[?#]/)[0];
+    }
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
+  };
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const v = url.trim().toLowerCase();
+    return v.includes('youtube.com') || v.includes('youtu.be') || v.includes('vimeo.com') || ReactPlayer.canPlay(url);
+  };
+
+  const VideoRenderer = ({ url }) => {
+    const embedUrl = getYoutubeEmbed(url);
+    
+    return (
+      <div className="my-8 w-full block clear-both">
+        <div className="relative w-full overflow-hidden rounded-2xl shadow-xl border bg-black" style={{ paddingTop: '56.25%' }}>
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="absolute top-0 left-0 w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              title="Video Player"
+            />
+          ) : (
+            <ReactPlayer
+              url={url}
+              width="100%"
+              height="100%"
+              controls
+              style={{ position: 'absolute', top: 0, left: 0, zIndex: 10 }}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const components = useMemo(() => ({
+    p: ({ node, children, ...props }) => {
+      const childrenArray = React.Children.toArray(children);
+      const textContent = childrenArray
+        .map(c => typeof c === 'string' ? c : '')
+        .join('')
+        .trim();
+
+      if (isVideoUrl(textContent)) {
+        return <VideoRenderer url={textContent} />;
+      }
+
+      const realNodes = node.children.filter(n => !(n.type === 'text' && !n.value.trim()));
+      const isVideoLink = realNodes.length === 1 && 
+                         realNodes[0].tagName === 'a' && 
+                         isVideoUrl(realNodes[0].properties?.href);
+
+      if (isVideoLink) {
+        return <VideoRenderer url={realNodes[0].properties?.href} />;
+      }
+      
+      return <p {...props} className="mb-4 leading-relaxed text-slate-700">{children}</p>;
+    },
+
+    a: ({ href, children, ...props }) => {
+      const isVideo = isVideoUrl(href);
+      const childrenArray = React.Children.toArray(children);
+      const linkText = typeof childrenArray[0] === 'string' ? childrenArray[0] : '';
+      
+      const isPlainLink = isVideo && (
+        linkText.trim() === href.trim() || 
+        linkText.toLowerCase().includes('youtube') || 
+        linkText.toLowerCase().includes('youtu.be')
+      );
+
+      if (isPlainLink) {
+        return <VideoRenderer url={href} />;
+      }
+      
+      return (
+        <a 
+          href={href} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-primary hover:underline font-medium break-all"
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    }
+  }), []);
+
   if (!content) {
     return (
       <div className="text-slate-400 italic">
@@ -45,7 +151,10 @@ const MarkdownPreview = ({ content, className = '' }) => {
         ${className}
       `}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      <ReactMarkdown 
+        remarkPlugins={[remarkGfm]}
+        components={components}
+      >
         {content}
       </ReactMarkdown>
     </article>

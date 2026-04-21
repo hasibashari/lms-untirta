@@ -173,9 +173,10 @@ const AdminClassesPage = () => {
   // Open create modal
   const handleOpenCreate = () => {
     setEditingClass(null);
+    const initialCourse = courses[0];
     setFormData({
-      courseId: courses[0]?.id || '',
-      lecturerId: dosenList[0]?.id || '',
+      courseId: initialCourse?.id || '',
+      lecturerId: initialCourse?.teacherId || initialCourse?.teacher?.id || dosenList[0]?.id || '',
       academicSemesterId: activeSemester?.id || semesters[0]?.id || '',
       section: 'A',
       schedule: '',
@@ -771,7 +772,15 @@ const AdminClassesPage = () => {
                     </label>
                     <select
                       value={formData.courseId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, courseId: e.target.value }))}
+                      onChange={(e) => {
+                        const cid = e.target.value;
+                        const selectedCourse = courses.find(c => c.id === cid);
+                        setFormData(prev => ({
+                          ...prev,
+                          courseId: cid,
+                          lecturerId: selectedCourse?.teacherId || selectedCourse?.teacher?.id || prev.lecturerId
+                        }));
+                      }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                       required
                     >
@@ -808,7 +817,7 @@ const AdminClassesPage = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Dosen Pengampu <span className="text-red-500">*</span>
+                        Dosen Pengampu <span className="text-blue-600 text-[10px] font-normal ml-1">(Otomatis terisi)</span>
                       </label>
                       <select
                         value={formData.lecturerId}

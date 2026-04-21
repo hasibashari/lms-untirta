@@ -107,10 +107,13 @@ export const userService = {
         if (existing) return callback({ code: grpc.status.ALREADY_EXISTS, details: 'Email sudah terdaftar' });
       }
 
-      const updateData = { ...data };
-      delete updateData.id;
-      if (updateData.password) {
-        updateData.password = await bcrypt.hash(updateData.password, 10);
+      const updateData = {};
+      if (data.email) updateData.email = data.email;
+      if (data.name) updateData.name = data.name;
+      if (data.role) updateData.role = data.role;
+
+      if (data.password) {
+        updateData.password = await bcrypt.hash(data.password, 10);
       }
 
       const updated = await prisma.user.update({
