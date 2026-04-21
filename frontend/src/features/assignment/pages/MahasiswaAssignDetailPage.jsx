@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getAssignmentDetail } from '../assignmentService';
 import { getMyAssignmentStatus, submitAssignment } from '../../submission/submissionService';
+import MarkdownPreview from '../../../components/ui/MarkdownPreview';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import BackButton from '../../../components/navigation/BackButton';
 import toast from 'react-hot-toast';
@@ -19,6 +20,7 @@ import {
   MessageSquare,
   Info,
   ExternalLink,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -79,6 +81,17 @@ export default function AssignmentDetail() {
     }
   };
 
+  // Helper: Get full absolute URL for internal files
+  const getFullUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    
+    // Internal path case
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    const host = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
+    return `${host}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   // Helper: Cek status deadline - Fix: Ganti 'orange' ke 'amber' untuk Tailwind valid
   const getDeadlineStatus = () => {
     if (!assignment) return null; // Gunakan assignment untuk dueDate
@@ -100,6 +113,45 @@ export default function AssignmentDetail() {
       return { type: 'soon', text: `${days} hari ${hours} jam lagi`, color: 'yellow' };
     }
     return { type: 'safe', text: `${days} hari lagi`, color: 'green' };
+  };
+
+  // Logic handle download/preview (sama dengan dosen)
+  const handleDownload = async (url) => {
+    if (!url) return;
+
+    // Jika eksternal link (Drive, GitHub, dll), buka langsung
+    if (url.startsWith('http') && !url.includes(window.location.hostname) && !url.includes('localhost')) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Jika internal file, gunakan fetch dengan token
+    const toastId = toast.loading('Menyiapkan file...');
+    try {
+      const fullUrl = getFullUrl(url);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(fullUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Gagal mengakses file');
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Buka di tab baru (Preview)
+      window.open(blobUrl, '_blank');
+      
+      // Cleanup URL setelah beberapa saat
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      toast.success('File siap dibuka', { id: toastId });
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Gagal memuat file. Pastikan Anda masih login.', { id: toastId });
+    }
   };
 
   // Handle file selection - Fix: Tambah validasi lebih ketat dan feedback
@@ -263,10 +315,16 @@ export default function AssignmentDetail() {
       {/* Info Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 space-y-4">
-          {/* Deskripsi - Sekarang akan muncul dari assignment.description */}
+          {/* Deskripsi - Sekarang akan muncul sebagai Markdown */}
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-2">Deskripsi Tugas</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{assignment.description || 'Tidak ada deskripsi.'}</p> {/* Gunakan assignment.description */}
+            {assignment.description ? (
+              <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100/50">
+                <MarkdownPreview content={assignment.description} className="prose prose-slate max-w-none" />
+              </div>
+            ) : (
+              <p className="text-gray-400 italic">Tidak ada deskripsi.</p>
+            )}
           </div>
 
           {/* Deadline */}
@@ -296,9 +354,11 @@ export default function AssignmentDetail() {
               {status.feedback && (
                 <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
                   <MessageSquare className="w-6 h-6 text-green-600 shrink-0" />
-                  <div>
-                    <p className="text-sm text-green-600">Feedback Dosen</p>
-                    <p className="text-gray-700">{status.feedback}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-green-600 font-medium mb-1">Feedback Dosen</p>
+                    <div className="text-gray-700 prose prose-sm prose-green max-w-none">
+                      <MarkdownPreview content={status.feedback} />
+                    </div>
                   </div>
                 </div>
               )}
@@ -320,17 +380,27 @@ export default function AssignmentDetail() {
               {status.fileUrl && (
                 <div className="flex items-start gap-2 text-sm text-gray-700">
                   <LinkIcon className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-gray-500">File/Link tugas</p>
-                    <a
-                      href={status.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:underline break-all"
-                    >
-                      {getFileNameFromUrl(status.fileUrl)}
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <button
+                        onClick={() => handleDownload(status.fileUrl)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium group"
+                      >
+                        <span className="truncate max-w-[200px]">
+                          {getFileNameFromUrl(status.fileUrl)}
+                        </span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDownload(status.fileUrl)}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Pratinjau"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

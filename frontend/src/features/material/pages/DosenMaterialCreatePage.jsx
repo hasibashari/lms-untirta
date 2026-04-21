@@ -345,7 +345,7 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
             />
           </div>
 
-          {/* Lampiran & Resource - Multiple Attachments */}
+          {/* Lampiran & Resource - Multiple Attachments - DISABLED FOR NOW
           <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div>
@@ -367,7 +367,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
               </button>
             </div>
 
-            {/* List Attachments */}
             {attachments.length === 0 ? (
               <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
                 <Link2 size={32} className="mx-auto text-slate-300 mb-3" />
@@ -381,7 +380,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
                     key={index}
                     className="flex flex-col md:flex-row gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200"
                   >
-                    {/* Nama Lampiran */}
                     <div className="flex-1">
                       <label className="block text-xs font-medium text-slate-600 mb-1">
                         Nama Lampiran
@@ -395,7 +393,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
                       />
                     </div>
 
-                    {/* URL */}
                     <div className="flex-2">
                       <label className="block text-xs font-medium text-slate-600 mb-1">
                         URL Link
@@ -405,7 +402,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
                         value={attachment.url}
                         onChange={(e) => {
                           updateAttachmentField(index, 'url', e.target.value);
-                          // Auto-detect type berdasarkan URL
                           if (isVideoUrl(e.target.value)) {
                             updateAttachmentField(index, 'type', 'video');
                           }
@@ -415,7 +411,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
                       />
                     </div>
 
-                    {/* Tipe */}
                     <div className="w-full md:w-32">
                       <label className="block text-xs font-medium text-slate-600 mb-1">
                         Tipe
@@ -430,7 +425,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
                       </select>
                     </div>
 
-                    {/* Delete Button */}
                     <div className="flex items-end">
                       <button
                         type="button"
@@ -446,6 +440,7 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
               </div>
             )}
           </div>
+          */}
 
           {/* Action Buttons */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
@@ -551,7 +546,7 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
             )}
           </div>
 
-          {/* Attachments Section */}
+          {/* Attachments Section - DISABLED FOR NOW
           {attachments && attachments.length > 0 && (
             <div className="border-t border-slate-200 pt-8">
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
@@ -568,7 +563,6 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
                       key={index}
                       className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden"
                     >
-                      {/* Video Embed untuk YouTube */}
                       {videoId ? (
                         <div className="aspect-video">
                           <iframe
@@ -581,7 +575,6 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
                         </div>
                       ) : null}
 
-                      {/* Attachment Info */}
                       <div className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${attachment.type === 'video'
@@ -633,6 +626,7 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
               </div>
             </div>
           )}
+          */}
         </div>
       </div>
 

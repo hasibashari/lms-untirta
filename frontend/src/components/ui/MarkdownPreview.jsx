@@ -155,7 +155,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
         remarkPlugins={[remarkGfm]}
         components={components}
       >
-        {content}
+        {String(content || '')}
       </ReactMarkdown>
     </article>
   );

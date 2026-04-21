@@ -160,27 +160,57 @@ function FilePreviewCard({ url }) {
     }
   };
 
-  // Download handler with token
-  const handleDownload = async (e) => {
-    e.preventDefault();
+  // Download handler with token for internal files, or open for external links
+  const handleDownload = async (e, mode = 'download') => {
+    if (e) e.preventDefault();
+
+    // Check if external link
+    const isExternal = fileInfo.type === 'google' || fileInfo.type === 'github' || fileInfo.type === 'link';
+
+    if (isExternal) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Token tidak ditemukan');
-      const res = await fetch(url, {
+
+      // Ensure URL is absolute for internal files
+      let downloadUrl = url;
+      if (url && !url.startsWith('http')) {
+        const baseUrl = import.meta.env.VITE_API_URL || '';
+        const host = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
+        downloadUrl = `${host}${url.startsWith('/') ? '' : '/'}${url}`;
+      }
+
+      const res = await fetch(downloadUrl, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Gagal mengunduh file');
+
+      if (!res.ok) {
+        window.open(downloadUrl, '_blank');
+        return;
+      }
+
       const blob = await res.blob();
-      const fileName = fileInfo.name || 'file';
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(link.href);
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      if (mode === 'preview') {
+        window.open(blobUrl, '_blank');
+        // We don't revoke immediately for preview because the tab needs it
+      } else {
+        const fileName = fileInfo.name || 'file';
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+      }
     } catch (err) {
-      toast.error(err.message || 'Gagal mengunduh file');
+      window.open(url, '_blank');
     }
   };
 
@@ -196,14 +226,26 @@ function FilePreviewCard({ url }) {
           <p className="font-medium text-sm truncate">{fileInfo.name}</p>
           <p className="text-xs opacity-70 capitalize">{fileInfo.type === 'google' ? 'Google Drive' : fileInfo.type}</p>
         </div>
-        {/* Download Button Only */}
-        <button
-          onClick={handleDownload}
-          className="p-2 rounded-lg hover:bg-white/50 transition"
-          title="Download File"
-        >
-          <Download size={16} />
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-1">
+          {/* Preview/Open Button */}
+          <button
+            onClick={(e) => handleDownload(e, 'preview')}
+            className="p-2 rounded-lg hover:bg-white/50 transition text-slate-500 hover:text-slate-700"
+            title="Buka / Preview"
+          >
+            <Eye size={16} />
+          </button>
+          
+          {/* Download Button */}
+          <button
+            onClick={(e) => handleDownload(e, 'download')}
+            className="p-2 rounded-lg hover:bg-white/50 transition text-slate-500 hover:text-slate-700"
+            title={fileInfo.type === 'link' || fileInfo.type === 'google' ? "Buka Link" : "Download File"}
+          >
+            <Download size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

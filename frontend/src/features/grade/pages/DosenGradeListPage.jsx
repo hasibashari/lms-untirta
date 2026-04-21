@@ -127,7 +127,7 @@ const DosenGradeListPage = () => {
             const title = cls.course?.title || cls.title || 'Mata Kuliah';
             const code = cls.course?.code || cls.code || '-';
             const section = cls.section || '';
-            const studentCount = cls._count?.enrollments ?? cls._count?.students ?? 0;
+            const studentCount = cls.krsEnrollmentsCount || 0;
 
             return (
               <button

@@ -240,8 +240,8 @@ const MaterialDetail = () => {
 
               <Separator className="my-8" />
 
-              {/* Video Player Section (Featured Video) */}
-              {(material.videoUrl || (material.attachments && material.attachments.some(a => a.type === 'video'))) && (
+              {/* Video Player Section - Non-aktifkan sementara sesua permintaan */}
+              {/* {(material.videoUrl || (material.attachments && material.attachments.some(a => a.type === 'video'))) && (
                 <div className="mb-10 space-y-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wider">
                     <PlayCircle size={18} />
@@ -262,15 +262,15 @@ const MaterialDetail = () => {
                     />
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* Markdown Content */}
               <article className="prose prose-slate max-w-none text-slate-800 dark:prose-invert">
                 <MarkdownPreview content={material.content} />
               </article>
 
-              {/* Attachments Section */}
-              {material.attachments && material.attachments.length > 0 && (
+              {/* Attachments Section - Non-aktifkan sementara sesua permintaan */}
+              {/* {material.attachments && material.attachments.length > 0 && (
                 <section className="mt-12">
                   <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                     <FileText size={20} className="text-primary" />
@@ -314,7 +314,7 @@ const MaterialDetail = () => {
                     })}
                   </div>
                 </section>
-              )}
+              )} */}
 
               <Separator className="my-12" />
 
