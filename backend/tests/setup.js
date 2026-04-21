@@ -12,14 +12,11 @@
  *     table truncation between suites for isolation.
  */
 
-import { config } from 'dotenv';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import './load-env.js'; // MUST BE FIRST - loads .env.test and protects main DB
 import { beforeAll, afterAll, expect } from '@jest/globals';
 import prisma from './helpers/prisma.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: resolve(__dirname, '..', '.env.test') });
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 let grpcServer;
 

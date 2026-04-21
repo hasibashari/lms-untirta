@@ -22,6 +22,11 @@ const rootDir = resolve(__dirname, '..');
 export default async function globalSetup() {
   // 1. Load .env.test
   config({ path: resolve(rootDir, '.env.test') });
+  
+  // Safety Check: Jangan biarkan migrasi berjalan di database utama!
+  if (!process.env.DATABASE_URL?.includes('lms_db_test')) {
+    throw new Error('CRITICAL: Global setup detected a non-test database! Migrations aborted for safety.');
+  }
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
