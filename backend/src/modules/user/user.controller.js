@@ -1,6 +1,5 @@
 import userClient from '../../grpc/clients/user.client.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
-import { handleError } from '../../utils/errorHandler.js';
 import grpc from '@grpc/grpc-js';
 import util from 'util';
 
