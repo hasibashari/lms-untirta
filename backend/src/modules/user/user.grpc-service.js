@@ -14,12 +14,29 @@ export const userService = {
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
+      let assignedAdvisorId = null;
+      if (data.role === 'MAHASISWA') {
+        const dospems = await prisma.user.findMany({
+          where: { role: 'DOSEN', isDospem: true },
+          include: {
+            _count: {
+              select: { advisedStudents: true }
+            }
+          }
+        });
+        if (dospems.length > 0) {
+          dospems.sort((a, b) => a._count.advisedStudents - b._count.advisedStudents);
+          assignedAdvisorId = dospems[0].id;
+        }
+      }
+
       const user = await prisma.user.create({
         data: {
           email: data.email,
           name: data.name,
           password: hashedPassword,
           role: data.role,
+          advisorId: assignedAdvisorId,
         },
         select: {
           id: true, name: true, email: true, role: true, createdAt: true,

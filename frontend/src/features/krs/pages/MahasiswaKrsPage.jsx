@@ -240,7 +240,7 @@ const StudyPlan = () => {
     setActionError(null);
     try {
       await enrollClass(classId);
-      showSuccess('Berhasil menambahkan kelas ke KRS. Menunggu persetujuan Dosen PA.');
+      showSuccess('Berhasil menambahkan kelas ke KRS.');
       await fetchData();
     } catch (err) {
       const responseData = err?.response?.data;
@@ -279,7 +279,7 @@ const StudyPlan = () => {
     setActionError(null);
     try {
       const res = await reviseEnrollment(enrollmentId);
-      showSuccess(res?.data?.message || 'KRS berhasil direvisi. Menunggu persetujuan Dosen PA.');
+      showSuccess(res?.data?.message || 'KRS berhasil direvisi.');
       await fetchData();
     } catch (err) {
       showError(err?.response?.data?.message || err?.message || 'Gagal merevisi KRS');
@@ -321,7 +321,7 @@ const StudyPlan = () => {
     return pages;
   };
 
-  const canDrop = (status) => !isReadOnly && (status === 'PENDING' || status === 'REJECTED');
+  const canDrop = (status) => !isReadOnly;
   const canRevise = (status) => !isReadOnly && status === 'REJECTED';
 
   // Semester label helper
@@ -424,7 +424,6 @@ const StudyPlan = () => {
           label="Maks SKS"
           variant={totalSKS > (summary.maxSKS || 24) ? 'danger' : 'warning'}
         />
-        <StatCard value={enrollmentStats.approved} label="Disetujui" variant="warning" />
       </div>
 
       {/* SKS Limit Info */}
@@ -1085,9 +1084,7 @@ const StudyPlan = () => {
                 <Info size={14} className="inline mr-1" />
                 {isReadOnly
                   ? 'Data read-only — semester sudah ditutup'
-                  : enrollmentStats.pending > 0
-                    ? 'Menunggu persetujuan Dosen PA'
-                    : 'Tambahkan kelas untuk mengajukan KRS'}
+                  : 'Tambahkan kelas untuk mengajukan KRS'}
               </p>
             </div>
           </div>
@@ -1111,9 +1108,8 @@ const StudyPlan = () => {
             <p className="font-medium mb-1">Informasi Alur KRS</p>
             <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-blue-600">
               <li>Pilih kelas dari daftar dan klik (+) untuk menambahkan ke KRS</li>
-              <li>Kelas yang ditambahkan langsung berstatus Menunggu persetujuan Dosen PA</li>
-              <li>Dosen PA akan menyetujui atau menolak setiap mata kuliah</li>
-              <li>Jika ditolak, klik revisi untuk mengajukan ulang atau hapus dari KRS</li>
+              <li>Kelas yang ditambahkan otomatis langsung disetujui</li>
+              <li>Dosen Pembimbing dapat membatalkan persetujuan jika diperlukan</li>
               <li>Pastikan total SKS tidak melebihi jatah yang ditetapkan</li>
             </ul>
           </div>

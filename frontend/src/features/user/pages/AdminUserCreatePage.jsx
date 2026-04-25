@@ -57,7 +57,7 @@ export default function CreateUser() {
       <div className='flex items-start justify-between gap-3 flex-wrap'>
         <div>
           <h1 className='text-xl font-bold'>Tambah User</h1>
-          <p className='text-sm text-gray-600'>Buat akun untuk Admin atau Dosen.</p>
+          <p className='text-sm text-gray-600'>Buat akun untuk Admin, Dosen, atau Mahasiswa.</p>
         </div>
         <Button variant='secondary' onClick={() => navigate('/admin/users')}>
           Kembali
@@ -105,6 +105,7 @@ export default function CreateUser() {
               >
                 <option value='DOSEN'>Dosen</option>
                 <option value='ADMIN'>Admin</option>
+                <option value='MAHASISWA'>Mahasiswa</option>
               </select>
               <p className='text-xs text-gray-500'>Role menentukan akses menu dan fitur.</p>
             </div>

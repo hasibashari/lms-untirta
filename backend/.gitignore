@@ -7,4 +7,5 @@ node_modules
 coverage
 tests/
 
-public/uploads/submission
+public/uploads/submission/*
+public/uploads/assignment/*

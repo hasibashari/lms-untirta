@@ -359,13 +359,14 @@ const enrollClass = async (studentId, classId) => {
       throw new AppError(400, `Total SKS melebihi batas semester (${currentSKS}+${courseSKS} > ${maxSKS} SKS).`, 'SKS_LIMIT_EXCEEDED', { currentSKS, courseSKS, maxSKS });
     }
 
-    // 6. Create KRS enrollment (directly as PENDING — no draft phase)
+    // 6. Create KRS enrollment (directly as APPROVED — no draft phase)
     const enrollment = await tx.krsEnrollment.create({
       data: {
         studentId,
         classId,
-        status: KRS_STATUS.PENDING,
+        status: KRS_STATUS.APPROVED,
         submittedAt: new Date(),
+        approvedAt: new Date(),
       },
       select: {
         id: true,
@@ -403,6 +404,21 @@ const enrollClass = async (studentId, classId) => {
       },
     });
 
+    // 7. Create LMS enrollment bridge
+    await tx.enrollment.upsert({
+      where: {
+        userId_courseId: {
+          userId: studentId,
+          courseId: classData.courseId,
+        },
+      },
+      create: {
+        userId: studentId,
+        courseId: classData.courseId,
+      },
+      update: {},
+    });
+
     return {
       id: enrollment.id,
       status: enrollment.status,
@@ -415,52 +431,58 @@ const enrollClass = async (studentId, classId) => {
 // ======================== DROP (UNENROLL) ========================
 
 const dropClass = async (studentId, classId) => {
-  const enrollment = await prisma.krsEnrollment.findUnique({
-    where: {
-      studentId_classId: {
-        studentId,
-        classId,
-      },
-    },
-    select: {
-      id: true,
-      status: true,
-      class: {
-        select: {
-          academicSemesterId: true,
-          course: {
-            select: { title: true, code: true },
-          },
-          section: true,
+  return prisma.$transaction(async (tx) => {
+    const enrollment = await tx.krsEnrollment.findUnique({
+      where: {
+        studentId_classId: {
+          studentId,
+          classId,
         },
       },
-    },
-  });
-
-  if (!enrollment) {
-    throw new AppError(404, 'Anda tidak terdaftar di kelas ini');
-  }
-
-  // Semester must be OPEN to drop
-  await assertEnrollmentPeriodOpen(enrollment.class.academicSemesterId);
-
-  if (enrollment.status === KRS_STATUS.APPROVED) {
-    throw new AppError(400, 'Tidak dapat menghapus mata kuliah yang sudah disetujui');
-  }
-
-  await prisma.krsEnrollment.delete({
-    where: {
-      studentId_classId: {
-        studentId,
-        classId,
+      select: {
+        id: true,
+        status: true,
+        class: {
+          select: {
+            academicSemesterId: true,
+            courseId: true,
+            course: {
+              select: { title: true, code: true },
+            },
+            section: true,
+          },
+        },
       },
-    },
-  });
+    });
 
-  return {
-    message: `Berhasil menghapus ${enrollment.class.course.code} - ${enrollment.class.course.title} (Kelas ${enrollment.class.section}) dari KRS`,
-    classId,
-  };
+    if (!enrollment) {
+      throw new AppError(404, 'Anda tidak terdaftar di kelas ini');
+    }
+
+    // Semester must be OPEN to drop
+    await assertEnrollmentPeriodOpen(enrollment.class.academicSemesterId, tx);
+
+    await tx.krsEnrollment.delete({
+      where: {
+        studentId_classId: {
+          studentId,
+          classId,
+        },
+      },
+    });
+
+    await tx.enrollment.deleteMany({
+      where: {
+        userId: studentId,
+        courseId: enrollment.class.courseId,
+      },
+    });
+
+    return {
+      message: `Berhasil menghapus ${enrollment.class.course.code} - ${enrollment.class.course.title} (Kelas ${enrollment.class.section}) dari KRS`,
+      classId,
+    };
+  });
 };
 
 // ======================== MY KRS ========================
