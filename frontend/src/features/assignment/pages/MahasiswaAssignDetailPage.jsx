@@ -85,7 +85,7 @@ export default function AssignmentDetail() {
   const getFullUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    
+
     // Internal path case
     const baseUrl = import.meta.env.VITE_API_URL || '';
     const host = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
@@ -130,7 +130,7 @@ export default function AssignmentDetail() {
     try {
       const fullUrl = getFullUrl(url);
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(fullUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -141,10 +141,10 @@ export default function AssignmentDetail() {
 
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      
+
       // Buka di tab baru (Preview)
       window.open(blobUrl, '_blank');
-      
+
       // Cleanup URL setelah beberapa saat
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
       toast.success('File siap dibuka', { id: toastId });
@@ -392,7 +392,7 @@ export default function AssignmentDetail() {
                         </span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
-                      
+
                       <button
                         onClick={() => handleDownload(status.fileUrl)}
                         className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
@@ -558,13 +558,6 @@ export default function AssignmentDetail() {
                         </p>
                       </>
                     )}
-                  </div>
-                  {/* Info bahwa fitur belum tersedia */}
-                  <div className="mt-3 flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <Info className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                    <p className="text-sm text-yellow-700">
-                      Fitur upload file sedang dalam pengembangan. Untuk sementara, gunakan <strong>Link URL</strong> untuk mengumpulkan tugas.
-                    </p>
                   </div>
                 </div>
               )}

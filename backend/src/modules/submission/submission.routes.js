@@ -31,6 +31,10 @@ router.post(
   '/:assignmentId/submit',
   authenticateToken,
   authorizeRole('MAHASISWA'),
+  (req, res, next) => {
+    req.uploadSubfolder = 'submission';
+    next();
+  },
   upload.single('file'),
   validate(submitAssignmentSchema),
   submit,

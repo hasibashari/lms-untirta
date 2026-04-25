@@ -2,6 +2,8 @@ import submissionClient from '../../grpc/clients/submission.client.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
+import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
+import { buildFileUrl } from '../../middlewares/upload.middleware.js';
 
 const promisifyGrpc = (client, method, arg) => {
   return new Promise((resolve, reject) => {
@@ -16,15 +18,25 @@ const promisifyGrpc = (client, method, arg) => {
 };
 
 // ======= SUBMIT ASSIGNMENT =======
-const submitAssignment = async (req, res) => {
+const submit = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const studentId = req.user.id;
+
+    // Validate that a file is uploaded
+    if (!req.file) {
+      return sendError(res, { statusCode: 400, message: 'File tugas wajib diunggah' });
+    }
+
+    // Persist metadata and generate the URL
+    await persistUploadMeta({ userId: req.user.id, file: req.file });
+    const fileUrl = buildFileUrl(req, req.file.filename, 'submission');
 
     const result = await promisifyGrpc(submissionClient, 'SubmitAssignment', {
       assignmentId,
       studentId,
       ...req.body,
+      fileUrl, // Ensure fileUrl is passed to gRPC
     });
 
     sendSuccess(res, {
@@ -33,6 +45,8 @@ const submitAssignment = async (req, res) => {
       data: result.submission,
     });
   } catch (error) {
+    console.error('SUBMISSION_CONTROLLER_ERROR:', error);
+    if (req.file) await cleanupFile(req.file.path);
     if (error.code) {
       return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
     }
@@ -41,7 +55,7 @@ const submitAssignment = async (req, res) => {
 };
 
 // ======= GET ASSIGNMENT WITH STUDENT SUBMISSION =======
-const getAssignmentWithMySubmission = async (req, res) => {
+const getMyAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const studentId = req.user.id;
@@ -65,7 +79,7 @@ const getAssignmentWithMySubmission = async (req, res) => {
 };
 
 // ======= GET SUBMISSIONS BY ASSIGNMENT =======
-const getSubmissionsByAssignment = async (req, res) => {
+const getSubmissions = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const teacherId = req.user.id;
@@ -133,7 +147,7 @@ const getMyDashboardStats = async (req, res) => {
 };
 
 // ======= GRADE STUDENT SUBMISSION =======
-const gradeSubmission = async (req, res) => {
+const grade = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const teacherId = req.user.id;
@@ -180,7 +194,7 @@ const getTeacherDashboardStats = async (req, res) => {
 };
 
 // ======= GET RECENT SUBMISSIONS FOR TEACHER =======
-const getRecentSubmissionsForTeacher = async (req, res) => {
+const getRecentSubmissions = async (req, res) => {
   try {
     const teacherId = req.user.id;
     const limit = parseInt(req.query.limit) || 10;
@@ -204,12 +218,12 @@ const getRecentSubmissionsForTeacher = async (req, res) => {
 };
 
 export {
-  submitAssignment,
-  getAssignmentWithMySubmission,
-  getSubmissionsByAssignment,
+  submit,
+  getMyAssignment,
+  getSubmissions,
   getAllMyGrades,
   getMyDashboardStats,
-  gradeSubmission,
+  grade,
   getTeacherDashboardStats,
-  getRecentSubmissionsForTeacher,
+  getRecentSubmissions,
 };

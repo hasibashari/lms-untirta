@@ -6,14 +6,12 @@ import fs from "fs";
 import { AppError } from "../config/errors.js";
 
 // ── Upload directory ──────────────────────────────────────────────────
-const UPLOAD_DIR = "public/uploads/";
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const UPLOAD_ROOT = "public/uploads/";
+if (!fs.existsSync(UPLOAD_ROOT)) {
+  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
 }
 
 // ── Allowed MIME types ────────────────────────────────────────────────
-// Extend this map as needed. The key is the trusted MIME type,
-// the value is the canonical extension written to disk.
 const ALLOWED_TYPES = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
@@ -26,23 +24,27 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 // ── Storage engine ────────────────────────────────────────────────────
 const storage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, "public/uploads/");
+  destination(req, _file, cb) {
+    // Support dynamic subfolders via req.uploadSubfolder
+    const subfolder = req.uploadSubfolder || "";
+    const dest = path.join(UPLOAD_ROOT, subfolder);
+
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+    cb(null, dest);
   },
 
   filename(_req, file, cb) {
-    // Derive extension from the allowlist (never trust the client filename).
-    // Fallback to path.extname only for types already validated by fileFilter.
     const ext =
       ALLOWED_TYPES[file.mimetype] ||
       path.extname(file.originalname).toLowerCase();
-    // Sanitize original name: replace spaces with dashes, remove non-alphanumeric chars (except dots, dashes, underscores)
+    
     const sanitizedOriginalName = file.originalname
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-zA-Z0-9.\-_]/g, "");
 
-    // Recommendation: Combine UUID for uniqueness with sanitized name for readability
     const storedName = `${uuidv4()}-${sanitizedOriginalName}`;
     cb(null, storedName);
   },
@@ -68,5 +70,12 @@ export const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
 });
 
-// Re-export constants so other modules (e.g. upload service) can reference them.
+// 
+export const buildFileUrl = (req, filename, subfolder = "") => {
+  const protocol = req.protocol;
+  const host = req.get("host");
+  const pathPart = subfolder ? `uploads/${subfolder}/${filename}` : `uploads/${filename}`;
+  return `${protocol}://${host}/${pathPart}`;
+};
+
 export { ALLOWED_TYPES, MAX_FILE_SIZE };

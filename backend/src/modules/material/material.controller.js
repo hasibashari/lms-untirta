@@ -2,15 +2,8 @@ import * as materialService from './material.service.js';
 import { sendSuccess } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
+import { buildFileUrl } from '../../middlewares/upload.middleware.js';
 
-/**
- * Builds the public URL for an uploaded file.
- * @param {import('express').Request} req
- * @param {string} filename - The stored filename (e.g. "uuid.pdf").
- * @returns {string} Full URL like "http://host/uploads/uuid.pdf"
- */
-const buildFileUrl = (req, filename) =>
-  `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 
 /**
  * Creates a new course material.
