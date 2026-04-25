@@ -4,7 +4,6 @@ import {
   Users,
   Search,
   FileText,
-  Link as LinkIcon,
   Calendar,
   Clock,
   CheckCircle,
@@ -18,7 +17,6 @@ import {
   Save,
   Check,
   AlertCircle,
-  Copy,
   Eye,
   File,
   Image,
@@ -195,7 +193,7 @@ function FilePreviewCard({ url }) {
 
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      
+
       if (mode === 'preview') {
         window.open(blobUrl, '_blank');
         // We don't revoke immediately for preview because the tab needs it
@@ -236,7 +234,7 @@ function FilePreviewCard({ url }) {
           >
             <Eye size={16} />
           </button>
-          
+
           {/* Download Button */}
           <button
             onClick={(e) => handleDownload(e, 'download')}
@@ -793,7 +791,7 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
         <div className={`px-5 py-4 border-t ${isEditing || !hasGrade ? 'bg-slate-50' : 'bg-white'} border-slate-100`}>
           {/* Compact View (Already Graded & Not Editing) */}
           {hasGrade && !isEditing && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-slate-600">
                   Nilai: <span className="font-bold text-blue-600">{submission.grade}</span>
@@ -801,9 +799,9 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
               </div>
               <button
                 onClick={() => setIsEditing(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-3 py-1 rounded-md"
               >
-                Edit Nilai
+                Edit / Nilai
               </button>
             </div>
           )}
