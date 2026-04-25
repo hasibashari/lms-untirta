@@ -1,96 +1,158 @@
-import * as submissionService from './submission.service.js';
-import { sendSuccess } from '../../utils/response.js';
+import submissionClient from '../../grpc/clients/submission.client.js';
+import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
-import { AppError } from '../../config/errors.js';
-import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
-import logger from '../../config/logger.js';
+import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
 
-const buildFileUrl = (req, filename) =>
-  `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+const promisifyGrpc = (client, method, arg) => {
+  return new Promise((resolve, reject) => {
+    client[method](arg, (err, response) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(response);
+      }
+    });
+  });
+};
 
 // ======= SUBMIT ASSIGNMENT =======
-const submit = async (req, res) => {
+const submitAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const { note, fileUrl: bodyFileUrl } = req.body;
+    const studentId = req.user.id;
 
-    let fileUrl;
-    if (req.file) {
-      await persistUploadMeta({ userId: req.user.id, file: req.file }).catch((err) =>
-        logger.warn({ err }, 'Failed to persist upload metadata to Redis — continuing'),
-      );
-      fileUrl = buildFileUrl(req, req.file.filename);
-    } else if (bodyFileUrl) {
-      fileUrl = bodyFileUrl;
-    } else {
-      throw new AppError(400, 'File tugas atau URL wajib diberikan');
+    const result = await promisifyGrpc(submissionClient, 'SubmitAssignment', {
+      assignmentId,
+      studentId,
+      ...req.body,
+    });
+
+    sendSuccess(res, {
+      statusCode: 201,
+      message: result.message,
+      data: result.submission,
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
     }
+    return handleError(res, error);
+  }
+};
 
-    const result = await submissionService.submitAssignment(assignmentId, req.user.id, {
-      fileUrl,
-      note,
+// ======= GET ASSIGNMENT WITH STUDENT SUBMISSION =======
+const getAssignmentWithMySubmission = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const studentId = req.user.id;
+
+    const result = await promisifyGrpc(submissionClient, 'GetAssignmentWithMySubmission', {
+      assignmentId,
+      studentId,
     });
 
     sendSuccess(res, {
       statusCode: 200,
-      message: 'Tugas berhasil dikumpulkan',
-      data: { ...result, status: 'Submitted' },
+      message: result.message,
+      data: result.data,
     });
   } catch (error) {
-    if (req.file) cleanupFile(req.file.path).catch(() => { });
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
 // ======= GET SUBMISSIONS BY ASSIGNMENT =======
-const getSubmissions = async (req, res) => {
+const getSubmissionsByAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const result = await submissionService.getSubmissionsByAssignment(assignmentId, req.user.id);
-    sendSuccess(res, { statusCode: 200, message: 'Daftar pengumpulan berhasil diambil', data: result });
+    const teacherId = req.user.id;
+
+    const result = await promisifyGrpc(submissionClient, 'GetSubmissionsByAssignment', {
+      assignmentId,
+      teacherId,
+    });
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-// ======= GRADE SUBMISSION =======
-const grade = async (req, res) => {
-  try {
-    const { submissionId } = req.params;
-    const result = await submissionService.gradeSubmission(submissionId, req.user.id, req.body);
-    sendSuccess(res, { statusCode: 200, message: 'Nilai berhasil disimpan', data: result });
-  } catch (error) {
-    return handleError(res, error);
-  }
-};
-
-// ======= GET MY ASSIGNMENT =======
-const getMyAssignment = async (req, res) => {
-  try {
-    const { assignmentId } = req.params;
-    const result = await submissionService.getAssignmentWithMySubmission(assignmentId, req.user.id);
-    sendSuccess(res, { statusCode: 200, message: 'Status tugas berhasil diambil', data: result });
-  } catch (error) {
-    return handleError(res, error);
-  }
-};
-
-// ======= GET ALL MY GRADES =======
+// ======= GET ALL STUDENT GRADES =======
 const getAllMyGrades = async (req, res) => {
   try {
-    const result = await submissionService.getAllMyGrades(req.user.id);
-    sendSuccess(res, { statusCode: 200, message: 'Daftar nilai berhasil diambil', data: result });
+    const studentId = req.user.id;
+
+    const result = await promisifyGrpc(submissionClient, 'GetAllMyGrades', {
+      studentId,
+    });
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-// ======= GET MY DASHBOARD STATS =======
+// ======= GET STUDENT DASHBOARD STATS =======
 const getMyDashboardStats = async (req, res) => {
   try {
-    const result = await submissionService.getMyDashboardStats(req.user.id);
-    sendSuccess(res, { statusCode: 200, message: 'Statistik berhasil diambil', data: result });
+    const studentId = req.user.id;
+
+    const result = await promisifyGrpc(submissionClient, 'GetMyDashboardStats', {
+      studentId,
+    });
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+
+// ======= GRADE STUDENT SUBMISSION =======
+const gradeSubmission = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const teacherId = req.user.id;
+
+    const result = await promisifyGrpc(submissionClient, 'GradeSubmission', {
+      submissionId,
+      teacherId,
+      ...req.body,
+    });
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
@@ -98,31 +160,56 @@ const getMyDashboardStats = async (req, res) => {
 // ======= GET TEACHER DASHBOARD STATS =======
 const getTeacherDashboardStats = async (req, res) => {
   try {
-    const result = await submissionService.getTeacherDashboardStats(req.user.id);
-    sendSuccess(res, { statusCode: 200, message: 'Statistik dosen berhasil diambil', data: result });
+    const teacherId = req.user.id;
+
+    const result = await promisifyGrpc(submissionClient, 'GetTeacherDashboardStats', {
+      teacherId,
+    });
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
-// ======= GET RECENT SUBMISSIONS =======
-const getRecentSubmissions = async (req, res) => {
+// ======= GET RECENT SUBMISSIONS FOR TEACHER =======
+const getRecentSubmissionsForTeacher = async (req, res) => {
   try {
+    const teacherId = req.user.id;
     const limit = parseInt(req.query.limit) || 10;
-    const result = await submissionService.getRecentSubmissionsForTeacher(req.user.id, limit);
-    sendSuccess(res, { statusCode: 200, message: 'Submissions terbaru berhasil diambil', data: result });
+
+    const result = await promisifyGrpc(submissionClient, 'GetRecentSubmissionsForTeacher', {
+      teacherId,
+      limit,
+    });
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
     return handleError(res, error);
   }
 };
 
 export {
-  submit,
-  getSubmissions,
-  grade,
-  getMyAssignment,
+  submitAssignment,
+  getAssignmentWithMySubmission,
+  getSubmissionsByAssignment,
   getAllMyGrades,
   getMyDashboardStats,
+  gradeSubmission,
   getTeacherDashboardStats,
-  getRecentSubmissions,
+  getRecentSubmissionsForTeacher,
 };

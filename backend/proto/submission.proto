@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package submissionPackage;
+
+service SubmissionService {
+  rpc SubmitAssignment (SubmitAssignmentRequest) returns (SubmissionResponse);
+  rpc GetAssignmentWithMySubmission (GetAssignmentWithMySubmissionRequest) returns (AssignmentWithSubmissionResponse);
+  rpc GetSubmissionsByAssignment (GetSubmissionsByAssignmentRequest) returns (ListSubmissionsResponse);
+  rpc GetAllMyGrades (GetAllMyGradesRequest) returns (ListGradesResponse);
+  rpc GetMyDashboardStats (GetMyDashboardStatsRequest) returns (StudentDashboardStatsResponse);
+  rpc GradeSubmission (GradeSubmissionRequest) returns (GradeResponse);
+  rpc GetTeacherDashboardStats (GetTeacherDashboardStatsRequest) returns (TeacherDashboardStatsResponse);
+  rpc GetRecentSubmissionsForTeacher (GetRecentSubmissionsForTeacherRequest) returns (ListRecentSubmissionsResponse);
+}
+
+// Request and Response Messages
+
+message SubmitAssignmentRequest {
+  string assignmentId = 1;
+  string studentId = 2;
+  string fileUrl = 3;
+  string note = 4;
+}
+
+message SubmissionResponse {
+  string message = 1;
+  Submission submission = 2;
+}
+
+message Submission {
+  string id = 1;
+  string assignmentId = 2;
+  string submittedAt = 3;
+  string fileUrl = 4;
+  string status = 5;
+  bool isLate = 6;
+}
+
+message GetAssignmentWithMySubmissionRequest {
+  string assignmentId = 1;
+  string studentId = 2;
+}
+
+message AssignmentWithSubmissionResponse {
+  string message = 1;
+  AssignmentSubmission data = 2;
+}
+
+message AssignmentSubmission {
+  string id = 1;
+  string title = 2;
+  string dueDate = 3;
+  bool isOverdue = 4;
+  string status = 5;
+  string submittedAt = 6;
+  string fileUrl = 7;
+  string note = 8;
+  int32 grade = 9;
+  string feedback = 10;
+}
+
+message GetSubmissionsByAssignmentRequest {
+  string assignmentId = 1;
+  string teacherId = 2;
+}
+
+message ListSubmissionsResponse {
+  string message = 1;
+  repeated TeacherSubmission data = 2;
+}
+
+message TeacherSubmission {
+  string id = 1;
+  string submittedAt = 2;
+  string fileUrl = 3;
+  string note = 4;
+  int32 grade = 5;
+  StudentInfo student = 6;
+}
+
+message StudentInfo {
+  string id = 1;
+  string name = 2;
+}
+
+message GetAllMyGradesRequest {
+  string studentId = 1;
+}
+
+message ListGradesResponse {
+  string message = 1;
+  repeated GradeData data = 2;
+}
+
+message GradeData {
+  string courseId = 1;
+  string courseName = 2;
+  string courseCode = 3;
+  string teacherName = 4;
+  string assignmentId = 5;
+  string assignmentTitle = 6;
+  string dueDate = 7;
+  string status = 8;
+  int32 grade = 9;
+  string feedback = 10;
+  string submittedAt = 11;
+}
+
+message GetMyDashboardStatsRequest {
+  string studentId = 1;
+}
+
+message StudentDashboardStatsResponse {
+  string message = 1;
+  StudentStats data = 2;
+}
+
+message StudentStats {
+  int32 totalCourses = 1;
+  int32 totalAssignments = 2;
+  int32 pendingAssignments = 3;
+  int32 gradedAssignments = 4;
+}
+
+message GradeSubmissionRequest {
+  string submissionId = 1;
+  string teacherId = 2;
+  int32 grade = 3;
+  string feedback = 4;
+}
+
+message GradeResponse {
+  string message = 1;
+  GradeDataResult data = 2;
+}
+
+message GradeDataResult {
+  string id = 1;
+  int32 grade = 2;
+  string feedback = 3;
+  string studentId = 4;
+}
+
+message GetTeacherDashboardStatsRequest {
+  string teacherId = 1;
+}
+
+message TeacherDashboardStatsResponse {
+  string message = 1;
+  TeacherStats data = 2;
+}
+
+message TeacherStats {
+  int32 totalCourses = 1;
+  int32 totalStudents = 2;
+  int32 totalMaterials = 3;
+  int32 totalAssignments = 4;
+  int32 pendingGrading = 5;
+  int32 recentSubmissions = 6;
+}
+
+message GetRecentSubmissionsForTeacherRequest {
+  string teacherId = 1;
+  int32 limit = 2;
+}
+
+message ListRecentSubmissionsResponse {
+  string message = 1;
+  repeated RecentSubmission data = 2;
+}
+
+message RecentSubmission {
+  string id = 1;
+  string studentName = 2;
+  string studentEmail = 3;
+  string assignmentId = 4;
+  string assignmentTitle = 5;
+  string courseId = 6;
+  string courseName = 7;
+  string courseCode = 8;
+  string submittedAt = 9;
+  bool isGraded = 10;
+  int32 grade = 11;
+}
