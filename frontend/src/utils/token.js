@@ -1,7 +1,5 @@
-/**
- * Decode a JWT payload without verifying the signature.
- * Returns null if the token is malformed.
- */
+// Decode JWT token tanpa memverifikasi signature
+// Mengembalikan null jika token tidak valid
 export function decodeToken(token) {
   try {
     const base64Url = token.split('.')[1];
@@ -13,20 +11,16 @@ export function decodeToken(token) {
   }
 }
 
-/**
- * Check whether a JWT is expired (or will expire within `bufferMs`).
- * Returns true if expired/invalid, false if still valid.
- */
+// Cek apakah JWT sudah expired atau akan expired dalam bufferMs
+// Mengembalikan true jika token sudah expired atau akan expired dalam bufferMs
 export function isTokenExpired(token, bufferMs = 0) {
   const payload = decodeToken(token);
   if (!payload?.exp) return true;
   return Date.now() >= payload.exp * 1000 - bufferMs;
 }
 
-/**
- * Returns milliseconds until the token expires.
- * Returns 0 if the token is already expired or invalid.
- */
+// Ambil sisa waktu token dalam milisecond
+// Mengembalikan 0 jika token sudah expired atau tidak valid
 export function getTokenRemainingMs(token) {
   const payload = decodeToken(token);
   if (!payload?.exp) return 0;

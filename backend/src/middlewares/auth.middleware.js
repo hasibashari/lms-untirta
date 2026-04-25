@@ -6,10 +6,9 @@ import { sendError } from '../utils/response.js';
 
 const USER_CACHE_TTL = 300; // 5 minutes in seconds
 
-/**
- * Middleware to authenticate users via JWT.
- * Checks Redis cache first, falls back to DB, and caches the result.
- */
+// Middleware untuk authenticate user berdasarkan JWT token
+// ✅ Redis cache first, fallback ke DB, lalu cache
+// ✅ 5 minutes TTL
 export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
