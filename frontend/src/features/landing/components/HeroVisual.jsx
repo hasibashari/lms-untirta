@@ -35,7 +35,7 @@ const HeroVisual = ({
 
       {/* Abstract Background Element */}
       {showDecorations && (
-        <div className="absolute inset-0 bg-blue-600 rounded-4xl rotate-3 transform translate-x-2 translate-y-2 opacity-10"></div>
+        <div className="absolute inset-0 bg-blue-700 rounded-4xl rotate-3 transform translate-x-2 translate-y-2 opacity-10"></div>
       )}
 
       {/* Main Image */}

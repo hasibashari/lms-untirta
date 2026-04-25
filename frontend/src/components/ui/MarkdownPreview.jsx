@@ -17,7 +17,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
     if (!url) return null;
     let videoId = '';
     const v = url.trim();
-    
+
     if (v.includes('youtu.be/')) {
       videoId = v.split('youtu.be/')[1].split(/[?#]/)[0];
     } else if (v.includes('youtube.com/watch')) {
@@ -26,7 +26,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
     } else if (v.includes('youtube.com/embed/')) {
       videoId = v.split('youtube.com/embed/')[1].split(/[?#]/)[0];
     }
-    
+
     return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
   };
 
@@ -38,13 +38,14 @@ const MarkdownPreview = ({ content, className = '' }) => {
 
   const VideoRenderer = ({ url }) => {
     const embedUrl = getYoutubeEmbed(url);
-    
+
     return (
       <div className="my-8 w-full block clear-both">
         <div className="relative w-full overflow-hidden rounded-2xl shadow-xl border bg-black" style={{ paddingTop: '56.25%' }}>
           {embedUrl ? (
             <iframe
               src={embedUrl}
+              loading="lazy"
               className="absolute top-0 left-0 w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
@@ -77,14 +78,14 @@ const MarkdownPreview = ({ content, className = '' }) => {
       }
 
       const realNodes = node.children.filter(n => !(n.type === 'text' && !n.value.trim()));
-      const isVideoLink = realNodes.length === 1 && 
-                         realNodes[0].tagName === 'a' && 
-                         isVideoUrl(realNodes[0].properties?.href);
+      const isVideoLink = realNodes.length === 1 &&
+        realNodes[0].tagName === 'a' &&
+        isVideoUrl(realNodes[0].properties?.href);
 
       if (isVideoLink) {
         return <VideoRenderer url={realNodes[0].properties?.href} />;
       }
-      
+
       return <p {...props} className="mb-4 leading-relaxed text-slate-700">{children}</p>;
     },
 
@@ -92,22 +93,22 @@ const MarkdownPreview = ({ content, className = '' }) => {
       const isVideo = isVideoUrl(href);
       const childrenArray = React.Children.toArray(children);
       const linkText = typeof childrenArray[0] === 'string' ? childrenArray[0] : '';
-      
+
       const isPlainLink = isVideo && (
-        linkText.trim() === href.trim() || 
-        linkText.toLowerCase().includes('youtube') || 
+        linkText.trim() === href.trim() ||
+        linkText.toLowerCase().includes('youtube') ||
         linkText.toLowerCase().includes('youtu.be')
       );
 
       if (isPlainLink) {
         return <VideoRenderer url={href} />;
       }
-      
+
       return (
-        <a 
-          href={href} 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-primary hover:underline font-medium break-all"
           {...props}
         >
@@ -119,7 +120,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
     code({ node, inline, className, children, ...props }) {
       const match = /language-(\w+)/.exec(className || '');
       const language = match ? match[1] : '';
-      
+
       if (!inline && match) {
         return (
           <div className="rounded-xl overflow-hidden my-8 border border-slate-800 shadow-2xl bg-[#282c34] group">
@@ -127,7 +128,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
               <span className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest leading-none">
                 {language}
               </span>
-              <button 
+              <button
                 onClick={() => {
                   navigator.clipboard.writeText(String(children));
                   // Could add a temporary "Copied!" state here if we had state in this subcomponent
@@ -135,7 +136,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
                 className="text-slate-500 hover:text-slate-300 transition-colors"
                 title="Salin Kode"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
               </button>
             </div>
             <SyntaxHighlighter
@@ -158,8 +159,8 @@ const MarkdownPreview = ({ content, className = '' }) => {
       }
 
       return (
-        <code 
-          className={`${className} px-1.5 py-0.5 rounded bg-slate-100 text-pink-600 font-mono text-[0.9em] border border-slate-200`} 
+        <code
+          className={`${className} px-1.5 py-0.5 rounded bg-slate-100 text-pink-600 font-mono text-[0.9em] border border-slate-200`}
           {...props}
         >
           {children}
@@ -204,7 +205,7 @@ const MarkdownPreview = ({ content, className = '' }) => {
         ${className}
       `}
     >
-      <ReactMarkdown 
+      <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={components}
       >
