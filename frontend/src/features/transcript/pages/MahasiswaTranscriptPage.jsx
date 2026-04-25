@@ -119,27 +119,27 @@ const MahasiswaTranscriptPage = () => {
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Kartu Hasil Studi (KHS)</h1>
           <p className="text-slate-500 mt-1 text-sm sm:text-base">
-            Mahasiswa: <span className="font-semibold text-slate-700">{student?.name || '-'}</span> |  
-            Total SKS: <span className="font-semibold text-slate-700">{calculatedTotalSks} SKS</span> | 
+            Mahasiswa: <span className="font-semibold text-slate-700">{student?.name || '-'}</span> |
+            Total SKS: <span className="font-semibold text-slate-700">{calculatedTotalSks} SKS</span> |
             IPK: <span className="font-semibold text-slate-700">{summary?.ipk?.toFixed(2) || '0.00'}</span>
           </p>
         </div>
         <button
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg shadow-sm font-medium transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm font-medium transition-colors focus:ring-2 focus:ring-blue-400 focus:outline-none"
         >
           <Printer size={18} /> Cetak Semua KHS
         </button>
       </div>
 
       {semesterDataList.length === 0 ? (
-         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center max-w-2xl mx-auto text-slate-500 italic">
-             Belum ada data nilai akademik yang tersedia.
-         </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center max-w-2xl mx-auto text-slate-500 italic">
+          Belum ada data nilai akademik yang tersedia.
+        </div>
       ) : (
         semesterDataList.map((semData) => (
           <div key={semData.semester} className="bg-white p-6 sm:p-8 shadow-sm rounded-xl border border-slate-200 mb-8 print:shadow-none print:border-none print:p-0 print:mb-12">
-            
+
             {/* Header KHS */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
@@ -147,7 +147,7 @@ const MahasiswaTranscriptPage = () => {
                 <p className="text-slate-500 text-sm mt-1">{semData.semesterTitle}</p>
               </div>
               <div className="flex gap-3 mt-4 sm:mt-0 print:hidden">
-                <button 
+                <button
                   onClick={() => window.print()}
                   className="flex items-center gap-2 border border-cyan-300 text-cyan-600 hover:bg-cyan-50 px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >

@@ -56,7 +56,18 @@ const Navbar = () => {
             <div className="hidden md:flex space-x-1 lg:space-x-4">
               {NAV_LINKS.map((link) => {
                 if (link.requiresAuth && !isAuthenticated) return null;
-                const isActive = location.pathname === link.to;
+
+                // Determine target path: if link requires auth and user is logged in, 
+                // redirect to their specific dashboard.
+                let targetTo = link.to;
+                if (link.requiresAuth && isAuthenticated && user?.role) {
+                  const role = user.role.toUpperCase();
+                  if (role === 'ADMIN') targetTo = '/admin/dashboard';
+                  else if (role === 'DOSEN') targetTo = '/dosen/dashboard';
+                  else if (role === 'MAHASISWA') targetTo = '/mahasiswa/dashboard';
+                }
+
+                const isActive = location.pathname === targetTo;
 
                 if (link.external) {
                   return (
@@ -68,7 +79,7 @@ const Navbar = () => {
                 return (
                   <Link 
                     key={link.name} 
-                    to={link.to} 
+                    to={targetTo} 
                     className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       isActive 
                         ? 'text-blue-600 bg-blue-50' 
@@ -125,7 +136,17 @@ const Navbar = () => {
           <div className="px-4 pt-2 pb-4 space-y-1">
             {NAV_LINKS.map((link) => {
               if (link.requiresAuth && !isAuthenticated) return null;
-              const isActive = location.pathname === link.to;
+
+              // Determine target path for mobile menu as well
+              let targetTo = link.to;
+              if (link.requiresAuth && isAuthenticated && user?.role) {
+                const role = user.role.toUpperCase();
+                if (role === 'ADMIN') targetTo = '/admin/dashboard';
+                else if (role === 'DOSEN') targetTo = '/dosen/dashboard';
+                else if (role === 'MAHASISWA') targetTo = '/mahasiswa/dashboard';
+              }
+
+              const isActive = location.pathname === targetTo;
 
               if (link.external) {
                 return (
@@ -137,7 +158,7 @@ const Navbar = () => {
               return (
                 <Link 
                   key={link.name} 
-                  to={link.to} 
+                  to={targetTo} 
                   onClick={() => setIsMobileMenuOpen(false)} 
                   className={`block px-4 py-3 rounded-xl text-base font-semibold transition-colors ${
                     isActive

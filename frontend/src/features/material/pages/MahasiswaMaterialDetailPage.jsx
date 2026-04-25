@@ -5,15 +5,10 @@ import {
   ChevronLeft,
   Menu,
   FileText,
-  ExternalLink,
-  Download,
   CheckCircle,
   Clock,
-  MonitorPlay,
-  PlayCircle,
-  Youtube
-} from 'lucide-react';
-import ReactPlayer from 'react-player';
+  MonitorPlay} from 'lucide-react';
+import { motion } from 'motion/react';
 import { getMaterialDetail, getMaterials } from '../materialService';
 import { getMyCourses } from '../../course/courseService';
 import LearningSidebar from '../components/LearningSidebar';
@@ -23,7 +18,6 @@ import MarkdownPreview from '../../../components/ui/MarkdownPreview';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -179,13 +173,28 @@ const MaterialDetail = () => {
 
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex items-center gap-2 text-muted-foreground hover:text-primary"
+              className="hidden lg:flex items-center justify-center text-muted-foreground hover:text-primary transition-colors h-10 w-10"
+              title={sidebarCollapsed ? 'Buka Sidebar' : 'Tutup Sidebar'}
             >
-              <Menu size={18} />
-              <span className="font-medium text-sm">
-                {sidebarCollapsed ? 'Buka Sidebar' : 'Tutup Sidebar'}
-              </span>
+              <div className="relative w-5 h-5 flex flex-col items-center justify-center">
+                <motion.span
+                  animate={sidebarCollapsed ? { rotate: 0, y: -6 } : { rotate: 45, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute w-5 h-0.5 bg-current rounded-full"
+                />
+                <motion.span
+                  animate={sidebarCollapsed ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute w-5 h-0.5 bg-current rounded-full"
+                />
+                <motion.span
+                  animate={sidebarCollapsed ? { rotate: 0, y: 6 } : { rotate: -45, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute w-5 h-0.5 bg-current rounded-full"
+                />
+              </div>
             </Button>
 
             <div className="w-10 lg:w-24" />

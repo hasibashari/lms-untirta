@@ -65,13 +65,8 @@ export const getMyCourses = async (req, res) => {
       courses = result.courses;
       message = 'Berhasil mengambil daftar kelas yang diikuti';
     } else if (userRole === 'DOSEN') {
-      if (includeStats) {
-        const result = await promisifyGrpc(courseClient, 'GetTeachingCoursesWithStats', { teacherId: userId });
-        courses = result.courses;
-      } else {
-        const result = await promisifyGrpc(courseClient, 'GetTeachingCourses', { teacherId: userId });
-        courses = result.courses;
-      }
+      const result = await promisifyGrpc(courseClient, 'GetTeachingCourses', { teacherId: userId });
+      courses = result.courses;
       message = 'Berhasil mengambil daftar kelas yang diajar';
     } else if (userRole === 'ADMIN') {
       const result = await promisifyGrpc(courseClient, 'AdminGetAllCourses', {

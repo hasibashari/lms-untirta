@@ -12,11 +12,10 @@ import {
   Link as LinkIcon,
   Image,
   Video,
-  Eye,
+  Code2,
   Edit3,
   HelpCircle,
 } from 'lucide-react';
-import MarkdownPreview from './MarkdownPreview';
 
 /**
  * MarkdownEditor - Editor Markdown dengan Preview
@@ -69,7 +68,8 @@ const MarkdownEditor = ({
     { icon: ListOrdered, label: 'Numbered List', action: () => insertMarkdown('\n1. ', '\n', 'Item list') },
     { icon: Quote, label: 'Quote', action: () => insertMarkdown('\n> ', '\n', 'Kutipan') },
     { type: 'divider' },
-    { icon: Code, label: 'Code', action: () => insertMarkdown('`', '`', 'kode') },
+    { icon: Code, label: 'Inline Code', action: () => insertMarkdown('`', '`', 'kode') },
+    { icon: Code2, label: 'Code Block', action: () => insertMarkdown('\n```javascript\n', '\n```\n', '// tulis kode di sini') },
     { icon: LinkIcon, label: 'Link', action: () => insertMarkdown('[', '](url)', 'teks link') },
     { icon: Image, label: 'Image', action: () => insertMarkdown('![', '](url)', 'alt text') },
     { icon: Video, label: 'Video (YouTube/Vimeo)', action: () => insertMarkdown('\nhttps://www.youtube.com/watch?v=', '\n', 'VIDEO_ID') },
@@ -107,6 +107,7 @@ const MarkdownEditor = ({
             <div><code className="bg-blue-100 px-1 rounded">- item</code> → Bullet list</div>
             <div><code className="bg-blue-100 px-1 rounded">1. item</code> → Numbered list</div>
             <div><code className="bg-blue-100 px-1 rounded">`kode`</code> → <code>Inline code</code></div>
+            <div><code className="bg-blue-100 px-1 rounded">```lang ... ```</code> → <code>Code Block</code></div>
             <div><code className="bg-blue-100 px-1 rounded">[teks](url)</code> → Link</div>
             <div><code className="bg-blue-100 px-1 rounded">![alt](url)</code> → Image</div>
             <div><code className="bg-blue-100 px-1 rounded">https://url</code> → Video Embed</div>
@@ -143,7 +144,7 @@ const MarkdownEditor = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full h-full p-6 text-slate-700 placeholder-slate-400 resize-none focus:outline-none font-mono text-sm leading-relaxed"
+          className="w-full h-full p-6 text-slate-700 placeholder-slate-400 resize-none focus:outline-none font-mono text-sm leading-relaxed bg-white/50 backdrop-blur-sm"
           style={{ minHeight }}
         />
       </div>

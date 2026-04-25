@@ -97,9 +97,9 @@ export default function CourseCard({
         <div className="flex items-center flex-wrap gap-x-1.5 text-[11px] text-gray-400 font-medium">
           <span>{code}</span>
           <span>·</span>
-          <span>Semester {semester}</span>
+          <span>Semester {semester || '-'}</span>
           <span>·</span>
-          <span>{sks} SKS</span>
+          <span>{sks || 0} SKS</span>
         </div>
 
         {/* Lecturer */}
@@ -112,18 +112,14 @@ export default function CourseCard({
 
         {/* Stats row */}
         <div className="flex items-center gap-3 mt-auto pt-1 text-[11px] text-gray-400">
-          {studentsCount > 0 && (
-            <span className="flex items-center gap-1">
-              <Users size={12} />
-              {studentsCount} siswa
-            </span>
-          )}
-          {materialsCount > 0 && (
-            <span className="flex items-center gap-1">
-              <BookOpen size={12} />
-              {materialsCount} materi
-            </span>
-          )}
+          <span className="flex items-center gap-1">
+            <Users size={12} />
+            {studentsCount} siswa
+          </span>
+          <span className="flex items-center gap-1">
+            <BookOpen size={12} />
+            {materialsCount} materi
+          </span>
         </div>
       </div>
     </div>

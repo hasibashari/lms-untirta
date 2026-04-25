@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Search, Filter } from 'lucide-react';
+import { BookOpen, Search } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
 import CourseCard from '../../course/components/CourseCard';
 import { Button } from '@/components/ui/button';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
 
 /**
  * MyClasses / Kelas Saya
@@ -153,8 +152,8 @@ const MyClasses = () => {
               teacher={{ name: enrollment.course.teacher?.name || '-' }}
               semester={enrollment.course.semester}
               sks={enrollment.course.sks}
-              studentsCount={enrollment.course._count?.students ?? enrollment.course.studentsCount ?? 0}
-              materialsCount={enrollment.course._count?.materials ?? enrollment.course.materialsCount ?? 0}
+              studentsCount={enrollment.course.studentsCount}
+              materialsCount={enrollment.course.materialsCount}
               schedule={enrollment.course.schedule}
               description={enrollment.course.description}
               onClick={() => navigate(`/mahasiswa/courses/${enrollment.course.id}`)}

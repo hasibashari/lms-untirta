@@ -20,8 +20,10 @@ import { ChatWidget } from '../../features/chatbot';
 const SidebarLogoHeader = () => {
   return (
     <SidebarHeader className="h-16 flex items-center justify-center px-4">
-      <Logo className="w-full flex group-data-[collapsible=icon]:hidden transition-opacity duration-200" />
-      <Logo variant="icon" className="hidden group-data-[collapsible=icon]:flex transition-opacity duration-200" />
+      <Link to="/" className="w-full">
+        <Logo className="w-full flex group-data-[collapsible=icon]:hidden transition-opacity duration-200" />
+        <Logo variant="icon" className="hidden group-data-[collapsible=icon]:flex transition-opacity duration-200" />
+      </Link>
     </SidebarHeader>
   );
 };

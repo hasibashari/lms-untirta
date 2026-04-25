@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import ReactPlayer from 'react-player';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 /**
  * MarkdownPreview - Komponen untuk render Markdown ke HTML
@@ -112,6 +114,57 @@ const MarkdownPreview = ({ content, className = '' }) => {
           {children}
         </a>
       );
+    },
+
+    code({ node, inline, className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || '');
+      const language = match ? match[1] : '';
+      
+      if (!inline && match) {
+        return (
+          <div className="rounded-xl overflow-hidden my-8 border border-slate-800 shadow-2xl bg-[#282c34] group">
+            <div className="bg-[#21252b] px-4 py-2 flex items-center justify-between border-b border-white/5">
+              <span className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest leading-none">
+                {language}
+              </span>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(String(children));
+                  // Could add a temporary "Copied!" state here if we had state in this subcomponent
+                }}
+                className="text-slate-500 hover:text-slate-300 transition-colors"
+                title="Salin Kode"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+            </div>
+            <SyntaxHighlighter
+              style={oneDark}
+              language={language}
+              PreTag="div"
+              customStyle={{
+                margin: 0,
+                padding: '1.25rem',
+                fontSize: '0.875rem',
+                lineHeight: '1.6',
+                background: 'transparent',
+              }}
+              {...props}
+            >
+              {String(children).replace(/\n$/, '')}
+            </SyntaxHighlighter>
+          </div>
+        );
+      }
+
+      return (
+        <code 
+          className={`${className} px-1.5 py-0.5 rounded bg-slate-100 text-pink-600 font-mono text-[0.9em] border border-slate-200`} 
+          {...props}
+        >
+          {children}
+        </code>
+      );
     }
   }), []);
 
@@ -140,8 +193,8 @@ const MarkdownPreview = ({ content, className = '' }) => {
         [&_ul]:list-disc [&_ul]:my-4 [&_ul]:pl-6
         [&_ol]:list-decimal [&_ol]:my-4 [&_ol]:pl-6
         [&_li]:text-slate-700 [&_li]:mb-2
-        [&_code]:text-blue-600 [&_code]:bg-blue-50 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
-        [&_pre]:bg-slate-900 [&_pre]:text-slate-100 [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-6
+        [&_code]:font-mono
+        [&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:my-0
         [&_blockquote]:border-l-4 [&_blockquote]:border-blue-500 [&_blockquote]:bg-blue-50 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:rounded-r-lg [&_blockquote]:text-slate-700 [&_blockquote]:my-6 [&_blockquote]:not-italic
         [&_img]:rounded-xl [&_img]:shadow-md [&_img]:my-6
         [&_table]:border-collapse [&_table]:w-full [&_table]:my-6
