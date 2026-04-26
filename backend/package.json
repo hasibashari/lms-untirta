@@ -4,16 +4,7 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' npx jest --runInBand",
-    "test:docker": "./scripts/test.sh --runInBand",
-    "test:docker:coverage": "./scripts/test.sh --coverage --runInBand",
-    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' npx jest --watch --runInBand",
-    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' npx jest --coverage --runInBand",
-    "test:unit": "NODE_OPTIONS='--experimental-vm-modules' npx jest --testPathPatterns='service\\.test' --runInBand",
-    "test:integration": "NODE_OPTIONS='--experimental-vm-modules' npx jest --testPathPatterns='api\\.test' --runInBand",
-    "test:db:up": "docker compose -f docker-compose.test.yml up -d",
-    "test:db:down": "docker compose -f docker-compose.test.yml down -v"
+    "dev": "nodemon src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -47,10 +38,8 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.2",
     "@types/pg": "^8.16.0",
-    "jest": "^30.2.0",
     "nodemon": "^3.1.11",
     "prisma": "^6.19.2",
-    "supertest": "^7.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
