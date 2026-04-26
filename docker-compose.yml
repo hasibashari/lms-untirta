@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lms_db
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: lms_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: lms_redis
+    restart: always
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lms_backend
+    restart: always
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override koneksi agar menggunakan hostname container (bukan localhost)
+      - DATABASE_URL=postgresql://dev_user:admin@db:5432/lms_db?schema=public
+      - REDIS_URL=redis://redis:6379
+      - USER_GRPC_URL=backend:50051
+    ports:
+      - "3000:3000"
+      - "50051:50051"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lms_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:
