@@ -3,11 +3,6 @@ import { sendSuccess } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import logger from '../../config/logger.js';
 
-/**
- * Retrieves the student's study results based on legacy course enrollments.
- * @param {import('express').Request} req - Express request object. Supports `semester` query param.
- * @param {import('express').Response} res - Express response object.
- */
 export const getStudyResults = async (req, res) => {
   try {
     const filters = {
@@ -24,12 +19,6 @@ export const getStudyResults = async (req, res) => {
   }
 };
 
-/**
- * Retrieves the student's transcript based on class enrollments (KRS).
- * This is the modern transcript view supporting the new academic system.
- * @param {import('express').Request} req - Express request object. Supports `academicSemesterId` query param.
- * @param {import('express').Response} res - Express response object.
- */
 export const getTranscriptByClass = async (req, res) => {
   try {
     const filters = {
@@ -46,12 +35,7 @@ export const getTranscriptByClass = async (req, res) => {
   }
 };
 
-/**
- * Retrieves a summary of the student's academic progress.
- * Combines data from both legacy and new systems for the dashboard.
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- */
+
 export const getAcademicSummary = async (req, res) => {
   try {
     const result = await transcriptService.getAcademicSummary(req.user.id);
@@ -65,12 +49,7 @@ export const getAcademicSummary = async (req, res) => {
   }
 };
 
-/**
- * Retrieves the full transcript of a specific student for administrative viewing.
- * Accessible by Lecturers (Dosen) and Admins. Includes audit logging.
- * @param {import('express').Request} req - Express request object. Expects `studentId` in params.
- * @param {import('express').Response} res - Express response object.
- */
+
 export const getStudentTranscript = async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -102,12 +81,7 @@ export const getStudentTranscript = async (req, res) => {
   }
 };
 
-/**
- * Retrieves a list of all students with their academic summary.
- * Intended for the Admin dashboard to browse student records.
- * @param {import('express').Request} req - Express request object. Supports `search` query param.
- * @param {import('express').Response} res - Express response object.
- */
+
 export const getStudentList = async (req, res) => {
   try {
     const filters = {

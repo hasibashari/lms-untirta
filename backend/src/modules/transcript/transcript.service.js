@@ -3,27 +3,6 @@ import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../..
 import { AppError } from '../../config/errors.js';
 import { paginate } from '../../utils/pagination.js';
 
-// ========================================================================
-// TRANSCRIPT SERVICE
-// Mengelola data transkrip akademik — hasil studi, IPK, dan rekap nilai.
-//
-// GRADE VISIBILITY RULES:
-// 1. FinalGrade with status=FINALIZED takes priority over assignment averages.
-// 2. Students can ONLY see FinalGrades when:
-//    a. The grade status is FINALIZED, AND
-//    b. The semester status is CLOSED (or no semester link).
-// 3. Assignment-based grades are used as fallback for legacy data only.
-// 4. Admin/Dosen can see all grades regardless of status.
-// ========================================================================
-
-/**
- * Retrieves study results based on legacy course enrollments.
- * Calculates average grades per course and overall GPA.
- * @param {string} studentId - The ID of the student.
- * @param {object} filters - Filter options (e.g., semester).
- * @returns {Promise<object>} Object containing student info, courses, and summary.
- * @throws {Error} If student is not found.
- */
 const getStudyResults = async (studentId, filters = {}) => {
   // Validasi mahasiswa ada
   const student = await prisma.user.findUnique({
@@ -131,15 +110,7 @@ const getStudyResults = async (studentId, filters = {}) => {
   };
 };
 
-/**
- * Retrieves the transcript based on KrsEnrollment (Class-based).
- * Handles grade visibility rules based on semester status and user role.
- * @param {string} studentId - The ID of the student.
- * @param {object} filters - Filter options (e.g., academicSemesterId).
- * @param {object} [options] - Options like `isStudentView`.
- * @returns {Promise<object>} Object containing student info, courses, semester breakdown, and summary.
- * @throws {Error} If student is not found.
- */
+
 const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
@@ -338,12 +309,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   };
 };
 
-/**
- * Retrieves a combined academic summary from both legacy and new systems.
- * @param {string} studentId - The ID of the student.
- * @returns {Promise<object>} Summary object.
- * @throws {Error} If student is not found.
- */
+
 const getAcademicSummary = async (studentId) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
@@ -367,15 +333,7 @@ const getAcademicSummary = async (studentId) => {
   };
 };
 
-// ========================================================================
-// ADMIN: Get all students with academic summary
-// ========================================================================
 
-/**
- * Retrieves a list of all students with their academic summary counts.
- * @param {object} filters - Filter options (e.g., search).
- * @returns {Promise<Array<object>>} List of students with enrollment counts.
- */
 const getStudentList = async (filters = {}, query = {}) => {
   const { skip, take, meta } = paginate(query);
   const where = { role: 'MAHASISWA' };
@@ -424,13 +382,7 @@ const getStudentList = async (filters = {}, query = {}) => {
   };
 };
 
-/**
- * Retrieves the full transcript for a student, combining legacy and new data.
- * Intended for Admin/Lecturer view, showing all grades regardless of visibility rules.
- * @param {string} studentId - The ID of the student.
- * @returns {Promise<object>} Comprehensive transcript object including grade distribution.
- * @throws {Error} If student is not found.
- */
+
 const getFullStudentTranscript = async (studentId) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },

@@ -2,18 +2,19 @@ import courseClient from '../../grpc/clients/course.client.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
+import util from 'util';
 
-const promisifyGrpc = (client, method, arg) => {
-  return new Promise((resolve, reject) => {
-    client[method](arg, (err, response) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(response);
-      }
-    });
-  });
-};
+const grpcAddStudentToCourseById = util.promisify(courseClient.AddStudentToCourseById).bind(courseClient);
+const grpcAddStudentToCourse = util.promisify(courseClient.AddStudentToCourse).bind(courseClient);
+const grpcGetEnrolledCourses = util.promisify(courseClient.GetEnrolledCourses).bind(courseClient);
+const grpcGetTeachingCourses = util.promisify(courseClient.GetTeachingCourses).bind(courseClient);
+const grpcAdminGetAllCourses = util.promisify(courseClient.AdminGetAllCourses).bind(courseClient);
+const grpcGetStudentsByCourse = util.promisify(courseClient.GetStudentsByCourse).bind(courseClient);
+const grpcGetAvailableStudentsForCourse = util.promisify(courseClient.GetAvailableStudentsForCourse).bind(courseClient);
+const grpcAdminCreateCourse = util.promisify(courseClient.AdminCreateCourse).bind(courseClient);
+const grpcAdminUpdateCourse = util.promisify(courseClient.AdminUpdateCourse).bind(courseClient);
+const grpcAdminDeleteCourse = util.promisify(courseClient.AdminDeleteCourse).bind(courseClient);
+const grpcAdminAssignTeacher = util.promisify(courseClient.AdminAssignTeacher).bind(courseClient);
 
 export const enrollStudent = async (req, res) => {
   try {
@@ -23,14 +24,14 @@ export const enrollStudent = async (req, res) => {
     let result;
 
     if (studentId) {
-      result = await promisifyGrpc(courseClient, 'AddStudentToCourseById', {
+      result = await grpcAddStudentToCourseById({
         courseId,
         studentId,
         teacherId: req.user.id,
         teacherRole: req.user.role
       });
     } else if (email) {
-      result = await promisifyGrpc(courseClient, 'AddStudentToCourse', {
+      result = await grpcAddStudentToCourse({
         courseId,
         studentEmail: email,
         teacherId: req.user.id,
@@ -61,15 +62,15 @@ export const getMyCourses = async (req, res) => {
     let pagination;
 
     if (userRole === 'MAHASISWA') {
-      const result = await promisifyGrpc(courseClient, 'GetEnrolledCourses', { studentId: userId });
+      const result = await grpcGetEnrolledCourses({ studentId: userId });
       courses = result.courses;
       message = 'Berhasil mengambil daftar kelas yang diikuti';
     } else if (userRole === 'DOSEN') {
-      const result = await promisifyGrpc(courseClient, 'GetTeachingCourses', { teacherId: userId });
+      const result = await grpcGetTeachingCourses({ teacherId: userId });
       courses = result.courses;
       message = 'Berhasil mengambil daftar kelas yang diajar';
     } else if (userRole === 'ADMIN') {
-      const result = await promisifyGrpc(courseClient, 'AdminGetAllCourses', {
+      const result = await grpcAdminGetAllCourses({
         skip: req.query.skip ? parseInt(req.query.skip, 10) : undefined,
         take: req.query.take ? parseInt(req.query.take, 10) : undefined
       });
@@ -93,7 +94,7 @@ export const getMyCourses = async (req, res) => {
 export const getStudentsByCourse = async (req, res) => {
   try {
     const { id: courseId } = req.params;
-    const result = await promisifyGrpc(courseClient, 'GetStudentsByCourse', {
+    const result = await grpcGetStudentsByCourse({
       courseId,
       userId: req.user.id,
       userRole: req.user.role
@@ -111,7 +112,7 @@ export const getStudentsByCourse = async (req, res) => {
 export const getAvailableStudents = async (req, res) => {
   try {
     const { id: courseId } = req.params;
-    const result = await promisifyGrpc(courseClient, 'GetAvailableStudentsForCourse', {
+    const result = await grpcGetAvailableStudentsForCourse({
       courseId,
       userId: req.user.id,
       userRole: req.user.role
@@ -128,7 +129,7 @@ export const getAvailableStudents = async (req, res) => {
 
 export const adminGetAllCourses = async (req, res) => {
   try {
-    const result = await promisifyGrpc(courseClient, 'AdminGetAllCourses', {
+    const result = await grpcAdminGetAllCourses({
       skip: req.query.skip ? parseInt(req.query.skip, 10) : undefined,
       take: req.query.take ? parseInt(req.query.take, 10) : undefined
     });
@@ -145,7 +146,7 @@ export const adminGetAllCourses = async (req, res) => {
 export const adminCreateCourse = async (req, res) => {
   try {
     const data = req.body;
-    const newCourse = await promisifyGrpc(courseClient, 'AdminCreateCourse', data);
+    const newCourse = await grpcAdminCreateCourse(data);
     sendSuccess(res, { statusCode: 201, message: 'Kelas berhasil dibuat', data: newCourse });
   } catch (error) {
     if (error.code) {
@@ -160,7 +161,7 @@ export const adminUpdateCourse = async (req, res) => {
   try {
     const { id } = req.params;
     const data = { courseId: id, ...req.body };
-    const updatedCourse = await promisifyGrpc(courseClient, 'AdminUpdateCourse', data);
+    const updatedCourse = await grpcAdminUpdateCourse(data);
     sendSuccess(res, { statusCode: 200, message: 'Kelas berhasil diperbarui', data: updatedCourse });
   } catch (error) {
     if (error.code) {
@@ -174,7 +175,7 @@ export const adminUpdateCourse = async (req, res) => {
 export const adminDeleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await promisifyGrpc(courseClient, 'AdminDeleteCourse', { courseId: id });
+    const result = await grpcAdminDeleteCourse({ courseId: id });
     sendSuccess(res, { statusCode: 200, message: result.message, data: result });
   } catch (error) {
     if (error.code) {
@@ -189,7 +190,7 @@ export const adminAssignTeacher = async (req, res) => {
   try {
     const { id } = req.params;
     const { teacherId } = req.body;
-    const updatedCourse = await promisifyGrpc(courseClient, 'AdminAssignTeacher', { courseId: id, teacherId });
+    const updatedCourse = await grpcAdminAssignTeacher({ courseId: id, teacherId });
     sendSuccess(res, { statusCode: 200, message: 'Dosen berhasil ditetapkan ke kelas', data: updatedCourse });
   } catch (error) {
     if (error.code) {

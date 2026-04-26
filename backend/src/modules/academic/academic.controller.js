@@ -2,22 +2,21 @@ import academicClient from '../../grpc/clients/academic.client.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
+import util from 'util';
 
-const promisifyGrpc = (client, method, arg) => {
-  return new Promise((resolve, reject) => {
-    client[method](arg, (err, response) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(response);
-      }
-    });
-  });
-};
+const grpcGetAllSemesters = util.promisify(academicClient.GetAllSemesters).bind(academicClient);
+const grpcGetActiveSemester = util.promisify(academicClient.GetActiveSemester).bind(academicClient);
+const grpcGetSemesterById = util.promisify(academicClient.GetSemesterById).bind(academicClient);
+const grpcCreateSemester = util.promisify(academicClient.CreateSemester).bind(academicClient);
+const grpcUpdateSemester = util.promisify(academicClient.UpdateSemester).bind(academicClient);
+const grpcUpdateStatus = util.promisify(academicClient.UpdateStatus).bind(academicClient);
+const grpcGetClosingReadiness = util.promisify(academicClient.GetClosingReadiness).bind(academicClient);
+const grpcDeleteSemester = util.promisify(academicClient.DeleteSemester).bind(academicClient);
+const grpcGetStudentSemesters = util.promisify(academicClient.GetStudentSemesters).bind(academicClient);
 
 export const getAll = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'GetAllSemesters', {});
+    const result = await grpcGetAllSemesters({});
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar semester akademik berhasil diambil',
@@ -33,7 +32,7 @@ export const getAll = async (req, res) => {
 
 export const getActive = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'GetActiveSemester', {});
+    const result = await grpcGetActiveSemester({});
     sendSuccess(res, {
       statusCode: 200,
       message: result.semester ? 'Semester aktif berhasil diambil' : 'Tidak ada semester aktif',
@@ -49,7 +48,7 @@ export const getActive = async (req, res) => {
 
 export const getById = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'GetSemesterById', { id: req.params.id });
+    const result = await grpcGetSemesterById({ id: req.params.id });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Detail semester berhasil diambil',
@@ -65,7 +64,7 @@ export const getById = async (req, res) => {
 
 export const create = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'CreateSemester', req.body);
+    const result = await grpcCreateSemester(req.body);
     sendSuccess(res, {
       statusCode: 201,
       message: `Semester ${result.semester.semesterType} ${result.semester.academicYear} berhasil dibuat`,
@@ -81,7 +80,7 @@ export const create = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'UpdateSemester', { id: req.params.id, ...req.body });
+    const result = await grpcUpdateSemester({ id: req.params.id, ...req.body });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Semester berhasil diperbarui',
@@ -97,7 +96,7 @@ export const update = async (req, res) => {
 
 export const updateStatus = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'UpdateStatus', { id: req.params.id, newStatus: req.body.status });
+    const result = await grpcUpdateStatus({ id: req.params.id, newStatus: req.body.status });
     sendSuccess(res, {
       statusCode: 200,
       message: `Status semester berhasil diubah ke ${req.body.status}`,
@@ -113,7 +112,7 @@ export const updateStatus = async (req, res) => {
 
 export const getClosingReadiness = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'GetClosingReadiness', { id: req.params.id });
+    const result = await grpcGetClosingReadiness({ id: req.params.id });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Status kesiapan penutupan semester berhasil diambil',
@@ -129,7 +128,7 @@ export const getClosingReadiness = async (req, res) => {
 
 export const remove = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'DeleteSemester', { id: req.params.id });
+    const result = await grpcDeleteSemester({ id: req.params.id });
     sendSuccess(res, {
       statusCode: 200,
       message: result.message,
@@ -144,7 +143,7 @@ export const remove = async (req, res) => {
 
 export const getStudentSemesters = async (req, res) => {
   try {
-    const result = await promisifyGrpc(academicClient, 'GetStudentSemesters', { studentId: req.user.id });
+    const result = await grpcGetStudentSemesters({ studentId: req.user.id });
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar semester mahasiswa berhasil diambil',

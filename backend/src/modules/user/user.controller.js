@@ -3,7 +3,11 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 import grpc from '@grpc/grpc-js';
 import util from 'util';
 
-// Promisify the gRPC client methods
+// Controller untuk user yang bertindak sebagai layer HTTP -> gRPC client.
+// Tugas utama: memanggil client gRPC, memetakan error gRPC ke HTTP,
+// dan mengembalikan response yang konsisten ke client REST.
+
+// Promisify method gRPC agar bisa dipanggil dengan async/await
 const grpcCreateUserByAdmin = util.promisify(userClient.CreateUserByAdmin).bind(userClient);
 const grpcGetAllUsers = util.promisify(userClient.GetAllUsers).bind(userClient);
 const grpcGetUserById = util.promisify(userClient.GetUserById).bind(userClient);
@@ -16,7 +20,7 @@ const grpcGetAdvisorSummary = util.promisify(userClient.GetAdvisorSummary).bind(
 const grpcGetAdvisorStudents = util.promisify(userClient.GetAdvisorStudents).bind(userClient);
 const grpcGetAdminStats = util.promisify(userClient.GetAdminStats).bind(userClient);
 
-// Map gRPC status to HTTP status
+// Pemetaan error gRPC ke status HTTP agar client REST mendapatkan kode yang sesuai
 const mapGrpcErrorToHttp = (res, error) => {
   let statusCode = 500;
   if (error.code === grpc.status.NOT_FOUND) statusCode = 404;
@@ -44,10 +48,12 @@ export const getAllUsers = async (req, res) => {
   try {
     const { role, isDospem, skip, take } = req.query;
 
+    // Validasi query param role jika ada
     if (role && !['DOSEN', 'MAHASISWA', 'ADMIN'].includes(role)) {
       return sendError(res, { statusCode: 400, message: 'Invalid role. Use DOSEN, MAHASISWA, or ADMIN' });
     }
 
+    // Normalisasi payload untuk gRPC: hanya kirim field yang ada
     const requestPayload = {
       role: role || undefined,
       isDospem: isDospem === 'true' ? true : isDospem === 'false' ? false : undefined,

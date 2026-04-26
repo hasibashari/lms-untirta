@@ -3,7 +3,14 @@ import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
 import { paginate } from '../../utils/pagination.js';
 
+// Implementasi service gRPC untuk entitas `user`.
+// File ini dijalankan sebagai bagian dari gRPC server internal dan menyediakan
+// method yang dipanggil oleh gRPC client (mis. API HTTP layer).
+// Komentar hanya menyorot bagian penting: validasi, hashing password,
+// penetapan advisor otomatis, pagination, dan error mapping.
+
 export const userService = {
+  // Buat user oleh admin (atau sistem). Jika role MAHASISWA, tetapkan advisor otomatis
   CreateUserByAdmin: async (call, callback) => {
     try {
       const data = call.request;
@@ -12,17 +19,15 @@ export const userService = {
         return callback({ code: grpc.status.ALREADY_EXISTS, details: 'Email sudah terdaftar' });
       }
 
+      // Hash password sebelum disimpan
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
+      // Jika mahasiswa, coba assign Dosen Pembimbing dengan beban terendah
       let assignedAdvisorId = null;
       if (data.role === 'MAHASISWA') {
         const dospems = await prisma.user.findMany({
           where: { role: 'DOSEN', isDospem: true },
-          include: {
-            _count: {
-              select: { advisedStudents: true }
-            }
-          }
+          include: { _count: { select: { advisedStudents: true } } }
         });
         if (dospems.length > 0) {
           dospems.sort((a, b) => a._count.advisedStudents - b._count.advisedStudents);
@@ -38,23 +43,23 @@ export const userService = {
           role: data.role,
           advisorId: assignedAdvisorId,
         },
-        select: {
-          id: true, name: true, email: true, role: true, createdAt: true,
-        },
+        select: { id: true, name: true, email: true, role: true, createdAt: true },
       });
 
+      // Kembalikan createdAt sebagai ISO string agar konsisten di klien
       callback(null, { ...user, createdAt: user.createdAt.toISOString() });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
     }
   },
 
+  // Ambil daftar user dengan pagination dan optional filter (role, isDospem)
   GetAllUsers: async (call, callback) => {
     try {
       const { role, isDospem, skip, take } = call.request;
       const query = { skip, take };
       const { skip: pSkip, take: pTake, meta } = paginate(query);
-      
+
       const whereClause = {};
       if (role) whereClause.role = role;
       if (isDospem !== undefined && isDospem !== null) whereClause.isDospem = isDospem;
@@ -74,6 +79,7 @@ export const userService = {
         prisma.user.count({ where: whereClause }),
       ]);
 
+      // Normalisasi response untuk client gRPC/HTTP
       const data = users.map(u => ({
         id: u.id, name: u.name, email: u.email, role: u.role, isDospem: u.isDospem, advisorId: u.advisorId,
         advisor: u.advisor || null,
@@ -86,6 +92,7 @@ export const userService = {
     }
   },
 
+  // Ambil detail user berdasarkan ID
   GetUserById: async (call, callback) => {
     try {
       const { id } = call.request;
@@ -111,13 +118,12 @@ export const userService = {
     }
   },
 
+  // Update user (validasi email unik jika berubah, hash password jika diberikan)
   UpdateUser: async (call, callback) => {
     try {
       const data = call.request;
       const user = await prisma.user.findUnique({ where: { id: data.id } });
-      if (!user) {
-        return callback({ code: grpc.status.NOT_FOUND, details: 'User tidak ditemukan' });
-      }
+      if (!user) return callback({ code: grpc.status.NOT_FOUND, details: 'User tidak ditemukan' });
 
       if (data.email && data.email !== user.email) {
         const existing = await prisma.user.findUnique({ where: { email: data.email } });
@@ -129,9 +135,7 @@ export const userService = {
       if (data.name) updateData.name = data.name;
       if (data.role) updateData.role = data.role;
 
-      if (data.password) {
-        updateData.password = await bcrypt.hash(data.password, 10);
-      }
+      if (data.password) updateData.password = await bcrypt.hash(data.password, 10);
 
       const updated = await prisma.user.update({
         where: { id: data.id },
@@ -145,44 +149,40 @@ export const userService = {
     }
   },
 
+  // Hapus user
   DeleteUser: async (call, callback) => {
     try {
       const { id } = call.request;
       const user = await prisma.user.findUnique({ where: { id } });
       if (!user) return callback({ code: grpc.status.NOT_FOUND, details: 'User tidak ditemukan' });
 
-      const deleted = await prisma.user.delete({
-        where: { id }, select: { id: true, name: true, email: true, role: true }
-      });
+      const deleted = await prisma.user.delete({ where: { id }, select: { id: true, name: true, email: true, role: true } });
       callback(null, deleted);
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
     }
   },
 
+  // Toggle status Dosen Pembimbing untuk user dengan role DOSEN
   UpdateDospemStatus: async (call, callback) => {
     try {
       const { id, isDospem } = call.request;
       const user = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
-      
       if (!user) return callback({ code: grpc.status.NOT_FOUND, details: 'User tidak ditemukan' });
       if (user.role !== 'DOSEN') return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Hanya dosen yang dapat dijadikan Dosen Pembimbing' });
 
-      const updated = await prisma.user.update({
-        where: { id }, data: { isDospem },
-        select: { id: true, name: true, email: true, role: true, isDospem: true },
-      });
+      const updated = await prisma.user.update({ where: { id }, data: { isDospem }, select: { id: true, name: true, email: true, role: true, isDospem: true } });
       callback(null, updated);
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
     }
   },
 
+  // Assign/unassign advisor untuk mahasiswa
   AssignAdvisor: async (call, callback) => {
     try {
       const { studentId, advisorId } = call.request;
       const student = await prisma.user.findUnique({ where: { id: studentId }, select: { id: true, role: true } });
-      
       if (!student) return callback({ code: grpc.status.NOT_FOUND, details: 'Mahasiswa tidak ditemukan' });
       if (student.role !== 'MAHASISWA') return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Hanya mahasiswa yang dapat memiliki Dosen Pembimbing' });
 
@@ -194,7 +194,8 @@ export const userService = {
       }
 
       const updated = await prisma.user.update({
-        where: { id: studentId }, data: { advisorId: advisorId || null },
+        where: { id: studentId },
+        data: { advisorId: advisorId || null },
         select: { id: true, name: true, email: true, role: true, advisorId: true, advisor: { select: { id: true, name: true, email: true } } },
       });
 
@@ -204,6 +205,7 @@ export const userService = {
     }
   },
 
+  // Assign advisor ke banyak mahasiswa sekaligus (batch)
   BulkAssignAdvisor: async (call, callback) => {
     try {
       const { studentIds, advisorId } = call.request;
@@ -221,13 +223,13 @@ export const userService = {
       if (students.length !== studentIds.length) return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Beberapa user bukan mahasiswa atau tidak ditemukan' });
 
       const result = await prisma.user.updateMany({ where: { id: { in: studentIds } }, data: { advisorId: advisorId || null } });
-      
       callback(null, { message: `${result.count} mahasiswa berhasil di-assign`, updatedCount: result.count });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
     }
   },
 
+  // Ambil ringkasan dosen pembimbing dan jumlah mahasiswa bimbingannya
   GetAdvisorSummary: async (call, callback) => {
     try {
       const advisors = await prisma.user.findMany({
@@ -240,38 +242,29 @@ export const userService = {
         orderBy: { name: 'asc' },
       });
 
-      const data = advisors.map(a => ({
-        id: a.id, name: a.name, email: a.email,
-        advisedStudentCount: a._count.advisedStudents,
-        students: a.advisedStudents,
-      }));
-
+      const data = advisors.map(a => ({ id: a.id, name: a.name, email: a.email, advisedStudentCount: a._count.advisedStudents, students: a.advisedStudents }));
       callback(null, { data });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
     }
   },
 
+  // Ambil daftar mahasiswa bimbingan untuk satu dosen
   GetAdvisorStudents: async (call, callback) => {
     try {
       const { advisorId } = call.request;
       const advisor = await prisma.user.findUnique({ where: { id: advisorId }, select: { id: true, role: true, isDospem: true, name: true, email: true } });
-      
       if (!advisor) return callback({ code: grpc.status.NOT_FOUND, details: 'Dosen tidak ditemukan' });
       if (!advisor.isDospem) return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Dosen ini bukan Dosen Pembimbing' });
 
-      const students = await prisma.user.findMany({
-        where: { advisorId, role: 'MAHASISWA' },
-        select: { id: true, name: true, email: true },
-        orderBy: { name: 'asc' },
-      });
-
+      const students = await prisma.user.findMany({ where: { advisorId, role: 'MAHASISWA' }, select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
       callback(null, { advisor: { id: advisor.id, name: advisor.name, email: advisor.email }, students });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
     }
   },
 
+  // Statistik ringkas untuk dashboard admin
   GetAdminStats: async (call, callback) => {
     try {
       const [totalUsers, totalCourses, totalDosen, totalMahasiswa] = await Promise.all([

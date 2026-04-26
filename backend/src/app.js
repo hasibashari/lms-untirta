@@ -1,3 +1,4 @@
+// File: backend/src/app.js
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -32,13 +33,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // -- MIDDLEWARE --
-// Security headers
+// Header keamanan dasar (mis. HSTS, XSS Protection)
 app.use(helmet());
 
-// Structured request logging
+// Logging terstruktur untuk setiap request (abaikan root '/')
 app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/' } }));
 
-// CORS — read allowed origins from env, fall back to localhost for dev
+// CORS — baca daftar origin yang diizinkan dari env, fallback untuk dev lokal
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
   : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'];
@@ -50,35 +51,36 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parser untuk JSON
+// Parsing body JSON
 app.use(express.json());
 
-// Protected static file access — requires valid JWT
+// Akses file statis di /uploads dilindungi oleh JWT
 app.use('/uploads', authenticateToken, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
-// Swagger UI & JSON spec for Postman import
+// Swagger: JSON spec dan UI untuk dokumentasi API
 app.get('/docs.json', (_req, res) => res.json(swaggerSpec))
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 import chatRoutes from './modules/chatbot/chat.routes.js';
 
-// -- MOUNT ROUTES --
-app.use('/api/auth', authRoutes); // Login/Register
-app.use('/api/courses', courseRoutes); // Kelas
-app.use('/api/users', userRoutes); // User Management (Admin Only)
-app.use('/api/submissions', submissionRoutes); // Submission Routes
-app.use('/api/assignments', assignmentRoutes); // Assignment Routes
-app.use('/api/materials', materialRoutes); // Material Routes (Detail)
-app.use('/api/classes', classRoutes); // Class Offering Routes
-app.use('/api/krs', krsRoutes); // KRS (Kartu Rencana Studi)
-app.use('/api/transcript', transcriptRoutes); // Transcript (Hasil Studi)
-app.use('/api/academic-semesters', academicSemesterRoutes); // Academic Semester Management
-app.use('/api/grades', gradeRoutes); // Final Grade Management
-app.use('/api/chat', chatRoutes); // Chatbot API
+// -- PASANG ROUTE UTAMA --
+app.use('/api/auth', authRoutes); // Otentikasi: login / register
+app.use('/api/courses', courseRoutes); // Manajemen mata kuliah / kelas
+app.use('/api/users', userRoutes); // Manajemen pengguna (biasanya admin)
+app.use('/api/submissions', submissionRoutes); // Pengiriman tugas/berkas
+app.use('/api/assignments', assignmentRoutes); // Tugas (create/list/update)
+app.use('/api/materials', materialRoutes); // Materi per mata kuliah
+app.use('/api/classes', classRoutes); // Penawaran kelas / jadwal
+app.use('/api/krs', krsRoutes); // Pengelolaan KRS
+app.use('/api/transcript', transcriptRoutes); // Transkrip / riwayat nilai
+app.use('/api/academic-semesters', academicSemesterRoutes); // Semester akademik
+app.use('/api/grades', gradeRoutes); // Pengelolaan nilai akhir
+app.use('/api/chat', chatRoutes); // API chatbot
 
 // -- GLOBAL ERROR HANDLER --
+// Handler error global: menangani error upload, error aplikasi, dan error tak terduga
 app.use((err, _req, res, _next) => {
-  // Multer upload errors
+  // Error dari multer (upload file)
   if (err instanceof multer.MulterError) {
     const messages = {
       LIMIT_FILE_SIZE: 'Ukuran file melebihi batas maksimum (5 MB)',
@@ -91,7 +93,7 @@ app.use((err, _req, res, _next) => {
     });
   }
 
-  // AppError (known application errors with statusCode)
+  // Error aplikasi terspesialisasi yang sudah memiliki statusCode
   if (err.statusCode) {
     return sendError(res, {
       statusCode: err.statusCode,
@@ -101,7 +103,7 @@ app.use((err, _req, res, _next) => {
     });
   }
 
-  // Unexpected errors
+  // Error tak terduga — log untuk investigasi, kembalikan 500 ke client
   logger.error({ err }, 'Unhandled error in global handler');
   return sendError(res, { statusCode: 500, message: 'Internal Server Error' });
 });

@@ -1,23 +1,19 @@
+// Validasi payload untuk endpoint otentikasi menggunakan Zod.
+// Hanya menegakkan shape dan constraint dasar (email/password/name).
 import z from 'zod';
 
-/**
- * Zod validation schema for the user registration payload.
- * Enforces format and length constraints for email, password, and name.
- * Note: Role assignment is handled in the service layer, not validated here.
- */
+// Schema untuk registrasi user — body wajib berisi email, password, dan name.
+// Catatan: role tidak divalidasi di sini karena default role (MAHASISWA)
+// biasanya diatur di service saat pendaftaran.
 export const registerSchema = z.object({
   body: z.object({
     email: z.string().email({ message: 'Email tidak valid' }),
     password: z.string().min(8, { message: 'Password minimal 8 karakter' }),
     name: z.string().min(3, { message: 'Nama terlalu pendek' }),
-    // Role tidak divalidasi disini karena user register defaultnya Mahasiswa (diatur di service)
   }),
 });
 
-/**
- * Zod validation schema for the user login payload.
- * Ensures email and password are provided and meet basic format requirements.
- */
+// Schema untuk login — hanya periksa keberadaan dan format dasar.
 export const loginSchema = z.object({
   body: z.object({
     email: z.string().email({ message: 'Email tidak valid' }),
