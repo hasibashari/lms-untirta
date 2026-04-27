@@ -38,16 +38,15 @@ const MaterialDetail = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Effect 1: Fetch course-level data (materials list + KRS) — hanya re-fetch saat courseId berubah
   useEffect(() => {
-    if (!materialId || !courseId) return;
+    if (!courseId) return;
 
     Promise.all([
-      getMaterialDetail(materialId),
       getMaterials(courseId),
       getMyKRS(),
     ])
-      .then(([materialRes, materialsRes, krsRes]) => {
-        setMaterial(materialRes.data);
+      .then(([materialsRes, krsRes]) => {
         setMaterials(materialsRes.data);
 
         const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
@@ -58,15 +57,31 @@ const MaterialDetail = () => {
         );
         setCourse(foundEnrollment?.class?.course || null);
       })
+      .catch(err => toast.error(err?.message || 'Gagal memuat data kelas'));
+  }, [courseId]);
+
+  // Effect 2: Fetch material detail — re-fetch setiap materialId berubah (navigasi antar materi)
+  useEffect(() => {
+    if (!materialId) return;
+
+    setLoading(true);
+    setMaterial(null);
+
+    getMaterialDetail(materialId)
+      .then(res => setMaterial(res.data))
       .catch(err => toast.error(err?.message || 'Gagal memuat detail materi'))
       .finally(() => setLoading(false));
-  }, [materialId, courseId]);
+  }, [materialId]);
 
   const currentIndex = materials.findIndex(
     m => m.id === parseInt(materialId) || m.id === materialId
   );
+  // Guard currentIndex >= 0 agar saat material belum ditemukan (currentIndex = -1),
+  // nextMaterial tidak salah menunjuk ke materials[0]
   const prevMaterial = currentIndex > 0 ? materials[currentIndex - 1] : null;
-  const nextMaterial = currentIndex < materials.length - 1 ? materials[currentIndex + 1] : null;
+  const nextMaterial = currentIndex >= 0 && currentIndex < materials.length - 1
+    ? materials[currentIndex + 1]
+    : null;
 
   // Handle Mark as Complete Flow
   const handleCompleteAndNext = () => {
@@ -334,12 +349,13 @@ const MaterialDetail = () => {
               {/* Inline Footer Navigation */}
               <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-8">
                 {prevMaterial ? (
-                  <Button variant="ghost" className="w-full sm:w-auto gap-2" asChild>
-                    <Link to={`/mahasiswa/courses/${courseId}/materials/${prevMaterial.id}`}>
-                      <ChevronLeft size={16} />
-                      Materi Sebelumnya
-                    </Link>
-                  </Button>
+                  <Link
+                    to={`/mahasiswa/courses/${courseId}/materials/${prevMaterial.id}`}
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                    Materi Sebelumnya
+                  </Link>
                 ) : (
                   <div className="hidden sm:block"></div>
                 )}

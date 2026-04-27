@@ -141,8 +141,8 @@ const CourseMaterials = () => {
       {/* Materials Section Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Daftar Materi</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-xl font-bold text-foreground">Daftar Materi</h2>
+          <p className="text-sm text-muted-foreground">
             {materials.length} materi pembelajaran tersedia
           </p>
         </div>
@@ -151,57 +151,47 @@ const CourseMaterials = () => {
       {/* Materials List */}
       {materials.length === 0 ? (
         <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-            <FileText size={32} className="text-slate-400" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+            <FileText size={32} className="text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             Belum Ada Materi
           </h3>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             Materi pembelajaran belum tersedia untuk kelas ini.
           </p>
         </div>
       ) : (
-        <div className="relative">
-          {/* Progress Line (vertical) */}
-          <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-slate-200 hidden sm:block"></div>
-
-          {/* Materials Items */}
-          <div className="space-y-4">
-            {materials.map((material, index) => (
-              <Link
-                key={material.id}
-                to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
-                className="group relative block"
-              >
-                <div className="flex items-stretch gap-4 sm:gap-6 bg-card rounded-xl border border-border shadow-sm p-5 hover:shadow-lg hover:border-primary/50 transition-all">
-                  {/* Number Indicator */}
-                  <div className="relative z-10 shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-blue-50 border-4 border-white shadow text-blue-600 font-bold flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
-                      {material.order || index + 1}
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 py-1">
-                    <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition mb-1 truncate">
-                      {material.title}
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Materi {material.order || index + 1} dari {materials.length}
-                    </p>
-                  </div>
-
-                  {/* Action Arrow */}
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-blue-600 transition">
-                      <ArrowRight size={18} className="text-slate-400 group-hover:text-white transition" />
-                    </div>
-                  </div>
+        <div className="space-y-3">
+          {materials.map((material, index) => (
+            <Link
+              key={material.id}
+              to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
+              className="group block"
+            >
+              <div className="flex items-center gap-4 p-5 bg-card rounded-xl border border-border shadow-sm hover:border-primary/50 hover:shadow-lg transition-all">
+                {/* Order Number */}
+                <div className="shrink-0 w-12 h-12 rounded-lg bg-primary/10 text-primary font-bold flex items-center justify-center text-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  {material.order || index + 1}
                 </div>
-              </Link>
-            ))}
-          </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    {material.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Materi {material.order || index + 1} dari {materials.length}
+                  </p>
+                </div>
+
+                {/* Action Arrow */}
+                <div className="shrink-0 w-9 h-9 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary transition-colors">
+                  <ArrowRight size={18} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
 

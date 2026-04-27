@@ -158,76 +158,76 @@ const CourseHome = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
-          onClick={() => navigate(`/mahasiswa/courses/${courseId}/materials`)}
-          className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:bg-slate-50 transition-all cursor-pointer"
+        <Link
+          to={`/mahasiswa/courses/${courseId}/materials`}
+          className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
         >
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-105 transition-all duration-300">
-            <BookOpen size={24} className="text-indigo-600" />
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
+            <BookOpen size={24} className="text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">Materi Pembelajaran</h3>
-            <p className="text-sm text-slate-500 mt-0.5">{materials.length} materi tersedia</p>
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Materi Pembelajaran</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">{materials.length} materi tersedia</p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
-            <ArrowRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-colors">
+            <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
           </div>
-        </div>
+        </Link>
 
-        <div
-          onClick={() => navigate(`/mahasiswa/courses/${courseId}/assignments`)}
-          className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:bg-slate-50 transition-all cursor-pointer"
+        <Link
+          to={`/mahasiswa/courses/${courseId}/assignments`}
+          className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
         >
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-105 transition-all duration-300">
-            <ClipboardList size={24} className="text-indigo-600" />
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
+            <ClipboardList size={24} className="text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">Tugas Akademik</h3>
-            <p className="text-sm text-slate-500 mt-0.5">{assignments.length} tugas tersedia</p>
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Tugas Akademik</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">{assignments.length} tugas tersedia</p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
-            <ArrowRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-colors">
+            <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Silabus Section */}
-      <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
-          <h2 className="text-lg font-bold text-slate-900">Silabus Materi</h2>
-          <p className="text-sm text-slate-500 mt-1">Daftar perjalanan pembelajaran Anda di kelas ini</p>
+      <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="p-5 sm:p-6 border-b border-border bg-muted/30">
+          <h2 className="text-lg font-bold text-foreground">Silabus Materi</h2>
+          <p className="text-sm text-muted-foreground mt-1">Daftar perjalanan pembelajaran Anda di kelas ini</p>
         </div>
 
         {materials.length === 0 ? (
           <div className="p-10 text-center flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
-              <FileText size={28} className="text-slate-300" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <FileText size={28} className="text-muted-foreground" />
             </div>
-            <p className="text-slate-500 font-medium">Belum ada materi di kelas ini</p>
-            <p className="text-sm text-slate-400 mt-1">Materi akan muncul setelah dosen mengunggahnya</p>
+            <p className="text-foreground font-medium">Belum ada materi di kelas ini</p>
+            <p className="text-sm text-muted-foreground mt-1">Materi akan muncul setelah dosen mengunggahnya</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {materials.map((material, index) => (
               <Link
                 key={material.id}
                 to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
-                className="flex items-center gap-4 p-4 sm:p-5 hover:bg-slate-50 transition-colors group"
+                className="flex items-center gap-4 p-4 sm:p-5 hover:bg-muted/50 transition-colors group"
               >
-                {/* Number indicator */}
-                <div className="shrink-0 w-8 h-8 rounded bg-slate-100 border border-slate-200 text-slate-600 font-semibold text-sm flex items-center justify-center group-hover:bg-indigo-50 group-hover:border-indigo-200 group-hover:text-indigo-700 transition-colors">
+                {/* Order Number */}
+                <div className="shrink-0 w-9 h-9 rounded-lg bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   {material.order || index + 1}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-800 group-hover:text-indigo-700 transition-colors truncate">
+                  <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
                     {material.title}
                   </h3>
                 </div>
 
                 {/* Arrow */}
-                <ArrowRight size={18} className="text-slate-300 group-hover:text-indigo-500 group-hover:-rotate-45 transition-all opacity-0 group-hover:opacity-100" />
+                <ArrowRight size={18} className="shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors" />
               </Link>
             ))}
           </div>
@@ -235,10 +235,10 @@ const CourseHome = () => {
 
         {/* View All Link */}
         {materials.length > 0 && (
-          <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+          <div className="p-4 bg-muted/30 border-t border-border">
             <Link
               to={`/mahasiswa/courses/${courseId}/materials`}
-              className="flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-indigo-600 font-medium transition-colors"
+              className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary font-medium transition-colors"
             >
               Lihat Seluruh Materi
               <ArrowRight size={16} />

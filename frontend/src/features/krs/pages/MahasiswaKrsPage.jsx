@@ -29,6 +29,7 @@ import StatCard from '@/components/ui/StatCard';
 import InfoBanner from '@/components/ui/InfoBanner';
 import CourseBadge from '@/components/ui/CourseBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
+import Breadcrumb from '@/components/navigation/Breadcrumb';
 import {
   Select,
   SelectContent,
@@ -321,7 +322,7 @@ const StudyPlan = () => {
     return pages;
   };
 
-  const canDrop = (status) => !isReadOnly;
+  const canDrop = () => !isReadOnly;
   const canRevise = (status) => !isReadOnly && status === 'REJECTED';
 
   // Semester label helper
@@ -330,33 +331,41 @@ const StudyPlan = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Dashboard', to: '/mahasiswa/dashboard' },
+          { label: 'Rencana Studi' },
+        ]}
+      />
+
       {/* Page Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
           Rencana Studi
         </h1>
-        <p className="text-slate-500 mt-1 text-sm sm:text-base">
-          Dashboard &gt; Rencana Studi
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+          Kelola pengambilan mata kuliah semester ini
         </p>
       </div>
 
       {/* ==================== SEMESTER SELECTOR ==================== */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5">
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-slate-700 whitespace-nowrap">
+            <label className="text-sm font-medium text-foreground whitespace-nowrap">
               Semester Akademik
             </label>
             {semestersLoading ? (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 size={14} className="animate-spin" />
                 Memuat semester...
               </div>
             ) : semesters.length === 0 ? (
-              <span className="text-sm text-slate-500">Tidak ada semester tersedia</span>
+              <span className="text-sm text-muted-foreground">Tidak ada semester tersedia</span>
             ) : (
               <Select value={selectedSemesterId || ''} onValueChange={handleSemesterChange}>
-                <SelectTrigger className="w-70 bg-white">
+                <SelectTrigger className="w-70">
                   <SelectValue placeholder="Pilih Semester" />
                 </SelectTrigger>
                 <SelectContent>
@@ -369,7 +378,7 @@ const StudyPlan = () => {
                             OPEN
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
                             CLOSED
                           </span>
                         )}
@@ -390,7 +399,7 @@ const StudyPlan = () => {
                   Semester Aktif — KRS Terbuka
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-xs font-medium">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground border border-border rounded-full text-xs font-medium">
                   <Lock size={10} />
                   Semester Ditutup — Read-only
                 </span>
@@ -402,9 +411,9 @@ const StudyPlan = () => {
 
       {/* CLOSED semester read-only banner */}
       {isReadOnly && (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
-          <Lock size={20} className="text-slate-500 mt-0.5 shrink-0" />
-          <div className="text-sm text-slate-700">
+        <div className="bg-muted/50 border border-border rounded-xl p-4 flex items-start gap-3">
+          <Lock size={20} className="text-muted-foreground mt-0.5 shrink-0" />
+          <div className="text-sm text-foreground">
             <strong>Semester sudah ditutup.</strong> Anda hanya dapat melihat data KRS semester ini.
             Pengisian dan perubahan KRS tidak tersedia.
           </div>
@@ -412,17 +421,24 @@ const StudyPlan = () => {
       )}
 
       {/* Summary Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="flex flex-wrap gap-2 sm:gap-4">
         <StatCard
+          className="flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0"
           value={summary.totalCourses || enrollments.length}
           label="Total Mata Kuliah"
-          variant="warning"
+          variant="primary"
         />
-        <StatCard value={totalSKS} label="Total SKS" variant="warning" />
         <StatCard
+          className="flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0"
+          value={totalSKS}
+          label="Total SKS"
+          variant="primary"
+        />
+        <StatCard
+          className="flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0"
           value={summary.maxSKS || 24}
           label="Maks SKS"
-          variant={totalSKS > (summary.maxSKS || 24) ? 'danger' : 'warning'}
+          variant={totalSKS > (summary.maxSKS || 24) ? 'danger' : 'primary'}
         />
       </div>
 
@@ -1062,25 +1078,25 @@ const StudyPlan = () => {
           </div>
 
           {/* Footer Summary */}
-          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-50 border-t border-slate-200">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-muted/30 border-t border-border">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
               <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm">
-                <span className="text-slate-600">
-                  Total: <strong className="text-slate-900">{enrollments.length}</strong> MK
+                <span className="text-muted-foreground">
+                  Total: <strong className="text-foreground">{enrollments.length}</strong> MK
                 </span>
-                <span className="text-slate-600">
-                  SKS: <strong className="text-slate-900">{totalSKS}</strong>
+                <span className="text-muted-foreground">
+                  SKS: <strong className="text-foreground">{totalSKS}</strong>
                 </span>
-                <span className="text-slate-600">
+                <span className="text-muted-foreground">
                   Disetujui: <strong className="text-green-700">{enrollmentStats.approved}</strong>
                 </span>
                 {enrollmentStats.rejected > 0 && (
-                  <span className="text-slate-600">
+                  <span className="text-muted-foreground">
                     Ditolak: <strong className="text-red-600">{enrollmentStats.rejected}</strong>
                   </span>
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-slate-500">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 <Info size={14} className="inline mr-1" />
                 {isReadOnly
                   ? 'Data read-only — semester sudah ditutup'
@@ -1093,9 +1109,9 @@ const StudyPlan = () => {
 
       {/* No enrollments message for CLOSED semester */}
       {enrollments.length === 0 && !loading && isReadOnly && (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <BookOpen size={32} className="text-slate-400 mx-auto mb-3" />
-          <p className="text-slate-600 font-medium">Tidak ada data KRS untuk semester ini</p>
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
+          <BookOpen size={32} className="text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">Tidak ada data KRS untuk semester ini</p>
         </div>
       )}
 
