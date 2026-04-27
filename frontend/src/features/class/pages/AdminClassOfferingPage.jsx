@@ -327,6 +327,9 @@ const AdminClassesPage = () => {
           <p className="text-gray-600 mt-1">
             Buat dan kelola kelas per semester untuk pendaftaran KRS mahasiswa
           </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Mata kuliah dibuat di menu Mata Kuliah, sedangkan jadwal dan ruangan ditentukan di Kelas Offering.
+          </p>
         </div>
         <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={courses.length === 0 || semesters.length === 0}>
           <Plus size={18} />
@@ -618,10 +621,10 @@ const AdminClassesPage = () => {
                 {filteredClasses.map((cls, index) => (
                   <TableRow key={cls.id} className="hover:bg-slate-50">
                     <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
-                    
+
                     {/* Collapsed: Mata Kuliah & Kelas */}
                     <TableCell>
-                      <div className="min-w-0 max-w-[180px] sm:max-w-xs xl:max-w-sm">
+                      <div className="min-w-0 max-w-45 sm:max-w-xs xl:max-w-sm">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="font-semibold text-slate-900 truncate" title={cls.course?.title}>{cls.course?.title}</span>
                           <span className="shrink-0 px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">
@@ -639,7 +642,7 @@ const AdminClassesPage = () => {
 
                     {/* Collapsed: Dosen & Jadwal */}
                     <TableCell>
-                      <div className="min-w-0 max-w-[140px] sm:max-w-[200px]">
+                      <div className="min-w-0 max-w-35 sm:max-w-50">
                         <div className="text-sm font-medium text-slate-700 truncate" title={cls.lecturer?.name || '-'}>
                           {cls.lecturer?.name || '-'}
                         </div>
@@ -652,7 +655,7 @@ const AdminClassesPage = () => {
 
                     {/* Semester */}
                     <TableCell>
-                      <div className="flex flex-col gap-1 items-start min-w-0 max-w-[130px]">
+                      <div className="flex flex-col gap-1 items-start min-w-0 max-w-32.5">
                         <span className="text-sm text-slate-600 truncate w-full" title={getSemesterLabel(cls.academicSemester)}>
                           {getSemesterLabel(cls.academicSemester)}
                         </span>

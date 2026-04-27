@@ -1,34 +1,38 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search } from 'lucide-react';
-import { getMyCourses } from '../../course/courseService';
+import { getMyKRS } from '../../krs/krsService';
 import CourseCard from '../../course/components/CourseCard';
 import { Button } from '@/components/ui/button';
 
 /**
  * MyClasses / Kelas Saya
- * Halaman khusus untuk menampilkan daftar lengkap kelas mahasiswa
+ * Halaman khusus untuk menampilkan daftar lengkap mata kuliah mahasiswa
  * Terpisah dari Dashboard untuk UX yang lebih fokus
  */
 const MyClasses = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [approvedEnrollments, setApprovedEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    getMyCourses()
-      .then(res => setCourses(res.data))
+    getMyKRS()
+      .then((res) => {
+        const enrollments = res?.data?.enrollments || [];
+        setApprovedEnrollments(enrollments.filter((e) => e.status === 'APPROVED'));
+      })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
   }, []);
 
-  // Filter courses based on search query
-  const filteredCourses = courses.filter(enrollment =>
-    enrollment.course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    enrollment.course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    enrollment.course.teacher?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter class offerings based on search query
+  const filteredClasses = approvedEnrollments.filter((enrollment) =>
+    enrollment.class.course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    enrollment.class.course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    enrollment.class.lecturer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    enrollment.class.section?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -39,7 +43,7 @@ const MyClasses = () => {
           Kelas Saya
         </h1>
         <p className="text-slate-500 mt-1">
-          Daftar lengkap kelas yang Anda ikuti
+          Daftar lengkap kelas offering yang Anda ikuti
         </p>
       </div>
 
@@ -49,7 +53,7 @@ const MyClasses = () => {
           <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari kelas, kode, atau dosen..."
+            placeholder="Cari mata kuliah, kode, kelas, atau dosen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
@@ -62,7 +66,7 @@ const MyClasses = () => {
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <BookOpen size={16} />
           <span>
-            {filteredCourses.length} dari {courses.length} kelas
+            {filteredClasses.length} dari {approvedEnrollments.length} kelas offering
           </span>
         </div>
       )}
@@ -98,16 +102,14 @@ const MyClasses = () => {
       )}
 
       {/* Empty State */}
-      {!loading && !error && courses.length === 0 && (
+      {!loading && !error && approvedEnrollments.length === 0 && (
         <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <BookOpen size={32} className="text-slate-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            Belum Ada Kelas
-          </h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum Ada Kelas Offering</h3>
           <p className="text-slate-500 max-w-sm mx-auto mb-4">
-            Anda belum terdaftar di kelas manapun. Silakan ambil mata kuliah melalui menu Study Plan.
+            Anda belum memiliki kelas yang disetujui. Silakan isi KRS melalui menu Study Plan.
           </p>
           <a
             href="/mahasiswa/study-plan"
@@ -120,7 +122,7 @@ const MyClasses = () => {
       )}
 
       {/* No Search Results */}
-      {!loading && !error && courses.length > 0 && filteredCourses.length === 0 && (
+      {!loading && !error && approvedEnrollments.length > 0 && filteredClasses.length === 0 && (
         <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
@@ -142,21 +144,19 @@ const MyClasses = () => {
       )}
 
       {/* Courses Grid */}
-      {!loading && !error && filteredCourses.length > 0 && (
+      {!loading && !error && filteredClasses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((enrollment) => (
+          {filteredClasses.map((enrollment) => (
             <CourseCard
-              key={enrollment.enrollmentId}
-              title={enrollment.course.title}
-              code={enrollment.course.code}
-              teacher={{ name: enrollment.course.teacher?.name || '-' }}
-              semester={enrollment.course.semester}
-              sks={enrollment.course.sks}
-              studentsCount={enrollment.course.studentsCount}
-              materialsCount={enrollment.course.materialsCount}
-              schedule={enrollment.course.schedule}
-              description={enrollment.course.description}
-              onClick={() => navigate(`/mahasiswa/courses/${enrollment.course.id}`)}
+              key={enrollment.id}
+              title={enrollment.class.course.title}
+              code={`${enrollment.class.course.code} · Kelas ${enrollment.class.section}`}
+              teacher={{ name: enrollment.class.lecturer?.name || '-' }}
+              semester={enrollment.class.course.semester}
+              sks={enrollment.class.course.sks}
+              studentsCount={enrollment.class._count?.krsEnrollments || 0}
+              materialsCount={enrollment.class.course._count?.materials || 0}
+              onClick={() => navigate(`/mahasiswa/courses/${enrollment.class.course.id}`)}
             />
           ))}
         </div>

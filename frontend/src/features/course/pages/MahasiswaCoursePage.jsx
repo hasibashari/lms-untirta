@@ -11,7 +11,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from 'lucide-react';
-import { getMyCourses } from '../courseService';
+import { getMyKRS } from '../../krs/krsService';
 import { getMaterials } from '../../material/materialService';
 import { getAssignments } from '../../assignment/assignmentService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
@@ -37,17 +37,28 @@ const CourseHome = () => {
 
     Promise.all([
       getAssignments(courseId),
-      getMyCourses(),
+      getMyKRS(),
       getMaterials(courseId),
     ])
-      .then(([assignmentsRes, coursesRes, materialsRes]) => {
+      .then(([assignmentsRes, krsRes, materialsRes]) => {
         setAssignments(assignmentsRes.data);
         setMaterials(materialsRes.data);
 
-        const foundCourse = coursesRes.data.find(
-          item => item.course.id === courseId || item.course.id === parseInt(courseId)
+        const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
+          (item) => item.status === 'APPROVED'
         );
-        setCourse(foundCourse?.course);
+        const foundEnrollment = approvedEnrollments.find(
+          (item) => item.class?.course?.id === courseId
+        );
+        if (foundEnrollment) {
+          setCourse({
+            ...foundEnrollment.class.course,
+            teacher: foundEnrollment.class.lecturer,
+            classSection: foundEnrollment.class.section,
+          });
+        } else {
+          setCourse(null);
+        }
       })
       .catch(err => {
         console.error(err);
@@ -109,7 +120,7 @@ const CourseHome = () => {
         {/* Subtle decorative pattern or glow */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 blur-3xl rounded-full pointer-events-none"></div>
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none"></div>
-        
+
         <div className="relative p-6 lg:p-8 z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
           <div className="flex-1 min-w-0">
             {/* Course Code Badge */}
@@ -130,7 +141,7 @@ const CourseHome = () => {
               </p>
             )}
           </div>
-          
+
           <div className="w-full md:w-72 lg:w-80 shrink-0 flex items-center gap-4 p-4 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-inner transition-colors hover:bg-white/15">
             <div className="shrink-0 w-12 h-12 rounded-full bg-blue-600/50 border border-blue-400/50 flex items-center justify-center text-white shadow-sm">
               <User size={20} />
@@ -286,11 +297,10 @@ const CourseHome = () => {
 
                 {/* Status Badge */}
                 <div className="shrink-0 mt-2 sm:mt-0">
-                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${
-                    assignment.status === 'submitted'
+                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${assignment.status === 'submitted'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : 'bg-amber-50 text-amber-700 border border-amber-200'
-                  }`}>
+                    }`}>
                     {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
                   </span>
                 </div>

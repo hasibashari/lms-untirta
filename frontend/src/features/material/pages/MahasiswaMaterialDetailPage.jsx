@@ -7,10 +7,11 @@ import {
   FileText,
   CheckCircle,
   Clock,
-  MonitorPlay} from 'lucide-react';
+  MonitorPlay
+} from 'lucide-react';
 import { motion } from 'motion/react';
 import { getMaterialDetail, getMaterials } from '../materialService';
-import { getMyCourses } from '../../course/courseService';
+import { getMyKRS } from '../../krs/krsService';
 import LearningSidebar from '../components/LearningSidebar';
 import MarkdownPreview from '../../../components/ui/MarkdownPreview';
 
@@ -43,16 +44,19 @@ const MaterialDetail = () => {
     Promise.all([
       getMaterialDetail(materialId),
       getMaterials(courseId),
-      getMyCourses(),
+      getMyKRS(),
     ])
-      .then(([materialRes, materialsRes, coursesRes]) => {
+      .then(([materialRes, materialsRes, krsRes]) => {
         setMaterial(materialRes.data);
         setMaterials(materialsRes.data);
 
-        const foundCourse = coursesRes.data.find(
-          item => item.course.id === parseInt(courseId) || item.course.id === courseId
+        const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
+          (item) => item.status === 'APPROVED'
         );
-        setCourse(foundCourse?.course);
+        const foundEnrollment = approvedEnrollments.find(
+          (item) => item.class?.course?.id === courseId
+        );
+        setCourse(foundEnrollment?.class?.course || null);
       })
       .catch(err => toast.error(err?.message || 'Gagal memuat detail materi'))
       .finally(() => setLoading(false));

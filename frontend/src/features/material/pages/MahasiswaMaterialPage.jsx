@@ -10,7 +10,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { getMaterials } from '../materialService';
-import { getMyCourses } from '../../course/courseService';
+import { getMyKRS } from '../../krs/krsService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
 
@@ -31,14 +31,17 @@ const CourseMaterials = () => {
     setLoading(true);
     setError(null);
 
-    Promise.all([getMaterials(courseId), getMyCourses()])
-      .then(([materialsRes, coursesRes]) => {
+    Promise.all([getMaterials(courseId), getMyKRS()])
+      .then(([materialsRes, krsRes]) => {
         setMaterials(materialsRes.data);
 
-        const foundCourse = coursesRes.data.find(
-          item => item.course.id === parseInt(courseId) || item.course.id === courseId
+        const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
+          (item) => item.status === 'APPROVED'
         );
-        setCourse(foundCourse?.course);
+        const foundEnrollment = approvedEnrollments.find(
+          (item) => item.class?.course?.id === courseId
+        );
+        setCourse(foundEnrollment?.class?.course || null);
       })
       .catch(err => {
         console.error(err);

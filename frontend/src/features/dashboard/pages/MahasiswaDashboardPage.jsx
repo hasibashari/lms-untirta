@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, ClipboardList, ArrowRight, Award, Clock, LayoutDashboard } from 'lucide-react';
-import { getMyCourses } from '../../course/courseService';
+import { getMyKRS } from '../../krs/krsService';
 import { getMyDashboardStats } from '../../submission/submissionService';
 import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
 
@@ -12,15 +12,16 @@ import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
  * Berbeda dari MyClasses yang menampilkan daftar lengkap
  */
 const MahasiswaDashboard = () => {
-  const [courses, setCourses] = useState([]);
+  const [approvedEnrollments, setApprovedEnrollments] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([getMyCourses(), getMyDashboardStats()])
-      .then(([coursesRes, statsRes]) => {
-        setCourses(coursesRes.data);
+    Promise.all([getMyKRS(), getMyDashboardStats()])
+      .then(([krsRes, statsRes]) => {
+        const enrollments = krsRes?.data?.enrollments || [];
+        setApprovedEnrollments(enrollments.filter((e) => e.status === 'APPROVED'));
         setStats(statsRes.data);
       })
       .catch(err => setError(err.message || 'Gagal memuat data'))
@@ -31,7 +32,7 @@ const MahasiswaDashboard = () => {
   const statsCards = [
     {
       label: 'Total Kelas',
-      value: stats?.totalCourses || courses.length,
+      value: stats?.totalCourses || approvedEnrollments.length,
       icon: BookOpen,
       color: 'blue',
     },
@@ -129,7 +130,7 @@ const MahasiswaDashboard = () => {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-card-foreground">Kelas Saya</h3>
-            <p className="text-sm text-muted-foreground">{courses.length} kelas terdaftar</p>
+            <p className="text-sm text-muted-foreground">{approvedEnrollments.length} kelas terdaftar</p>
           </div>
           <ArrowRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </Link>

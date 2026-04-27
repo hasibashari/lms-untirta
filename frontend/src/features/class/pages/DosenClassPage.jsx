@@ -6,7 +6,7 @@ import { getMyCoursesWithStats } from '../../course/courseService';
 
 /**
  * MyClasses / Kelas Saya (Dosen)
- * Halaman untuk menampilkan daftar kelas yang diampu dosen (READ-ONLY)
+ * Halaman untuk menampilkan daftar mata kuliah yang diampu dosen (READ-ONLY)
  * Kelas dibuat oleh Admin, dosen hanya mengelola kelas yang sudah ditugaskan
  * 
  * OPTIMASI:
@@ -73,7 +73,7 @@ const MyClasses = () => {
           Kelas Saya
         </h1>
         <p className="text-slate-500 mt-1">
-          Daftar kelas yang Anda ampu
+          Daftar mata kuliah yang Anda ampu
         </p>
       </div>
 
@@ -95,7 +95,7 @@ const MyClasses = () => {
           <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari kelas atau kode..."
+            placeholder="Cari mata kuliah atau kode..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
@@ -108,7 +108,7 @@ const MyClasses = () => {
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <BookOpen size={16} />
           <span>
-            {filteredCourses.length} dari {courses.length} kelas
+            {filteredCourses.length} dari {courses.length} mata kuliah
           </span>
         </div>
       )}
@@ -149,11 +149,11 @@ const MyClasses = () => {
             <BookOpen size={32} className="text-slate-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            Belum Ada Kelas
+            Belum Ada Mata Kuliah
           </h3>
           <p className="text-slate-500 max-w-sm mx-auto">
             Anda belum ditugaskan untuk mengampu kelas.
-            Hubungi admin untuk penugasan kelas.
+            Hubungi admin untuk penugasan kelas offering.
           </p>
         </div>
       )}

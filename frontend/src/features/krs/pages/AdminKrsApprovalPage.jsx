@@ -106,6 +106,17 @@ const AdminKrsMonitoringPage = () => {
     setExpandedStudent(prev => (prev === studentId ? null : studentId));
   };
 
+  const formatDateTime = (dateValue) => {
+    if (!dateValue) return '-';
+    return new Date(dateValue).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -241,6 +252,9 @@ const AdminKrsMonitoringPage = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 truncate">{group.student.name}</p>
                     <p className="text-sm text-slate-500 truncate">{group.student.email}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                      Dospem: {group.student.advisor?.name || '-'}
+                    </p>
                   </div>
                   <div className="hidden sm:flex items-center gap-2 flex-wrap">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
@@ -264,44 +278,46 @@ const AdminKrsMonitoringPage = () => {
                 {isExpanded && (
                   <div className="border-t border-slate-100">
                     <div className="overflow-x-auto">
-                      <Table>
+                      <Table className="table-fixed w-full min-w-0">
                         <TableHeader>
                           <TableRow className="bg-slate-50/50">
-                            <TableHead>Kode</TableHead>
-                            <TableHead>Mata Kuliah</TableHead>
-                            <TableHead>Kelas</TableHead>
-                            <TableHead className="text-center">SKS</TableHead>
-                            <TableHead>Dosen MK</TableHead>
-                            <TableHead>Dospem</TableHead>
-                            <TableHead className="text-center">Status</TableHead>
+                            <TableHead className="w-12 text-center pl-4">No</TableHead>
+                            <TableHead className="w-1/2 pl-4">Mata Kuliah</TableHead>
+                            <TableHead className="w-16 text-center">SKS</TableHead>
+                            <TableHead className="w-48">Dosen MK</TableHead>
+                            <TableHead className="w-40 text-center pr-4 sm:pr-6">Status</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {group.enrollments.map(enrollment => (
+                          {group.enrollments.map((enrollment, index) => (
                             <TableRow key={enrollment.id} className="hover:bg-slate-50">
-                              <TableCell className="font-mono text-sm text-slate-600">
-                                {enrollment.class?.course?.code}
+                              <TableCell className="text-center font-medium text-slate-400 pl-4">
+                                {index + 1}
                               </TableCell>
-                              <TableCell>
-                                <p className="font-medium text-slate-900">{enrollment.class?.course?.title}</p>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                              <TableCell className="align-top pl-4">
+                                <p className="font-medium text-slate-900 line-clamp-2" title={`${enrollment.class?.course?.code} - ${enrollment.class?.course?.title}`}>
+                                  {enrollment.class?.course?.title}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5 truncate" title={`${enrollment.class?.course?.code} · Kelas ${enrollment.class?.section} · ${enrollment.class?.academicSemester?.academicYear} — ${enrollment.class?.academicSemester?.semesterType}`}>
+                                  {enrollment.class?.course?.code} · Kelas {enrollment.class?.section} · {' '}
                                   {enrollment.class?.academicSemester?.academicYear} — {enrollment.class?.academicSemester?.semesterType}
                                 </p>
-                              </TableCell>
-                              <TableCell className="text-sm text-slate-600">
-                                {enrollment.class?.section}
                               </TableCell>
                               <TableCell className="text-center font-medium">
                                 {enrollment.class?.course?.sks || 3}
                               </TableCell>
-                              <TableCell className="text-sm text-slate-600">
-                                {enrollment.class?.lecturer?.name || '-'}
+                              <TableCell className="text-sm text-slate-600 truncate" title={enrollment.class?.lecturer?.name || enrollment.class?.course?.teacher?.name || 'Belum ditetapkan'}>
+                                {enrollment.class?.lecturer?.name || enrollment.class?.course?.teacher?.name || 'Belum ditetapkan'}
                               </TableCell>
-                              <TableCell className="text-sm text-slate-600">
-                                {enrollment.student?.advisor?.name || '-'}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <KrsStatusBadge status={enrollment.status} />
+                              <TableCell className="text-center pr-4 sm:pr-6">
+                                <div className="inline-flex flex-col items-center gap-1">
+                                  <KrsStatusBadge status={enrollment.status} />
+                                  <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                                    {enrollment.status === 'APPROVED'
+                                      ? formatDateTime(enrollment.approvedAt)
+                                      : formatDateTime(enrollment.submittedAt)}
+                                  </span>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}

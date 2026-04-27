@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, Link } from 'react-router-dom';
 import { getAssignments } from '../assignmentService';
-import { getMyCourses } from '../../course/courseService';
+import { getMyKRS } from '../../krs/krsService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import BackButton from '../../../components/navigation/BackButton';
 import {
@@ -24,11 +24,16 @@ export default function Assignments() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    Promise.all([getAssignments(courseId), getMyCourses()])
-      .then(([assignmentsRes, coursesRes]) => {
+    Promise.all([getAssignments(courseId), getMyKRS()])
+      .then(([assignmentsRes, krsRes]) => {
         setAssignments(assignmentsRes.data);
-        const foundCourse = coursesRes.data.find(item => item.course.id === parseInt(courseId));
-        setCourse(foundCourse?.course);
+        const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
+          (item) => item.status === 'APPROVED'
+        );
+        const foundEnrollment = approvedEnrollments.find(
+          (item) => item.class?.course?.id === courseId
+        );
+        setCourse(foundEnrollment?.class?.course || null);
       })
       .catch(err => toast.error(err?.message || 'Gagal memuat data tugas'))
       .finally(() => setLoading(false));

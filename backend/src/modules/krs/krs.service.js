@@ -510,6 +510,11 @@ const getMyKRS = async (studentId, filters = {}) => {
           schedule: true,
           room: true,
           academicSemesterId: true,
+          _count: {
+            select: {
+              krsEnrollments: true,
+            },
+          },
           academicSemester: {
             select: {
               academicYear: true,
@@ -524,6 +529,11 @@ const getMyKRS = async (studentId, filters = {}) => {
               description: true,
               semester: true,
               sks: true,
+              _count: {
+                select: {
+                  materials: true,
+                },
+              },
             },
           },
           lecturer: {
@@ -962,6 +972,12 @@ const getPendingKRS = async (filters = {}, currentUser = null) => {
           id: true,
           section: true,
           academicSemesterId: true,
+          lecturer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           academicSemester: {
             select: {
               academicYear: true,
@@ -1238,6 +1254,12 @@ const getKrsMonitoring = async (filters = {}) => {
               title: true,
               code: true,
               sks: true,
+              teacher: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           },
         },

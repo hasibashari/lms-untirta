@@ -16,13 +16,13 @@ import { getDosen } from '../../user/userService';
 import { Button } from '@/components/ui/button';
 
 /**
- * Courses - Kelola Kelas (Admin)
+ * Courses - Kelola Mata Kuliah (Admin)
  * Admin dapat:
- * - Melihat semua kelas
- * - Membuat kelas baru
- * - Mengassign dosen ke kelas
- * - Menentukan semester kelas
- * - Menghapus kelas
+ * - Melihat semua mata kuliah
+ * - Membuat mata kuliah baru
+ * - Mengassign dosen ke mata kuliah
+ * - Menentukan semester mata kuliah
+ * - Menghapus mata kuliah
  */
 const Courses = () => {
   // State data
@@ -42,7 +42,6 @@ const Courses = () => {
     description: '',
     semester: 1,
     sks: 3,
-    schedule: '',
     teacherId: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -100,7 +99,6 @@ const Courses = () => {
       description: '',
       semester: 1,
       sks: 3,
-      schedule: '',
       teacherId: '',
     });
     setSubmitError(null);
@@ -117,7 +115,6 @@ const Courses = () => {
       description: course.description || '',
       semester: course.semester || 1,
       sks: course.sks || 3,
-      schedule: course.schedule || '',
       teacherId: course.teacherId || '',
     });
     setSubmitError(null);
@@ -144,12 +141,12 @@ const Courses = () => {
         // Update existing course
         const res = await updateCourse(editingCourse.id, payload);
         setCourses(prev => prev.map(c => c.id === editingCourse.id ? res.data : c));
-        setSubmitSuccess('Kelas berhasil diperbarui!');
+        setSubmitSuccess('Mata kuliah berhasil diperbarui!');
       } else {
         // Create new course
         const res = await createCourse(payload);
         setCourses(prev => [...prev, res.data]);
-        setSubmitSuccess('Kelas baru berhasil dibuat!');
+        setSubmitSuccess('Mata kuliah baru berhasil dibuat!');
       }
 
       // Close modal after 1.5 seconds
@@ -174,32 +171,31 @@ const Courses = () => {
       setCourses(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || 'Gagal menghapus kelas');
+      alert(err?.response?.data?.message || err?.message || 'Gagal menghapus mata kuliah');
     } finally {
       setDeleting(false);
     }
   };
 
   // Get dosen name by ID
-  const getDosenName = (teacherId) => {
-    const dosen = dosenList.find(d => d.id === teacherId);
-    return dosen?.name || 'Belum ditugaskan';
-  };
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kelola Kelas</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Kelola Mata Kuliah</h1>
           <p className="text-gray-600 mt-1">
-            Buat dan kelola semua kelas untuk sistem KRS
+            Buat dan kelola katalog mata kuliah untuk sistem KRS
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Jadwal dan ruangan diatur saat membuat Kelas Offering agar sesuai per semester dan section.
           </p>
         </div>
 
         <Button onClick={handleOpenCreate} className="flex items-center gap-2">
           <Plus size={18} />
-          Tambah Kelas
+          Tambah Mata Kuliah
         </Button>
       </div>
 
@@ -210,7 +206,7 @@ const Courses = () => {
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Cari kelas, kode, atau dosen..."
+            placeholder="Cari mata kuliah, kode, atau dosen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -234,7 +230,7 @@ const Courses = () => {
       {!loading && !error && (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <BookOpen size={16} />
-          <span>{filteredCourses.length} dari {courses.length} kelas</span>
+          <span>{filteredCourses.length} dari {courses.length} mata kuliah</span>
         </div>
       )}
 
@@ -274,13 +270,13 @@ const Courses = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
             <BookOpen size={32} className="text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum Ada Kelas</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum Ada Mata Kuliah</h3>
           <p className="text-gray-500 max-w-sm mx-auto mb-4">
-            Buat kelas baru untuk memulai sistem KRS
+            Buat mata kuliah baru untuk memulai sistem KRS
           </p>
           <Button onClick={handleOpenCreate} className="inline-flex items-center gap-2">
             <Plus size={18} />
-            Tambah Kelas Pertama
+            Tambah Mata Kuliah Pertama
           </Button>
         </div>
       )}
@@ -296,7 +292,8 @@ const Courses = () => {
               teacher={{ name: course.teacher?.name || 'Belum ada dosen' }}
               semester={course.semester}
               sks={course.sks}
-              studentsCount={course._count?.students || 0}
+              studentsCount={course.studentsCount || 0}
+              materialsCount={course.materialsCount || 0}
               schedule={course.schedule}
               description={course.description}
               showActionsOnHover={false}
@@ -328,7 +325,7 @@ const Courses = () => {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">
-                {editingCourse ? 'Edit Kelas' : 'Tambah Kelas Baru'}
+                {editingCourse ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah Baru'}
               </h2>
               <button
                 onClick={() => !submitting && setShowModal(false)}
@@ -438,20 +435,6 @@ const Courses = () => {
                     </div>
                   </div>
 
-                  {/* Schedule */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Jadwal
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.schedule}
-                      onChange={(e) => setFormData(prev => ({ ...prev, schedule: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="contoh: Senin 08:00-10:00"
-                    />
-                  </div>
-
                   {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -482,7 +465,7 @@ const Courses = () => {
                           <Loader2 size={18} className="animate-spin mr-2" />
                           Menyimpan...
                         </>
-                      ) : editingCourse ? 'Simpan Perubahan' : 'Tambah Kelas'}
+                      ) : editingCourse ? 'Simpan Perubahan' : 'Tambah Mata Kuliah'}
                     </Button>
                   </div>
                 </>
@@ -503,10 +486,10 @@ const Courses = () => {
                 <AlertCircle size={24} className="text-red-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Hapus Kelas?
+                Hapus Mata Kuliah?
               </h3>
               <p className="text-gray-500 mb-6">
-                Anda yakin ingin menghapus kelas <strong>{deleteConfirm.title}</strong>?
+                Anda yakin ingin menghapus mata kuliah <strong>{deleteConfirm.title}</strong>?
                 Semua data terkait (materi, tugas, enrollment) juga akan dihapus.
               </p>
               <div className="flex items-center justify-center gap-3">
