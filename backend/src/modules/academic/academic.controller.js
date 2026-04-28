@@ -2,6 +2,7 @@ import academicClient from '../../grpc/clients/academic.client.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
+import { createGrpcMetadata } from '../../grpc/helpers/metadata.helper.js';
 import util from 'util';
 
 const grpcGetAllSemesters = util.promisify(academicClient.GetAllSemesters).bind(academicClient);
@@ -16,7 +17,8 @@ const grpcGetStudentSemesters = util.promisify(academicClient.GetStudentSemester
 
 export const getAll = async (req, res) => {
   try {
-    const result = await grpcGetAllSemesters({});
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetAllSemesters({}, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar semester akademik berhasil diambil',
@@ -32,7 +34,8 @@ export const getAll = async (req, res) => {
 
 export const getActive = async (req, res) => {
   try {
-    const result = await grpcGetActiveSemester({});
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetActiveSemester({}, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: result.semester ? 'Semester aktif berhasil diambil' : 'Tidak ada semester aktif',
@@ -48,7 +51,8 @@ export const getActive = async (req, res) => {
 
 export const getById = async (req, res) => {
   try {
-    const result = await grpcGetSemesterById({ id: req.params.id });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetSemesterById({ id: req.params.id }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Detail semester berhasil diambil',
@@ -64,7 +68,8 @@ export const getById = async (req, res) => {
 
 export const create = async (req, res) => {
   try {
-    const result = await grpcCreateSemester(req.body);
+    const meta = createGrpcMetadata(req);
+    const result = await grpcCreateSemester(req.body, meta);
     sendSuccess(res, {
       statusCode: 201,
       message: `Semester ${result.semester.semesterType} ${result.semester.academicYear} berhasil dibuat`,
@@ -80,7 +85,8 @@ export const create = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
-    const result = await grpcUpdateSemester({ id: req.params.id, ...req.body });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcUpdateSemester({ id: req.params.id, ...req.body }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Semester berhasil diperbarui',
@@ -96,7 +102,8 @@ export const update = async (req, res) => {
 
 export const updateStatus = async (req, res) => {
   try {
-    const result = await grpcUpdateStatus({ id: req.params.id, newStatus: req.body.status });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcUpdateStatus({ id: req.params.id, newStatus: req.body.status }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: `Status semester berhasil diubah ke ${req.body.status}`,
@@ -112,7 +119,8 @@ export const updateStatus = async (req, res) => {
 
 export const getClosingReadiness = async (req, res) => {
   try {
-    const result = await grpcGetClosingReadiness({ id: req.params.id });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetClosingReadiness({ id: req.params.id }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Status kesiapan penutupan semester berhasil diambil',
@@ -128,7 +136,8 @@ export const getClosingReadiness = async (req, res) => {
 
 export const remove = async (req, res) => {
   try {
-    const result = await grpcDeleteSemester({ id: req.params.id });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcDeleteSemester({ id: req.params.id }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: result.message,
@@ -143,7 +152,8 @@ export const remove = async (req, res) => {
 
 export const getStudentSemesters = async (req, res) => {
   try {
-    const result = await grpcGetStudentSemesters({ studentId: req.user.id });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetStudentSemesters({ studentId: req.user.id }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar semester mahasiswa berhasil diambil',

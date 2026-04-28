@@ -4,6 +4,7 @@ import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
 import { persistUploadMeta, cleanupFile } from '../../services/upload.service.js';
 import { buildFileUrl } from '../../middlewares/upload.middleware.js';
+import { createGrpcMetadata } from '../../grpc/helpers/metadata.helper.js';
 import util from 'util';
 
 const grpcSubmitAssignment = util.promisify(submissionClient.SubmitAssignment).bind(submissionClient);
@@ -29,13 +30,14 @@ const submit = async (req, res) => {
     // Persist metadata and generate the URL
     await persistUploadMeta({ userId: req.user.id, file: req.file });
     const fileUrl = buildFileUrl(req, req.file.filename, 'submission');
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcSubmitAssignment({
       assignmentId,
       studentId,
       ...req.body,
-      fileUrl, // Ensure fileUrl is passed to gRPC
-    });
+      fileUrl,
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 201,
@@ -57,11 +59,12 @@ const getMyAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const studentId = req.user.id;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGetAssignmentWithMySubmission({
       assignmentId,
       studentId,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -81,11 +84,12 @@ const getSubmissions = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const teacherId = req.user.id;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGetSubmissionsByAssignment({
       assignmentId,
       teacherId,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -104,10 +108,11 @@ const getSubmissions = async (req, res) => {
 const getAllMyGrades = async (req, res) => {
   try {
     const studentId = req.user.id;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGetAllMyGrades({
       studentId,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -126,10 +131,11 @@ const getAllMyGrades = async (req, res) => {
 const getMyDashboardStats = async (req, res) => {
   try {
     const studentId = req.user.id;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGetMyDashboardStats({
       studentId,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -149,12 +155,13 @@ const grade = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const teacherId = req.user.id;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGradeSubmission({
       submissionId,
       teacherId,
       ...req.body,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -173,10 +180,11 @@ const grade = async (req, res) => {
 const getTeacherDashboardStats = async (req, res) => {
   try {
     const teacherId = req.user.id;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGetTeacherDashboardStats({
       teacherId,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -196,11 +204,12 @@ const getRecentSubmissions = async (req, res) => {
   try {
     const teacherId = req.user.id;
     const limit = parseInt(req.query.limit) || 10;
+    const meta = createGrpcMetadata(req);
 
     const result = await grpcGetRecentSubmissionsForTeacher({
       teacherId,
       limit,
-    });
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,

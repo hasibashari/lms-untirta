@@ -3,6 +3,7 @@ import protoLoader from '@grpc/proto-loader';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import logger from '../config/logger.js';
+import { grpcAuthInterceptor } from './interceptors/auth.interceptor.js';
 
 import { userService } from '../modules/user/user.grpc-service.js';
 import { courseService } from '../modules/course/course.grpc-service.js';
@@ -48,7 +49,12 @@ const submissionProtoDescriptor = grpc.loadPackageDefinition(submissionPackageDe
 
 // Mulai server gRPC dan daftarkan service handlers yang diimplementasikan modul-modul
 export const startGrpcServer = () => {
-  const server = new grpc.Server();
+  // Daftarkan interceptor auth agar setiap gRPC call divalidasi JWT-nya.
+  // Ini adalah Defense in Depth: auth dilakukan di REST layer (untuk client HTTP)
+  // dan di gRPC layer (untuk akses langsung ke port 50051, misal via Postman/tools).
+  const server = new grpc.Server({
+    interceptors: [grpcAuthInterceptor],
+  });
 
   // Registrasi service: nama service sesuai definisi di .proto
   server.addService(protoDescriptor.user.UserService.service, userService);
@@ -58,11 +64,14 @@ export const startGrpcServer = () => {
   server.addService(submissionProtoDescriptor.submissionPackage.SubmissionService.service, submissionServiceImpl);
 
   // Port untuk binding gRPC internal. Untuk development gunakan default 50051.
+  // Binding ke 0.0.0.0 agar kompatibel dengan Docker network dan semua environment.
+  // Keamanan dijaga oleh: JWT auth interceptor + Docker network/firewall isolation.
   const PORT = process.env.GRPC_PORT || 50051;
   const BIND_ADDRESS = `0.0.0.0:${PORT}`;
 
-  // bindAsync melakukan binding socket; contoh ini menggunakan insecure credentials
-  // karena sering dipakai untuk komunikasi internal di jaringan terpercaya.
+  // bindAsync melakukan binding socket; menggunakan insecure credentials karena
+  // auth sudah dilakukan di REST layer sebelum gRPC dipanggil (monolith pattern).
+  // Jika migrasi ke microservices, pertimbangkan mTLS atau shared-secret.
   server.bindAsync(BIND_ADDRESS, grpc.ServerCredentials.createInsecure(), (error, port) => {
     if (error) {
       logger.error('Failed to bind gRPC server:', error);

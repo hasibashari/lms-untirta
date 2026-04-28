@@ -14,6 +14,7 @@ import RoleRoute from './RoleRoute';
 
 // Shared components
 import PageLoader from '../components/shared/PageLoader';
+import UnauthorizedPage from '../features/error/pages/UnauthorizedPage';
 
 // Public pages
 import Home from '../features/landing/pages/HomePage';
@@ -106,6 +107,9 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
+
+      {/* ── Error pages ── */}
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* ── Admin (DashboardLayout) ── */}
       <Route element={<ProtectedRoute />}>

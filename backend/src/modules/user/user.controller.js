@@ -2,6 +2,7 @@ import userClient from '../../grpc/clients/user.client.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import grpc from '@grpc/grpc-js';
 import util from 'util';
+import { createGrpcMetadata } from '../../grpc/helpers/metadata.helper.js';
 
 // Controller untuk user yang bertindak sebagai layer HTTP -> gRPC client.
 // Tugas utama: memanggil client gRPC, memetakan error gRPC ke HTTP,
@@ -37,7 +38,8 @@ const mapGrpcErrorToHttp = (res, error) => {
 
 export const createUser = async (req, res) => {
   try {
-    const newUser = await grpcCreateUserByAdmin(req.body);
+    const meta = createGrpcMetadata(req);
+    const newUser = await grpcCreateUserByAdmin(req.body, meta);
     sendSuccess(res, { statusCode: 201, message: 'User berhasil dibuat', data: newUser });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -61,7 +63,8 @@ export const getAllUsers = async (req, res) => {
       take: take ? parseInt(take) : undefined
     };
 
-    const response = await grpcGetAllUsers(requestPayload);
+    const meta = createGrpcMetadata(req);
+    const response = await grpcGetAllUsers(requestPayload, meta);
 
     const roleMessages = {
       DOSEN: 'Daftar dosen berhasil diambil',
@@ -79,7 +82,8 @@ export const getAllUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await grpcGetUserById({ id });
+    const meta = createGrpcMetadata(req);
+    const user = await grpcGetUserById({ id }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Berhasil mengambil detail user', data: user });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -89,7 +93,8 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedUser = await grpcUpdateUser({ id, ...req.body });
+    const meta = createGrpcMetadata(req);
+    const updatedUser = await grpcUpdateUser({ id, ...req.body }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Berhasil mengubah user', data: updatedUser });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -99,7 +104,8 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedUser = await grpcDeleteUser({ id });
+    const meta = createGrpcMetadata(req);
+    const deletedUser = await grpcDeleteUser({ id }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Berhasil menghapus user', data: deletedUser });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -112,7 +118,8 @@ export const updateDospemStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { isDospem } = req.body;
-    const result = await grpcUpdateDospemStatus({ id, isDospem });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcUpdateDospemStatus({ id, isDospem }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: isDospem ? 'Berhasil menetapkan sebagai Dosen Pembimbing' : 'Status Dosen Pembimbing dicabut',
@@ -127,7 +134,8 @@ export const assignAdvisor = async (req, res) => {
   try {
     const { id } = req.params;
     const { advisorId } = req.body;
-    const result = await grpcAssignAdvisor({ studentId: id, advisorId });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcAssignAdvisor({ studentId: id, advisorId }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: advisorId ? 'Dosen Pembimbing berhasil di-assign' : 'Dosen Pembimbing berhasil di-unassign',
@@ -141,7 +149,8 @@ export const assignAdvisor = async (req, res) => {
 export const bulkAssignAdvisor = async (req, res) => {
   try {
     const { studentIds, advisorId } = req.body;
-    const result = await grpcBulkAssignAdvisor({ studentIds, advisorId });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcBulkAssignAdvisor({ studentIds, advisorId }, meta);
     sendSuccess(res, { statusCode: 200, message: result.message, data: result });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -150,7 +159,8 @@ export const bulkAssignAdvisor = async (req, res) => {
 
 export const getAdvisorSummary = async (req, res) => {
   try {
-    const result = await grpcGetAdvisorSummary({});
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetAdvisorSummary({}, meta);
     sendSuccess(res, { statusCode: 200, message: 'Daftar Dosen Pembimbing berhasil diambil', data: result.data });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -160,7 +170,8 @@ export const getAdvisorSummary = async (req, res) => {
 export const getAdvisorStudents = async (req, res) => {
   try {
     const { dosenId } = req.params;
-    const result = await grpcGetAdvisorStudents({ advisorId: dosenId });
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetAdvisorStudents({ advisorId: dosenId }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Daftar mahasiswa bimbingan berhasil diambil', data: result });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -169,7 +180,8 @@ export const getAdvisorStudents = async (req, res) => {
 
 export const getAdminStats = async (req, res) => {
   try {
-    const stats = await grpcGetAdminStats({});
+    const meta = createGrpcMetadata(req);
+    const stats = await grpcGetAdminStats({}, meta);
     sendSuccess(res, { statusCode: 200, message: 'Statistik dashboard berhasil diambil', data: stats });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);

@@ -37,6 +37,10 @@ services:
     ports:
       - "3000:3000"
       - "50051:50051"
+    volumes:
+      # Persistensi file upload (submission mahasiswa & materi dosen)
+      # Tanpa ini, semua file akan HILANG saat container di-recreate
+      - uploadsdata:/app/public/uploads
     depends_on:
       - db
       - redis
@@ -55,3 +59,5 @@ services:
 volumes:
   pgdata:
   redisdata:
+  # Named volume untuk semua file yang diupload (submission & material)
+  uploadsdata:
