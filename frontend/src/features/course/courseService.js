@@ -17,8 +17,15 @@ export const getCourseStudents = async (courseId) => {
 
 // ========== Course Management (Admin) ==========
 
-export const getAllCourses = () => {
-  return api.get('/courses/admin/all');
+export const getAllCourses = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.page) query.append('page', params.page);
+  if (params.limit) query.append('limit', params.limit);
+  if (params.search) query.append('search', params.search);
+  if (params.semester && params.semester !== 'all') query.append('semester', params.semester);
+  
+  const queryString = query.toString();
+  return api.get(`/courses/admin/all${queryString ? `?${queryString}` : ''}`);
 };
 
 export const createCourse = (payload) => {

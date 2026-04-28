@@ -56,9 +56,8 @@ export const userService = {
   // Ambil daftar user dengan pagination dan optional filter (role, isDospem)
   GetAllUsers: async (call, callback) => {
     try {
-      const { role, isDospem, skip, take } = call.request;
-      const query = { skip, take };
-      const { skip: pSkip, take: pTake, meta } = paginate(query);
+      const { role, isDospem, page, limit } = call.request;
+      const { skip: pSkip, take: pTake, meta } = paginate({ page, limit });
 
       const whereClause = {};
       if (role) whereClause.role = role;

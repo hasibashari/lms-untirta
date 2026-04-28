@@ -6,23 +6,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Users as UsersIcon } from 'lucide-react';
+import PaginationComponent from '../../../components/shared/PaginationComponent';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const limit = 10;
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const flash = location.state?.flash;
 
   useEffect(() => {
-    getUsers()
-      .then(res => setUsers(res.data))
+    setLoading(true);
+    getUsers({ page: currentPage, limit })
+      .then(res => {
+        setUsers(res.data);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+          setTotalItems(res.pagination.total);
+        }
+      })
       .catch(err => setError(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentPage]);
 
   const handleDelete = async (id, name, e) => {
     e.stopPropagation();
@@ -151,7 +164,7 @@ export default function Users() {
                     className="hover:bg-slate-50 cursor-pointer"
                     onClick={() => navigate(`/admin/users/${u.id}/edit`)}
                   >
-                    <TableCell className="text-center text-slate-500 text-sm">{index + 1}</TableCell>
+                    <TableCell className="text-center text-slate-500 text-sm">{(currentPage - 1) * limit + index + 1}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -194,6 +207,21 @@ export default function Users() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && users.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 px-1">
+          <p className="text-sm text-slate-500 order-2 sm:order-1">
+            Menampilkan <span className="font-medium text-slate-900">{users.length}</span> dari <span className="font-medium text-slate-900">{totalItems}</span> user
+          </p>
+          <div className="order-1 sm:order-2">
+            <PaginationComponent
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       )}

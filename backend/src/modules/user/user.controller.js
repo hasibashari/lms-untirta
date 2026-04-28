@@ -48,7 +48,7 @@ export const createUser = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const { role, isDospem, skip, take } = req.query;
+    const { role, isDospem, page, limit } = req.query;
 
     // Validasi query param role jika ada
     if (role && !['DOSEN', 'MAHASISWA', 'ADMIN'].includes(role)) {
@@ -59,8 +59,8 @@ export const getAllUsers = async (req, res) => {
     const requestPayload = {
       role: role || undefined,
       isDospem: isDospem === 'true' ? true : isDospem === 'false' ? false : undefined,
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined
     };
 
     const meta = createGrpcMetadata(req);

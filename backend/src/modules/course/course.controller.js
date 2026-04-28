@@ -74,8 +74,8 @@ export const getMyCourses = async (req, res) => {
       message = 'Berhasil mengambil daftar kelas yang diajar';
     } else if (userRole === 'ADMIN') {
       const result = await grpcAdminGetAllCourses({
-        skip: req.query.skip ? parseInt(req.query.skip, 10) : undefined,
-        take: req.query.take ? parseInt(req.query.take, 10) : undefined
+        page: req.query.page ? parseInt(req.query.page, 10) : undefined,
+        limit: req.query.limit ? parseInt(req.query.limit, 10) : undefined
       }, meta);
       courses = result.data;
       pagination = result.pagination;
@@ -136,8 +136,10 @@ export const adminGetAllCourses = async (req, res) => {
   try {
     const meta = createGrpcMetadata(req);
     const result = await grpcAdminGetAllCourses({
-      skip: req.query.skip ? parseInt(req.query.skip, 10) : undefined,
-      take: req.query.take ? parseInt(req.query.take, 10) : undefined
+      page: req.query.page ? parseInt(req.query.page, 10) : undefined,
+      limit: req.query.limit ? parseInt(req.query.limit, 10) : undefined,
+      search: req.query.search || undefined,
+      semester: req.query.semester ? parseInt(req.query.semester, 10) : undefined
     }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Daftar semua kelas berhasil diambil', data: result.data, pagination: result.pagination });
   } catch (error) {

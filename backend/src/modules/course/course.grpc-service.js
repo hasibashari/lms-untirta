@@ -295,10 +295,25 @@ export const courseService = {
 
   AdminGetAllCourses: async (call, callback) => {
     try {
-      const { skip: rawSkip, take: rawTake } = call.request;
-      const { skip, take, meta } = paginate({ skip: rawSkip, take: rawTake });
+      const { page, limit, search, semester } = call.request;
+      const { skip, take, meta } = paginate({ page, limit });
+
+      const where = {
+        AND: [
+          search ? {
+            OR: [
+              { title: { contains: search, mode: 'insensitive' } },
+              { code: { contains: search, mode: 'insensitive' } },
+              { teacher: { name: { contains: search, mode: 'insensitive' } } }
+            ]
+          } : {},
+          semester ? { semester: semester } : {}
+        ]
+      };
+
       const [courses, total] = await Promise.all([
         prisma.course.findMany({
+          where,
           select: {
             id: true,
             title: true,
@@ -327,7 +342,7 @@ export const courseService = {
           skip,
           take,
         }),
-        prisma.course.count(),
+        prisma.course.count({ where }),
       ]);
 
       const data = courses.map(c => ({

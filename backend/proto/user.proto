@@ -44,6 +44,8 @@ message GetAllUsersRequest {
   optional bool isDospem = 2;
   int32 skip = 3;
   int32 take = 4;
+  optional int32 page = 5;
+  optional int32 limit = 6;
 }
 
 message AdvisorBasic {

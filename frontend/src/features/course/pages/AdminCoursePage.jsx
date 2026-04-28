@@ -14,6 +14,7 @@ import CourseCard from '../components/CourseCard';
 import { getAllCourses, createCourse, updateCourse, deleteCourse } from '../courseService';
 import { getDosen } from '../../user/userService';
 import { Button } from '@/components/ui/button';
+import PaginationComponent from '../../../components/shared/PaginationComponent';
 
 /**
  * Courses - Kelola Mata Kuliah (Admin)
@@ -32,6 +33,10 @@ const Courses = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSemester, setFilterSemester] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const limit = 9; // Show 9 courses per page (3x3 grid)
 
   // State modal create/edit
   const [showModal, setShowModal] = useState(false);
@@ -54,41 +59,50 @@ const Courses = () => {
 
   const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
 
-  // Fetch courses and dosen list
+  // Fetch dosen list once
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const [coursesRes, dosenRes] = await Promise.all([
-          getAllCourses(),
-          getDosen()
-        ]);
-
-        setCourses(coursesRes.data || []);
-        setDosenList(dosenRes.data || []);
-      } catch (err) {
-        setError(err?.message || 'Gagal memuat data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    getDosen().then(res => setDosenList(res.data || [])).catch(console.error);
   }, []);
 
-  // Filter courses
-  const filteredCourses = courses.filter(course => {
-    const matchSearch =
-      course.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.teacher?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Fetch courses with debounce for search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const fetchData = async () => {
+        setLoading(true);
+        setError(null);
 
-    const matchSemester = filterSemester === 'all' || course.semester === parseInt(filterSemester);
+        try {
+          const res = await getAllCourses({
+            page: currentPage,
+            limit,
+            search: searchQuery,
+            semester: filterSemester
+          });
 
-    return matchSearch && matchSemester;
-  });
+          setCourses(res.data || []);
+          if (res.pagination) {
+            setTotalPages(res.pagination.totalPages);
+            setTotalItems(res.pagination.total);
+          }
+        } catch (err) {
+          setError(err?.message || 'Gagal memuat data');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, searchQuery ? 500 : 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPage, searchQuery, filterSemester]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterSemester]);
+
+  // Course count is now based on totalItems from backend
 
   // Open modal for create
   const handleOpenCreate = () => {
@@ -230,7 +244,7 @@ const Courses = () => {
       {!loading && !error && (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <BookOpen size={16} />
-          <span>{filteredCourses.length} dari {courses.length} mata kuliah</span>
+          <span>Menampilkan {courses.length} dari {totalItems} mata kuliah</span>
         </div>
       )}
 
@@ -282,37 +296,48 @@ const Courses = () => {
       )}
 
       {/* Course Grid */}
-      {!loading && !error && filteredCourses.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCourses.map(course => (
-            <CourseCard
-              key={course.id}
-              title={course.title}
-              code={course.code}
-              teacher={{ name: course.teacher?.name || 'Belum ada dosen' }}
-              semester={course.semester}
-              sks={course.sks}
-              studentsCount={course.studentsCount || 0}
-              materialsCount={course.materialsCount || 0}
-              schedule={course.schedule}
-              description={course.description}
-              showActionsOnHover={false}
-              actions={[
-                {
-                  icon: Edit,
-                  label: 'Edit',
-                  color: 'blue',
-                  onClick: () => handleOpenEdit(course),
-                },
-                {
-                  icon: Trash2,
-                  label: 'Hapus',
-                  color: 'red',
-                  onClick: () => setDeleteConfirm(course),
-                },
-              ]}
+      {!loading && !error && courses.length > 0 && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courses.map(course => (
+              <CourseCard
+                key={course.id}
+                title={course.title}
+                code={course.code}
+                teacher={{ name: course.teacher?.name || 'Belum ada dosen' }}
+                semester={course.semester}
+                sks={course.sks}
+                studentsCount={course.studentsCount || 0}
+                materialsCount={course.materialsCount || 0}
+                schedule={course.schedule}
+                description={course.description}
+                showActionsOnHover={false}
+                actions={[
+                  {
+                    icon: Edit,
+                    label: 'Edit',
+                    color: 'blue',
+                    onClick: () => handleOpenEdit(course),
+                  },
+                  {
+                    icon: Trash2,
+                    label: 'Hapus',
+                    color: 'red',
+                    onClick: () => setDeleteConfirm(course),
+                  },
+                ]}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-center pt-4">
+            <PaginationComponent
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
             />
-          ))}
+          </div>
         </div>
       )}
 

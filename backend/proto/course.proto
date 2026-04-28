@@ -100,6 +100,10 @@ message AvailableStudentsResponse {
 message PaginationRequest {
   int32 skip = 1;
   int32 take = 2;
+  optional int32 page = 3;
+  optional int32 limit = 4;
+  optional string search = 5;
+  optional int32 semester = 6;
 }
 
 message PaginationMeta {
