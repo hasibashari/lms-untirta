@@ -19,6 +19,11 @@ import {
 
 import { createMaterial, getMaterials } from '../material/material.controller.js';
 import { createMaterialSchema } from '../material/material.validation.js';
+import {
+  getThreads,
+  createThread,
+} from '../forum/forum.controller.js';
+import { createThreadSchema } from '../forum/forum.validation.js';
 
 // --- Router Setup ---
 const router = express.Router();
@@ -438,6 +443,20 @@ router.get(
   '/:courseId/materials',
   authenticateToken,
   getMaterials
+);
+
+// --- Forum Routes (course-scoped) ---
+router.get(
+  '/:courseId/forum',
+  authenticateToken,
+  getThreads
+);
+
+router.post(
+  '/:courseId/forum',
+  authenticateToken,
+  validate(createThreadSchema),
+  createThread
 );
 
 export default router;

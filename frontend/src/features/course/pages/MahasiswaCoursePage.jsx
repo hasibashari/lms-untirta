@@ -10,6 +10,7 @@ import {
   FileText,
   AlertTriangle,
   RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
 import { getMyCourses } from '../courseService';
 import { getMaterials } from '../../material/materialService';
@@ -109,7 +110,7 @@ const CourseHome = () => {
         {/* Subtle decorative pattern or glow */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 blur-3xl rounded-full pointer-events-none"></div>
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none"></div>
-        
+
         <div className="relative p-6 lg:p-8 z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
           <div className="flex-1 min-w-0">
             {/* Course Code Badge */}
@@ -130,7 +131,7 @@ const CourseHome = () => {
               </p>
             )}
           </div>
-          
+
           <div className="w-full md:w-72 lg:w-80 shrink-0 flex items-center gap-4 p-4 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-inner transition-colors hover:bg-white/15">
             <div className="shrink-0 w-12 h-12 rounded-full bg-blue-600/50 border border-blue-400/50 flex items-center justify-center text-white shadow-sm">
               <User size={20} />
@@ -146,7 +147,7 @@ const CourseHome = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           onClick={() => navigate(`/mahasiswa/courses/${courseId}/materials`)}
           className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:bg-slate-50 transition-all cursor-pointer"
@@ -175,6 +176,22 @@ const CourseHome = () => {
             <p className="text-sm text-slate-500 mt-0.5">{assignments.length} tugas tersedia</p>
           </div>
           <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
+            <ArrowRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate(`/mahasiswa/courses/${courseId}/forum`)}
+          className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 bg-white hover:border-amber-300 hover:shadow-md hover:bg-slate-50 transition-all cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 group-hover:scale-105 transition-all duration-300">
+            <MessageSquare size={24} className="text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-slate-900 group-hover:text-amber-700 transition-colors">Forum Diskusi</h3>
+            <p className="text-sm text-slate-500 mt-0.5">Tanya jawab dan diskusi kelas</p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-amber-600 group-hover:border-amber-600 transition-colors">
             <ArrowRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
           </div>
         </div>
@@ -286,11 +303,10 @@ const CourseHome = () => {
 
                 {/* Status Badge */}
                 <div className="shrink-0 mt-2 sm:mt-0">
-                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${
-                    assignment.status === 'submitted'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
-                  }`}>
+                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${assignment.status === 'submitted'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
                     {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
                   </span>
                 </div>

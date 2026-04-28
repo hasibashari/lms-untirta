@@ -61,6 +61,7 @@ app.get('/docs.json', (_req, res) => res.json(swaggerSpec))
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 import chatRoutes from './modules/chatbot/chat.routes.js';
+import { forumRouter } from './modules/forum/forum.routes.js';
 
 // -- MOUNT ROUTES --
 app.use('/api/auth', authRoutes); // Login/Register
@@ -75,6 +76,7 @@ app.use('/api/transcript', transcriptRoutes); // Transcript (Hasil Studi)
 app.use('/api/academic-semesters', academicSemesterRoutes); // Academic Semester Management
 app.use('/api/grades', gradeRoutes); // Final Grade Management
 app.use('/api/chat', chatRoutes); // Chatbot API
+app.use('/api/forum', forumRouter); // Forum Routes (Thread & Reply)
 
 // -- GLOBAL ERROR HANDLER --
 app.use((err, _req, res, _next) => {

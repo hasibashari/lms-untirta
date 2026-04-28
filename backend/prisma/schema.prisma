@@ -66,6 +66,10 @@ model User {
   submissions     Submission[] // Mahasiswa bisa submit banyak tugas
   finalGrades     FinalGrade[]    @relation("StudentGrades") // Nilai akhir mahasiswa
   gradesGiven     FinalGrade[]    @relation("LecturerGrades") // Nilai yang diberikan dosen
+
+  // Forum
+  forumThreads  ForumThread[] @relation("ThreadAuthor") // Thread diskusi yang dibuat
+  forumReplies  ForumReply[]  @relation("ReplyAuthor") // Balasan diskusi yang dibuat
 }
 
 // 3. Model Course (Kelas)
@@ -86,7 +90,8 @@ model Course {
   students    Enrollment[]
   materials   Material[]
   assignments Assignment[]
-  classes     Class[] // Satu mata kuliah bisa punya banyak kelas offering
+  classes      Class[]       // Satu mata kuliah bisa punya banyak kelas offering
+  forumThreads ForumThread[] // Thread forum diskusi
 }
 
 // Tabel Pivot (Join Table)
@@ -348,4 +353,49 @@ model KrsApprovalLog {
   note String? @db.Text
 
   createdAt DateTime @default(now())
+}
+
+// ===== FORUM DISKUSI =====
+
+// 12. Model ForumThread (Topik Diskusi)
+// Thread diskusi dalam sebuah mata kuliah. Bersifat course-scoped.
+model ForumThread {
+  id      String @id @default(uuid())
+  title   String
+  content String @db.Text
+
+  // Thread bisa di-pin oleh dosen agar selalu muncul di atas
+  isPinned Boolean @default(false)
+
+  // Relasi ke Course
+  courseId String
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // Pembuat thread
+  authorId String
+  author   User @relation("ThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Balasan
+  replies ForumReply[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 13. Model ForumReply (Balasan di Thread)
+// Balasan terhadap topik diskusi. Flat (tidak nested/threaded).
+model ForumReply {
+  id      String @id @default(uuid())
+  content String @db.Text
+
+  // Relasi ke Thread
+  threadId String
+  thread   ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  // Pembuat reply
+  authorId String
+  author   User @relation("ReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
