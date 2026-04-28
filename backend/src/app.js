@@ -62,6 +62,7 @@ app.get('/docs.json', (_req, res) => res.json(swaggerSpec))
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 import chatRoutes from './modules/chatbot/chat.routes.js';
+import { forumRouter } from './modules/forum/forum.routes.js';
 
 // -- PASANG ROUTE UTAMA --
 app.use('/api/auth', authRoutes); // Otentikasi: login / register
@@ -76,6 +77,7 @@ app.use('/api/transcript', transcriptRoutes); // Transkrip / riwayat nilai
 app.use('/api/academic-semesters', academicSemesterRoutes); // Semester akademik
 app.use('/api/grades', gradeRoutes); // Pengelolaan nilai akhir
 app.use('/api/chat', chatRoutes); // API chatbot
+app.use('/api/forum', forumRouter); // Forum thread-level (detail, reply, pin)
 
 // -- GLOBAL ERROR HANDLER --
 // Handler error global: menangani error upload, error aplikasi, dan error tak terduga

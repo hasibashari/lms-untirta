@@ -83,6 +83,11 @@ const DosenSubmissions = lazy(() => import('../features/submission/page/Submissi
 const DosenAllSubmissions = lazy(() => import('../features/submission/page/SubmissionDosenAllPage'));
 const MahasiswaGrades = lazy(() => import('../features/submission/page/MahasiswaGradesPage'));
 
+// Forum module
+const ForumThreadList = lazy(() => import('../features/forum/pages/ForumThreadListPage'));
+const ForumThreadCreate = lazy(() => import('../features/forum/pages/ForumThreadCreatePage'));
+const ForumThreadDetail = lazy(() => import('../features/forum/pages/ForumThreadDetailPage'));
+
 // Suspense wrapper for lazy-loaded pages
 const Lazy = (props) => {
   const C = props.component;
@@ -152,6 +157,9 @@ function AppRoutes() {
             <Route path="/dosen/courses/:courseId/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
             <Route path="/dosen/courses/:courseId/submissions" element={<Lazy component={DosenSubmissions} />} />
             <Route path="/dosen/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
+            <Route path="/dosen/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
+            <Route path="/dosen/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/dosen/courses/:courseId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
           </Route>
         </Route>
       </Route>
@@ -169,6 +177,9 @@ function AppRoutes() {
             <Route path="/mahasiswa/courses/:courseId/materials" element={<Lazy component={MahasiswaCourseMaterials} />} />
             <Route path="/mahasiswa/courses/:courseId/assignments" element={<Lazy component={MahasiswaAssignments} />} />
             <Route path="/mahasiswa/courses/:courseId/assignments/:assignmentId" element={<Lazy component={MahasiswaAssignmentDetail} />} />
+            <Route path="/mahasiswa/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
+            <Route path="/mahasiswa/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/mahasiswa/courses/:courseId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
           </Route>
           <Route element={<LearningLayout />}>
             <Route path="/mahasiswa/courses/:courseId/materials/:materialId" element={<Lazy component={MahasiswaMaterialDetail} />} />

@@ -11,6 +11,7 @@ import {
   Inbox,
   User,
   Award,
+  MessageSquare,
 } from 'lucide-react';
 import { getMyCourses, getCourseStudents } from '../courseService';
 import { getMaterials } from '../../material/materialService';
@@ -147,6 +148,13 @@ export default function CourseHome() {
       icon: Inbox,
       color: 'orange',
       to: `/dosen/courses/${courseId}/submissions`,
+    },
+    {
+      title: 'Forum Diskusi',
+      description: 'Diskusi dengan mahasiswa',
+      icon: MessageSquare,
+      color: 'amber',
+      to: `/dosen/courses/${courseId}/forum`,
     },
   ];
 

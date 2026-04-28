@@ -10,6 +10,7 @@ import {
   FileText,
   AlertTriangle,
   RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
 import { getMyKRS } from '../../krs/krsService';
 import { getMaterials } from '../../material/materialService';
@@ -184,6 +185,22 @@ const CourseHome = () => {
           <div className="flex-1">
             <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Tugas Akademik</h3>
             <p className="text-sm text-muted-foreground mt-0.5">{assignments.length} tugas tersedia</p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-colors">
+            <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
+          </div>
+        </Link>
+
+        <Link
+          to={`/mahasiswa/courses/${courseId}/forum`}
+          className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
+        >
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
+            <MessageSquare size={24} className="text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Forum Diskusi</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">Diskusi dan tanya jawab</p>
           </div>
           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-colors">
             <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
