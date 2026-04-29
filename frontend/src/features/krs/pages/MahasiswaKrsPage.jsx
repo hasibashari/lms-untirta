@@ -351,21 +351,21 @@ const StudyPlan = () => {
 
       {/* ==================== SEMESTER SELECTOR ==================== */}
       <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-foreground whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <label className="text-sm font-semibold text-foreground whitespace-nowrap">
               Semester Akademik
             </label>
             {semestersLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 size={14} className="animate-spin" />
-                Memuat semester...
+                Memuat...
               </div>
             ) : semesters.length === 0 ? (
-              <span className="text-sm text-muted-foreground">Tidak ada semester tersedia</span>
+              <span className="text-sm text-muted-foreground">Tidak ada semester</span>
             ) : (
               <Select value={selectedSemesterId || ''} onValueChange={handleSemesterChange}>
-                <SelectTrigger className="w-70">
+                <SelectTrigger className="w-full sm:w-64">
                   <SelectValue placeholder="Pilih Semester" />
                 </SelectTrigger>
                 <SelectContent>
@@ -420,22 +420,21 @@ const StudyPlan = () => {
         </div>
       )}
 
-      {/* Summary Stats Cards */}
-      <div className="flex flex-wrap gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         <StatCard
-          className="flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0"
+          className="col-span-1"
           value={summary.totalCourses || enrollments.length}
           label="Total Mata Kuliah"
           variant="primary"
         />
         <StatCard
-          className="flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0"
+          className="col-span-1"
           value={totalSKS}
           label="Total SKS"
           variant="primary"
         />
         <StatCard
-          className="flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0"
+          className="col-span-2 lg:col-span-1"
           value={summary.maxSKS || 24}
           label="Maks SKS"
           variant={totalSKS > (summary.maxSKS || 24) ? 'danger' : 'primary'}
@@ -1079,25 +1078,25 @@ const StudyPlan = () => {
 
           {/* Footer Summary */}
           <div className="px-4 sm:px-6 py-3 sm:py-4 bg-muted/30 border-t border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-              <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm">
-                <span className="text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm">
+                <span className="text-muted-foreground whitespace-nowrap">
                   Total: <strong className="text-foreground">{enrollments.length}</strong> MK
                 </span>
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground whitespace-nowrap">
                   SKS: <strong className="text-foreground">{totalSKS}</strong>
                 </span>
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground whitespace-nowrap">
                   Disetujui: <strong className="text-green-700">{enrollmentStats.approved}</strong>
                 </span>
                 {enrollmentStats.rejected > 0 && (
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground whitespace-nowrap">
                     Ditolak: <strong className="text-red-600">{enrollmentStats.rejected}</strong>
                   </span>
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                <Info size={14} className="inline mr-1" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground italic">
+                <Info size={12} className="inline mr-1" />
                 {isReadOnly
                   ? 'Data read-only — semester sudah ditutup'
                   : 'Tambahkan kelas untuk mengajukan KRS'}

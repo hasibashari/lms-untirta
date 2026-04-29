@@ -34,7 +34,12 @@ const app = express();
 
 // -- MIDDLEWARE --
 // Header keamanan dasar (mis. HSTS, XSS Protection)
-app.use(helmet());
+// HSTS dinonaktifkan: jika aktif, browser akan cache redirect ke HTTPS
+// sehingga semua request HTTP otomatis di-redirect ke HTTPS oleh browser.
+// Aktifkan HSTS hanya jika aplikasi sudah berjalan di belakang HTTPS/SSL.
+app.use(helmet({
+  hsts: false,
+}));
 
 // Logging terstruktur untuk setiap request (abaikan root '/')
 app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/' } }));

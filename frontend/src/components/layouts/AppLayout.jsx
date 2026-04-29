@@ -12,15 +12,24 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarRail,
+  useSidebar,
 } from '../ui/sidebar';
 import Logo from '../ui/Logo';
 import ProfileDropdown from '../navigation/ProfileDropdown';
 import { ChatWidget } from '../../features/chatbot';
 
 const SidebarLogoHeader = () => {
+  const { isMobile, setOpenMobile } = useSidebar();
+
   return (
     <SidebarHeader className="h-16 flex items-center justify-center px-4">
-      <Link to="/" className="w-full">
+      <Link
+        to="/"
+        className="w-full"
+        onClick={() => {
+          if (isMobile) setOpenMobile(false);
+        }}
+      >
         <Logo className="w-full flex group-data-[collapsible=icon]:hidden transition-opacity duration-200" />
         <Logo variant="icon" className="hidden group-data-[collapsible=icon]:flex transition-opacity duration-200" />
       </Link>

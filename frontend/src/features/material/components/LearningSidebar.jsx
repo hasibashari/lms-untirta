@@ -151,6 +151,7 @@ const LearningSidebar = ({
         <div className={`p-4 border-t border-sidebar-border ${collapsed ? 'px-2' : ''}`}>
           <Link
             to={`${basePath}/courses/${courseId}`}
+            onClick={onClose}
             className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-muted text-foreground font-medium rounded-xl hover:bg-muted/80 transition ${collapsed ? 'px-2' : ''
               }`}
           >

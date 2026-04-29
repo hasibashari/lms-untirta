@@ -132,7 +132,7 @@ const DosenAdvisoryPage = () => {
         ) : (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div className="bg-white rounded-lg border p-3 text-center">
                 <p className="text-lg font-bold text-slate-800">{advisoryData.summary?.totalStudents || 0}</p>
                 <p className="text-xs text-slate-500">Total Mahasiswa</p>
@@ -141,7 +141,7 @@ const DosenAdvisoryPage = () => {
                 <p className="text-lg font-bold text-green-600">{advisoryData.summary?.totalApproved || 0}</p>
                 <p className="text-xs text-slate-500">KRS Disetujui</p>
               </div>
-              <div className="bg-white rounded-lg border p-3 text-center">
+              <div className="bg-white rounded-lg border p-3 text-center col-span-2 md:col-span-1">
                 <p className="text-lg font-bold text-red-600">{advisoryData.summary?.totalRejected || 0}</p>
                 <p className="text-xs text-slate-500">KRS Ditolak / Dicabut</p>
               </div>
@@ -168,16 +168,16 @@ const DosenAdvisoryPage = () => {
                           <p className="text-xs text-slate-500">{student.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{student.stats?.total || 0} MK</span>
-                        {student.stats?.approved > 0 && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">{student.stats.approved} Disetujui</span>
-                        )}
-                        {student.stats?.rejected > 0 && (
-                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">{student.stats.rejected} Ditolak</span>
-                        )}
-                        {isExpanded ? <ChevronUp size={18} className="text-slate-400 ml-1" /> : <ChevronDown size={18} className="text-slate-400 ml-1" />}
-                      </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 justify-end">
+              <span className="text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full whitespace-nowrap">{student.stats?.total || 0} MK</span>
+              {student.stats?.approved > 0 && (
+                <span className="text-[10px] sm:text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">{student.stats.approved} Disetujui</span>
+              )}
+              {student.stats?.rejected > 0 && (
+                <span className="text-[10px] sm:text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full whitespace-nowrap">{student.stats.rejected} Ditolak</span>
+              )}
+              {isExpanded ? <ChevronUp size={16} className="text-slate-400 ml-1" /> : <ChevronDown size={16} className="text-slate-400 ml-1" />}
+            </div>
                     </div>
 
                     {/* Expanded Enrollment Details */}
