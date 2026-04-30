@@ -18,17 +18,17 @@ const registerUser = async ({ email, name, password }) => {
   // 3. Cari dospem dengan jumlah mahasiswa bimbingan paling sedikit
   const dospems = await prisma.user.findMany({
     where: { role: 'DOSEN', isDospem: true },
-    include: {
-      _count: {
-        select: { advisedStudents: true }
+    orderBy: {
+      advisedStudents: {
+        _count: 'asc'
       }
-    }
+    },
+    take: 1,
+    select: { id: true }
   });
 
   let assignedAdvisorId = null;
   if (dospems.length > 0) {
-    // Urutkan berdasarkan jumlah mahasiswa bimbingan (ascending)
-    dospems.sort((a, b) => a._count.advisedStudents - b._count.advisedStudents);
     assignedAdvisorId = dospems[0].id;
   }
 

@@ -70,6 +70,9 @@ model User {
   // Forum
   forumThreads  ForumThread[] @relation("ThreadAuthor") // Thread diskusi yang dibuat
   forumReplies  ForumReply[]  @relation("ReplyAuthor") // Balasan diskusi yang dibuat
+
+  @@index([role])
+  @@index([advisorId])
 }
 
 // 3. Model Course (Kelas)
@@ -107,6 +110,8 @@ model Enrollment {
   course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId]) // Mencegah mahasiswa masuk kelas yang sama 2x
+  @@index([userId])
+  @@index([courseId])
 }
 
 // 4. Model Material (Materi Kuliah)
@@ -135,6 +140,8 @@ model Material {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([courseId])
 }
 
 // 5. Model Assignment (Tugas)
@@ -151,6 +158,8 @@ model Assignment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([courseId])
 }
 
 model Submission {
@@ -175,6 +184,8 @@ model Submission {
 
   // Constraint: Satu siswa cuma bisa submit 1x per tugas
   @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
 }
 
 // 7. Model Class (Kelas Offering)
@@ -218,6 +229,9 @@ model Class {
 
   // Constraint: Satu course hanya bisa punya satu kelas per section per semester
   @@unique([courseId, academicSemesterId, section])
+  @@index([lecturerId])
+  @@index([courseId])
+  @@index([academicSemesterId])
 }
 
 // 8. Model KrsEnrollment (Pendaftaran KRS)
@@ -256,6 +270,9 @@ model KrsEnrollment {
 
   // Constraint: Satu mahasiswa hanya bisa mendaftar ke satu kelas offering 1x
   @@unique([studentId, classId])
+  @@index([studentId])
+  @@index([classId])
+  @@index([status])
 }
 
 // 9. Model AcademicSemester (Tahun Akademik + Semester)
@@ -330,6 +347,10 @@ model FinalGrade {
 
   // Constraint: Satu nilai per mahasiswa per kelas
   @@unique([studentId, classId])
+  @@index([studentId])
+  @@index([classId])
+  @@index([academicSemesterId])
+  @@index([lecturerId])
 }
 
 // 11. Model KrsApprovalLog (Audit Trail Persetujuan KRS)
@@ -380,6 +401,9 @@ model ForumThread {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([authorId])
 }
 
 // 13. Model ForumReply (Balasan di Thread)
@@ -398,4 +422,7 @@ model ForumReply {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([threadId])
+  @@index([authorId])
 }

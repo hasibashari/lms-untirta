@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
 import { register as registerAPI } from '../authService';
 
@@ -32,6 +32,7 @@ export default function Register() {
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -54,6 +55,13 @@ export default function Register() {
       return;
     }
 
+    const allowedDomains = ['untirta.ac.id', 'gmail.com'];
+    const emailDomain = formData.email.split('@')[1];
+    if (!allowedDomains.includes(emailDomain)) {
+      setError('Harap gunakan email dengan domain @untirta.ac.id atau @gmail.com');
+      return;
+    }
+
     setIsLoading(true);
     try {
       await registerAPI({
@@ -62,8 +70,11 @@ export default function Register() {
         password: formData.password,
       });
 
-      alert('Pendaftaran berhasil. Silakan login.');
-      navigate('/login');
+      setIsSuccess(true);
+      // Auto redirect after 5 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 5000);
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Registrasi gagal.');
     } finally {
@@ -78,6 +89,33 @@ export default function Register() {
   const handleFacebookRegister = () => {
 
   };
+
+  if (isSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-center animate-in fade-in zoom-in duration-500">
+        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-sm border border-emerald-200">
+          <CheckCircle2 className="h-10 w-10 text-emerald-600 animate-bounce" />
+        </div>
+        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Pendaftaran Berhasil!</h2>
+        <p className="text-gray-500 max-w-sm mb-8 leading-relaxed">
+          Akun Anda telah berhasil dibuat. Selamat bergabung di ekosistem pembelajaran digital kami.
+        </p>
+        
+        <div className="w-full space-y-4">
+          <Button 
+            fullWidth 
+            onClick={() => navigate('/login')}
+            className="py-6 text-lg font-semibold shadow-lg shadow-emerald-200/50"
+          >
+            Masuk Sekarang <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+          <p className="text-xs text-gray-400">
+            Mengarahkan Anda ke halaman login secara otomatis dalam beberapa detik...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -127,8 +165,15 @@ export default function Register() {
               className="pl-10"
               value={formData.email}
               onChange={(e) => handleChange(e, 'email')}
+              aria-invalid={formData.email && !['untirta.ac.id', 'gmail.com'].includes(formData.email.split('@')[1])}
             />
           </div>
+          {formData.email && !['untirta.ac.id', 'gmail.com'].includes(formData.email.split('@')[1]) && (
+            <p className="text-[11px] text-red-500 font-medium mt-1 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-red-500"></span>
+              Gunakan email @untirta.ac.id atau @gmail.com
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -158,6 +203,46 @@ export default function Register() {
                 </button>
               </div>
             </div>
+            
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div className="mt-2 space-y-1.5">
+                <div className="flex gap-1.5 h-1">
+                  {[1, 2, 3, 4].map((step) => {
+                    const getStrength = (pwd) => {
+                      let s = 0;
+                      if (pwd.length >= 8) s++;
+                      if (/[0-9]/.test(pwd)) s++;
+                      if (/[A-Z]/.test(pwd)) s++;
+                      if (/[^A-Za-z0-9]/.test(pwd)) s++;
+                      return s;
+                    };
+                    const strength = getStrength(formData.password);
+                    const isActive = step <= strength;
+                    const colors = ['bg-gray-200', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-emerald-500'];
+                    return (
+                      <div 
+                        key={step} 
+                        className={`flex-1 rounded-full transition-all duration-300 ${isActive ? colors[strength] : 'bg-gray-100'}`}
+                      />
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  Keamanan: {
+                    (() => {
+                      const pwd = formData.password;
+                      let s = 0;
+                      if (pwd.length >= 8) s++;
+                      if (/[0-9]/.test(pwd)) s++;
+                      if (/[A-Z]/.test(pwd)) s++;
+                      if (/[^A-Za-z0-9]/.test(pwd)) s++;
+                      return ['Sangat Lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat Kuat'][s];
+                    })()
+                  }
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -174,6 +259,7 @@ export default function Register() {
                   className="pl-10 pr-10"
                   value={formData.confirmPassword}
                   onChange={(e) => handleChange(e, 'confirmPassword')}
+                  aria-invalid={formData.confirmPassword && formData.password !== formData.confirmPassword}
                 />
                 <button
                   type="button"
@@ -186,6 +272,18 @@ export default function Register() {
                 </button>
               </div>
             </div>
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <p className="text-[11px] text-red-500 font-medium mt-1 flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-red-500"></span>
+                Konfirmasi password tidak cocok
+              </p>
+            )}
+            {formData.confirmPassword && formData.password === formData.confirmPassword && (
+              <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                Password cocok
+              </p>
+            )}
           </div>
         </div>
 

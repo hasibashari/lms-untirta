@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, X, Loader2, BotMessageSquare } from 'lucide-react';
+import { Send, X, Loader2, BotMessageSquare, AlertTriangle } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from '../hooks/useChat';
 
@@ -22,15 +22,19 @@ export const ChatWindow = ({ isOpen, onClose }) => {
     }
   }, [messages, isOpen]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!input.trim() || chatMutation.isPending) return;
+  const quickActions = [
+    { label: '📅 Jadwal', text: 'Tampilkan jadwal kuliah saya' },
+    { label: '📝 Tugas', text: 'Tugas yang belum dikumpul' },
+    { label: '👨‍🏫 Dospem', text: 'Siapa dospem saya?' },
+    { label: '📚 Materi', text: 'Daftar materi kuliah' },
+  ];
 
-    const userMessage = input.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setInput('');
+  const sendMessage = (text) => {
+    if (!text.trim() || chatMutation.isPending) return;
 
-    chatMutation.mutate(userMessage, {
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
+    
+    chatMutation.mutate(text, {
       onSuccess: (res) => {
         setMessages(prev => [...prev, { role: 'bot', content: res.data.reply }]);
       },
@@ -38,6 +42,12 @@ export const ChatWindow = ({ isOpen, onClose }) => {
         setMessages(prev => [...prev, { role: 'bot', content: 'Maaf, saya sedang mengalami gangguan sistem. Silakan coba lagi.' }]);
       }
     });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    sendMessage(input);
+    setInput('');
   };
 
   if (!isOpen) return null;
@@ -55,6 +65,12 @@ export const ChatWindow = ({ isOpen, onClose }) => {
         </button>
       </div>
 
+      {/* Warning Banner */}
+      <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-2 text-[10px] text-yellow-600 font-medium text-center flex items-center justify-center gap-2">
+        <AlertTriangle size={12} className="shrink-0" />
+        <span>Sistem menggunakan API Gratis. Gangguan mungkin terjadi jika kuota harian habis.</span>
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 bg-muted/10">
         {messages.map((msg, idx) => (
@@ -67,6 +83,20 @@ export const ChatWindow = ({ isOpen, onClose }) => {
           </div>
         )}
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="px-4 py-2 flex gap-2 overflow-x-auto bg-background scrollbar-hide shrink-0 border-t border-border">
+        {quickActions.map((action, idx) => (
+          <button
+            key={idx}
+            onClick={() => sendMessage(action.text)}
+            disabled={chatMutation.isPending}
+            className="whitespace-nowrap px-3 py-1.5 bg-muted hover:bg-muted/80 text-muted-foreground rounded-full text-[11px] transition-colors border border-border disabled:opacity-50"
+          >
+            {action.label}
+          </button>
+        ))}
       </div>
 
       {/* Input Form */}

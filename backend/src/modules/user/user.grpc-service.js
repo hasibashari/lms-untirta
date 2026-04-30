@@ -27,10 +27,16 @@ export const userService = {
       if (data.role === 'MAHASISWA') {
         const dospems = await prisma.user.findMany({
           where: { role: 'DOSEN', isDospem: true },
-          include: { _count: { select: { advisedStudents: true } } }
+          orderBy: {
+            advisedStudents: {
+              _count: 'asc'
+            }
+          },
+          take: 1,
+          select: { id: true }
         });
+        
         if (dospems.length > 0) {
-          dospems.sort((a, b) => a._count.advisedStudents - b._count.advisedStudents);
           assignedAdvisorId = dospems[0].id;
         }
       }

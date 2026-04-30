@@ -23,12 +23,14 @@ export const generateChatResponse = async (prompt) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Use latest flash model
+    // Menggunakan Gemini 3.1 Flash Lite Preview (500 RPD) sebagai model utama
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
+    
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (error) {
     logger.error({ err: error }, "Error calling Gemini API");
-    throw new AppError(500, "Gagal memproses permintaan dari layanan AI.");
+    throw new AppError(500, `Gagal memproses permintaan dari layanan AI: ${error.message}`);
   }
 };

@@ -104,8 +104,15 @@ export default function Login() {
               className="pl-10"
               value={formData.email}
               onChange={(e) => handleChange(e, 'email')}
+              aria-invalid={formData.email && formData.email.includes('@') && !['untirta.ac.id', 'gmail.com'].includes(formData.email.split('@')[1])}
             />
           </div>
+          {formData.email && formData.email.includes('@') && !['untirta.ac.id', 'gmail.com'].includes(formData.email.split('@')[1]) && (
+            <p className="text-[11px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-amber-500"></span>
+              Gunakan email @untirta.ac.id atau @gmail.com
+            </p>
+          )}
         </div>
 
         <div>

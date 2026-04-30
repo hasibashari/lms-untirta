@@ -266,17 +266,13 @@ export const courseService = {
         });
       }
 
-      const enrolledStudents = await prisma.enrollment.findMany({
-        where: { courseId },
-        select: { userId: true },
-      });
-      const enrolledIds = enrolledStudents.map(e => e.userId);
-
       const availableStudents = await prisma.user.findMany({
         where: {
           role: 'MAHASISWA',
-          id: {
-            notIn: enrolledIds.length > 0 ? enrolledIds : [''],
+          enrollments: {
+            none: {
+              courseId: courseId,
+            },
           },
         },
         select: {

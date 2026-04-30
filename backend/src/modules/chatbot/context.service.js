@@ -5,138 +5,121 @@ export const getContextForUser = async (user, userMessage) => {
   let context = {};
   const msg = userMessage.toLowerCase();
 
-  // 1. Tambahkan Katalog Mata Kuliah jika ditanya atau sebagai referensi umum (ringkas)
-  if (msg.includes("mata kuliah") || msg.includes("daftar") || msg.includes("apa saja")) {
-    const allCourses = await prisma.course.findMany({
-      select: { title: true, code: true },
-      take: 20 // Batasi agar tidak overload, sesuaikan kebutuhan
-    });
-    context.KatalogLMS = allCourses.map(c => `${c.title} (${c.code})`);
-  }
+  // Deteksi Niat (Intent Detection) - Hemat Token
+  const isAskingAboutMaterials = msg.includes("materi") || msg.includes("bahas") || msg.includes("isi") || msg.includes("tentang");
+  const isAskingAboutAssignments = msg.includes("tugas") || msg.includes("deadline") || msg.includes("kumpul") || msg.includes("nilai");
+  const isAskingAboutSchedules = msg.includes("jadwal") || msg.includes("kapan") || msg.includes("jam") || msg.includes("hari") || msg.includes("ruang");
+  const isAskingAboutCatalog = msg.includes("mata kuliah") || msg.includes("daftar") || msg.includes("apa saja") || msg.includes("katalog");
+  const isAskingAboutAdvisor = msg.includes("dospem") || msg.includes("pembimbing");
 
-  if (user.role === "MAHASISWA") {
-    // Cari kelas yang KRS-nya disetujui
-    const enrollments = await prisma.krsEnrollment.findMany({
-      where: {
-        studentId: user.id,
-        status: "APPROVED"
-      },
-      select: {
-        class: {
-          select: {
-            id: true,
-            section: true,
-            schedule: true,
-            room: true,
-            finalGrades: {
-              where: { studentId: user.id },
-              select: { letterGrade: true, status: true }
-            },
-            course: {
-              select: {
-                title: true,
-                code: true,
-                description: true,
-                materials: {
-                  select: { 
-                    title: true, 
-                    content: true 
-                  },
-                  where: { isPublished: true },
-                  orderBy: { order: 'asc' },
-                  take: 5
-                },
-                assignments: {
-                  select: { 
-                    id: true,
-                    title: true, 
-                    dueDate: true,
-                    submissions: {
-                      where: { studentId: user.id },
-                      select: { grade: true, feedback: true, submittedAt: true }
-                    }
-                  },
-                  orderBy: { dueDate: 'asc' },
-                  take: 5
+  try {
+    // 1. Katalog Mata Kuliah (Hanya jika benar-benar ditanya)
+    if (isAskingAboutCatalog) {
+      const allCourses = await prisma.course.findMany({
+        select: { title: true, code: true },
+        take: 10 // Kurangi dari 20 ke 10
+      });
+      context.KatalogLMS = allCourses.map(c => `${c.title} (${c.code})`);
+    }
+
+    // 2. Info Dospem (Hanya jika ditanya)
+    if (isAskingAboutAdvisor && user.role === "MAHASISWA") {
+      const studentWithAdvisor = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { advisor: { select: { name: true, email: true } } }
+      });
+      context.DosenPembimbingAkademik = studentWithAdvisor?.advisor || "Belum ditentukan";
+    }
+
+    if (user.role === "MAHASISWA") {
+      const enrollments = await prisma.krsEnrollment.findMany({
+        where: { studentId: user.id, status: "APPROVED" },
+        select: {
+          class: {
+            select: {
+              section: true,
+              schedule: isAskingAboutSchedules, // Ambil jadwal hanya jika perlu
+              room: isAskingAboutSchedules,
+              course: {
+                select: {
+                  title: true,
+                  code: true,
+                  materials: isAskingAboutMaterials ? {
+                    select: { title: true, content: true },
+                    where: { isPublished: true },
+                    take: 5
+                  } : false,
+                  assignments: isAskingAboutAssignments ? {
+                    select: { 
+                      title: true, 
+                      dueDate: true,
+                      submissions: { where: { studentId: user.id }, select: { grade: true, submittedAt: true } }
+                    },
+                    take: 3
+                  } : false
                 }
               }
             }
           }
         }
-      }
-    });
+      });
 
-    // Format data kelas aktif untuk konteks chatbot
-    const activeClasses = enrollments.map(e => {
-      const cls = e.class;
-      const course = cls.course;
-      const finalGrade = cls.finalGrades[0];
-
-      return {
-        MataKuliah: course.title,
-        Kode: course.code,
-        DeskripsiMK: course.description,
-        Jadwal: cls.schedule,
-        Ruangan: cls.room,
-        NilaiAkhir: finalGrade ? `${finalGrade.letterGrade} (${finalGrade.status})` : "Belum tersedia",
-        MateriKuliah: course.materials.map(m => ({
-          Judul: m.title,
-          IsiSingkat: m.content ? m.content.substring(0, 200) + "..." : "Tidak ada deskripsi teks"
-        })),
-        DaftarTugas: course.assignments.map(a => {
-          const sub = a.submissions[0];
-          return {
-            JudulTugas: a.title,
-            Deadline: a.dueDate,
-            Status: sub ? "Sudah Dikumpul" : "Belum Dikumpul",
-            Nilai: sub ? (sub.grade ?? "Belum dinilai") : "-",
-            FeedbackDosen: sub?.feedback ?? "-"
-          };
-        })
-      };
-    });
-
-    context.KelasMahasiswaSaatIni = activeClasses;
-  } else if (user.role === "DOSEN") {
-    const teaching = await prisma.class.findMany({
-      where: { lecturerId: user.id },
-      select: {
-        section: true,
-        schedule: true,
-        room: true,
-        course: { 
-          select: { 
-            title: true, 
-            code: true,
-            materials: { select: { title: true }, take: 5 },
-            assignments: {
-              select: {
-                title: true,
-                _count: { select: { submissions: true } },
-                submissions: {
-                  where: { grade: null },
-                  select: { id: true }
-                }
-              }
-            }
-          } 
+      context.DataKelasAnda = enrollments.map(e => {
+        const cls = e.class;
+        const course = cls.course;
+        const data = { MataKuliah: course.title, Kode: course.code };
+        
+        if (isAskingAboutSchedules) {
+          data.Jadwal = cls.schedule;
+          data.Ruangan = cls.room;
         }
-      }
-    });
+        
+        if (isAskingAboutMaterials && course.materials) {
+          data.Materi = course.materials.map(m => ({
+            Judul: m.title,
+            Konten: m.content ? (m.content.length > 1500 ? m.content.substring(0, 1500) + "..." : m.content) : ""
+          }));
+        }
 
-    context.KelasYangDiajarDosen = teaching.map(c => ({
-      MataKuliah: c.course.title,
-      Kode: c.course.code,
-      Kelas: c.section,
-      Jadwal: c.schedule,
-      Ruangan: c.room,
-      DaftarMateri: c.course.materials.map(m => m.title).join(", "),
-      RingkasanTugas: c.course.assignments.map(a => ({
-        JudulTugas: a.title,
-        TotalKumpul: a._count.submissions,
-        BelumDinilai: a.submissions.length
-      }))
-    }));
+        if (isAskingAboutAssignments && course.assignments) {
+          data.Tugas = course.assignments.map(a => ({
+            Judul: a.title,
+            Deadline: a.dueDate,
+            Status: a.submissions.length > 0 ? "Sudah" : "Belum"
+          }));
+        }
+
+        return data;
+      });
+    } else if (user.role === "DOSEN") {
+      const teaching = await prisma.class.findMany({
+        where: { lecturerId: user.id },
+        select: {
+          section: true,
+          schedule: isAskingAboutSchedules,
+          course: { 
+            select: { 
+              title: true,
+              materials: isAskingAboutMaterials ? { select: { title: true }, take: 5 } : false,
+              assignments: isAskingAboutAssignments ? {
+                select: { title: true, _count: { select: { submissions: true } } }
+              } : false
+            } 
+          }
+        }
+      });
+
+      context.KelasYangDiajar = teaching.map(c => {
+        const data = { MataKuliah: c.course.title, Kelas: c.section };
+        if (isAskingAboutSchedules) data.Jadwal = c.schedule;
+        if (isAskingAboutMaterials) data.DaftarMateri = c.course.materials.map(m => m.title);
+        if (isAskingAboutAssignments) data.InfoTugas = c.course.assignments.map(a => `${a.title} (${a._count.submissions} kumpul)`);
+        return data;
+      });
+    }
+  } catch (error) {
+    console.error("Error in getContextForUser:", error);
+    context.info = "Beberapa data tidak dapat dimuat.";
   }
 
   return context;
