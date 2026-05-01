@@ -33,7 +33,8 @@ jest.unstable_mockModule('../../src/grpc/clients/class.client.js', () => ({
 }));
 
 // ─── 3. DYNAMIC IMPORTS ───────────────────────────────────────────────
-
+const { default: classClient } = await import('../../src/grpc/clients/class.client.js');
+const { default: ClassService } = await import('../../src/modules/class/class.grpc-service.js');
 const { getApp } = await import('../helpers/request.js');
 const app = getApp();
 
@@ -203,6 +204,19 @@ describe('Class API Integration Tests', () => {
       expect(res.status).toBe(409);
       expect(res.body.message).toMatch(/sudah ada/);
     });
+
+    it('500 — should handle generic error from gRPC', async () => {
+      classClientMock.CreateClass.mockImplementation((arg, cb) => {
+        cb(new Error('Fatal exception'));
+      });
+
+      const res = await request(app)
+        .post(API)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(validPayload());
+
+      expect(res.status).toBe(500);
+    });
   });
 
   // ─── 6. GET CLASSES ──────────────────────────────────────────────────
@@ -352,6 +366,150 @@ describe('Class API Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════
+  // gRPC Service Implementation (Direct Handler Tests)
+  // ═════════════════════════════════════════════════════════════
+  describe('gRPC Service Implementation', () => {
+    const mockCallback = (resolve, reject) => (err, response) => {
+      if (err) reject(err);
+      else resolve(response);
+    };
+
+    const callService = (method, request = {}) => {
+      return new Promise((resolve, reject) => {
+        ClassService[method]({ request }, mockCallback(resolve, reject));
+      });
+    };
+
+    let testSemester, testCourse, testDosen;
+
+    beforeEach(async () => {
+      await cleanDatabase();
+      const d = await createDosen();
+      testDosen = d.user;
+
+      testSemester = await prisma.academicSemester.create({
+        data: { academicYear: '2025/2026', semesterType: 'GANJIL', status: 'OPEN' }
+      });
+
+      testCourse = await prisma.course.create({
+        data: { title: 'Test Course', code: 'TC01', teacherId: testDosen.id }
+      });
+    });
+
+    it('CreateClass: should create class successfully', async () => {
+      const res = await callService('CreateClass', {
+        courseId: testCourse.id,
+        academicSemesterId: testSemester.id,
+        section: 'A',
+        capacity: 40
+      });
+      expect(res.class.section).toBe('A');
+    });
+
+    it('CreateClass: should fail if semester is CLOSED', async () => {
+      const closedSem = await prisma.academicSemester.create({
+        data: { academicYear: '2024/2025', semesterType: 'GENAP', status: 'CLOSED' }
+      });
+      await expect(callService('CreateClass', {
+        courseId: testCourse.id,
+        academicSemesterId: closedSem.id,
+        section: 'B'
+      })).rejects.toMatchObject({ code: 3 });
+    });
+
+    it('GetAllClasses: should support pagination', async () => {
+      await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callService('GetAllClasses', { page: 1, limit: 10 });
+      expect(res.classes.length).toBeGreaterThan(0);
+    });
+
+    it('GetClassById: should return details', async () => {
+      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callService('GetClassById', { id: cls.class.id });
+      expect(res.class.id).toBe(cls.class.id);
+    });
+
+    it('GetClassesByLecturer: should filter correctly', async () => {
+      await callService('CreateClass', {
+        courseId: testCourse.id,
+        academicSemesterId: testSemester.id,
+        section: 'B',
+        lecturerId: testDosen.id
+      });
+      const res = await callService('GetClassesByLecturer', { lecturerId: testDosen.id });
+      expect(res.classes.length).toBeGreaterThan(0);
+    });
+
+    it('GetClassesByCourse: should filter correctly', async () => {
+      await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callService('GetClassesByCourse', { courseId: testCourse.id });
+      expect(res.classes.length).toBeGreaterThan(0);
+    });
+
+    it('GetOpenClasses: should return classes with isEnrollmentOpen=true', async () => {
+      const res0 = await callService('CreateClass', {
+        courseId: testCourse.id,
+        academicSemesterId: testSemester.id,
+        section: 'C',
+        isEnrollmentOpen: true
+      });
+      const res = await callService('GetOpenClasses');
+      expect(res.classes.some(c => c.id === res0.class.id)).toBe(true);
+    });
+
+    it('UpdateClass: should update fields successfully', async () => {
+      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callService('UpdateClass', { id: cls.class.id, room: 'Lab A', isEnrollmentOpen: true });
+      expect(res.class.room).toBe('Lab A');
+      expect(res.class.isEnrollmentOpen).toBe(true);
+    });
+
+    it('UpdateClass: should fail on duplicate section', async () => {
+      await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'D' });
+      const cls2 = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'E' });
+      
+      await expect(callService('UpdateClass', { id: cls2.class.id, section: 'D' }))
+        .rejects.toMatchObject({ code: 6 });
+    });
+
+    it('UpdateClass: should fail if semester is CLOSED', async () => {
+      const closedSem = await prisma.academicSemester.create({
+        data: { academicYear: '2023/2024', semesterType: 'GENAP', status: 'CLOSED' }
+      });
+      const cls = await prisma.class.create({
+        data: { courseId: testCourse.id, lecturerId: testDosen.id, academicSemesterId: closedSem.id, section: 'F' }
+      });
+      
+      await expect(callService('UpdateClass', { id: cls.id, room: 'New Room' }))
+        .rejects.toMatchObject({ code: 3 });
+    });
+
+    it('ToggleEnrollment: should change open status', async () => {
+      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callService('ToggleEnrollment', { id: cls.class.id, isEnrollmentOpen: true });
+      expect(res.class.isEnrollmentOpen).toBe(true);
+    });
+
+    it('DeleteClass: should delete successfully', async () => {
+      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'G' });
+      await callService('DeleteClass', { id: cls.class.id });
+      const res = await callService('GetAllClasses');
+      expect(res.classes.find(c => c.id === cls.class.id)).toBeUndefined();
+    });
+
+    it('DeleteClass: should fail if semester is CLOSED', async () => {
+      const closedSem = await prisma.academicSemester.create({
+        data: { academicYear: '2022/2023', semesterType: 'GANJIL', status: 'CLOSED' }
+      });
+      const cls = await prisma.class.create({
+        data: { courseId: testCourse.id, lecturerId: testDosen.id, academicSemesterId: closedSem.id, section: 'H' }
+      });
+      await expect(callService('DeleteClass', { id: cls.id }))
+        .rejects.toMatchObject({ code: 3 });
     });
   });
 });

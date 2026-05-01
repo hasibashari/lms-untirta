@@ -35,6 +35,7 @@ jest.unstable_mockModule('../../src/grpc/clients/academic.client.js', () => ({
 
 // 2. Dynamic imports to ensure mocks are applied
 const { default: academicClient } = await import('../../src/grpc/clients/academic.client.js');
+const { academicService } = await import('../../src/modules/academic/academic.grpc-service.js');
 const { getApp } = await import('../helpers/request.js');
 
 const app = getApp();
@@ -135,6 +136,34 @@ describe('Academic Semester API (Gateway)', () => {
       expect(academicClient.CreateSemester).not.toHaveBeenCalled();
     });
 
+    it('should return 400 for invalid semesterType', async () => {
+      const res = await request(app)
+        .post(API)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          academicYear: '2025/2026',
+          semesterType: 'INVALID',
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 500 if gRPC call fails without code', async () => {
+      academicClient.CreateSemester.mockImplementation((data, callback) => {
+        callback(new Error('Unknown error'));
+      });
+
+      const res = await request(app)
+        .post(API)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          academicYear: '2025/2026',
+          semesterType: 'GANJIL',
+        });
+
+      expect(res.status).toBe(500);
+    });
+
     it('should handle gRPC ALREADY_EXISTS error', async () => {
       academicClient.CreateSemester.mockImplementation((data, callback) => {
         callback({ code: 6, details: 'Semester sudah ada' });
@@ -172,6 +201,52 @@ describe('Academic Semester API (Gateway)', () => {
       expect(res.body.data).toHaveLength(2);
       expect(academicClient.GetAllSemesters).toHaveBeenCalled();
     });
+
+    it('should handle gRPC error', async () => {
+      academicClient.GetAllSemesters.mockImplementation((data, callback) => {
+        callback({ code: 13, details: 'Internal error' });
+      });
+
+      const res = await request(app)
+        .get(API)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(500);
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════
+  // GET /:id — Semester Details
+  // ═════════════════════════════════════════════════════════════
+  describe('GET /:id', () => {
+    it('should return semester details', async () => {
+      const id = randomUUID();
+      const mockSemester = { id, academicYear: '2025/2026', semesterType: 'GANJIL' };
+
+      academicClient.GetSemesterById.mockImplementation((data, callback) => {
+        callback(null, { semester: mockSemester });
+      });
+
+      const res = await request(app)
+        .get(`${API}/${id}`)
+        .set('Authorization', `Bearer ${dosenToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.id).toBe(id);
+      expect(academicClient.GetSemesterById).toHaveBeenCalledWith({ id }, expect.any(Function));
+    });
+
+    it('should return 404 if not found', async () => {
+      academicClient.GetSemesterById.mockImplementation((data, callback) => {
+        callback({ code: 5, details: 'Not found' });
+      });
+
+      const res = await request(app)
+        .get(`${API}/${randomUUID()}`)
+        .set('Authorization', `Bearer ${dosenToken}`);
+
+      expect(res.status).toBe(404);
+    });
   });
 
   // ═════════════════════════════════════════════════════════════
@@ -204,6 +279,53 @@ describe('Academic Semester API (Gateway)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data).toBeUndefined();
+    });
+
+    it('should handle gRPC error', async () => {
+      academicClient.GetActiveSemester.mockImplementation((data, callback) => {
+        callback({ code: 13, details: 'Error' });
+      });
+
+      const res = await request(app)
+        .get(`${API}/active`)
+        .set('Authorization', `Bearer ${mhsToken}`);
+
+      expect(res.status).toBe(500);
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════
+  // PUT /:id — Update Semester
+  // ═════════════════════════════════════════════════════════════
+  describe('PUT /:id', () => {
+    it('should update semester successfully', async () => {
+      const id = randomUUID();
+      const mockSemester = { id, maxSks: 20 };
+
+      academicClient.UpdateSemester.mockImplementation((data, callback) => {
+        callback(null, { semester: mockSemester });
+      });
+
+      const res = await request(app)
+        .put(`${API}/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ maxSks: 20 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.maxSks).toBe(20);
+      expect(academicClient.UpdateSemester).toHaveBeenCalledWith(
+        expect.objectContaining({ id, maxSks: 20 }),
+        expect.any(Function)
+      );
+    });
+
+    it('should return 400 for validation error', async () => {
+      const res = await request(app)
+        .put(`${API}/${randomUUID()}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ maxSks: 50 }); // max is usually 36
+
+      expect(res.status).toBe(400);
     });
   });
 
@@ -308,6 +430,165 @@ describe('Academic Semester API (Gateway)', () => {
         expect.objectContaining({ studentId: mhsUser.id }),
         expect.any(Function)
       );
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════
+  // gRPC Service Implementation (Direct Handler Tests)
+  // ═════════════════════════════════════════════════════════════
+  describe('gRPC Service Implementation', () => {
+    const mockCallback = (resolve, reject) => (err, response) => {
+      if (err) reject(err);
+      else resolve(response);
+    };
+
+    const callService = (method, request = {}) => {
+      return new Promise((resolve, reject) => {
+        academicService[method]({ request }, mockCallback(resolve, reject));
+      });
+    };
+
+    beforeEach(async () => {
+      await cleanDatabase();
+    });
+
+    it('GetAllSemesters: should return empty list initially', async () => {
+      const res = await callService('GetAllSemesters');
+      expect(res.semesters).toHaveLength(0);
+    });
+
+    it('CreateSemester & GetActiveSemester flow', async () => {
+      // 1. Create DRAFT
+      const createRes = await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+        maxSks: 24,
+      });
+      expect(createRes.semester.status).toBe('DRAFT');
+
+      // 2. Check active (should be null)
+      const active1 = await callService('GetActiveSemester');
+      expect(active1.semester).toBeNull();
+
+      // 3. Update Status to OPEN
+      await callService('UpdateStatus', { id: createRes.semester.id, newStatus: 'OPEN' });
+
+      // 4. Check active again
+      const active2 = await callService('GetActiveSemester');
+      expect(active2.semester.id).toBe(createRes.semester.id);
+      expect(active2.semester.isActive).toBe(true);
+    });
+
+    it('UpdateStatus: should enforce valid transitions', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      // DRAFT -> CLOSED (Invalid)
+      await expect(callService('UpdateStatus', { id: sem.id, newStatus: 'CLOSED' }))
+        .rejects.toMatchObject({ code: 9 }); // FAILED_PRECONDITION
+
+      // DRAFT -> OPEN (Valid)
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'OPEN' });
+
+      // OPEN -> DRAFT (Invalid)
+      await expect(callService('UpdateStatus', { id: sem.id, newStatus: 'DRAFT' }))
+        .rejects.toMatchObject({ code: 9 });
+    });
+
+    it('DeleteSemester: should only allow deleting DRAFT with no classes', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      // 1. Delete DRAFT (Valid)
+      await callService('DeleteSemester', { id: sem.id });
+      const all = await callService('GetAllSemesters');
+      expect(all.semesters).toHaveLength(0);
+
+      // 2. Try delete non-existent
+      await expect(callService('DeleteSemester', { id: sem.id }))
+        .rejects.toMatchObject({ code: 5 }); // NOT_FOUND
+    });
+
+    it('GetClosingReadiness: should report issues if grades are missing', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      // Seeding a class with no grades
+      const { user: teacher } = await createDosen();
+      const course = await import('../helpers/prisma.js').then(m => m.default.course.create({
+        data: { title: 'Test', code: 'T1', semester: 1, sks: 3, teacherId: teacher.id }
+      }));
+      const cls = await import('../helpers/prisma.js').then(m => m.default.class.create({
+        data: { courseId: course.id, lecturerId: teacher.id, academicSemesterId: sem.id, section: 'A' }
+      }));
+      
+      // Student enrolled but no grade
+      const student = await createMahasiswa();
+      await import('../helpers/prisma.js').then(m => m.default.krsEnrollment.create({
+        data: { studentId: student.user.id, classId: cls.id, status: 'APPROVED' }
+      }));
+
+      const readiness = await callService('GetClosingReadiness', { id: sem.id });
+      expect(readiness.summary.isReady).toBe(false);
+      expect(readiness.summary.totalMissing).toBe(1);
+    });
+
+    it('GetStudentSemesters: should return relevant semesters for student', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2024/2025',
+        semesterType: 'GANJIL',
+      })).semester;
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'OPEN' });
+
+      const mhs = await createMahasiswa();
+      const res = await callService('GetStudentSemesters', { studentId: mhs.user.id });
+      
+      // Since it's OPEN, it should be included even if not enrolled yet
+      expect(res.semesters).toHaveLength(1);
+      expect(res.semesters[0].id).toBe(sem.id);
+    });
+
+    it('GetSemesterById: should return semester details', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      const res = await callService('GetSemesterById', { id: sem.id });
+      expect(res.semester.id).toBe(sem.id);
+    });
+
+    it('UpdateSemester: should update fields correctly', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      const updated = await callService('UpdateSemester', {
+        id: sem.id,
+        maxSks: 30,
+      });
+      expect(updated.semester.maxSks).toBe(30);
+    });
+
+    it('UpdateStatus: OPEN -> CLOSED should work when ready', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'OPEN' });
+      
+      // Since no students are enrolled, missingGradeCount is 0, so it's ready
+      const res = await callService('UpdateStatus', { id: sem.id, newStatus: 'CLOSED' });
+      expect(res.semester.status).toBe('CLOSED');
+      expect(res.semester.isActive).toBe(false);
     });
   });
 });
