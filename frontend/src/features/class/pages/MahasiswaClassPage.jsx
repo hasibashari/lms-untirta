@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search } from 'lucide-react';
-import { getMyKRS } from '../../krs/krsService';
 import CourseCard from '../../course/components/CourseCard';
 import { Button } from '@/components/ui/button';
 
@@ -10,22 +9,16 @@ import { Button } from '@/components/ui/button';
  * Halaman khusus untuk menampilkan daftar lengkap mata kuliah mahasiswa
  * Terpisah dari Dashboard untuk UX yang lebih fokus
  */
+import { useMyClasses } from '../../krs/hooks/useMyClasses';
+
+/**
+ * MyClasses / Kelas Saya
+ */
 const MyClasses = () => {
   const navigate = useNavigate();
-  const [approvedEnrollments, setApprovedEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: approvedEnrollments = [], isLoading: loading, error: fetchError } = useMyClasses();
   const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    getMyKRS()
-      .then((res) => {
-        const enrollments = res?.data?.enrollments || [];
-        setApprovedEnrollments(enrollments.filter((e) => e.status === 'APPROVED'));
-      })
-      .catch(err => setError(err.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
-  }, []);
+  const error = fetchError?.message || null;
 
   // Filter class offerings based on search query
   const filteredClasses = approvedEnrollments.filter((enrollment) =>

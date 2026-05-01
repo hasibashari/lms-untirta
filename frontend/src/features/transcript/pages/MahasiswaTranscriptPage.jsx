@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
-import { getStudentTranscript } from '../transcriptService';
 import CourseBadge from '@/components/ui/CourseBadge';
 
 /**
@@ -11,27 +9,16 @@ import CourseBadge from '@/components/ui/CourseBadge';
  * mengikuti spesifikasi UI terbaru: kartu per semester, badge SKS, 
  * dan tampilan IP/IPK di dalam tabel.
  */
+import { useStudentTranscript } from '../hooks/useStudentTranscript';
+
+/**
+ * MahasiswaTranscriptPage
+ */
 const MahasiswaTranscriptPage = () => {
   const { user } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchTranscript = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await getStudentTranscript(user.id);
-        setData(res.data);
-      } catch (err) {
-        setError(err?.message || 'Gagal memuat transkrip');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user?.id) fetchTranscript();
-  }, [user]);
+  const { data: transcriptData, isLoading: loading, error: fetchError } = useStudentTranscript(user?.id);
+  const data = transcriptData?.data || null;
+  const error = fetchError?.message || null;
 
   if (loading) {
     return (

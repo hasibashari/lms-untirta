@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import PageLoader from '../../../components/shared/PageLoader';
 
 export default function AdminUserEditPage() {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export default function AdminUserEditPage() {
     err?.response?.data?.message || err?.message || 'Gagal mengubah user.';
 
   if (initLoading) {
-    return <div className="p-10 text-gray-500">Memuat data user...</div>;
+    return <PageLoader />;
   }
 
   return (

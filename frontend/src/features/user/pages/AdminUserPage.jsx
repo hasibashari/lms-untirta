@@ -8,46 +8,29 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Trash2, Users as UsersIcon } from 'lucide-react';
 import PaginationComponent from '../../../components/shared/PaginationComponent';
+import PageLoader from '../../../components/shared/PageLoader';
+import { useUsers, useDeleteUser } from '../hooks/useUsers';
 
 export default function Users() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const limit = 10;
 
   const navigate = useNavigate();
   const location = useLocation();
-
   const flash = location.state?.flash;
 
-  useEffect(() => {
-    setLoading(true);
-    getUsers({ page: currentPage, limit })
-      .then(res => {
-        setUsers(res.data);
-        if (res.pagination) {
-          setTotalPages(res.pagination.totalPages);
-          setTotalItems(res.pagination.total);
-        }
-      })
-      .catch(err => setError(err))
-      .finally(() => setLoading(false));
-  }, [currentPage]);
+  const { data, isLoading, isError, error: fetchError, isFetching } = useUsers({ page: currentPage, limit });
+  const deleteMutation = useDeleteUser();
+
+  const users = data?.data || [];
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages || 1;
+  const totalItems = pagination?.total || 0;
 
   const handleDelete = async (id, name, e) => {
     e.stopPropagation();
     if (!window.confirm(`Apakah Anda yakin ingin menghapus user ${name}?`)) return;
-
-    try {
-      await deleteUser(id);
-      setUsers(users.filter(u => u.id !== id));
-      // Optional: you can show a success toast here if needed
-    } catch (err) {
-      alert('Gagal menghapus user: ' + (err?.response?.data?.message || err?.message || 'Terjadi kesalahan sistem.'));
-    }
+    deleteMutation.mutate(id);
   };
 
   const errorMessage = err =>
@@ -93,10 +76,10 @@ export default function Users() {
         </div>
       )}
 
-      {loading && <p className='text-gray-600'>Memuat user...</p>}
-      {error && <p className='text-red-600'>{errorMessage(error)}</p>}
+      {isLoading && <PageLoader />}
+      {isError && <p className='text-red-600'>{errorMessage(fetchError)}</p>}
 
-      {!loading && !error && users.length === 0 && (
+      {!isLoading && !isError && users.length === 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Belum ada user</CardTitle>
@@ -110,15 +93,14 @@ export default function Users() {
         </Card>
       )}
 
-      {!loading && !error && users.length > 0 && (
+      {!isLoading && !isError && users.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           {/* Mobile Card View */}
           <div className="lg:hidden divide-y divide-slate-100">
             {users.map(u => (
               <div
                 key={u.id}
-                className="p-4 hover:bg-slate-50 cursor-pointer transition flex items-center gap-3"
-                onClick={() => navigate(`/admin/users/${u.id}/edit`)}
+                className="p-4 hover:bg-slate-50 transition flex items-center gap-3"
               >
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                   <span className="text-blue-700 font-bold text-sm">
@@ -131,6 +113,15 @@ export default function Users() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={roleVariant(u.role)}>{roleLabel(u.role)}</Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 lg:hidden"
+                    title="Edit"
+                    onClick={() => navigate(`/admin/users/${u.id}/edit`)}
+                  >
+                    <Pencil className="h-4 w-4 text-blue-600" />
+                  </Button>
                   <Button
                     variant="destructive"
                     size="sm"
@@ -161,8 +152,7 @@ export default function Users() {
                 {users.map((u, index) => (
                   <TableRow
                     key={u.id}
-                    className="hover:bg-slate-50 cursor-pointer"
-                    onClick={() => navigate(`/admin/users/${u.id}/edit`)}
+                    className="hover:bg-slate-50"
                   >
                     <TableCell className="text-center text-slate-500 text-sm">{(currentPage - 1) * limit + index + 1}</TableCell>
                     <TableCell>
@@ -211,7 +201,7 @@ export default function Users() {
         </div>
       )}
 
-      {!loading && !error && users.length > 0 && (
+      {!isLoading && !isError && users.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 px-1">
           <p className="text-sm text-slate-500 order-2 sm:order-1">
             Menampilkan <span className="font-medium text-slate-900">{users.length}</span> dari <span className="font-medium text-slate-900">{totalItems}</span> user

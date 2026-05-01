@@ -6,39 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { getAdminStats } from '../../user/userService';
+import PageLoader from '../../../components/shared/PageLoader';
+import { useAdminStats } from '../../user/hooks/useAdminStats';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalCourses: 0,
-    totalDosen: 0,
-    totalMahasiswa: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await getAdminStats();
-        setStats({
-          totalUsers: res.data?.totalUsers || 0,
-          totalCourses: res.data?.totalCourses || 0,
-          totalDosen: res.data?.totalDosen || 0,
-          totalMahasiswa: res.data?.totalMahasiswa || 0,
-        });
-      } catch (err) {
-        setError(err?.message || 'Gagal memuat data dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  const { data, isLoading, error: fetchError } = useAdminStats();
+  
+  const stats = {
+    totalUsers: data?.data?.totalUsers || 0,
+    totalCourses: data?.data?.totalCourses || 0,
+    totalDosen: data?.data?.totalDosen || 0,
+    totalMahasiswa: data?.data?.totalMahasiswa || 0,
+  };
 
   const statCards = [
     { label: 'Total User', value: stats.totalUsers, icon: Users, color: 'blue', to: '/admin/users' },
@@ -53,6 +35,10 @@ const AdminDashboard = () => {
     violet: 'bg-violet-500/10 text-violet-600',
     amber: 'bg-amber-500/10 text-amber-600',
   };
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
 
   return (
     <div className='space-y-6'>
@@ -77,9 +63,9 @@ const AdminDashboard = () => {
       </DashboardJumbotron>
 
       {/* Error Banner */}
-      {error && (
+      {fetchError && (
         <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm'>
-          {error}
+          {fetchError.message || 'Gagal memuat data dashboard'}
         </div>
       )}
 

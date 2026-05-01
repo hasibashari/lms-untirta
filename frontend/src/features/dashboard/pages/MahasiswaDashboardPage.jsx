@@ -1,32 +1,19 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, ClipboardList, ArrowRight, Award, Clock, LayoutDashboard } from 'lucide-react';
-import { getMyKRS } from '../../krs/krsService';
-import { getMyDashboardStats } from '../../submission/submissionService';
 import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
+import { useMahasiswaDashboardData } from '../hooks/useMahasiswaDashboard';
+import PageLoader from '../../../components/shared/PageLoader';
 
 /**
  * MahasiswaDashboard
  * Halaman utama setelah login untuk mahasiswa
  * Fokus: Overview/ringkasan pembelajaran
- * Berbeda dari MyClasses yang menampilkan daftar lengkap
  */
 const MahasiswaDashboard = () => {
-  const [approvedEnrollments, setApprovedEnrollments] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    Promise.all([getMyKRS(), getMyDashboardStats()])
-      .then(([krsRes, statsRes]) => {
-        const enrollments = krsRes?.data?.enrollments || [];
-        setApprovedEnrollments(enrollments.filter((e) => e.status === 'APPROVED'));
-        setStats(statsRes.data);
-      })
-      .catch(err => setError(err.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, isLoading, error: fetchError } = useMahasiswaDashboardData();
+  
+  const approvedEnrollments = data?.approvedEnrollments || [];
+  const stats = data?.stats || null;
 
   // Stats cards - menampilkan informasi yang lebih bermakna
   const statsCards = [
@@ -60,12 +47,13 @@ const MahasiswaDashboard = () => {
   // Preview hanya 3 kelas terbaru
   return (
     <div className="space-y-8">
-      {/* Error Banner */}
-      {error && (
+      {fetchError && (
         <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm'>
-          {error}
+          {fetchError}
         </div>
       )}
+
+      {isLoading && <PageLoader />}
 
       {/* Jumbotron / Hero Section */}
       <DashboardJumbotron
@@ -96,7 +84,7 @@ const MahasiswaDashboard = () => {
                   <Icon size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-card-foreground">{loading ? '-' : stat.value}</p>
+                  <p className="text-2xl font-bold text-card-foreground">{isLoading ? '-' : stat.value}</p>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
