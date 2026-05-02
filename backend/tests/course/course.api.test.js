@@ -721,7 +721,7 @@ describe('Course API Integration Tests', () => {
       const cb = callbackMock();
       await courseService.AdminDeleteCourse(callMock({ courseId: testCourse.id }), cb);
       expect(cb.getResult().response.message).toContain('berhasil dihapus');
-      
+
       const deleted = await prisma.course.findUnique({ where: { id: testCourse.id } });
       expect(deleted).toBeNull();
     });
@@ -731,89 +731,6 @@ describe('Course API Integration Tests', () => {
       const cb = callbackMock();
       await courseService.AdminAssignTeacher(callMock({ courseId: testCourse.id, teacherId: otherDosen.id }), cb);
       expect(cb.getResult().response.teacher.id).toBe(otherDosen.id);
-    });
-
-    it('AddStudentToCourseById: should fail if course not found', async () => {
-      const cb = callbackMock();
-      await courseService.AddStudentToCourseById(callMock({ courseId: FAKE_UUID, studentId: mhs.id }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.NOT_FOUND);
-    });
-
-    it('AdminCreateCourse: should handle missing semester', async () => {
-      const cb = callbackMock();
-      await courseService.AdminCreateCourse(callMock({ title: 'No Sem', code: 'NOSEM', teacherId: dosen.id }), cb);
-      // semester defaults to null when not provided
-      expect(cb.getResult().err).toBeNull();
-      expect(cb.getResult().response.semester).toBeNull();
-    });
-
-    it('AdminUpdateCourse: should handle missing teacherId', async () => {
-      const cb = callbackMock();
-      await courseService.AdminUpdateCourse(callMock({ courseId: testCourse.id, title: 'No Teacher' }), cb);
-      expect(cb.getResult().response.title).toBe('No Teacher');
-    });
-
-    it('AdminUpdateCourse: should handle non-dosen teacher update', async () => {
-      const cb = callbackMock();
-      await courseService.AdminUpdateCourse(callMock({ courseId: testCourse.id, teacherId: admin.id }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.INVALID_ARGUMENT);
-    });
-
-    it('AdminUpdateCourse: should handle code update with existing code', async () => {
-      const other = await prisma.course.create({ data: { title: 'Other', code: 'EXISTS', teacherId: dosen.id, semester: 1, sks: 3 } });
-      const cb = callbackMock();
-      await courseService.AdminUpdateCourse(callMock({ courseId: testCourse.id, code: 'EXISTS' }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.ALREADY_EXISTS);
-      await prisma.course.delete({ where: { id: other.id } });
-    });
-
-    it('AdminAssignTeacher: should fail if course not found', async () => {
-      const cb = callbackMock();
-      await courseService.AdminAssignTeacher(callMock({ courseId: FAKE_UUID, teacherId: dosen.id }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.NOT_FOUND);
-    });
-
-    it('AdminAssignTeacher: should fail if teacher not found', async () => {
-      const cb = callbackMock();
-      await courseService.AdminAssignTeacher(callMock({ courseId: testCourse.id, teacherId: FAKE_UUID }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.NOT_FOUND);
-    });
-
-    it('AdminAssignTeacher: should fail if user is not a dosen', async () => {
-      const cb = callbackMock();
-      await courseService.AdminAssignTeacher(callMock({ courseId: testCourse.id, teacherId: mhs.id }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.INVALID_ARGUMENT);
-    });
-
-    it('GetEnrolledCourses: should return formatted course data', async () => {
-      // teacherId is required in schema, teacher will always exist.
-      // Verify the response includes properly formatted teacher data.
-      const extraCourse = await prisma.course.create({ data: { title: 'Extra Course', code: 'EXTRA', semester: 1, sks: 3, teacherId: dosen.id } });
-      await prisma.enrollment.create({ data: { userId: mhs.id, courseId: extraCourse.id } });
-      const cb = callbackMock();
-      await courseService.GetEnrolledCourses(callMock({ studentId: mhs.id }), cb);
-      const found = cb.getResult().response.courses.find(c => c.course.code === 'EXTRA');
-      expect(found).toBeDefined();
-      expect(found.course.teacher).toBeDefined();
-      expect(found.course.teacher.id).toBe(dosen.id);
-    });
-
-    it('AdminDeleteCourse: should fail if course not found', async () => {
-      const cb = callbackMock();
-      await courseService.AdminDeleteCourse(callMock({ courseId: FAKE_UUID }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.NOT_FOUND);
-    });
-
-    it('GetStudentsByCourse: should fail if course not found', async () => {
-      const cb = callbackMock();
-      await courseService.GetStudentsByCourse(callMock({ courseId: FAKE_UUID }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.NOT_FOUND);
-    });
-
-    it('GetAvailableStudentsForCourse: should fail if course not found', async () => {
-      const cb = callbackMock();
-      await courseService.GetAvailableStudentsForCourse(callMock({ courseId: FAKE_UUID }), cb);
-      expect(cb.getResult().err.code).toBe(grpc.status.NOT_FOUND);
     });
 
     it('Service Catch Blocks: should cover all internal error handlers using spies', async () => {

@@ -148,6 +148,19 @@ describe('Academic Semester API (Gateway)', () => {
       expect(res.status).toBe(400);
     });
 
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.CreateSemester.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .post(API)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ academicYear: '2025/2026', semesterType: 'GANJIL' });
+
+      expect(res.status).toBe(500);
+    });
+
     it('should return 500 if gRPC call fails without code', async () => {
       academicClient.CreateSemester.mockImplementation((data, callback) => {
         callback(new Error('Unknown error'));
@@ -213,6 +226,18 @@ describe('Academic Semester API (Gateway)', () => {
 
       expect(res.status).toBe(500);
     });
+
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.GetAllSemesters.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .get(API)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(500);
+    });
   });
 
   // ═════════════════════════════════════════════════════════════
@@ -246,6 +271,18 @@ describe('Academic Semester API (Gateway)', () => {
         .set('Authorization', `Bearer ${dosenToken}`);
 
       expect(res.status).toBe(404);
+    });
+
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.GetSemesterById.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .get(`${API}/${randomUUID()}`)
+        .set('Authorization', `Bearer ${dosenToken}`);
+
+      expect(res.status).toBe(500);
     });
   });
 
@@ -292,6 +329,18 @@ describe('Academic Semester API (Gateway)', () => {
 
       expect(res.status).toBe(500);
     });
+
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.GetActiveSemester.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .get(`${API}/active`)
+        .set('Authorization', `Bearer ${mhsToken}`);
+
+      expect(res.status).toBe(500);
+    });
   });
 
   // ═════════════════════════════════════════════════════════════
@@ -326,6 +375,19 @@ describe('Academic Semester API (Gateway)', () => {
         .send({ maxSks: 50 }); // max is usually 36
 
       expect(res.status).toBe(400);
+    });
+
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.UpdateSemester.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .put(`${API}/${randomUUID()}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ maxSks: 20 });
+
+      expect(res.status).toBe(500);
     });
   });
 
@@ -363,6 +425,15 @@ describe('Academic Semester API (Gateway)', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Tidak dapat membuka semester baru');
+    });
+
+    it('should return 400 for invalid status in validation', async () => {
+      const res = await request(app)
+        .patch(`${API}/${randomUUID()}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'INVALID_STATUS' });
+
+      expect(res.status).toBe(400);
     });
   });
 
@@ -407,6 +478,18 @@ describe('Academic Semester API (Gateway)', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/berhasil dihapus/);
     });
+
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.DeleteSemester.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .delete(`${API}/${randomUUID()}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(500);
+    });
   });
 
   // ═════════════════════════════════════════════════════════════
@@ -430,6 +513,18 @@ describe('Academic Semester API (Gateway)', () => {
         expect.objectContaining({ studentId: mhsUser.id }),
         expect.any(Function)
       );
+    });
+
+    it('should return 500 when gRPC throws non-gRPC error', async () => {
+      academicClient.GetStudentSemesters.mockImplementation(() => {
+        throw new Error('Internal Server Error');
+      });
+
+      const res = await request(app)
+        .get(`${API}/student-semesters`)
+        .set('Authorization', `Bearer ${mhsToken}`);
+
+      expect(res.status).toBe(500);
     });
   });
 
@@ -589,6 +684,115 @@ describe('Academic Semester API (Gateway)', () => {
       const res = await callService('UpdateStatus', { id: sem.id, newStatus: 'CLOSED' });
       expect(res.semester.status).toBe('CLOSED');
       expect(res.semester.isActive).toBe(false);
+    });
+
+    it('UpdateStatus: OPEN -> CLOSED should fail when grades are missing', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'OPEN' });
+
+      // Seeding a class with no grades
+      const { user: teacher } = await createDosen();
+      const course = await import('../helpers/prisma.js').then(m => m.default.course.create({
+        data: { title: 'Test', code: 'T3', semester: 1, sks: 3, teacherId: teacher.id }
+      }));
+      const cls = await import('../helpers/prisma.js').then(m => m.default.class.create({
+        data: { courseId: course.id, lecturerId: teacher.id, academicSemesterId: sem.id, section: 'A' }
+      }));
+      
+      // Student enrolled but no grade
+      const student = await createMahasiswa();
+      await import('../helpers/prisma.js').then(m => m.default.krsEnrollment.create({
+        data: { studentId: student.user.id, classId: cls.id, status: 'APPROVED' }
+      }));
+
+      await expect(callService('UpdateStatus', { id: sem.id, newStatus: 'CLOSED' }))
+        .rejects.toMatchObject({ 
+          code: 9,
+          details: expect.stringContaining('belum memiliki nilai akhir')
+        });
+    });
+
+    it('UpdateSemester: should fail if semester is CLOSED', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'OPEN' });
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'CLOSED' });
+
+      await expect(callService('UpdateSemester', { id: sem.id, maxSks: 30 }))
+        .rejects.toMatchObject({ code: 9 });
+    });
+
+    it('UpdateStatus: should fail if another semester is already OPEN', async () => {
+      const sem1 = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+      const sem2 = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GENAP',
+      })).semester;
+
+      await callService('UpdateStatus', { id: sem1.id, newStatus: 'OPEN' });
+
+      await expect(callService('UpdateStatus', { id: sem2.id, newStatus: 'OPEN' }))
+        .rejects.toMatchObject({ 
+          code: 9,
+          details: expect.stringContaining('Sudah ada semester OPEN')
+        });
+    });
+
+    it('DeleteSemester: should fail if status is not DRAFT', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      await callService('UpdateStatus', { id: sem.id, newStatus: 'OPEN' });
+
+      await expect(callService('DeleteSemester', { id: sem.id }))
+        .rejects.toMatchObject({ code: 9 });
+    });
+
+    it('DeleteSemester: should fail if it has classes', async () => {
+      const sem = (await callService('CreateSemester', {
+        academicYear: '2025/2026',
+        semesterType: 'GANJIL',
+      })).semester;
+
+      const { user: teacher } = await createDosen();
+      const course = await import('../helpers/prisma.js').then(m => m.default.course.create({
+        data: { title: 'Test', code: 'T2', semester: 1, sks: 3, teacherId: teacher.id }
+      }));
+      await import('../helpers/prisma.js').then(m => m.default.class.create({
+        data: { courseId: course.id, lecturerId: teacher.id, academicSemesterId: sem.id, section: 'A' }
+      }));
+
+      await expect(callService('DeleteSemester', { id: sem.id }))
+        .rejects.toMatchObject({ code: 9 });
+    });
+
+    it('gRPC Handlers should handle unexpected errors', async () => {
+      // We force a prisma error by passing invalid ID (not a string)
+      await expect(callService('GetSemesterById', { id: { some: 'object' } }))
+        .rejects.toMatchObject({ code: 13 });
+      
+      await expect(callService('UpdateSemester', { id: { some: 'object' }, maxSks: 20 }))
+        .rejects.toMatchObject({ code: 13 });
+
+      await expect(callService('UpdateStatus', { id: { some: 'object' }, newStatus: 'OPEN' }))
+        .rejects.toMatchObject({ code: 13 });
+
+      await expect(callService('DeleteSemester', { id: { some: 'object' } }))
+        .rejects.toMatchObject({ code: 13 });
+
+      await expect(callService('GetClosingReadiness', { id: { some: 'object' } }))
+        .rejects.toMatchObject({ code: 13 });
     });
   });
 });
