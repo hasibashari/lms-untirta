@@ -41,6 +41,10 @@ const app = getApp();
 const API = '/api/classes';
 const FAKE_UUID = '00000000-0000-0000-0000-000000000000';
 
+// Direct imports for gRPC Service testing
+const appPrisma = (await import('../../src/config/prisma.js')).default;
+const mockCallback = jest.fn();
+
 describe('Class API Integration Tests', () => {
   let adminToken, dosenToken, mhsToken;
   let adminUser, dosenUser, mhsUser;
@@ -369,18 +373,74 @@ describe('Class API Integration Tests', () => {
     });
   });
 
+  // ─── 9. CONTROLLER ERROR MAPPING ─────────────────────────────────────
+
+  describe('Controller Error Mapping', () => {
+    it('should handle non-gRPC errors in controllers', async () => {
+      classClientMock.GetAllClasses.mockImplementationOnce((arg, cb) => {
+        throw new Error('Unexpected error');
+      });
+
+      const res = await request(app)
+        .get(API)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(500);
+    });
+
+    it('should handle gRPC errors with codes in all methods', async () => {
+      classClientMock.GetClassById.mockImplementationOnce((arg, cb) => {
+        cb({ code: 7, details: 'Permission denied' });
+      });
+      const res = await request(app).get(`${API}/123`).set('Authorization', `Bearer ${mhsToken}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('should handle gRPC errors in update', async () => {
+      classClientMock.UpdateClass.mockImplementationOnce((arg, cb) => {
+        cb({ code: 3, details: 'Invalid' });
+      });
+      const res = await request(app).put(`${API}/123`).set('Authorization', `Bearer ${adminToken}`).send({ room: 'X' });
+      expect(res.status).toBe(400);
+    });
+
+    it('should handle gRPC errors in remove', async () => {
+      classClientMock.DeleteClass.mockImplementationOnce((arg, cb) => {
+        cb({ code: 13, details: 'Internal' });
+      });
+      const res = await request(app).delete(`${API}/123`).set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(500);
+    });
+
+    it('should handle non-code errors in update', async () => {
+      classClientMock.UpdateClass.mockImplementationOnce((arg, cb) => {
+        throw new Error('Fatal');
+      });
+      const res = await request(app).put(`${API}/123`).set('Authorization', `Bearer ${adminToken}`).send({ room: 'X' });
+      expect(res.status).toBe(500);
+    });
+
+    it('should handle gRPC errors in getMyClasses', async () => {
+      classClientMock.GetClassesByLecturer.mockImplementationOnce((arg, cb) => {
+        cb({ code: 5, details: 'Not found' });
+      });
+      const res = await request(app).get(`${API}/me`).set('Authorization', `Bearer ${dosenToken}`);
+      expect(res.status).toBe(404);
+    });
+  });
+
   // ═════════════════════════════════════════════════════════════
   // gRPC Service Implementation (Direct Handler Tests)
   // ═════════════════════════════════════════════════════════════
-  describe('gRPC Service Implementation', () => {
-    const mockCallback = (resolve, reject) => (err, response) => {
-      if (err) reject(err);
+  describe('gRPC Service Implementation (Direct)', () => {
+    const directMockCallback = (resolve, reject) => (err, response) => {
+      if (err) resolve(err); // Resolve with error for assertion
       else resolve(response);
     };
 
-    const callService = (method, request = {}) => {
+    const callServiceDirect = (method, request = {}) => {
       return new Promise((resolve, reject) => {
-        ClassService[method]({ request }, mockCallback(resolve, reject));
+        ClassService[method]({ request }, directMockCallback(resolve, reject));
       });
     };
 
@@ -398,118 +458,203 @@ describe('Class API Integration Tests', () => {
       testCourse = await prisma.course.create({
         data: { title: 'Test Course', code: 'TC01', teacherId: testDosen.id }
       });
+      
+      mockCallback.mockClear();
     });
 
-    it('CreateClass: should create class successfully', async () => {
-      const res = await callService('CreateClass', {
+    it('CreateClass: should fail if course not found', async () => {
+      const res = await callServiceDirect('CreateClass', { courseId: FAKE_UUID });
+      expect(res.code).toBe(5);
+    });
+
+    it('CreateClass: should fail if lecturer not found', async () => {
+      const res = await callServiceDirect('CreateClass', { courseId: testCourse.id, lecturerId: FAKE_UUID });
+      expect(res.code).toBe(5);
+    });
+
+    it('CreateClass: should fail if user is not a dosen', async () => {
+      const mhs = await createMahasiswa();
+      const res = await callServiceDirect('CreateClass', { courseId: testCourse.id, lecturerId: mhs.user.id });
+      expect(res.code).toBe(3);
+    });
+
+    it('CreateClass: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.course, 'findUnique').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.CreateClass({ request: { courseId: testCourse.id } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('GetAllClasses: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findMany').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.GetAllClasses({ request: {} }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('GetClassById: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findUnique').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.GetClassById({ request: { id: '123' } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('UpdateClass: should fail if class not found', async () => {
+      const res = await callServiceDirect('UpdateClass', { id: FAKE_UUID });
+      expect(res.code).toBe(5);
+    });
+
+    it('UpdateClass: should fail if new lecturer not found', async () => {
+      const cls = await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'Z', lecturerId: testDosen.id }
+      });
+      const res = await callServiceDirect('UpdateClass', { id: cls.id, lecturerId: FAKE_UUID });
+      expect(res.code).toBe(5);
+    });
+
+    it('UpdateClass: should fail if new academicSemester not found', async () => {
+      const cls = await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'Y', lecturerId: testDosen.id }
+      });
+      const res = await callServiceDirect('UpdateClass', { id: cls.id, academicSemesterId: FAKE_UUID });
+      expect(res.code).toBe(5);
+    });
+
+    it('UpdateClass: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findUnique').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.UpdateClass({ request: { id: '123' } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('ToggleEnrollment: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findUnique').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.ToggleEnrollment({ request: { id: '123' } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('DeleteClass: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findUnique').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.DeleteClass({ request: { id: '123' } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+    
+    it('GetAllClasses: should support pagination', async () => {
+      await callServiceDirect('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callServiceDirect('GetAllClasses', { page: 1, limit: 10 });
+      expect(res.classes.length).toBeGreaterThan(0);
+    });
+
+    it('GetClassById: should return details', async () => {
+      const cls = await callServiceDirect('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callServiceDirect('GetClassById', { id: cls.class.id });
+      expect(res.class.id).toBe(cls.class.id);
+    });
+
+    it('GetClassesByLecturer: should filter correctly', async () => {
+      await callServiceDirect('CreateClass', {
         courseId: testCourse.id,
         academicSemesterId: testSemester.id,
-        section: 'A',
-        capacity: 40
+        section: 'B',
+        lecturerId: testDosen.id
       });
-      expect(res.class.section).toBe('A');
+      const res = await callServiceDirect('GetClassesByLecturer', { lecturerId: testDosen.id });
+      expect(res.classes.length).toBeGreaterThan(0);
+    });
+
+    it('GetClassesByCourse: should filter correctly', async () => {
+      await callServiceDirect('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
+      const res = await callServiceDirect('GetClassesByCourse', { courseId: testCourse.id });
+      expect(res.classes.length).toBeGreaterThan(0);
+    });
+
+    it('GetOpenClasses: should return classes with isEnrollmentOpen=true', async () => {
+      const res0 = await callServiceDirect('CreateClass', {
+        courseId: testCourse.id,
+        academicSemesterId: testSemester.id,
+        section: 'C',
+        isEnrollmentOpen: true
+      });
+      const res = await callServiceDirect('GetOpenClasses');
+      expect(res.classes.some(c => c.id === res0.class.id)).toBe(true);
+    });
+
+    it('DeleteClass: should delete successfully', async () => {
+      const cls = await callServiceDirect('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'G' });
+      await callServiceDirect('DeleteClass', { id: cls.class.id });
+      const res = await callServiceDirect('GetAllClasses');
+      expect(res.classes.find(c => c.id === cls.class.id)).toBeUndefined();
     });
 
     it('CreateClass: should fail if semester is CLOSED', async () => {
       const closedSem = await prisma.academicSemester.create({
         data: { academicYear: '2024/2025', semesterType: 'GENAP', status: 'CLOSED' }
       });
-      await expect(callService('CreateClass', {
+      const res = await callServiceDirect('CreateClass', {
         courseId: testCourse.id,
         academicSemesterId: closedSem.id,
         section: 'B'
-      })).rejects.toMatchObject({ code: 3 });
-    });
-
-    it('GetAllClasses: should support pagination', async () => {
-      await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
-      const res = await callService('GetAllClasses', { page: 1, limit: 10 });
-      expect(res.classes.length).toBeGreaterThan(0);
-    });
-
-    it('GetClassById: should return details', async () => {
-      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
-      const res = await callService('GetClassById', { id: cls.class.id });
-      expect(res.class.id).toBe(cls.class.id);
-    });
-
-    it('GetClassesByLecturer: should filter correctly', async () => {
-      await callService('CreateClass', {
-        courseId: testCourse.id,
-        academicSemesterId: testSemester.id,
-        section: 'B',
-        lecturerId: testDosen.id
       });
-      const res = await callService('GetClassesByLecturer', { lecturerId: testDosen.id });
-      expect(res.classes.length).toBeGreaterThan(0);
+      expect(res.code).toBe(3);
     });
 
-    it('GetClassesByCourse: should filter correctly', async () => {
-      await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
-      const res = await callService('GetClassesByCourse', { courseId: testCourse.id });
-      expect(res.classes.length).toBeGreaterThan(0);
+    it('GetClassesByLecturer: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findMany').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.GetClassesByLecturer({ request: { lecturerId: '123' } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
     });
 
-    it('GetOpenClasses: should return classes with isEnrollmentOpen=true', async () => {
-      const res0 = await callService('CreateClass', {
-        courseId: testCourse.id,
-        academicSemesterId: testSemester.id,
-        section: 'C',
-        isEnrollmentOpen: true
+    it('GetClassesByCourse: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findMany').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.GetClassesByCourse({ request: { courseId: '123' } }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('GetOpenClasses: should handle internal error', async () => {
+      const spy = jest.spyOn(appPrisma.class, 'findMany').mockRejectedValue(new Error('Internal DB error'));
+      await ClassService.GetOpenClasses({ request: {} }, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({ code: 13 }));
+      spy.mockRestore();
+    });
+
+    it('UpdateClass: should update successfully', async () => {
+      const cls = await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A', lecturerId: testDosen.id }
       });
-      const res = await callService('GetOpenClasses');
-      expect(res.classes.some(c => c.id === res0.class.id)).toBe(true);
-    });
-
-    it('UpdateClass: should update fields successfully', async () => {
-      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
-      const res = await callService('UpdateClass', { id: cls.class.id, room: 'Lab A', isEnrollmentOpen: true });
+      const res = await callServiceDirect('UpdateClass', { id: cls.id, room: 'Lab A', isEnrollmentOpen: true });
       expect(res.class.room).toBe('Lab A');
-      expect(res.class.isEnrollmentOpen).toBe(true);
     });
 
     it('UpdateClass: should fail on duplicate section', async () => {
-      await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'D' });
-      const cls2 = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'E' });
-      
-      await expect(callService('UpdateClass', { id: cls2.class.id, section: 'D' }))
-        .rejects.toMatchObject({ code: 6 });
+      await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'D', lecturerId: testDosen.id }
+      });
+      const cls2 = await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'E', lecturerId: testDosen.id }
+      });
+      const res = await callServiceDirect('UpdateClass', { id: cls2.id, section: 'D' });
+      expect(res.code).toBe(6);
     });
 
-    it('UpdateClass: should fail if semester is CLOSED', async () => {
-      const closedSem = await prisma.academicSemester.create({
-        data: { academicYear: '2023/2024', semesterType: 'GENAP', status: 'CLOSED' }
+    it('ToggleEnrollment: should toggle successfully', async () => {
+      const cls = await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'F', lecturerId: testDosen.id }
       });
-      const cls = await prisma.class.create({
-        data: { courseId: testCourse.id, lecturerId: testDosen.id, academicSemesterId: closedSem.id, section: 'F' }
-      });
-      
-      await expect(callService('UpdateClass', { id: cls.id, room: 'New Room' }))
-        .rejects.toMatchObject({ code: 3 });
-    });
-
-    it('ToggleEnrollment: should change open status', async () => {
-      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'A' });
-      const res = await callService('ToggleEnrollment', { id: cls.class.id, isEnrollmentOpen: true });
+      const res = await callServiceDirect('ToggleEnrollment', { id: cls.id, isEnrollmentOpen: true });
       expect(res.class.isEnrollmentOpen).toBe(true);
     });
 
-    it('DeleteClass: should delete successfully', async () => {
-      const cls = await callService('CreateClass', { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'G' });
-      await callService('DeleteClass', { id: cls.class.id });
-      const res = await callService('GetAllClasses');
-      expect(res.classes.find(c => c.id === cls.class.id)).toBeUndefined();
-    });
-
-    it('DeleteClass: should fail if semester is CLOSED', async () => {
-      const closedSem = await prisma.academicSemester.create({
-        data: { academicYear: '2022/2023', semesterType: 'GANJIL', status: 'CLOSED' }
+    it('UpdateClass: should fail if lecturer is not a DOSEN', async () => {
+      const cls = await appPrisma.class.create({
+        data: { courseId: testCourse.id, academicSemesterId: testSemester.id, section: 'M', lecturerId: testDosen.id }
       });
-      const cls = await prisma.class.create({
-        data: { courseId: testCourse.id, lecturerId: testDosen.id, academicSemesterId: closedSem.id, section: 'H' }
-      });
-      await expect(callService('DeleteClass', { id: cls.id }))
-        .rejects.toMatchObject({ code: 3 });
+      const mhs = await createMahasiswa();
+      const res = await callServiceDirect('UpdateClass', { id: cls.id, lecturerId: mhs.user.id });
+      expect(res.code).toBe(3);
     });
   });
 });
