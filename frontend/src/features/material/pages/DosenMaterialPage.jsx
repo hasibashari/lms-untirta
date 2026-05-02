@@ -339,7 +339,7 @@ export default function Materials() {
           <h4 className="font-semibold text-primary mb-2">💡 Tips</h4>
           <ul className="text-sm text-foreground space-y-1">
             <li>• Gunakan format Markdown untuk membuat konten yang terstruktur</li>
-            <li>• Klik tombol <span className="font-semibold">👁 Preview</span> untuk melihat tampilan materi</li>
+            <li>• Klik icon <span className="font-semibold">👁</span> untuk melihat tampilan materi</li>
             <li>• Materi akan tampil sesuai urutan yang Anda tentukan</li>
           </ul>
         </div>
@@ -382,12 +382,9 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
           {material.order || index + 1}
         </div>
 
-        {/* Content - Clickable for Preview */}
-        <button
-          onClick={onPreview}
-          className="flex-1 min-w-0 text-left"
-        >
-          <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition truncate">
+        {/* Content - Static info, no longer clickable for preview */}
+        <div className="flex-1 min-w-0 py-1">
+          <h3 className="font-semibold text-slate-900 truncate">
             {material.title}
           </h3>
           <div className="flex items-center gap-2 mt-1">
@@ -419,18 +416,17 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
               )}
             </div>
           </div>
-        </button>
+        </div>
 
         {/* Actions - Semua tombol langsung terlihat */}
         <div className="shrink-0 flex items-center gap-2">
           {/* Preview Button */}
           <button
             onClick={onPreview}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition"
+            className="p-2 text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition"
             title="Preview Materi"
           >
-            <Eye size={16} />
-            <span className="hidden sm:inline">Preview</span>
+            <Eye size={18} />
           </button>
 
           {/* Edit Button */}
