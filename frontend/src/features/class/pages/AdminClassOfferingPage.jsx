@@ -225,7 +225,7 @@ const AdminClassesPage = () => {
         setClasses(prev => prev.map(c => c.id === editingClass.id ? (res?.data || c) : c));
         setSubmitSuccess('Kelas offering berhasil diperbarui!');
       } else {
-        const res = await createClass(payload);
+        await createClass(payload);
         // Re-fetch to get full data with relations
         await fetchData();
         setSubmitSuccess('Kelas offering berhasil dibuat!');
@@ -235,8 +235,8 @@ const AdminClassesPage = () => {
         setShowModal(false);
         setSubmitSuccess(null);
       }, 1500);
-    } catch (err) {
-      setSubmitError(err?.response?.data?.message || err?.message || 'Terjadi kesalahan');
+    } catch {
+      setSubmitError('Terjadi kesalahan');
     } finally {
       setSubmitting(false);
     }
@@ -257,8 +257,8 @@ const AdminClassesPage = () => {
           : `Pendaftaran ${cls.course?.code} Kelas ${cls.section} ditutup`,
         'success'
       );
-    } catch (err) {
-      showToast(err?.response?.data?.message || 'Gagal mengubah status pendaftaran', 'error');
+    } catch {
+      showToast('Gagal mengubah status pendaftaran', 'error');
     } finally {
       setToggling(null);
     }
@@ -291,7 +291,7 @@ const AdminClassesPage = () => {
         `${targetClasses.length} kelas berhasil ${openState ? 'dibuka' : 'ditutup'} pendaftarannya`,
         'success'
       );
-    } catch (err) {
+    } catch {
       showToast('Gagal mengubah status pendaftaran massal', 'error');
       await fetchData(); // Re-sync on partial failure
     } finally {

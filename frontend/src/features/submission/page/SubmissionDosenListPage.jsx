@@ -23,7 +23,6 @@ import {
   Archive,
   Github,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import {
   getSubmissions,
   gradeSubmission,
@@ -35,9 +34,6 @@ import Breadcrumb from '../../../components/navigation/Breadcrumb';
  * FilePreviewCard - Component untuk menampilkan file yang dikumpulkan dengan UX yang lebih baik
  */
 function FilePreviewCard({ url }) {
-  const [showPreview, setShowPreview] = useState(false);
-  const [copied, setCopied] = useState(false);
-
   // Detect file type dari URL
   const getFileInfo = (fileUrl) => {
     if (!fileUrl) return { type: 'unknown', name: 'File', icon: File, color: 'slate' };
@@ -61,7 +57,7 @@ function FilePreviewCard({ url }) {
 
     // GitHub
     if (urlLower.includes('github.com')) {
-      const repoMatch = fileUrl.match(/github\.com\/([^\/]+\/[^\/]+)/);
+      const repoMatch = fileUrl.match(/github\.com\/([^/]+\/[^/]+)/);
       return {
         type: 'github',
         name: repoMatch ? repoMatch[1] : 'GitHub Repository',
@@ -146,18 +142,6 @@ function FilePreviewCard({ url }) {
     slate: 'bg-slate-100 text-slate-600',
   };
 
-  // Copy URL to clipboard
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success('Link berhasil disalin!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Gagal menyalin link');
-    }
-  };
-
   // Download handler with token for internal files, or open for external links
   const handleDownload = async (e, mode = 'download') => {
     if (e) e.preventDefault();
@@ -207,7 +191,7 @@ function FilePreviewCard({ url }) {
         link.remove();
         window.URL.revokeObjectURL(blobUrl);
       }
-    } catch (err) {
+    } catch {
       window.open(url, '_blank');
     }
   };
@@ -259,7 +243,6 @@ export default function Submissions() {
   const navigate = useNavigate();
 
   // Data state
-  const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [currentAssignment, setCurrentAssignment] = useState(null);
 
@@ -269,23 +252,16 @@ export default function Submissions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'submitted' | 'not-submitted'
 
-  // Fetch data based on mode
+  // Fetch data
   useEffect(() => {
-    if (!courseId || courseId === 'undefined') return;
+    if (!courseId || !assignmentId) return;
+    
+    const startTimer = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+    }, 0);
 
-    setLoading(true);
-    setError(null);
-
-    // Mode A: Course-level - fetch assignments to pick
-    if (!assignmentId) {
-      getAssignments(courseId)
-        .then(res => setAssignments(res.data || []))
-        .catch(err => setError(err?.message || 'Gagal memuat data'))
-        .finally(() => setLoading(false));
-      return;
-    }
-
-    // Mode B: Assignment-level - fetch submissions
+    // Fetch submissions and assignment info
     Promise.all([
       getSubmissions(assignmentId),
       getAssignments(courseId),
@@ -293,11 +269,13 @@ export default function Submissions() {
       .then(([subRes, assignRes]) => {
         setSubmissions(subRes.data || []);
         // Find current assignment info
-        const current = (assignRes.data || []).find(a => a.id === assignmentId);
+        const current = (assignRes.data || []).find(a => a.id === assignmentId || a.id === parseInt(assignmentId));
         setCurrentAssignment(current);
       })
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(startTimer);
   }, [courseId, assignmentId]);
 
   // Handle grade submission
@@ -313,8 +291,8 @@ export default function Submissions() {
         )
       );
       return { success: true };
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.message || 'Gagal menyimpan nilai' };
+    } catch {
+      return { success: false, error: 'Gagal menyimpan nilai' };
     }
   };
 
@@ -379,94 +357,29 @@ export default function Submissions() {
           { label: 'Kelas Saya', to: '/dosen/classes' },
           { label: 'Kelas', to: `/dosen/courses/${courseId}` },
           { label: 'Tugas', to: `/dosen/courses/${courseId}/assignments` },
-          { label: assignmentId ? 'Submissions' : 'Pilih Tugas' },
+          { label: 'Submissions' },
         ]}
       />
 
-      {/* Mode A: Assignment Picker */}
+      {/* No Assignment ID fallback */}
       {!assignmentId && (
-        <>
-          {/* Header */}
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
-              Lihat Submissions
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Pilih tugas untuk melihat daftar pengumpulan mahasiswa
-            </p>
+        <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+            <FileText size={32} className="text-slate-400" />
           </div>
-
-          {/* Loading */}
-          {loading && (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
-                  <div className="h-5 bg-slate-200 rounded w-1/3 mb-2"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-              <p className="text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!loading && !error && assignments.length === 0 && (
-            <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                <FileText size={32} className="text-slate-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Belum Ada Tugas
-              </h3>
-              <p className="text-slate-500 mb-6">
-                Buat tugas terlebih dahulu untuk melihat submissions
-              </p>
-              <button
-                onClick={() => navigate(`/dosen/courses/${courseId}/assignments/new`)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                Buat Tugas
-              </button>
-            </div>
-          )}
-
-          {/* Assignment List */}
-          {!loading && !error && assignments.length > 0 && (
-            <div className="space-y-3">
-              {assignments.map(assignment => (
-                <button
-                  key={assignment.id}
-                  onClick={() => navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/submissions`)}
-                  className="w-full text-left bg-white rounded-xl border border-slate-200 hover:border-primary/50 hover:shadow-lg p-5 transition-all group"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition">
-                        {assignment.title}
-                      </h3>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={14} />
-                          Deadline: {formatDate(assignment.dueDate)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Users size={18} />
-                      <span className="text-sm font-medium">Lihat Submissions</span>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            Tugas Belum Dipilih
+          </h3>
+          <p className="text-slate-500 mb-6">
+            Silakan pilih tugas dari daftar tugas untuk melihat submission.
+          </p>
+          <button
+            onClick={() => navigate(`/dosen/courses/${courseId}/assignments`)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Lihat Daftar Tugas
+          </button>
+        </div>
       )}
 
       {/* Mode B: Submission List */}

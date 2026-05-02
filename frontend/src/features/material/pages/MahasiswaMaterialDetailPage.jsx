@@ -9,7 +9,6 @@ import {
   Clock,
   MonitorPlay
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { getMaterialDetail, getMaterials } from '../materialService';
 import { getMyKRS } from '../../krs/krsService';
 import LearningSidebar from '../components/LearningSidebar';
@@ -63,14 +62,16 @@ const MaterialDetail = () => {
   // Effect 2: Fetch material detail — re-fetch setiap materialId berubah (navigasi antar materi)
   useEffect(() => {
     if (!materialId) return;
-
-    setLoading(true);
-    setMaterial(null);
+    const startTimer = setTimeout(() => {
+      setLoading(true);
+      setMaterial(null);
+    }, 0);
 
     getMaterialDetail(materialId)
       .then(res => setMaterial(res.data))
       .catch(err => toast.error(err?.message || 'Gagal memuat detail materi'))
       .finally(() => setLoading(false));
+    return () => clearTimeout(startTimer);
   }, [materialId]);
 
   const currentIndex = materials.findIndex(
@@ -268,81 +269,10 @@ const MaterialDetail = () => {
 
               <Separator className="my-8" />
 
-              {/* Video Player Section - Non-aktifkan sementara sesua permintaan */}
-              {/* {(material.videoUrl || (material.attachments && material.attachments.some(a => a.type === 'video'))) && (
-                <div className="mb-10 space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wider">
-                    <PlayCircle size={18} />
-                    <span>Video Pembelajaran</span>
-                  </div>
-                  <div className="rounded-3xl overflow-hidden shadow-2xl border border-border aspect-video bg-black relative ring-1 ring-black/5">
-                    <ReactPlayer
-                      url={material.videoUrl || material.attachments.find(a => 
-                        a.type === 'video' || 
-                        a.url?.includes('youtube.com') || 
-                        a.url?.includes('youtu.be') || 
-                        a.url?.includes('vimeo.com')
-                      )?.url}
-                      width="100%"
-                      height="100%"
-                      controls
-                      className="absolute top-0 left-0"
-                    />
-                  </div>
-                </div>
-              )} */}
-
               {/* Markdown Content */}
               <article className="prose prose-slate max-w-none text-slate-800 dark:prose-invert">
                 <MarkdownPreview content={material.content} />
               </article>
-
-              {/* Attachments Section - Non-aktifkan sementara sesua permintaan */}
-              {/* {material.attachments && material.attachments.length > 0 && (
-                <section className="mt-12">
-                  <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                    <FileText size={20} className="text-primary" />
-                    Lampiran & Referensi
-                  </h3>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {material.attachments.map((file, i) => {
-                      const fileName = file.url?.split('/').pop() || 'File';
-                      const fileType = file.type?.toUpperCase() || 'FILE';
-                      const isPDF = fileType === 'PDF';
-                      const isVideo = file.type === 'video' || file.url?.includes('youtube.com') || file.url?.includes('youtu.be');
-
-                      return (
-                        <Card key={i} className={`group hover:border-primary/50 transition-colors cursor-pointer bg-card/50 ${isVideo ? 'border-primary/20' : ''}`} onClick={() => window.open(file.url, '_blank')}>
-                          <CardContent className="p-4 flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-lg flex shrink-0 items-center justify-center ${isPDF ? 'bg-red-500/10' : isVideo ? 'bg-amber-500/10' : 'bg-primary/10'}`}>
-                              {isPDF ? (
-                                <FileText size={24} className="text-red-500" />
-                              ) : isVideo ? (
-                                <Youtube size={24} className="text-amber-600" />
-                              ) : (
-                                <ExternalLink size={24} className="text-primary" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                                {fileName}
-                              </p>
-                              <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                                {isPDF ? 'Dokumen PDF' : isVideo ? 'Materi Video YouTube' : 'Tautan Eksternal'}
-                              </p>
-                            </div>
-                            {isVideo ? (
-                               <MonitorPlay size={18} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                            ) : (
-                               <Download size={18} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </section>
-              )} */}
 
               <Separator className="my-12" />
 

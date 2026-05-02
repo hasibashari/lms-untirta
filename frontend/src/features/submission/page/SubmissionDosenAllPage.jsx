@@ -9,10 +9,8 @@ import {
   ChevronDown,
   BookOpen,
   ArrowRight,
-  User,
 } from 'lucide-react';
 import { getRecentSubmissions } from '../submissionService';
-import { getMyCourses } from '../../course/courseService';
 
 /**
  * AllSubmissions - Halaman Semua Submissions Dosen
@@ -20,7 +18,6 @@ import { getMyCourses } from '../../course/courseService';
  */
 export default function AllSubmissions() {
   const [submissions, setSubmissions] = useState([]);
-  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,11 +28,9 @@ export default function AllSubmissions() {
   useEffect(() => {
     Promise.all([
       getRecentSubmissions(100), // Get more submissions
-      getMyCourses(),
     ])
-      .then(([submissionsRes, coursesRes]) => {
+      .then(([submissionsRes]) => {
         setSubmissions(submissionsRes.data);
-        setCourses(coursesRes.data);
       })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));

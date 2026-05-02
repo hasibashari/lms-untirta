@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Sparkles, CheckCircle, Users } from 'lucide-react';
 
 // Import Child Components
@@ -34,8 +35,7 @@ const HeroSection = () => {
   // Handler untuk search
   const handleSearch = (e) => {
     e.preventDefault();
-
-    alert(`Mencari kursus: ${searchQuery}`);
+    toast(`Mencari kursus: ${searchQuery}`);
   };
 
   // Data Configuration

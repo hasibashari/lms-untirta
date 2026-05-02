@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -31,7 +31,7 @@ const CourseHome = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     if (!courseId || courseId === 'undefined') return;
     setLoading(true);
     setError(null);
@@ -66,11 +66,15 @@ const CourseHome = () => {
         setError(err.message || 'Gagal memuat data kelas');
       })
       .finally(() => setLoading(false));
-  };
+  }, [courseId]);
 
   useEffect(() => {
-    fetchData();
-  }, [courseId]);
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [fetchData]);
 
   if (!courseId) {
     return (
@@ -315,8 +319,8 @@ const CourseHome = () => {
                 {/* Status Badge */}
                 <div className="shrink-0 mt-2 sm:mt-0">
                   <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${assignment.status === 'submitted'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}>
                     {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
                   </span>

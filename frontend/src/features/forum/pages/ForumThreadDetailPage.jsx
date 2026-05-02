@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -59,17 +59,21 @@ export default function ForumThreadDetailPage() {
     }
   })();
 
-  const fetchThread = () => {
+  const fetchThread = useCallback(() => {
     setLoading(true);
     getThread(threadId)
       .then((res) => setThread(res.data))
       .catch((err) => setError(err.message || 'Gagal memuat diskusi'))
       .finally(() => setLoading(false));
-  };
+  }, [threadId]);
 
   useEffect(() => {
-    fetchThread();
-  }, [threadId]);
+    const timer = setTimeout(() => {
+      fetchThread();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [fetchThread]);
 
   // Permissions
   const isOwner = currentUser && thread?.author?.id === currentUser.id;

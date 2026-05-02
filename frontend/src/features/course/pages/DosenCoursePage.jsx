@@ -34,8 +34,10 @@ export default function CourseHome() {
 
   useEffect(() => {
     if (!courseId || courseId === 'undefined') return;
+    const startTimer = setTimeout(() => {
+      setLoading(true);
+    }, 0);
 
-    setLoading(true);
     Promise.all([
       getMyCourses(),
       getMaterials(courseId),
@@ -54,6 +56,8 @@ export default function CourseHome() {
       })
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(startTimer);
   }, [courseId]);
 
   if (!courseId || courseId === 'undefined') {
@@ -142,13 +146,7 @@ export default function CourseHome() {
       color: 'violet',
       to: `/dosen/courses/${courseId}/students`,
     },
-    {
-      title: 'Cek Submission',
-      description: 'Lihat pengumpulan tugas',
-      icon: Inbox,
-      color: 'orange',
-      to: `/dosen/courses/${courseId}/submissions`,
-    },
+
     {
       title: 'Forum Diskusi',
       description: 'Diskusi dengan mahasiswa',

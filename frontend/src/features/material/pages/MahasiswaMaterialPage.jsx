@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -26,7 +26,7 @@ const CourseMaterials = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     if (!courseId) return;
     setLoading(true);
     setError(null);
@@ -48,11 +48,15 @@ const CourseMaterials = () => {
         setError(err.message || 'Gagal memuat data materi');
       })
       .finally(() => setLoading(false));
-  };
+  }, [courseId]);
 
   useEffect(() => {
-    fetchData();
-  }, [courseId]);
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [fetchData]);
 
   if (!courseId) {
     return (

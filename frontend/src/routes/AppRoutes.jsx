@@ -155,7 +155,6 @@ function AppRoutes() {
             <Route path="/dosen/courses/:courseId/assignments/new" element={<Lazy component={DosenCreateAssignment} />} />
             <Route path="/dosen/courses/:courseId/assignments/:assignmentId/edit" element={<Lazy component={DosenCreateAssignment} />} />
             <Route path="/dosen/courses/:courseId/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
-            <Route path="/dosen/courses/:courseId/submissions" element={<Lazy component={DosenSubmissions} />} />
             <Route path="/dosen/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
             <Route path="/dosen/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
             <Route path="/dosen/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />

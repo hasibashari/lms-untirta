@@ -13,6 +13,7 @@ import {
 } from '../hooks/useAcademic';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
 import { Button } from '@/components/ui/button';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 
 // ============================================================
 // Admin Academic Semester Management Page
@@ -53,6 +54,7 @@ const AdminAcademicPage = () => {
   // Transition confirmation modal
   const [transitionModal, setTransitionModal] = useState(null);
   const [transitionSubmitting, setTransitionSubmitting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Use the hook for readiness data, enabled only when targetStatus === 'CLOSED'
   const readinessQueryId = transitionModal?.toStatus === 'CLOSED' ? transitionModal?.semesterId : null;
@@ -71,7 +73,7 @@ const AdminAcademicPage = () => {
       await createSem(createForm);
       setShowCreate(false);
       setCreateForm({ academicYear: '', semesterType: 'GANJIL', maxSks: 24 });
-    } catch (err) {
+    } catch {
       // Error is handled in hook onError
     }
   };
@@ -114,15 +116,16 @@ const AdminAcademicPage = () => {
   };
 
   // Delete (only DRAFT)
-  const handleDelete = async (id) => {
-    if (!confirm('Yakin hapus semester ini?')) return;
-    setProcessingId(id);
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    setProcessingId(deleteConfirm.id);
     try {
-      await deleteSem(id);
-    } catch (err) {
+      await deleteSem(deleteConfirm.id);
+    } catch {
       // handled by hook
     } finally {
       setProcessingId(null);
+      setDeleteConfirm(null);
     }
   };
 
@@ -253,8 +256,8 @@ const AdminAcademicPage = () => {
         </div>
       ) : semesters.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <Calendar size={32} className="text-slate-400 mx-auto mb-3" />
-          <p className="text-slate-600 font-medium">Belum ada semester akademik</p>
+          <AlertCircle size={32} className="text-slate-400 mx-auto mb-3" />
+          <p className="text-slate-600 font-medium">Belum ada semester</p>
           <p className="text-sm text-slate-400 mt-1">
             Buat semester pertama untuk memulai konfigurasi akademik
           </p>
@@ -326,7 +329,7 @@ const AdminAcademicPage = () => {
                         (sem._count?.classes || 0) === 0 &&
                         (sem._count?.finalGrades || 0) === 0 && (
                           <button
-                            onClick={() => handleDelete(sem.id)}
+                            onClick={() => setDeleteConfirm(sem)}
                             disabled={isProcessing}
                             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg disabled:opacity-50 transition"
                           >
@@ -547,6 +550,16 @@ const AdminAcademicPage = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteConfirm)}
+        title="Hapus semester ini?"
+        description="Tindakan ini hanya tersedia untuk semester berstatus Draft."
+        confirmText="Hapus"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        loading={processingId === deleteConfirm?.id}
+      />
     </div>
   );
 };

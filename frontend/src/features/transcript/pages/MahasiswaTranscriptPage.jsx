@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
 import CourseBadge from '@/components/ui/CourseBadge';
@@ -21,29 +21,7 @@ const MahasiswaTranscriptPage = () => {
   const data = transcriptData?.data || null;
   const error = fetchError?.message || null;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <Loader2 size={32} className="animate-spin text-indigo-600 mx-auto mb-3" />
-          <p className="text-slate-500 font-medium">Memuat Hasil Studi...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white rounded-xl border border-red-200 p-12 text-center max-w-2xl mx-auto">
-        <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
-        <p className="text-red-700 font-medium">{error}</p>
-      </div>
-    );
-  }
-
-  if (!data) return null;
-
-  const { student, summary, courses } = data;
+  const { student, summary, courses } = data || {};
 
   // Memoized processed data
   const { semesterDataList, calculatedTotalSks } = useMemo(() => {
@@ -69,41 +47,71 @@ const MahasiswaTranscriptPage = () => {
     });
 
     const semesters = Object.keys(grouped).sort((a, b) => Number(a) - Number(b));
-    let cumulativeSks = 0;
-    let cumulativeMutu = 0;
 
-    const list = semesters.map((sem) => {
-      const coursesInSem = grouped[sem];
-      let semSks = 0;
-      let semMutu = 0;
+    const aggregated = semesters.reduce(
+      (acc, sem) => {
+        const coursesInSem = grouped[sem];
+        const { semSks, semMutu } = coursesInSem.reduce(
+          (totals, c) => ({
+            semSks: totals.semSks + c.sks,
+            semMutu: totals.semMutu + c.sks * (c.gradePoint || 0),
+          }),
+          { semSks: 0, semMutu: 0 }
+        );
 
-      coursesInSem.forEach((c) => {
-        semSks += c.sks;
-        semMutu += c.sks * (c.gradePoint || 0);
-      });
+        const cumulativeSks = acc.cumulativeSks + semSks;
+        const cumulativeMutu = acc.cumulativeMutu + semMutu;
+        const ip = semSks > 0 ? semMutu / semSks : 0;
+        const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
+        const isGasal = Number(sem) % 2 !== 0;
+        const semesterType = isGasal ? 'Gasal' : 'Genap';
+        const semesterTitle = `Semester ${sem} - ${semesterType}`;
 
-      cumulativeSks += semSks;
-      cumulativeMutu += semMutu;
+        return {
+          cumulativeSks,
+          cumulativeMutu,
+          list: [
+            ...acc.list,
+            {
+              semester: sem,
+              semesterTitle,
+              courses: coursesInSem,
+              ip,
+              ipk,
+            },
+          ],
+        };
+      },
+      { cumulativeSks: 0, cumulativeMutu: 0, list: [] }
+    );
 
-      const ip = semSks > 0 ? semMutu / semSks : 0;
-      const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
-
-      // Convert semester number to odd/even (Gasal/Genap)
-      const isGasal = Number(sem) % 2 !== 0;
-      const semesterType = isGasal ? 'Gasal' : 'Genap';
-      const semesterTitle = `Semester ${sem} - ${semesterType}`;
-
-      return {
-        semester: sem,
-        semesterTitle,
-        courses: coursesInSem,
-        ip,
-        ipk,
-      };
-    }).reverse(); // Display latest semester first
-
-    return { semesterDataList: list, calculatedTotalSks: totalSks };
+    return {
+      semesterDataList: aggregated.list.reverse(),
+      calculatedTotalSks: totalSks,
+    };
   }, [courses]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <Loader2 size={32} className="animate-spin text-indigo-600 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Memuat Hasil Studi...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl border border-red-200 p-12 text-center max-w-2xl mx-auto">
+        <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
+        <p className="text-red-700 font-medium">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -154,7 +162,7 @@ const MahasiswaTranscriptPage = () => {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap min-w-[700px]">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-175">
                 <thead>
                   <tr className="border-y border-slate-200 text-slate-500">
                     <th className="px-4 py-4 font-semibold w-16 text-center">No.</th>

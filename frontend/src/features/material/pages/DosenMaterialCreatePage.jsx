@@ -5,17 +5,8 @@ import {
   X,
   FileText,
   ArrowLeft,
-  FileDown,
-  Video,
-  Link2,
-  ExternalLink,
-  Plus,
-  Trash2,
   Eye,
   Edit3,
-  Play,
-  File,
-  Youtube,
   Calendar,
   Hash,
 } from 'lucide-react';
@@ -23,6 +14,7 @@ import { createMaterial, getMaterialDetail, updateMaterial } from '../materialSe
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import MarkdownEditor from '../../../components/ui/MarkdownEditor';
 import MarkdownPreview from '../../../components/ui/MarkdownPreview';
+import ConfirmDialog from '../../../components/shared/ConfirmDialog';
 
 /**
  * CreateMaterial - Form Pembuatan & Edit Materi
@@ -52,9 +44,7 @@ export default function CreateMaterial() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Multiple attachments dengan nama dan tipe
-  const [attachments, setAttachments] = useState([]);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Tab untuk switch antara Edit dan Preview
   const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'preview'
@@ -70,27 +60,6 @@ export default function CreateMaterial() {
           setContent(data.content || '');
           setOrder(data.order?.toString() || '');
 
-          // Konversi attachments dari response ke format form
-          const loadedAttachments = [];
-          if (data.attachments && Array.isArray(data.attachments)) {
-            data.attachments.forEach(att => {
-              loadedAttachments.push({
-                name: att.label || '',
-                url: att.url || '',
-                type: att.type === 'video' ? 'video' : 'file',
-              });
-            });
-          }
-          // Backward compatibility: jika tidak ada attachments array, cek fileUrl dan videoUrl
-          if (loadedAttachments.length === 0) {
-            if (data.fileUrl) {
-              loadedAttachments.push({ name: 'File', url: data.fileUrl, type: 'file' });
-            }
-            if (data.videoUrl) {
-              loadedAttachments.push({ name: 'Video', url: data.videoUrl, type: 'video' });
-            }
-          }
-          setAttachments(loadedAttachments);
         })
         .catch(err => {
           setError(err?.response?.data?.message || err?.message || 'Gagal memuat data materi');
@@ -98,37 +67,6 @@ export default function CreateMaterial() {
         .finally(() => setLoading(false));
     }
   }, [isEditMode, materialId]);
-
-  // Fungsi untuk menambah attachment baru
-  const addAttachment = () => {
-    setAttachments([...attachments, { name: '', url: '', type: 'file' }]);
-  };
-
-  // Fungsi untuk menghapus attachment
-  const removeAttachment = (index) => {
-    setAttachments(attachments.filter((_, i) => i !== index));
-  };
-
-  // Fungsi untuk update attachment
-  const updateAttachmentField = (index, field, value) => {
-    const newAttachments = [...attachments];
-    newAttachments[index][field] = value;
-    setAttachments(newAttachments);
-  };
-
-  // Helper untuk extract YouTube video ID
-  const getYoutubeVideoId = (url) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
-
-  // Helper untuk cek apakah URL adalah video
-  const isVideoUrl = (url) => {
-    if (!url) return false;
-    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -143,21 +81,10 @@ export default function CreateMaterial() {
     setError(null);
 
     try {
-      // Filter attachments yang valid (memiliki URL)
-      const validAttachments = attachments.filter(a => a.url.trim());
-
-      // Pisahkan file dan video untuk backward compatibility
-      const fileAttachment = validAttachments.find(a => a.type === 'file');
-      const videoAttachment = validAttachments.find(a => a.type === 'video');
-
       const payload = {
         title: title.trim(),
         content: content,
         order: order ? parseInt(order) : undefined,
-        fileUrl: fileAttachment?.url || undefined,
-        videoUrl: videoAttachment?.url || undefined,
-        // Kirim semua attachments untuk future use
-        attachments: validAttachments.length > 0 ? validAttachments : undefined,
       };
 
       if (isEditMode) {
@@ -177,7 +104,8 @@ export default function CreateMaterial() {
   };
 
   const handleCancel = () => {
-    if (content && !confirm('Perubahan belum disimpan. Yakin ingin keluar?')) {
+    if (content) {
+      setShowLeaveConfirm(true);
       return;
     }
     navigate(`/dosen/courses/${courseId}/materials`);
@@ -345,103 +273,6 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
             />
           </div>
 
-          {/* Lampiran & Resource - Multiple Attachments - DISABLED FOR NOW
-          <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-1">
-                  <Link2 size={20} className="text-blue-600" />
-                  Lampiran & Resource
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Tambahkan file PDF, video, atau resource lainnya (opsional)
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={addAttachment}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-medium hover:bg-blue-100 transition"
-              >
-                <Plus size={18} />
-                Tambah Lampiran
-              </button>
-            </div>
-
-            {attachments.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                <Link2 size={32} className="mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-500 text-sm">Belum ada lampiran</p>
-                <p className="text-slate-400 text-xs mt-1">Klik "Tambah Lampiran" untuk menambahkan file atau video</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {attachments.map((attachment, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col md:flex-row gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200"
-                  >
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Nama Lampiran
-                      </label>
-                      <input
-                        type="text"
-                        value={attachment.name}
-                        onChange={(e) => updateAttachmentField(index, 'name', e.target.value)}
-                        placeholder="contoh: Slide Pertemuan 1"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      />
-                    </div>
-
-                    <div className="flex-2">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        URL Link
-                      </label>
-                      <input
-                        type="url"
-                        value={attachment.url}
-                        onChange={(e) => {
-                          updateAttachmentField(index, 'url', e.target.value);
-                          if (isVideoUrl(e.target.value)) {
-                            updateAttachmentField(index, 'type', 'video');
-                          }
-                        }}
-                        placeholder="https://drive.google.com/... atau https://youtube.com/..."
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      />
-                    </div>
-
-                    <div className="w-full md:w-32">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Tipe
-                      </label>
-                      <select
-                        value={attachment.type}
-                        onChange={(e) => updateAttachmentField(index, 'type', e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      >
-                        <option value="file">📄 File</option>
-                        <option value="video">🎬 Video</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-end">
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-                        title="Hapus lampiran"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          */}
-
           {/* Action Buttons */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
             <p className="text-sm text-slate-500">
@@ -473,10 +304,17 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
           title={title}
           content={content}
           order={order}
-          attachments={attachments.filter(a => a.url.trim())}
-          getYoutubeVideoId={getYoutubeVideoId}
         />
       )}
+
+      <ConfirmDialog
+        open={showLeaveConfirm}
+        title="Keluar tanpa menyimpan?"
+        description="Perubahan belum disimpan. Jika keluar sekarang, semua perubahan akan hilang."
+        confirmText="Keluar"
+        onConfirm={() => navigate(`/dosen/courses/${courseId}/materials`)}
+        onCancel={() => setShowLeaveConfirm(false)}
+      />
     </div>
   );
 }
@@ -485,7 +323,7 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
  * MaterialPreview - Komponen Preview Materi
  * Tampilan yang konsisten dengan halaman mahasiswa (seperti platform edukasi)
  */
-function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId }) {
+function MaterialPreview({ title, content, order }) {
   const currentDate = new Date().toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
@@ -503,7 +341,7 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
       </div>
 
       {/* Material Card - Seperti tampilan edukasi */}
-      <div className="bg-card rounded-xl border border-border shadow-sm shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         {/* Header Section */}
         <div className="bg-linear-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
           <div className="flex items-start justify-between">
@@ -546,87 +384,6 @@ function MaterialPreview({ title, content, order, attachments, getYoutubeVideoId
             )}
           </div>
 
-          {/* Attachments Section - DISABLED FOR NOW
-          {attachments && attachments.length > 0 && (
-            <div className="border-t border-slate-200 pt-8">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Link2 size={20} className="text-blue-600" />
-                Lampiran ({attachments.length})
-              </h2>
-
-              <div className="space-y-4">
-                {attachments.map((attachment, index) => {
-                  const videoId = attachment.type === 'video' ? getYoutubeVideoId(attachment.url) : null;
-
-                  return (
-                    <div
-                      key={index}
-                      className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden"
-                    >
-                      {videoId ? (
-                        <div className="aspect-video">
-                          <iframe
-                            src={`https://www.youtube.com/embed/${videoId}`}
-                            title={attachment.name || `Video ${index + 1}`}
-                            className="w-full h-full"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      ) : null}
-
-                      <div className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${attachment.type === 'video'
-                            ? 'bg-red-100 text-red-600'
-                            : 'bg-emerald-100 text-emerald-600'
-                            }`}>
-                            {attachment.type === 'video' ? (
-                              videoId ? <Youtube size={20} /> : <Video size={20} />
-                            ) : (
-                              <File size={20} />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-slate-900">
-                              {attachment.name || (attachment.type === 'video' ? 'Video' : 'File Lampiran')}
-                            </p>
-                            <p className="text-xs text-slate-500 truncate max-w-xs">
-                              {attachment.url}
-                            </p>
-                          </div>
-                        </div>
-
-                        <a
-                          href={attachment.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${attachment.type === 'video'
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
-                            }`}
-                        >
-                          {attachment.type === 'video' ? (
-                            <>
-                              <Play size={16} />
-                              Tonton
-                            </>
-                          ) : (
-                            <>
-                              <FileDown size={16} />
-                              Download
-                            </>
-                          )}
-                          <ExternalLink size={14} />
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          */}
         </div>
       </div>
 

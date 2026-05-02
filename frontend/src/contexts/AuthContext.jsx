@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as loginAPI, getMe } from '../features/auth/authService';
@@ -6,10 +7,10 @@ import { isTokenExpired, getTokenRemainingMs } from '../utils/token';
 
 const AuthContext = createContext(null);
 
-// Auto-logout 30 seconds before the token actually expires
-const EXPIRY_BUFFER_MS = 30_000;
 
 export const AuthProvider = ({ children }) => {
+  // Auto-logout 30 seconds before the token actually expires
+  const EXPIRY_BUFFER_MS = 30_000;
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data);
       setToken(storedToken);
       scheduleAutoLogout(storedToken);
-    } catch (error) {
+    } catch {
       localStorage.removeItem('token');
       setUser(null);
       setToken(null);

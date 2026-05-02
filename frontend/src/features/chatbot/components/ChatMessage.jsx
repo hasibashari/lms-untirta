@@ -14,20 +14,19 @@ export const ChatMessage = ({ role, content }) => {
         <div className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${isBot ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
           {isBot ? <Bot size={18} /> : <User size={18} />}
         </div>
-        
+
         {/* Message Bubble */}
-        <div className={`px-4 py-3 rounded-2xl ${
-          isBot ? 'bg-muted/50 rounded-bl-sm text-foreground' : 'bg-primary text-primary-foreground rounded-br-sm'
-        }`}>
+        <div className={`px-4 py-3 rounded-2xl ${isBot ? 'bg-muted/50 rounded-bl-sm text-foreground' : 'bg-primary text-primary-foreground rounded-br-sm'
+          }`}>
           {isBot ? (
             <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
-              <ReactMarkdown 
+              <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code({ node, inline, className, children, ...props }) {
+                  code({ inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     const language = match ? match[1] : '';
-                    
+
                     if (!inline && match) {
                       return (
                         <div className="rounded-lg overflow-hidden my-3 border border-slate-700/50 shadow-sm bg-[#282c34]">
@@ -56,8 +55,8 @@ export const ChatMessage = ({ role, content }) => {
                     }
 
                     return (
-                      <code 
-                        className={`${className} px-1 rounded bg-slate-200 text-pink-600 font-mono text-[0.9em]`} 
+                      <code
+                        className={`${className} px-1 rounded bg-slate-200 text-pink-600 font-mono text-[0.9em]`}
                         {...props}
                       >
                         {children}

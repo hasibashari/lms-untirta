@@ -22,11 +22,16 @@ export default function ForumThreadListPage() {
 
   useEffect(() => {
     if (!courseId) return;
-    setLoading(true);
+    const startTimer = setTimeout(() => {
+      setLoading(true);
+    }, 0);
+
     getThreads(courseId)
       .then((res) => setThreads(res.data || []))
       .catch((err) => setError(err.message || 'Gagal memuat diskusi'))
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(startTimer);
   }, [courseId]);
 
   // Filter threads by search

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   BookOpen,
@@ -11,14 +12,11 @@ import {
   Eye,
   X,
   Edit,
-  FileDown,
-  Video,
-  ExternalLink,
-  File,
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials, deleteMaterial } from '../materialService';
 import MarkdownPreview from '../../../components/ui/MarkdownPreview';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import ConfirmDialog from '../../../components/shared/ConfirmDialog';
 
 /**
  * Materials - Daftar Materi Kelas (Dosen)
@@ -34,6 +32,7 @@ export default function Materials() {
   const [previewMaterial, setPreviewMaterial] = useState(null); // material detail for modal
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     if (!courseId || courseId === 'undefined') return;
@@ -60,14 +59,16 @@ export default function Materials() {
     }
   };
 
-  const handleDelete = async (materialId) => {
-    if (!confirm('Yakin ingin menghapus materi ini?')) return;
-
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
     try {
-      await deleteMaterial(materialId);
-      setMaterials((prev) => prev.filter((m) => m.id !== materialId));
+      await deleteMaterial(deleteConfirm.id);
+      setMaterials((prev) => prev.filter((m) => m.id !== deleteConfirm.id));
+      toast.success('Materi berhasil dihapus');
     } catch (err) {
-      alert(err?.message || err || 'Gagal menghapus materi');
+      toast.error(err?.message || err || 'Gagal menghapus materi');
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -214,7 +215,7 @@ export default function Materials() {
               courseId={courseId}
               onPreview={() => openPreview(material.id)}
               onEdit={() => navigate(`/dosen/courses/${courseId}/materials/${material.id}/edit`)}
-              onDelete={() => handleDelete(material.id)}
+              onDelete={() => setDeleteConfirm(material)}
             />
           ))}
         </div>
@@ -270,36 +271,6 @@ export default function Materials() {
                 </div>
               )}
 
-              {/* Attachments Links (same shape as mahasiswa) */}
-              {previewMaterial?.attachments?.length > 0 && (
-                <div className="flex flex-wrap gap-3">
-                  {previewMaterial.attachments.map((att, idx) => {
-                    const type = String(att.type || '').toLowerCase();
-                    const isPdf = type === 'pdf';
-                    const isVideo = type === 'video';
-
-                    return (
-                      <a
-                        key={idx}
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition border ${isPdf
-                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
-                          : isVideo
-                            ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
-                          }`}
-                      >
-                        {isPdf ? <FileDown size={18} /> : isVideo ? <Video size={18} /> : <File size={18} />}
-                        {att.label || (isPdf ? 'PDF' : isVideo ? 'Video' : 'Link')}
-                        <ExternalLink size={14} />
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-
               {/* Content - Markdown Preview */}
               {previewMaterial?.content ? (
                 <div className="prose prose-slate max-w-none">
@@ -309,9 +280,6 @@ export default function Materials() {
                 <div className="text-center py-8 text-slate-500">
                   <FileText size={40} className="mx-auto mb-3 text-slate-300" />
                   <p>Tidak ada konten teks untuk materi ini.</p>
-                  {(previewMaterial?.attachments?.length > 0) && (
-                    <p className="text-sm mt-1">Gunakan link di atas untuk mengakses materi.</p>
-                  )}
                 </div>
               )}
             </div>
@@ -344,6 +312,15 @@ export default function Materials() {
           </ul>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteConfirm)}
+        title="Hapus materi ini?"
+        description="Tindakan ini akan menghapus materi secara permanen."
+        confirmText="Hapus"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }
@@ -354,18 +331,9 @@ export default function Materials() {
 function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
   const [showMenu, setShowMenu] = useState(false);
 
-  const getBadgeInfo = () => {
-    const hasText = Boolean(material.content);
-    const atts = Array.isArray(material.attachments) ? material.attachments : [];
-    const types = new Set(atts.map((a) => String(a.type || '').toLowerCase()));
-
-    return {
-      hasText,
-      hasPdf: types.has('pdf') || Boolean(material.fileUrl),
-      hasVideo: types.has('video') || Boolean(material.videoUrl),
-      hasLink: types.has('link'),
-    };
-  };
+  const getBadgeInfo = () => ({
+    hasText: Boolean(material.content),
+  });
 
   const badges = getBadgeInfo();
 
@@ -394,24 +362,6 @@ function MaterialCard({ material, index, onPreview, onEdit, onDelete }) {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
                   <FileText size={12} />
                   Teks
-                </span>
-              )}
-              {badges.hasPdf && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs">
-                  <FileDown size={12} />
-                  PDF
-                </span>
-              )}
-              {badges.hasVideo && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">
-                  <Video size={12} />
-                  Video
-                </span>
-              )}
-              {badges.hasLink && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-xs">
-                  <ExternalLink size={12} />
-                  Link
                 </span>
               )}
             </div>

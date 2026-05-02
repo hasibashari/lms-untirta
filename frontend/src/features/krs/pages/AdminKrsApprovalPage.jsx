@@ -60,7 +60,7 @@ const AdminKrsMonitoringPage = () => {
       .catch(() => setSemesters([]));
   }, []);
 
-  const enrollments = monitoringData?.enrollments || [];
+  const enrollments = useMemo(() => monitoringData?.enrollments || [], [monitoringData]);
   const summary = monitoringData?.summary || {};
 
   // Group enrollments by student

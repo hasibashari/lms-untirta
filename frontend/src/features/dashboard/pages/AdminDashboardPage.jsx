@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
-import { getAdminStats } from '../../user/userService';
 import PageLoader from '../../../components/shared/PageLoader';
 import { useAdminStats } from '../../user/hooks/useAdminStats';
 
@@ -14,7 +12,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const { data, isLoading, error: fetchError } = useAdminStats();
-  
+
   const stats = {
     totalUsers: data?.data?.totalUsers || 0,
     totalCourses: data?.data?.totalCourses || 0,
@@ -85,7 +83,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className='text-2xl font-bold text-card-foreground'>
-                    {loading ? '-' : stat.value}
+                    {isLoading ? '-' : stat.value}
                   </p>
                   <p className='text-sm text-muted-foreground'>{stat.label}</p>
                 </div>

@@ -26,8 +26,10 @@ export default function Students() {
   // Fetch students
   useEffect(() => {
     if (!courseId || courseId === 'undefined') return;
+    const startTimer = setTimeout(() => {
+      setLoading(true);
+    }, 0);
 
-    setLoading(true);
     getCourseStudents(courseId)
       .then(res => {
         // API returns: [{ enrollmentId, enrolledAt, student: { id, name, email } }]
@@ -44,6 +46,8 @@ export default function Students() {
       })
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(startTimer);
   }, [courseId]);
 
   // Filter students by search

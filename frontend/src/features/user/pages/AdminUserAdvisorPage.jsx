@@ -271,7 +271,7 @@ const AdvisorAssignmentPage = () => {
             <div className="lg:hidden divide-y divide-slate-100">
               {filteredDosen.length === 0 ? (
                 <div className="text-center text-slate-400 py-10 text-sm">Tidak ada dosen ditemukan</div>
-              ) : filteredDosen.map((dosen, index) => {
+              ) : filteredDosen.map((dosen) => {
                 const studentCount = dosen.advisedStudentCount || 0;
                 return (
                   <div key={dosen.id} className="p-4 hover:bg-slate-50">

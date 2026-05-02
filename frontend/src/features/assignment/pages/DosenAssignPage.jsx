@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { getAssignments, deleteAssignment } from '../assignmentService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import toast from 'react-hot-toast';
+import ConfirmDialog from '../../../components/shared/ConfirmDialog';
 
 /**
  * Assignments - Daftar Tugas Kelas (Dosen)
@@ -28,6 +30,7 @@ export default function Assignments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     if (!courseId || courseId === 'undefined') return;
@@ -40,14 +43,16 @@ export default function Assignments() {
   }, [courseId]);
 
   // Handler untuk menghapus tugas
-  const handleDelete = async (assignmentId) => {
-    if (!confirm('Yakin ingin menghapus tugas ini? Semua submission mahasiswa juga akan terhapus.')) return;
-
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
     try {
-      await deleteAssignment(assignmentId);
-      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+      await deleteAssignment(deleteConfirm.id);
+      setAssignments((prev) => prev.filter((a) => a.id !== deleteConfirm.id));
+      toast.success('Tugas berhasil dihapus');
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || 'Gagal menghapus tugas');
+      toast.error(err?.response?.data?.message || err?.message || 'Gagal menghapus tugas');
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -64,7 +69,6 @@ export default function Assignments() {
     const diff = new Date(dueDate) - new Date();
     return diff > 0 && diff < 24 * 60 * 60 * 1000;
   };
-
   // Format date
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('id-ID', {
@@ -246,7 +250,7 @@ export default function Assignments() {
               onEdit={() =>
                 navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/edit`)
               }
-              onDelete={() => handleDelete(assignment.id)}
+              onDelete={() => setDeleteConfirm(assignment)}
             />
           ))}
         </div>
@@ -263,6 +267,15 @@ export default function Assignments() {
           </ul>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteConfirm)}
+        title="Hapus tugas ini?"
+        description="Tindakan ini akan menghapus tugas dan semua submission mahasiswa."
+        confirmText="Hapus"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }
@@ -388,7 +401,9 @@ function AssignmentCard({
           </div>
 
           <span className="text-slate-500">
-            Dibuat: {new Date(assignment.createdAt || Date.now()).toLocaleDateString('id-ID')}
+            Dibuat: {assignment.createdAt
+              ? new Date(assignment.createdAt).toLocaleDateString('id-ID')
+              : '-'}
           </span>
         </div>
       </div>

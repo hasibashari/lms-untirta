@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   BookOpen,
   Plus,
@@ -185,7 +186,7 @@ const Courses = () => {
       setCourses(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || 'Gagal menghapus mata kuliah');
+      toast.error(err?.response?.data?.message || err?.message || 'Gagal menghapus mata kuliah');
     } finally {
       setDeleting(false);
     }

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getUsers, deleteUser } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { Pencil, Trash2, Users as UsersIcon } from 'lucide-react';
 import PaginationComponent from '../../../components/shared/PaginationComponent';
 import PageLoader from '../../../components/shared/PageLoader';
 import { useUsers, useDeleteUser } from '../hooks/useUsers';
+import ConfirmDialog from '../../../components/shared/ConfirmDialog';
 
 export default function Users() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,18 +19,18 @@ export default function Users() {
   const location = useLocation();
   const flash = location.state?.flash;
 
-  const { data, isLoading, isError, error: fetchError, isFetching } = useUsers({ page: currentPage, limit });
+  const { data, isLoading, isError, error: fetchError } = useUsers({ page: currentPage, limit });
   const deleteMutation = useDeleteUser();
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const users = data?.data || [];
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages || 1;
   const totalItems = pagination?.total || 0;
 
-  const handleDelete = async (id, name, e) => {
+  const handleDelete = async (user, e) => {
     e.stopPropagation();
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus user ${name}?`)) return;
-    deleteMutation.mutate(id);
+    setDeleteConfirm(user);
   };
 
   const errorMessage = err =>
@@ -127,7 +127,7 @@ export default function Users() {
                     size="sm"
                     className="h-7 w-7 p-0 lg:hidden"
                     title="Hapus"
-                    onClick={(e) => handleDelete(u.id, u.name, e)}
+                    onClick={(e) => handleDelete(u, e)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -187,7 +187,7 @@ export default function Users() {
                           size="sm"
                           className="h-8 w-8 p-0"
                           title="Hapus"
-                          onClick={(e) => handleDelete(u.id, u.name, e)}
+                          onClick={(e) => handleDelete(u, e)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -215,6 +215,21 @@ export default function Users() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteConfirm)}
+        title="Hapus user ini?"
+        description={`User ${deleteConfirm?.name || ''} akan dihapus secara permanen.`}
+        confirmText="Hapus"
+        onConfirm={() =>
+          deleteMutation.mutate(deleteConfirm.id, {
+            onSuccess: () => setDeleteConfirm(null),
+            onError: () => setDeleteConfirm(null),
+          })
+        }
+        onCancel={() => setDeleteConfirm(null)}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -94,7 +94,7 @@ const StudyPlan = () => {
   const [itemsPerPage] = useState(10);
 
   // Derived data
-  const enrollments = krsData?.enrollments || [];
+  const enrollments = useMemo(() => krsData?.enrollments || [], [krsData]);
   const summary = krsData?.summary || {};
 
   // Currently selected semester object
@@ -195,10 +195,6 @@ const StudyPlan = () => {
   const totalItems = availableMeta?.pagination?.totalItems || 0;
 
   // Enrolled class IDs
-  const enrolledClassIds = useMemo(() => {
-    return new Set(enrollments.map((e) => e.class?.id));
-  }, [enrollments]);
-
   // Enrollment stats
   const enrollmentStats = useMemo(() => {
     const stats = { pending: 0, approved: 0, rejected: 0 };
