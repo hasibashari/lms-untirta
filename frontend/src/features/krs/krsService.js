@@ -9,6 +9,10 @@ import api from '../../services/apiService';
 export const getAvailableClasses = (params = {}) => {
   const query = new URLSearchParams();
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  if (params.semester) query.append('semester', params.semester);
+  if (params.search) query.append('search', params.search);
+  if (params.page) query.append('page', params.page);
+  if (params.limit) query.append('limit', params.limit);
   const qs = query.toString();
   return api.get(`/krs/available${qs ? `?${qs}` : ''}`);
 };

@@ -126,13 +126,33 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     where.academicSemesterId = targetSemesterId;
   }
 
-  // Filter berdasarkan semester course (jika diberikan)
+  // Filter berdasarkan semester course (tingkat)
   if (filters.semester) {
-    where.course = { semester: parseInt(filters.semester) };
+    where.course = { ...where.course, semester: parseInt(filters.semester) };
   }
+
+  // Filter berdasarkan search query (title atau code)
+  if (filters.search) {
+    const searchLower = filters.search.toLowerCase();
+    where.OR = [
+      { course: { title: { contains: searchLower, mode: 'insensitive' } } },
+      { course: { code: { contains: searchLower, mode: 'insensitive' } } },
+      { lecturer: { name: { contains: searchLower, mode: 'insensitive' } } },
+    ];
+  }
+
+  // Pagination parameters
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get total count for pagination metadata
+  const totalItems = await prisma.class.count({ where });
 
   const classes = await prisma.class.findMany({
     where,
+    skip,
+    take: limit,
     select: {
       id: true,
       academicSemesterId: true,
@@ -199,9 +219,17 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     lecturer: cls.lecturer,
   }));
 
-  // 5. Build diagnostic metadata when empty (helps frontend show useful messages)
-  let _meta = null;
-  if (result.length === 0) {
+  // 5. Build diagnostic metadata when empty or for pagination
+  let _meta = {
+    pagination: {
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: page,
+      limit,
+    },
+  };
+
+  if (result.length === 0 && !filters.search) {
     // Count ALL classes for this semester (including enrollment-closed ones)
     const totalClassesInSemester = targetSemesterId
       ? await prisma.class.count({ where: { academicSemesterId: targetSemesterId } })
@@ -214,6 +242,7 @@ const getAvailableClasses = async (studentId, filters = {}) => {
       : 0;
 
     _meta = {
+      ..._meta,
       reason: !semesterDiag
         ? 'NO_ACTIVE_SEMESTER'
         : semesterDiag.status !== 'OPEN'

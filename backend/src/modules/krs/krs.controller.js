@@ -9,6 +9,9 @@ export const getAvailableClasses = async (req, res) => {
     const filters = {
       academicSemesterId: req.query.academicSemesterId,
       semester: req.query.semester,
+      search: req.query.search,
+      page: req.query.page,
+      limit: req.query.limit,
     };
     const result = await krsService.getAvailableClasses(req.user.id, filters);
     sendSuccess(res, {

@@ -157,17 +157,19 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
               code: true,
               semester: true,
               sks: true,
-              assignments: {
-                select: {
-                  id: true,
-                  submissions: {
-                    where: { studentId },
-                    select: {
-                      grade: true,
+              ...(!isStudentView && {
+                assignments: {
+                  select: {
+                    id: true,
+                    submissions: {
+                      where: { studentId },
+                      select: {
+                        grade: true,
+                      },
                     },
                   },
                 },
-              },
+              }),
             },
           },
           lecturer: {
@@ -225,14 +227,14 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
         averageScore = finalGrade.numericScore;
         gradeSource = 'final_grade';
       }
-    } else if (!isStudentView) {
+    } else if (!isStudentView && course.assignments) {
       // Fallback to assignment averages (only for admin/dosen view)
       const allSubmissions = course.assignments.flatMap(a =>
         a.submissions.map(s => ({ grade: s.grade }))
       );
       const avgResult = calculateAverageGrade(allSubmissions);
-      const converted = convertToLetterGrade(avgResult.averageScore);
       averageScore = avgResult.averageScore;
+      const converted = convertToLetterGrade(averageScore);
       letterGrade = converted.letterGrade;
       gradePoint = converted.gradePoint;
       gradeSource = 'assignment_average';
@@ -254,7 +256,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
       letterGrade,
       gradePoint,
       gradeSource,
-      totalAssignments: course.assignments.length,
+      totalAssignments: course.assignments?.length || 0,
       enrolledAt: enrollment.createdAt,
     };
   });
@@ -383,7 +385,8 @@ const getStudentList = async (filters = {}, query = {}) => {
 };
 
 
-const getFullStudentTranscript = async (studentId) => {
+const getFullStudentTranscript = async (studentId, options = {}) => {
+  const isStudentView = options.isStudentView === true;
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     select: { id: true, name: true, email: true, nim: true, createdAt: true },
@@ -393,8 +396,8 @@ const getFullStudentTranscript = async (studentId) => {
     throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
-  const legacyResult = await getStudyResults(studentId);
-  const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView: false });
+  const legacyResult = await getStudyResults(studentId, {});
+  const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView });
 
   // Combine all courses and compute unified GPA
   // Deduplicate by courseId (prefer KRS result if exists)

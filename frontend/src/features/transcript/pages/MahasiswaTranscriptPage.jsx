@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
 import CourseBadge from '@/components/ui/CourseBadge';
@@ -44,60 +45,65 @@ const MahasiswaTranscriptPage = () => {
 
   const { student, summary, courses } = data;
 
-  // Sorting courses valid only
-  const sortedCourses = [...(courses || [])].sort((a, b) => {
-    if (a.semester !== b.semester) return (a.semester || 0) - (b.semester || 0);
-    return (a.courseCode || '').localeCompare(b.courseCode || '');
-  });
-  const validCourses = sortedCourses.filter(c => c.letterGrade && c.letterGrade !== '-');
+  // Memoized processed data
+  const { semesterDataList, calculatedTotalSks } = useMemo(() => {
+    // Sorting courses valid only
+    const sortedCourses = [...(courses || [])].sort((a, b) => {
+      if (a.semester !== b.semester) return (a.semester || 0) - (b.semester || 0);
+      return (a.courseCode || '').localeCompare(b.courseCode || '');
+    });
+    const validCourses = sortedCourses.filter(c => c.letterGrade && c.letterGrade !== '-');
 
-  // Calculate generic total for header
-  let calculatedTotalSks = 0;
-  validCourses.forEach(c => calculatedTotalSks += c.sks);
+    // Calculate generic total for header
+    let totalSks = 0;
+    validCourses.forEach(c => totalSks += c.sks);
 
-  // Group courses by semester
-  const groupedCourses = {};
-  validCourses.forEach((course) => {
-    const sem = course.semester || 1;
-    if (!groupedCourses[sem]) {
-      groupedCourses[sem] = [];
-    }
-    groupedCourses[sem].push(course);
-  });
-
-  const semestersList = Object.keys(groupedCourses).sort((a, b) => Number(a) - Number(b));
-  let cumulativeSks = 0;
-  let cumulativeMutu = 0;
-
-  const semesterDataList = semestersList.map((sem) => {
-    const coursesInSem = groupedCourses[sem];
-    let semSks = 0;
-    let semMutu = 0;
-
-    coursesInSem.forEach((c) => {
-      semSks += c.sks;
-      semMutu += c.sks * (c.gradePoint || 0);
+    // Group courses by semester
+    const grouped = {};
+    validCourses.forEach((course) => {
+      const sem = course.semester || 1;
+      if (!grouped[sem]) {
+        grouped[sem] = [];
+      }
+      grouped[sem].push(course);
     });
 
-    cumulativeSks += semSks;
-    cumulativeMutu += semMutu;
+    const semesters = Object.keys(grouped).sort((a, b) => Number(a) - Number(b));
+    let cumulativeSks = 0;
+    let cumulativeMutu = 0;
 
-    const ip = semSks > 0 ? semMutu / semSks : 0;
-    const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
+    const list = semesters.map((sem) => {
+      const coursesInSem = grouped[sem];
+      let semSks = 0;
+      let semMutu = 0;
 
-    // Convert semester number to odd/even (Gasal/Genap)
-    const isGasal = Number(sem) % 2 !== 0;
-    const semesterType = isGasal ? 'Gasal' : 'Genap';
-    const semesterTitle = `Semester ${sem} - ${semesterType}`;
+      coursesInSem.forEach((c) => {
+        semSks += c.sks;
+        semMutu += c.sks * (c.gradePoint || 0);
+      });
 
-    return {
-      semester: sem,
-      semesterTitle,
-      courses: coursesInSem,
-      ip,
-      ipk,
-    };
-  }).reverse(); // Display latest semester first
+      cumulativeSks += semSks;
+      cumulativeMutu += semMutu;
+
+      const ip = semSks > 0 ? semMutu / semSks : 0;
+      const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
+
+      // Convert semester number to odd/even (Gasal/Genap)
+      const isGasal = Number(sem) % 2 !== 0;
+      const semesterType = isGasal ? 'Gasal' : 'Genap';
+      const semesterTitle = `Semester ${sem} - ${semesterType}`;
+
+      return {
+        semester: sem,
+        semesterTitle,
+        courses: coursesInSem,
+        ip,
+        ipk,
+      };
+    }).reverse(); // Display latest semester first
+
+    return { semesterDataList: list, calculatedTotalSks: totalSks };
+  }, [courses]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">

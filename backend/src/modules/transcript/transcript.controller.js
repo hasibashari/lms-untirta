@@ -60,7 +60,8 @@ export const getStudentTranscript = async (req, res) => {
       throw error;
     }
 
-    const result = await transcriptService.getFullStudentTranscript(studentId);
+    const isStudentView = req.user.role === 'MAHASISWA';
+    const result = await transcriptService.getFullStudentTranscript(studentId, { isStudentView });
 
     // Audit log: record who accessed whose transcript
     const accessor = req.user;

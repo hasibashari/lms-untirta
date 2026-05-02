@@ -103,6 +103,16 @@ const StudyPlan = () => {
     [semesters, selectedSemesterId],
   );
 
+  // Debounced search query
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Is the current semester read-only? (CLOSED = read-only)
   const isReadOnly = currentSemester?.status === 'CLOSED';
 
@@ -140,14 +150,20 @@ const StudyPlan = () => {
     setLoading(true);
     setError(null);
     try {
-      const params = { academicSemesterId: selectedSemesterId };
+      const params = {
+        academicSemesterId: selectedSemesterId,
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearch,
+        semester: selectedCourseSemester !== 'all' ? selectedCourseSemester : undefined,
+      };
 
       const [availableRes, krsRes] = await Promise.all([
         // Only fetch available classes for OPEN semesters
         currentSemester?.status === 'OPEN'
           ? getAvailableClasses(params)
           : Promise.resolve({ data: [] }),
-        getMyKRS(params),
+        getMyKRS({ academicSemesterId: selectedSemesterId }),
       ]);
 
       setAvailableClasses(Array.isArray(availableRes?.data) ? availableRes.data : []);
@@ -158,7 +174,14 @@ const StudyPlan = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedSemesterId, currentSemester?.status]);
+  }, [
+    selectedSemesterId,
+    currentSemester?.status,
+    currentPage,
+    itemsPerPage,
+    debouncedSearch,
+    selectedCourseSemester,
+  ]);
 
   useEffect(() => {
     if (!semestersLoading) {
@@ -167,40 +190,14 @@ const StudyPlan = () => {
   }, [fetchData, semestersLoading]);
 
   // Enrolled class IDs
+  // Total pages from metadata
+  const totalPages = availableMeta?.pagination?.totalPages || 1;
+  const totalItems = availableMeta?.pagination?.totalItems || 0;
+
+  // Enrolled class IDs
   const enrolledClassIds = useMemo(() => {
     return new Set(enrollments.map((e) => e.class?.id));
   }, [enrollments]);
-
-  // Filter available classes
-  const availableFiltered = useMemo(
-    () =>
-      availableClasses.filter((cls) => {
-        if (enrolledClassIds.has(cls.id)) return false;
-        if (searchQuery) {
-          const q = searchQuery.toLowerCase();
-          const matches =
-            cls.course?.title?.toLowerCase().includes(q) ||
-            cls.course?.code?.toLowerCase().includes(q) ||
-            cls.lecturer?.name?.toLowerCase().includes(q);
-          if (!matches) return false;
-        }
-        if (
-          selectedCourseSemester !== 'all' &&
-          cls.course?.semester !== parseInt(selectedCourseSemester)
-        )
-          return false;
-        return true;
-      }),
-    [availableClasses, enrolledClassIds, searchQuery, selectedCourseSemester],
-  );
-
-  // Paginated available classes
-  const paginatedClasses = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return availableFiltered.slice(start, start + itemsPerPage);
-  }, [availableFiltered, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(availableFiltered.length / itemsPerPage);
 
   // Enrollment stats
   const enrollmentStats = useMemo(() => {
@@ -567,6 +564,11 @@ const StudyPlan = () => {
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
               />
             </div>
+            {!loading && !error && availableClasses.length > 0 && (
+              <p className="text-xs text-slate-500 italic">
+                Menampilkan {availableClasses.length} dari {totalItems} mata kuliah tersedia
+              </p>
+            )}
           </div>
 
           {/* Available Classes - Loading/Error/Empty */}
@@ -583,7 +585,7 @@ const StudyPlan = () => {
                 Coba lagi
               </Button>
             </div>
-          ) : availableFiltered.length === 0 ? (
+          ) : availableClasses.length === 0 ? (
             <div className="p-8 sm:p-12 text-center">
               <BookOpen size={32} className="text-slate-400 mx-auto mb-3" />
               <p className="text-slate-600 font-medium">
@@ -604,7 +606,7 @@ const StudyPlan = () => {
             <>
               {/* Mobile Card View */}
               <div className="lg:hidden divide-y divide-slate-100">
-                {paginatedClasses.map((cls, index) => {
+                {availableClasses.map((cls, index) => {
                   const isEnrollingThis = enrolling === cls.id;
                   const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
@@ -679,7 +681,7 @@ const StudyPlan = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedClasses.map((cls, index) => {
+                    {availableClasses.map((cls, index) => {
                       const isEnrollingThis = enrolling === cls.id;
                       const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
                       return (
