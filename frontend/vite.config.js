@@ -22,4 +22,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'query-vendor': ['@tanstack/react-query'],
+          'ui-vendor': ['lucide-react', 'motion'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 800,
+  },
 });

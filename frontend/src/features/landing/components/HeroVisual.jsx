@@ -43,7 +43,8 @@ const HeroVisual = ({
         src={imageUrl}
         alt={imageAlt}
         className="relative w-full h-full object-cover rounded-4xl shadow-2xl z-10"
-        loading="lazy"
+        loading="eager"
+        fetchpriority="high"
       />
 
       {/* Floating Cards */}
