@@ -122,6 +122,7 @@ const getThreadById = async (threadId, userId, userRole) => {
           content: true,
           createdAt: true,
           updatedAt: true,
+          parentId: true,
           author: {
             select: {
               id: true,
@@ -314,11 +315,13 @@ const createReply = async (threadId, userId, data) => {
         content: data.content,
         threadId: threadId,
         authorId: userId,
+        parentId: data.parentId || null, // Dukungan untuk nested reply
       },
       select: {
         id: true,
         content: true,
         createdAt: true,
+        parentId: true, // Sertakan parentId di respon
         author: {
           select: {
             id: true,

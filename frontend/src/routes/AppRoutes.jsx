@@ -158,6 +158,7 @@ function AppRoutes() {
             <Route path="/dosen/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
             <Route path="/dosen/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
             <Route path="/dosen/courses/:courseId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
+            <Route path="/dosen/courses/:courseId/forum/:threadId/edit" element={<Lazy component={ForumThreadCreate} />} />
           </Route>
         </Route>
       </Route>
@@ -178,6 +179,7 @@ function AppRoutes() {
             <Route path="/mahasiswa/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
             <Route path="/mahasiswa/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
             <Route path="/mahasiswa/courses/:courseId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
+            <Route path="/mahasiswa/courses/:courseId/forum/:threadId/edit" element={<Lazy component={ForumThreadCreate} />} />
           </Route>
           <Route element={<LearningLayout />}>
             <Route path="/mahasiswa/courses/:courseId/materials/:materialId" element={<Lazy component={MahasiswaMaterialDetail} />} />

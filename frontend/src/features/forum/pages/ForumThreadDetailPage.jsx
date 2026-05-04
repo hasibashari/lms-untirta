@@ -14,6 +14,7 @@ import { getThread, togglePin, deleteThread, createReply, updateReply, deleteRep
 import ReplyCard from '../components/ReplyCard';
 import ReplyComposer from '../components/ReplyComposer';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import MarkdownPreview from '../../../components/ui/MarkdownPreview';
 import toast from 'react-hot-toast';
 
 const roleBadge = {
@@ -95,13 +96,15 @@ export default function ForumThreadDetailPage() {
     } catch { /* error handled by apiService */ }
   };
 
-  const handleCreateReply = async (content) => {
-    const res = await createReply(threadId, { content });
-    setThread((prev) => ({
-      ...prev,
-      replies: [...(prev.replies || []), res.data],
-    }));
-    toast.success('Balasan berhasil dikirim');
+  const handleCreateReply = async (content, parentId = null) => {
+    try {
+      const res = await createReply(threadId, { content, parentId });
+      setThread((prev) => ({
+        ...prev,
+        replies: [...(prev.replies || []), res.data],
+      }));
+      toast.success('Balasan berhasil dikirim');
+    } catch { /* error handled by apiService */ }
   };
 
   const handleUpdateReply = async (replyId, content) => {
@@ -121,6 +124,32 @@ export default function ForumThreadDetailPage() {
     }));
     toast.success('Balasan berhasil dihapus');
   };
+
+  // Group replies into a tree structure for nested display
+  const replyTree = (() => {
+    if (!thread?.replies) return [];
+    const map = {};
+    const roots = [];
+    
+    // Sort by date to ensure order is preserved within levels
+    const sortedReplies = [...thread.replies].sort((a, b) => 
+      new Date(a.createdAt) - new Date(b.createdAt)
+    );
+
+    sortedReplies.forEach(r => {
+      map[r.id] = { ...r, children: [] };
+    });
+    
+    sortedReplies.forEach(r => {
+      if (r.parentId && map[r.parentId]) {
+        map[r.parentId].children.push(map[r.id]);
+      } else {
+        roots.push(map[r.id]);
+      }
+    });
+    
+    return roots;
+  })();
 
   if (loading) {
     return (
@@ -199,8 +228,8 @@ export default function ForumThreadDetailPage() {
           </div>
 
           {/* Content */}
-          <div className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-wrap wrap-break-word">
-            {thread.content}
+          <div className="mb-6">
+            <MarkdownPreview content={thread.content} />
           </div>
 
           {/* Actions */}
@@ -258,9 +287,9 @@ export default function ForumThreadDetailPage() {
         </div>
 
         {/* Replies list */}
-        {thread.replies?.length > 0 ? (
+        {replyTree.length > 0 ? (
           <div className="divide-y divide-border">
-            {thread.replies.map((reply) => (
+            {replyTree.map((reply) => (
               <ReplyCard
                 key={reply.id}
                 reply={reply}
@@ -268,6 +297,7 @@ export default function ForumThreadDetailPage() {
                 currentUserRole={currentUser?.role}
                 onUpdate={handleUpdateReply}
                 onDelete={handleDeleteReply}
+                onCreateReply={handleCreateReply}
               />
             ))}
           </div>
