@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion as Motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
@@ -199,17 +200,17 @@ const MaterialDetail = () => {
               title={sidebarCollapsed ? 'Buka Sidebar' : 'Tutup Sidebar'}
             >
               <div className="relative w-5 h-5 flex flex-col items-center justify-center">
-                <motion.span
+                <Motion.span
                   animate={sidebarCollapsed ? { rotate: 0, y: -6 } : { rotate: 45, y: 0 }}
                   transition={{ duration: 0.3 }}
                   className="absolute w-5 h-0.5 bg-current rounded-full"
                 />
-                <motion.span
+                <Motion.span
                   animate={sidebarCollapsed ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
                   transition={{ duration: 0.2 }}
                   className="absolute w-5 h-0.5 bg-current rounded-full"
                 />
-                <motion.span
+                <Motion.span
                   animate={sidebarCollapsed ? { rotate: 0, y: 6 } : { rotate: -45, y: 0 }}
                   transition={{ duration: 0.3 }}
                   className="absolute w-5 h-0.5 bg-current rounded-full"

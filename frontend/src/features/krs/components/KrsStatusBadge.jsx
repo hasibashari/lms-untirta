@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -18,7 +19,7 @@ const STATUS_CONFIG = {
   },
 };
 
-const KrsStatusBadge = ({ status, className = '', hideLabel = false }) => {
+const KrsStatusBadge = memo(({ status, className = '', hideLabel = false }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   const Icon = config.icon;
 
@@ -31,6 +32,6 @@ const KrsStatusBadge = ({ status, className = '', hideLabel = false }) => {
       {!hideLabel && config.label}
     </span>
   );
-};
+});
 
 export default KrsStatusBadge;

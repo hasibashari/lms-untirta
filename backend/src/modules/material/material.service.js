@@ -1,6 +1,7 @@
 import prisma from '../../config/prisma.js';
 import { cleanupFile } from '../../services/upload.service.js';
 import { AppError } from '../../config/errors.js';
+import cache from '../../utils/cache.js';
 import path from 'path';
 
 // Service layer untuk materi. Mengandung logika bisnis seperti:
@@ -33,7 +34,7 @@ const createMaterial = async (courseId, teacherId, data) => {
   const newOrder = lastMaterial ? lastMaterial.order + 1 : 1;
 
   // 4. Simpan materi ke DB dan kembalikan field penting saja
-  return await prisma.material.create({
+  const result = await prisma.material.create({
     data: {
       title: data.title,
       content: data.content,
@@ -54,6 +55,11 @@ const createMaterial = async (courseId, teacherId, data) => {
       createdAt: true,
     },
   });
+
+  // 5. Invalidate cache list materi kelas
+  await cache.invalidate(`materials:list:${courseId}`);
+
+  return result;
 };
 
 const getMaterials = async (courseId, userId, userRole) => {
@@ -73,17 +79,20 @@ const getMaterials = async (courseId, userId, userRole) => {
   }
 
   // Ambil daftar materi, terurut berdasarkan 'order' (naik)
-  return await prisma.material.findMany({
-    where: { courseId },
-    select: {
-      id: true,
-      title: true,
-      order: true,
-    },
-    orderBy: {
-      order: 'asc',
-    },
-  });
+  // Cache key include courseId
+  return await cache.getOrSet(`materials:list:${courseId}`, async () => {
+    return await prisma.material.findMany({
+      where: { courseId },
+      select: {
+        id: true,
+        title: true,
+        order: true,
+      },
+      orderBy: {
+        order: 'asc',
+      },
+    });
+  }, 1800); // 30 minutes
 };
 
 const getMaterialById = async (materialId, userId, userRole) => {
@@ -130,17 +139,38 @@ const getMaterialById = async (materialId, userId, userRole) => {
     }
   }
 
+  // Cache the core material details (not including authorization context)
+  const cachedMaterial = await cache.getOrSet(`material:detail:${materialId}`, async () => {
+    return {
+      id: material.id,
+      title: material.title,
+      content: material.content,
+      fileUrl: material.fileUrl,
+      videoUrl: material.videoUrl
+    };
+  }, 3600);
+
   // Susun daftar attachment jika ada file/video
   const attachments = [];
-  if (material.fileUrl) attachments.push({ type: 'pdf', url: material.fileUrl });
-  if (material.videoUrl) attachments.push({ type: 'video', url: material.videoUrl });
+  if (cachedMaterial.fileUrl) attachments.push({ type: 'pdf', url: cachedMaterial.fileUrl });
+  if (cachedMaterial.videoUrl) attachments.push({ type: 'video', url: cachedMaterial.videoUrl });
 
-  return {
-    id: material.id,
-    title: material.title,
-    content: material.content,
+  const result = {
+    id: cachedMaterial.id,
+    title: cachedMaterial.title,
+    content: cachedMaterial.content,
     attachments,
   };
+
+  return result;
+};
+
+// Wrapper for getMaterialById with cache
+const getMaterialByIdWithCache = async (materialId, userId, userRole) => {
+  // We only cache the core material data, not the user-specific authorization
+  // because auth depends on userId and role.
+  // Actually, let's just use getOrSet inside the function but carefully.
+  return await getMaterialById(materialId, userId, userRole);
 };
 
 const updateMaterial = async (materialId, userId, userRole, data) => {
@@ -172,7 +202,7 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
   }
 
   // Lakukan update dan kembalikan field yang relevan
-  return await prisma.material.update({
+  const updated = await prisma.material.update({
     where: { id: materialId },
     data: {
       title: data.title,
@@ -193,6 +223,12 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
       updatedAt: true,
     },
   });
+
+  // Invalidate caches
+  await cache.invalidate(`material:detail:${materialId}`);
+  await cache.invalidate(`materials:list:${updated.courseId}`);
+
+  return updated;
 };
 
 const deleteMaterial = async (materialId, userId, userRole) => {
@@ -226,6 +262,10 @@ const deleteMaterial = async (materialId, userId, userRole) => {
 
   // Hapus record materi
   await prisma.material.delete({ where: { id: materialId } });
+
+  // Invalidate caches
+  await cache.invalidate(`material:detail:${materialId}`);
+  await cache.invalidate(`materials:list:${material.course.id}`);
 
   // Jika ada file terkait, hapus file fisik secara asinkron (jangan blokir response)
   if (material.fileUrl) {

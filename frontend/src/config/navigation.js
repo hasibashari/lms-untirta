@@ -31,7 +31,7 @@ const MAHASISWA_NAV_ITEMS = [
   { label: 'Dashboard', to: '/mahasiswa/dashboard', icon: LayoutDashboard, exact: true },
   { label: 'Kelas Saya', to: '/mahasiswa/classes', icon: BookOpen },
   { label: 'Nilai Saya', to: '/mahasiswa/grades', icon: Award, description: 'Daftar Nilai Tugas' },
-  { label: 'Rencana Studi', to: '/mahasiswa/study-plan', icon: FileText, description: 'Kartu Rencana Studi' },
+  { label: 'Rencana Studi', to: '/mahasiswa/krs', icon: FileText, description: 'Kartu Rencana Studi' },
   { label: 'Hasil Studi', to: '/mahasiswa/study-result', icon: GraduationCap, description: 'Transkrip Nilai' },
 ];
 

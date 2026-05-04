@@ -105,7 +105,7 @@ const MyClasses = () => {
             Anda belum memiliki kelas yang disetujui. Silakan isi KRS melalui menu Study Plan.
           </p>
           <a
-            href="/mahasiswa/study-plan"
+            href="/mahasiswa/krs"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             <BookOpen size={18} />

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -9,7 +10,7 @@ import { cn } from '@/lib/utils';
  * @param {'primary'|'success'|'warning'|'info'|'purple'|'gray'} variant - Color variant
  * @param {string} className - Additional CSS classes
  */
-const CourseBadge = ({
+const CourseBadge = memo(({
   children,
   variant = 'primary',
   className = '',
@@ -46,6 +47,6 @@ const CourseBadge = ({
       {children}
     </span>
   );
-};
+});
 
 export default CourseBadge;

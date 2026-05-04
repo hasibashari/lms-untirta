@@ -46,8 +46,7 @@ const MahasiswaCourseMaterials = lazy(() => import('../features/material/pages/M
 const AdminClasses = lazy(() => import('../features/class/pages/AdminClassOfferingPage'));
 const DosenMyClasses = lazy(() => import('../features/class/pages/DosenClassPage'));
 const MahasiswaMyClasses = lazy(() => import('../features/class/pages/MahasiswaClassPage'));
-// KRS module
-const MahasiswaStudyPlan = lazy(() => import('../features/krs/pages/MahasiswaKrsPage'));
+const KartuRencanaStudi = lazy(() => import('../features/krs/pages/MahasiswaKrsPage'));
 const AdminKrsMonitoring = lazy(() => import('../features/krs/pages/AdminKrsApprovalPage'));
 const DosenAdvisory = lazy(() => import('../features/krs/pages/DosenKrsAdvisoryPage'));
 
@@ -170,7 +169,7 @@ function AppRoutes() {
             <Route path="/mahasiswa/dashboard" element={<Lazy component={MahasiswaDashboard} />} />
             <Route path="/mahasiswa/classes" element={<Lazy component={MahasiswaMyClasses} />} />
             <Route path="/mahasiswa/grades" element={<Lazy component={MahasiswaGrades} />} />
-            <Route path="/mahasiswa/study-plan" element={<Lazy component={MahasiswaStudyPlan} />} />
+            <Route path="/mahasiswa/krs" element={<Lazy component={KartuRencanaStudi} />} />
             <Route path="/mahasiswa/study-result" element={<Lazy component={MahasiswaStudyResult} />} />
             <Route path="/mahasiswa/courses/:courseId" element={<Lazy component={MahasiswaCourseHome} />} />
             <Route path="/mahasiswa/courses/:courseId/materials" element={<Lazy component={MahasiswaCourseMaterials} />} />

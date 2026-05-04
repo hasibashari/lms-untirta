@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma.js';
 import { AppError } from '../../config/errors.js';
+import cache from '../../utils/cache.js';
 
 // ======= GET ASSIGNMENTS BY COURSE (WITH SUBMISSION STATUS) =======
 const getAssignmentsByCourse = async (courseId, userId, userRole) => {
@@ -80,7 +81,7 @@ const createAssignment = async (courseId, teacherId, data) => {
     throw new AppError(403, 'Akses ditolak');
   }
 
-  return prisma.assignment.create({
+  const newAssignment = await prisma.assignment.create({
     data: {
       title: data.title,
       description: data.description,
@@ -94,19 +95,23 @@ const createAssignment = async (courseId, teacherId, data) => {
       courseId: true,
     },
   });
+
+  return newAssignment;
 };
 
 // ======= GET ASSIGNMENT DETAIL =======
 const getAssignmentDetail = async assignmentId => {
-  return prisma.assignment.findUnique({
-    where: { id: assignmentId },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      dueDate: true,
-    },
-  });
+  return await cache.getOrSet(`assignment:detail:${assignmentId}`, async () => {
+    return await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        dueDate: true,
+      },
+    });
+  }, 3600);
 };
 
 // ======= UPDATE ASSIGNMENT =======
@@ -136,7 +141,7 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
     throw new AppError(403, 'Akses ditolak: Mahasiswa tidak dapat mengedit tugas');
   }
 
-  return prisma.assignment.update({
+  const updated = await prisma.assignment.update({
     where: { id: assignmentId },
     data: {
       title: data.title,
@@ -152,6 +157,11 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
       updatedAt: true,
     },
   });
+
+  // Invalidate cache
+  await cache.invalidate(`assignment:detail:${assignmentId}`);
+
+  return updated;
 };
 
 // ======= DELETE ASSIGNMENT =======
@@ -189,6 +199,9 @@ const deleteAssignment = async (assignmentId, userId, userRole) => {
   await prisma.assignment.delete({
     where: { id: assignmentId },
   });
+
+  // Invalidate cache
+  await cache.invalidate(`assignment:detail:${assignmentId}`);
 
   return {
     message: 'Tugas berhasil dihapus',

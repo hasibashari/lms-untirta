@@ -3,6 +3,7 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
 import { createGrpcMetadata } from '../../grpc/helpers/metadata.helper.js';
+import cache from '../../utils/cache.js';
 import util from 'util';
 
 const grpcAddStudentToCourseById = util.promisify(courseClient.AddStudentToCourseById).bind(courseClient);
@@ -43,6 +44,12 @@ export const enrollStudent = async (req, res) => {
       return sendError(res, { statusCode: 400, message: 'studentId atau email wajib diisi' });
     }
 
+    // Invalidate cache for the student and the list of students in the course
+    if (studentId) {
+      await cache.invalidate(`courses:student:${studentId}`);
+    }
+    // We don't have the email-to-id mapping here easily, so we rely on TTL or pattern invalidation if needed.
+
     sendSuccess(res, { statusCode: 201, message: 'Mahasiswa berhasil ditambahkan ke kelas', data: result });
   } catch (error) {
     if (error.code) {
@@ -65,12 +72,18 @@ export const getMyCourses = async (req, res) => {
     let pagination;
 
     if (userRole === 'MAHASISWA') {
-      const result = await grpcGetEnrolledCourses({ studentId: userId }, meta);
-      courses = result.courses;
+      const cacheKey = `courses:student:${userId}`;
+      courses = await cache.getOrSet(cacheKey, async () => {
+        const result = await grpcGetEnrolledCourses({ studentId: userId }, meta);
+        return result.courses;
+      }, 300); // 5 minutes
       message = 'Berhasil mengambil daftar kelas yang diikuti';
     } else if (userRole === 'DOSEN') {
-      const result = await grpcGetTeachingCourses({ teacherId: userId }, meta);
-      courses = result.courses;
+      const cacheKey = `courses:teacher:${userId}`;
+      courses = await cache.getOrSet(cacheKey, async () => {
+        const result = await grpcGetTeachingCourses({ teacherId: userId }, meta);
+        return result.courses;
+      }, 600); // 10 minutes
       message = 'Berhasil mengambil daftar kelas yang diajar';
     } else if (userRole === 'ADMIN') {
       const result = await grpcAdminGetAllCourses({
@@ -172,6 +185,14 @@ export const adminUpdateCourse = async (req, res) => {
     const data = { courseId: id, ...req.body };
     const meta = createGrpcMetadata(req);
     const updatedCourse = await grpcAdminUpdateCourse(data, meta);
+    
+    // Invalidate caches if it might affect user views
+    if (updatedCourse.teacherId) {
+      await cache.invalidate(`courses:teacher:${updatedCourse.teacherId}`);
+    }
+    // Pattern invalidate all student caches for this course might be too heavy,
+    // so we rely on 5 min TTL for students.
+
     sendSuccess(res, { statusCode: 200, message: 'Kelas berhasil diperbarui', data: updatedCourse });
   } catch (error) {
     if (error.code) {
