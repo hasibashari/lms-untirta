@@ -11,7 +11,7 @@ import FloatingCard from '@/components/ui/FloatingCard';
  * @param {boolean} showDecorations - Toggle untuk decorative elements
  */
 const HeroVisual = ({
-  imageUrl = null,
+  imageUrl = 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
   srcSet = null,
   sizes = null,
   imageAlt = 'Visual',

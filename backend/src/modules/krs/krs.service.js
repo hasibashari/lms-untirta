@@ -89,31 +89,14 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     }
   }
 
-  // 2. Validate semester status for diagnostics
-  let semesterDiag = null;
-  if (targetSemesterId) {
-    semesterDiag = await prisma.academicSemester.findUnique({
-      where: { id: targetSemesterId },
-      select: {
-        id: true,
-        academicYear: true,
-        semesterType: true,
-        status: true,
-        isActive: true,
-        _count: { select: { classes: true } },
-      },
-    });
-  }
-
-  // 3. Ambil kelas yang sudah didaftarkan mahasiswa ini
-  const enrolledClasses = await prisma.krsEnrollment.findMany({
+  // 1. Ambil kelas yang sudah didaftarkan (untuk filter exclusion)
+  const enrolledClassesResult = await prisma.krsEnrollment.findMany({
     where: { studentId },
     select: { classId: true },
   });
+  const enrolledClassIds = enrolledClassesResult.map(e => e.classId);
 
-  const enrolledClassIds = enrolledClasses.map(e => e.classId);
-
-  // 4. Build where clause
+  // 2. Bangun filter 'where'
   const where = {
     isEnrollmentOpen: true,
   };
@@ -126,12 +109,10 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     where.academicSemesterId = targetSemesterId;
   }
 
-  // Filter berdasarkan semester course (tingkat)
   if (filters.semester) {
     where.course = { ...where.course, semester: parseInt(filters.semester) };
   }
 
-  // Filter berdasarkan search query (title atau code)
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
     where.OR = [
@@ -146,56 +127,54 @@ const getAvailableClasses = async (studentId, filters = {}) => {
   const limit = parseInt(filters.limit) || 10;
   const skip = (page - 1) * limit;
 
-  // Get total count for pagination metadata
-  const totalItems = await prisma.class.count({ where });
-
-  const classes = await prisma.class.findMany({
-    where,
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      academicSemesterId: true,
-      academicSemester: {
-        select: {
-          id: true,
-          academicYear: true,
-          semesterType: true,
+  // 3. Eksekusi query diagnostik, count, dan data kelas secara PARALEL
+  const [semesterDiag, totalItems, classes] = await Promise.all([
+    targetSemesterId 
+      ? prisma.academicSemester.findUnique({
+          where: { id: targetSemesterId },
+          select: {
+            id: true,
+            academicYear: true,
+            semesterType: true,
+            status: true,
+            isActive: true,
+            _count: { select: { classes: true } },
+          },
+        })
+      : Promise.resolve(null),
+    prisma.class.count({ where }),
+    prisma.class.findMany({
+      where,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        academicSemesterId: true,
+        academicSemester: {
+          select: { id: true, academicYear: true, semesterType: true },
+        },
+        section: true,
+        schedule: true,
+        room: true,
+        capacity: true,
+        isEnrollmentOpen: true,
+        course: {
+          select: { id: true, title: true, code: true, description: true, semester: true, sks: true },
+        },
+        lecturer: {
+          select: { id: true, name: true },
+        },
+        _count: {
+          select: { krsEnrollments: true },
         },
       },
-      section: true,
-      schedule: true,
-      room: true,
-      capacity: true,
-      isEnrollmentOpen: true,
-      course: {
-        select: {
-          id: true,
-          title: true,
-          code: true,
-          description: true,
-          semester: true,
-          sks: true,
-        },
-      },
-      lecturer: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      _count: {
-        select: {
-          krsEnrollments: true,
-        },
-      },
-    },
-    orderBy: [
-      { course: { semester: 'asc' } },
-      { course: { code: 'asc' } },
-      { section: 'asc' },
-    ],
-  });
+      orderBy: [
+        { course: { semester: 'asc' } },
+        { course: { code: 'asc' } },
+        { section: 'asc' },
+      ],
+    })
+  ]);
 
   const result = classes.map(cls => ({
     id: cls.id,
@@ -579,23 +558,22 @@ const getMyKRS = async (studentId, filters = {}) => {
     },
   });
 
-  // Hitung total SKS
+  // Hitung total SKS & Ambil maxSKS secara paralel
   const totalSKS = enrollments.reduce(
     (total, e) => total + (e.class.course.sks || 3),
     0
   );
 
-  // Get semester's maxSks from the first enrollment's semester, or query directly
   let maxSKSValue = 24;
-  if (enrollments.length > 0) {
+  
+  // Resolve semester ID for maxSKS query
+  const targetSemesterIdForMaxSKS = enrollments.length > 0 
+    ? enrollments[0].class.academicSemesterId 
+    : filters.academicSemesterId;
+
+  if (targetSemesterIdForMaxSKS) {
     const semesterData = await prisma.academicSemester.findUnique({
-      where: { id: enrollments[0].class.academicSemesterId },
-      select: { maxSks: true },
-    });
-    maxSKSValue = semesterData?.maxSks ?? 24;
-  } else if (filters.academicSemesterId) {
-    const semesterData = await prisma.academicSemester.findUnique({
-      where: { id: filters.academicSemesterId },
+      where: { id: targetSemesterIdForMaxSKS },
       select: { maxSks: true },
     });
     maxSKSValue = semesterData?.maxSks ?? 24;
