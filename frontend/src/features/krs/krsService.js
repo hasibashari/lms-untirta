@@ -25,7 +25,7 @@ export const getMyKRS = (params = {}) => {
   const query = new URLSearchParams();
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
   const qs = query.toString();
-  return api.get(`/krs/my-plan${qs ? `?${qs}` : ''}`);
+  return api.get(`/krs/my-krs${qs ? `?${qs}` : ''}`);
 };
 
 

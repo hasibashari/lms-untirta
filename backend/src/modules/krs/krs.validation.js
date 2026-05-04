@@ -21,8 +21,7 @@ export const dropClassSchema = z.object({
 });
 
 /**
- * Zod validation schema for submitting a KRS plan.
- * @deprecated This schema might be for a legacy bulk submission flow and may not be in active use.
+ * Zod validation schema for submitting a KRS.
  */
 export const submitKrsSchema = z.object({
   body: z.object({

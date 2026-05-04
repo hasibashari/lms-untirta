@@ -30,7 +30,7 @@ const options = {
       { name: 'Users', description: 'User management (Admin)' },
       { name: 'Courses', description: 'Course catalogue & enrollment' },
       { name: 'Classes', description: 'Class offerings per semester' },
-      { name: 'KRS', description: 'Kartu Rencana Studi (Study Plan)' },
+      { name: 'KRS', description: 'Kartu Rencana Studi' },
       { name: 'Grades', description: 'Final grade management' },
       { name: 'Transcript', description: 'Academic transcript & study results' },
       { name: 'Academic Semesters', description: 'Semester lifecycle management' },
