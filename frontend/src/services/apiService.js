@@ -9,39 +9,50 @@ const api = axios.create({
 });
 
 // --- 401 auto-logout hook ---
-// AuthContext registers its logout function here so the interceptor can call it
-// without importing from the React tree (avoids circular dependency).
 let _onUnauthorized = null;
 
 export const setOnUnauthorized = (fn) => {
   _onUnauthorized = fn;
 };
 
+// Global Request Tracking for Loading Bar
+let activeRequests = 0;
+const notifyLoading = (isLoading) => {
+  if (isLoading) activeRequests++;
+  else activeRequests = Math.max(0, activeRequests - 1);
+  
+  // Dispatch custom event for GlobalLoadingBar
+  window.dispatchEvent(new CustomEvent('api-loading', { detail: activeRequests > 0 }));
+};
+
 api.interceptors.request.use(
   config => {
+    notifyLoading(true);
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    // Let browser set Content-Type for FormData (includes multipart boundary)
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
     return config;
   },
   error => {
+    notifyLoading(false);
     return Promise.reject(error);
   }
 );
 
 api.interceptors.response.use(
-  response => response.data,
+  response => {
+    notifyLoading(false);
+    return response.data;
+  },
   error => {
+    notifyLoading(false);
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message || 'Terjadi kesalahan jaringan';
 
-    // Auto-logout on 401 (expired / invalid token),
-    // tapi JANGAN untuk endpoint /auth/login (biar error login salah tetap tampil benar)
     const isLoginEndpoint = error.config?.url?.includes('/auth/login');
     if (status === 401 && _onUnauthorized && !error.config?._skipAuthRedirect && !isLoginEndpoint) {
       _onUnauthorized();
@@ -49,7 +60,6 @@ api.interceptors.response.use(
       return Promise.reject(new Error('Sesi telah berakhir'));
     }
 
-    // Default global error handler for other statuses
     if (status !== 401) {
       toast.error(message);
     }

@@ -11,8 +11,10 @@ import FloatingCard from '@/components/ui/FloatingCard';
  * @param {boolean} showDecorations - Toggle untuk decorative elements
  */
 const HeroVisual = ({
-  imageUrl = 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-  imageAlt = 'Students Collaboration',
+  imageUrl = null,
+  srcSet = null,
+  sizes = null,
+  imageAlt = 'Visual',
   floatingCards = [
     {
       icon: CheckCircle,
@@ -38,14 +40,27 @@ const HeroVisual = ({
         <div className="absolute inset-0 bg-blue-700 rounded-4xl rotate-3 transform translate-x-2 translate-y-2 opacity-10"></div>
       )}
 
-      {/* Main Image */}
-      <img
-        src={imageUrl}
-        alt={imageAlt}
-        className="relative w-full h-full object-cover rounded-4xl shadow-2xl z-10"
-        loading="eager"
-        fetchpriority="high"
-      />
+      {/* Main Image or Placeholder */}
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          srcSet={srcSet}
+          sizes={sizes}
+          alt={imageAlt}
+          className="relative w-full h-full object-cover rounded-4xl shadow-2xl z-10"
+          loading="eager"
+          fetchpriority="high"
+        />
+      ) : (
+        <div className="relative w-full h-full bg-linear-to-br from-blue-600 to-indigo-700 rounded-4xl shadow-2xl z-10 overflow-hidden flex items-center justify-center">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+          <div className="relative z-20 text-white/20">
+            <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L1 21h22L12 2zm0 3.45l8.1 14.1H3.9L12 5.45z" />
+            </svg>
+          </div>
+        </div>
+      )}
 
       {/* Floating Cards */}
       {floatingCards.map((card, index) => (

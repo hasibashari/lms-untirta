@@ -68,8 +68,8 @@ const togglePinThread = async (req, res) => {
 const createReply = async (req, res) => {
   try {
     const { threadId } = req.params;
-    const { content } = req.body;
-    const result = await forumService.createReply(threadId, req.user.id, { content });
+    const { content, parentId } = req.body;
+    const result = await forumService.createReply(threadId, req.user.id, { content, parentId });
     sendSuccess(res, { statusCode: 201, message: 'Balasan berhasil dikirim', data: result });
   } catch (error) {
     return handleError(res, error);

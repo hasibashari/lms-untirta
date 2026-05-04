@@ -117,8 +117,6 @@ const HeroSection = () => {
           {/* 2. Right Column: Hero Visual/Image */}
           <HeroVisual
             floatingCards={floatingCards}
-            imageUrl="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=70&fm=webp"
-            imageAlt="Students Collaboration"
             showDecorations={true}
           />
 

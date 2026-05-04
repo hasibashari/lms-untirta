@@ -69,7 +69,7 @@ export default function ReplyCard({
   return (
     <div className={`
       group transition-all
-      ${shouldIndent ? 'ml-3 sm:ml-8 border-l-2 border-slate-200 pl-3 sm:pl-6' : ''}
+      ${shouldIndent ? 'ml-3 sm:ml-8 border-l-2 border-slate-200 pl-3 sm:pl-6 bg-muted/5 rounded-r-xl' : ''}
     `}>
       <div className="flex gap-3 sm:gap-4 p-4 sm:p-5 relative">
         {/* Connection line for visual hierarchy (L-shape connector) */}

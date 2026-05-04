@@ -29,6 +29,7 @@ export const updateThreadSchema = z.object({
 export const createReplySchema = z.object({
   body: z.object({
     content: z.string().min(1, 'Isi balasan tidak boleh kosong'),
+    parentId: z.string().uuid('ID parent tidak valid').optional().nullable(),
   }),
 });
 
