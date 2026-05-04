@@ -217,9 +217,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
     let gradeSource = 'none';
 
     if (finalGrade) {
-      const canShowGrade = !isStudentView ||
-        (finalGrade.status === 'FINALIZED' &&
-          (!semesterStatus || semesterStatus === 'CLOSED'));
+      const canShowGrade = !isStudentView || finalGrade.status === 'FINALIZED';
 
       if (canShowGrade) {
         letterGrade = finalGrade.letterGrade;

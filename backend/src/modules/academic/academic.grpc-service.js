@@ -178,6 +178,7 @@ export const academicService = {
           startDate: data.startDate ? new Date(data.startDate) : null,
           endDate: data.endDate ? new Date(data.endDate) : null,
           maxSks: data.maxSks || 24,
+          isAutoKrs: data.isAutoKrs !== undefined ? data.isAutoKrs : true,
           status: 'DRAFT',
           isActive: false,
         },
@@ -211,6 +212,7 @@ export const academicService = {
           startDate: data.startDate ? new Date(data.startDate) : semester.startDate,
           endDate: data.endDate ? new Date(data.endDate) : semester.endDate,
           maxSks: data.maxSks !== 0 ? data.maxSks : undefined,
+          isAutoKrs: data.isAutoKrs !== undefined ? data.isAutoKrs : semester.isAutoKrs,
         },
       });
 

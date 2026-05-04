@@ -380,7 +380,7 @@ const enrollClass = async (studentId, classId) => {
     // Get semester's maxSks limit
     const semester = await tx.academicSemester.findUnique({
       where: { id: classData.academicSemesterId },
-      select: { maxSks: true },
+      select: { maxSks: true, isAutoKrs: true },
     });
     const maxSKS = semester?.maxSks ?? 24;
 
@@ -388,14 +388,14 @@ const enrollClass = async (studentId, classId) => {
       throw new AppError(400, `Total SKS melebihi batas semester (${currentSKS}+${courseSKS} > ${maxSKS} SKS).`, 'SKS_LIMIT_EXCEEDED', { currentSKS, courseSKS, maxSKS });
     }
 
-    // 6. Create KRS enrollment (directly as APPROVED — no draft phase)
+    const isAuto = semester?.isAutoKrs ?? true;
     const enrollment = await tx.krsEnrollment.create({
       data: {
         studentId,
         classId,
-        status: KRS_STATUS.APPROVED,
+        status: isAuto ? KRS_STATUS.APPROVED : KRS_STATUS.PENDING,
         submittedAt: new Date(),
-        approvedAt: new Date(),
+        approvedAt: isAuto ? new Date() : null,
       },
       select: {
         id: true,
@@ -1212,6 +1212,8 @@ const getAdvisoryStudents = async (dosenId, filters = {}) => {
     const pending = s.krsEnrollments.filter(e => e.status === 'PENDING').length;
     const approved = s.krsEnrollments.filter(e => e.status === 'APPROVED').length;
     const rejected = s.krsEnrollments.filter(e => e.status === 'REJECTED').length;
+    const totalSks = s.krsEnrollments.reduce((sum, e) => sum + (e.class.course.sks || 3), 0);
+    
     totalPending += pending;
     totalApproved += approved;
     totalRejected += rejected;
@@ -1221,7 +1223,7 @@ const getAdvisoryStudents = async (dosenId, filters = {}) => {
       name: s.name,
       email: s.email,
       enrollments: s.krsEnrollments,
-      stats: { pending, approved, rejected, total: s.krsEnrollments.length },
+      stats: { pending, approved, rejected, total: s.krsEnrollments.length, totalSks },
     };
   });
 

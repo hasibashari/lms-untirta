@@ -1,16 +1,37 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Send, X, Loader2, BotMessageSquare, AlertTriangle } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from '../hooks/useChat';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export const ChatWindow = ({ isOpen, onClose }) => {
-  const [messages, setMessages] = useState([
-    { role: 'bot', content: 'Halo! Saya UntirtaBot. Ada yang bisa saya bantu terkait jadwal, materi, atau informasi akademik lainnya?' }
-  ]);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
+  const isInitialized = useRef(false);
   
   const chatMutation = useChat();
+
+  useEffect(() => {
+    if (user && !isInitialized.current) {
+      const welcome = `Halo ${user.name}! Saya UntirtaBot. Ada yang bisa saya bantu terkait ${
+        user.role === 'DOSEN' 
+          ? 'jadwal mengajar, materi kuliah, atau penilaian mahasiswa?' 
+          : user.role === 'ADMIN'
+          ? 'statistik sistem atau manajemen data LMS?'
+          : 'jadwal, materi, atau informasi akademik lainnya?'
+      }`;
+      
+      // Defer state update to avoid synchronous cascading render warning
+      const timer = setTimeout(() => {
+        setMessages([{ role: 'bot', content: welcome }]);
+        isInitialized.current = true;
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,12 +43,34 @@ export const ChatWindow = ({ isOpen, onClose }) => {
     }
   }, [messages, isOpen]);
 
-  const quickActions = [
-    { label: '📅 Jadwal', text: 'Tampilkan jadwal kuliah saya' },
-    { label: '📝 Tugas', text: 'Tugas yang belum dikumpul' },
-    { label: '👨‍🏫 Dospem', text: 'Siapa dospem saya?' },
-    { label: '📚 Materi', text: 'Daftar materi kuliah' },
-  ];
+  const quickActions = useMemo(() => {
+    if (!user) return [];
+    
+    switch (user.role) {
+      case 'DOSEN':
+        return [
+          { label: '📅 Jadwal Mengajar', text: 'Tampilkan jadwal mengajar saya' },
+          { label: '👥 Daftar Mahasiswa', text: 'Tampilkan daftar mahasiswa di kelas saya' },
+          { label: '📝 Koreksi Tugas', text: 'Tugas mahasiswa yang perlu dinilai' },
+          { label: '👥 Bimbingan', text: 'Daftar mahasiswa bimbingan saya' },
+          { label: '📚 Materi', text: 'Daftar materi yang saya upload' },
+        ];
+      case 'ADMIN':
+        return [
+          { label: '📊 Statistik', text: 'Tampilkan statistik penggunaan LMS' },
+          { label: '⚙️ Status Sistem', text: 'Bagaimana status sistem saat ini?' },
+          { label: '👥 User Baru', text: 'Tampilkan pendaftaran user baru' },
+        ];
+      default: // MAHASISWA
+        return [
+          { label: '📊 Nilai Saya', text: 'Tampilkan nilai akademik saya' },
+          { label: '📅 Jadwal', text: 'Tampilkan jadwal kuliah saya' },
+          { label: '📝 Tugas', text: 'Tugas yang belum dikumpul' },
+          { label: '👨‍🏫 Dospem', text: 'Siapa dospem saya?' },
+          { label: '📚 Materi', text: 'Daftar materi kuliah' },
+        ];
+    }
+  }, [user]);
 
   const sendMessage = (text) => {
     if (!text.trim() || chatMutation.isPending) return;

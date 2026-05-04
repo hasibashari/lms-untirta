@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BookOpen,
   Loader2,
@@ -65,6 +66,7 @@ import {
  */
 const StudyPlan = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Semester selector state
   const [semesters, setSemesters] = useState([]);
@@ -235,6 +237,9 @@ const StudyPlan = () => {
     try {
       await enrollClass(classId);
       showSuccess('Berhasil menambahkan kelas ke KRS.');
+      // Invalidate queries to ensure fresh data in other modules (KHS, etc)
+      queryClient.invalidateQueries({ queryKey: ['student-transcript'] });
+      queryClient.invalidateQueries({ queryKey: ['student-semesters'] });
       await fetchData();
     } catch (err) {
       const responseData = err?.response?.data;
@@ -259,6 +264,9 @@ const StudyPlan = () => {
     try {
       await dropClass(classId);
       showSuccess('Berhasil menghapus kelas dari KRS');
+      // Invalidate queries to ensure fresh data in other modules (KHS, etc)
+      queryClient.invalidateQueries({ queryKey: ['student-transcript'] });
+      queryClient.invalidateQueries({ queryKey: ['student-semesters'] });
       await fetchData();
     } catch (err) {
       showError(err?.response?.data?.message || err?.message || 'Gagal menghapus kelas');
@@ -342,40 +350,48 @@ const StudyPlan = () => {
         </p>
       </div>
 
-      {/* ==================== SEMESTER SELECTOR ==================== */}
-      <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <label className="text-sm font-semibold text-foreground whitespace-nowrap">
-              Semester Akademik
-            </label>
+      {/* ==================== SEMESTER & STATUS SUMMARY ==================== */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Current Academic Status */}
+        <div className="md:col-span-1 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Anda</p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              {user?.semester || '?'}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Semester {user?.semester || '?'}</p>
+              <p className="text-[10px] text-emerald-600 font-medium">Aktif / Reguler</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Semester Selector Box */}
+        <div className="md:col-span-3 bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Periode Perkuliahan</p>
             {semestersLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 size={14} className="animate-spin" />
-                Memuat...
+                Memuat periode...
               </div>
-            ) : semesters.length === 0 ? (
-              <span className="text-sm text-muted-foreground">Tidak ada semester</span>
             ) : (
               <Select value={selectedSemesterId || ''} onValueChange={handleSemesterChange}>
-                <SelectTrigger className="w-full sm:w-64">
-                  <SelectValue placeholder="Pilih Semester" />
+                <SelectTrigger className="w-full sm:w-72 bg-slate-50 border-slate-200 font-semibold">
+                  <SelectValue placeholder="Pilih Periode" />
                 </SelectTrigger>
                 <SelectContent>
-                  {semesters.map((sem) => (
+                  <div className="px-2 py-1.5 text-[10px] font-bold text-blue-600 uppercase">Periode Aktif</div>
+                  {semesters.filter(s => s.status === 'OPEN').map((sem) => (
+                    <SelectItem key={sem.id} value={sem.id} className="font-medium">
+                      {semesterLabel(sem)} (SEKARANG)
+                    </SelectItem>
+                  ))}
+                  
+                  <div className="px-2 py-1.5 mt-2 text-[10px] font-bold text-slate-400 border-t uppercase">Riwayat Semester</div>
+                  {semesters.filter(s => s.status !== 'OPEN').map((sem) => (
                     <SelectItem key={sem.id} value={sem.id}>
-                      <span className="flex items-center gap-2">
-                        {semesterLabel(sem)}
-                        {sem.status === 'OPEN' ? (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700">
-                            OPEN
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
-                            CLOSED
-                          </span>
-                        )}
-                      </span>
+                      {semesterLabel(sem)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -383,18 +399,19 @@ const StudyPlan = () => {
             )}
           </div>
 
-          {/* Status badge for current selection */}
+          {/* Current Selection Status */}
           {currentSemester && (
-            <div className="flex items-center gap-2">
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Pengisian</p>
               {currentSemester.status === 'OPEN' ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Semester Aktif — KRS Terbuka
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Pendaftaran Terbuka
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground border border-border rounded-full text-xs font-medium">
-                  <Lock size={10} />
-                  Semester Ditutup — Read-only
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-xs font-bold">
+                  <Lock size={12} />
+                  Sudah Ditutup
                 </span>
               )}
             </div>
@@ -445,27 +462,90 @@ const StudyPlan = () => {
         </div>
       )}
 
-      {/* Dosen Pembimbing Info */}
-      {user?.advisor ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-            <UserCheck size={20} className="text-blue-600" />
+      {/* ==================== KRS PROGRESS TIMELINE ==================== */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <ArrowDownUp size={16} className="text-blue-600" />
+          STATUS PROSES KRS
+        </h3>
+        <div className="relative flex justify-between">
+          {/* Progress Line */}
+          <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-100 -z-0" />
+          <div 
+            className="absolute top-5 left-0 h-0.5 bg-blue-500 transition-all duration-1000 -z-0" 
+            style={{ width: enrollments.length > 0 ? (enrollmentStats.pending === 0 && enrollmentStats.approved > 0 ? '100%' : '50%') : '0%' }}
+          />
+
+          {/* Step 1: Pemilihan */}
+          <div className="relative z-10 flex flex-col items-center text-center w-1/3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${enrollments.length > 0 ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>
+              <Plus size={20} />
+            </div>
+            <span className={`text-[10px] sm:text-xs font-bold mt-2 ${enrollments.length > 0 ? 'text-blue-600' : 'text-slate-400'}`}>PILIH MK</span>
           </div>
-          <div>
-            <p className="text-sm font-medium text-blue-800">Dosen Pembimbing Akademik</p>
-            <p className="text-sm text-blue-700">
-              {user.advisor.name} &mdash; {user.advisor.email}
-            </p>
+
+          {/* Step 2: Persetujuan */}
+          <div className="relative z-10 flex flex-col items-center text-center w-1/3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${enrollmentStats.approved > 0 || enrollmentStats.pending > 0 ? (enrollmentStats.pending > 0 ? 'bg-orange-500 border-orange-500 text-white' : 'bg-blue-600 border-blue-600 text-white') : 'bg-white border-slate-200 text-slate-400'}`}>
+              <RefreshCw size={20} className={enrollmentStats.pending > 0 ? 'animate-spin-slow' : ''} />
+            </div>
+            <span className={`text-[10px] sm:text-xs font-bold mt-2 ${enrollmentStats.pending > 0 ? 'text-orange-600' : (enrollmentStats.approved > 0 ? 'text-blue-600' : 'text-slate-400')}`}>
+              {enrollmentStats.pending > 0 ? 'DITINJAU' : 'DIVERIFIKASI'}
+            </span>
+          </div>
+
+          {/* Step 3: Selesai */}
+          <div className="relative z-10 flex flex-col items-center text-center w-1/3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${enrollmentStats.approved > 0 && enrollmentStats.pending === 0 ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>
+              <CheckCircle size={20} />
+            </div>
+            <span className={`text-[10px] sm:text-xs font-bold mt-2 ${enrollmentStats.approved > 0 && enrollmentStats.pending === 0 ? 'text-green-600' : 'text-slate-400'}`}>SELESAI</span>
           </div>
         </div>
-      ) : (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-          <AlertCircle size={20} className="text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-700">
-            Dosen pembimbing akademik belum ditetapkan. Hubungi Admin untuk penugasan.
+      </div>
+
+      {/* ==================== ADVISOR CARD ==================== */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden">
+          <div className="absolute -right-10 -bottom-10 opacity-10">
+            <UserCheck size={160} />
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                <UserCheck size={32} />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">Dosen Pembimbing Akademik</h4>
+                <p className="text-blue-100 text-sm">Konsultasikan rencana studi Anda</p>
+              </div>
+            </div>
+            {user?.advisor ? (
+              <div className="space-y-2">
+                <p className="text-xl font-semibold">{user.advisor.name}</p>
+                <div className="flex flex-wrap gap-3">
+                  <span className="inline-flex items-center gap-1 text-xs bg-white/10 px-2 py-1 rounded border border-white/20">
+                    <BookOpen size={12} /> {user.advisor.email}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-amber-200 text-sm font-medium italic">Belum ada dosen pembimbing yang ditugaskan.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Small Note Card */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+            <Info size={16} className="text-blue-600" />
+            CATATAN
+          </h4>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Pastikan Anda telah mengambil mata kuliah sesuai kurikulum. Jika status masih <b>DITINJAU</b>, mohon tunggu dosen pembimbing melakukan verifikasi.
           </p>
         </div>
-      )}
+      </div>
 
       {/* Info Banner — only for OPEN semester */}
       {!isReadOnly && currentSemester && (

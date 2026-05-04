@@ -246,7 +246,7 @@ router.post('/', authenticateToken, authorizeRole('ADMIN'), validate(createSemes
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/:id', authenticateToken, authorizeRole('ADMIN'), validate(updateSemesterSchema), update);
+router.put('/:id', authenticateToken, authorizeRole('ADMIN', 'DOSEN'), validate(updateSemesterSchema), update);
 
 /**
  * @swagger

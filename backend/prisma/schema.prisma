@@ -1,4 +1,3 @@
-// schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,344 +7,191 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. Enum untuk Role
-// Why? Mengunci nilai agar tidak ada typo seperti "admin", "Admin", "ADMIN".
-enum Role {
-  ADMIN
-  DOSEN
-  MAHASISWA
-}
-
-// Enum untuk Tipe Semester (Ganjil/Genap)
-enum SemesterType {
-  GANJIL
-  GENAP
-}
-
-// Enum untuk Status KRS
-enum KrsStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-// Enum untuk Status Semester Akademik
-enum SemesterStatus {
-  DRAFT // Persiapan, admin bisa set kelas & konfigurasi
-  OPEN // Semester aktif: KRS, perkuliahan, dan penilaian
-  CLOSED // Semester selesai, nilai final visible
-}
-
-// Enum untuk Status Nilai Akhir
-enum GradeStatus {
-  DRAFT // Dosen sedang input, belum final
-  FINALIZED // Nilai sudah dikunci, visible ke mahasiswa
-}
-
-// 2. Model User
 model User {
-  id        String   @id @default(uuid()) // Gunakan UUID agar tidak mudah ditebak
-  email     String   @unique
-  password  String // Akan di-hash (bcrypt)
-  name      String
-  nim       String?  @unique // NIM (Nomor Induk Mahasiswa) — wajib untuk MAHASISWA
-  role      Role     @default(MAHASISWA)
-  createdAt DateTime @default(now())
-
-  // Dosen Pembimbing (Academic Advisor)
-  isDospem        Boolean @default(false) // Apakah dosen ini adalah Dosen Pembimbing?
-  advisorId       String? // FK ke Dosen Pembimbing (untuk mahasiswa)
-  advisor         User?   @relation("AdvisorStudents", fields: [advisorId], references: [id])
-  advisedStudents User[]  @relation("AdvisorStudents") // Mahasiswa yang dibimbing
-
-  // Relasi
-  coursesTeaching Course[]        @relation("TeacherCourses") // Dosen mengajar banyak kelas
-  classesTeaching Class[]         @relation("LecturerClasses") // Dosen mengajar banyak kelas offering
-  enrollments     Enrollment[] // Mahasiswa bisa ambil banyak kelas (legacy)
-  krsEnrollments  KrsEnrollment[] // KRS: Mahasiswa mendaftar ke kelas offering
-  submissions     Submission[] // Mahasiswa bisa submit banyak tugas
-  finalGrades     FinalGrade[]    @relation("StudentGrades") // Nilai akhir mahasiswa
-  gradesGiven     FinalGrade[]    @relation("LecturerGrades") // Nilai yang diberikan dosen
-
-  // Forum
-  forumThreads  ForumThread[] @relation("ThreadAuthor") // Thread diskusi yang dibuat
-  forumReplies  ForumReply[]  @relation("ReplyAuthor") // Balasan diskusi yang dibuat
+  id              String          @id @default(uuid())
+  email           String          @unique
+  password        String
+  name            String
+  role            Role            @default(MAHASISWA)
+  createdAt       DateTime        @default(now())
+  advisorId       String?
+  isDospem        Boolean         @default(false)
+  nim             String?         @unique
+  classesTeaching Class[]         @relation("LecturerClasses")
+  coursesTeaching Course[]        @relation("TeacherCourses")
+  enrollments     Enrollment[]
+  gradesGiven     FinalGrade[]    @relation("LecturerGrades")
+  finalGrades     FinalGrade[]    @relation("StudentGrades")
+  forumReplies    ForumReply[]    @relation("ReplyAuthor")
+  forumThreads    ForumThread[]   @relation("ThreadAuthor")
+  krsEnrollments  KrsEnrollment[]
+  submissions     Submission[]
+  advisor         User?           @relation("AdvisorStudents", fields: [advisorId], references: [id])
+  advisedStudents User[]          @relation("AdvisorStudents")
 
   @@index([role])
   @@index([advisorId])
 }
 
-// 3. Model Course (Kelas)
 model Course {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  code        String   @unique // Misal: IF-101
-  semester    Int? // Semester 1-8
-  sks         Int      @default(3) // Satuan Kredit Semester
-  teacherId   String
-  createdAt   DateTime @default(now())
-
-  // Relasi @relation
-  // Why? Menghubungkan field 'teacherId' di sini dengan 'id' di model User.
-  teacher User @relation("TeacherCourses", fields: [teacherId], references: [id])
-
-  students    Enrollment[]
-  materials   Material[]
-  assignments Assignment[]
-  classes      Class[]       // Satu mata kuliah bisa punya banyak kelas offering
-  forumThreads ForumThread[] // Thread forum diskusi
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  code         String        @unique
+  teacherId    String
+  createdAt    DateTime      @default(now())
+  semester     Int?
+  sks          Int           @default(3)
+  assignments  Assignment[]
+  classes      Class[]
+  teacher      User          @relation("TeacherCourses", fields: [teacherId], references: [id])
+  students     Enrollment[]
+  forumThreads ForumThread[]
+  materials    Material[]
 }
 
-// Tabel Pivot (Join Table)
-// Why? Relasi Mahasiswa <-> Kelas adalah Many-to-Many.
-// Kita butuh tabel tengah untuk mencatat kapan mahasiswa masuk, nilai akhir, dsb.
 model Enrollment {
   id         String   @id @default(uuid())
   userId     String
   courseId   String
   enrolledAt DateTime @default(now())
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  student User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, courseId]) // Mencegah mahasiswa masuk kelas yang sama 2x
+  @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
 }
 
-// 4. Model Material (Materi Kuliah)
 model Material {
-  id    String @id @default(uuid())
-  title String
-
-  // 1. KONTEN UTAMA (Artikel/Dokumentasi)
-  // Gunakan @db.Text agar bisa menampung tulisan sangat panjang (Rich Text/Markdown)
-  content String? @db.Text
-
-  // 2. SUPLEMEN (Opsional)
-  fileUrl  String? // Link download PDF/Doc
-  videoUrl String? // Link streaming (YouTube/Drive)
-
-  // 3. URUTAN MATERI
-  // Agar materi muncul berurutan: Pertemuan 1, Pertemuan 2, dst.
-  order Int @default(1)
-
-  // 4. STATUS (Opsional tapi bagus)
-  // Dosen bisa bikin draft dulu sebelum dirilis ke mahasiswa
-  isPublished Boolean @default(true)
-
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  content     String?
+  courseId    String
+  createdAt   DateTime @default(now())
+  fileUrl     String?
+  isPublished Boolean  @default(true)
+  order       Int      @default(1)
+  updatedAt   DateTime @updatedAt
+  videoUrl    String?
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
 }
 
-// 5. Model Assignment (Tugas)
 model Assignment {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
-  description String?  @db.Text
-  dueDate     DateTime // Batas waktu pengumpulan
-
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  submissions Submission[] // Relasi ke jawaban siswa
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  dueDate     DateTime
+  courseId    String
+  createdAt   DateTime     @default(now())
+  description String?
+  updatedAt   DateTime     @updatedAt
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
 
   @@index([courseId])
 }
 
 model Submission {
-  id String @id @default(uuid())
-
-  // Jawaban Siswa
-  fileUrl String? // Link Google Drive / PDF
-  note    String? @db.Text // Catatan tambahan siswa
-
-  // Penilaian Dosen (Nanti diisi dosen)
-  grade    Float? // Nilai (misal: 85.5)
-  feedback String? @db.Text // Komentar dosen
-
-  submittedAt DateTime @default(now())
-
-  // Relasi
+  id           String     @id @default(uuid())
+  fileUrl      String?
+  note         String?
+  grade        Float?
+  feedback     String?
+  submittedAt  DateTime   @default(now())
   assignmentId String
+  studentId    String
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  studentId String
-  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  // Constraint: Satu siswa cuma bisa submit 1x per tugas
   @@unique([assignmentId, studentId])
   @@index([assignmentId])
   @@index([studentId])
 }
 
-// 7. Model Class (Kelas Offering)
-// Representasi penawaran mata kuliah di semester tertentu.
-// Satu Course bisa punya banyak Class (Kelas A, B, C di semester berbeda).
-// academicYear dan semesterType diperoleh melalui relasi AcademicSemester (normalisasi).
 model Class {
-  id String @id @default(uuid())
-
-  // Relasi ke Mata Kuliah (Katalog)
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  // Dosen Pengampu
-  lecturerId String
-  lecturer   User   @relation("LecturerClasses", fields: [lecturerId], references: [id])
-
-  // Relasi ke Semester Akademik (sumber kebenaran untuk tahun & tipe semester)
+  id                 String           @id @default(uuid())
+  courseId           String
+  lecturerId         String
+  section            String
+  schedule           String?
+  room               String?
+  capacity           Int              @default(40)
+  isEnrollmentOpen   Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
   academicSemesterId String
   academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id])
+  course             Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lecturer           User             @relation("LecturerClasses", fields: [lecturerId], references: [id])
+  finalGrades        FinalGrade[]
+  krsEnrollments     KrsEnrollment[]
 
-  // Kelas: "A", "B", "C"
-  section String
-
-  // Jadwal & Kapasitas
-  schedule String? // Contoh: "Senin, 08:00-10:00, Ruang A1.01"
-  room     String? // Ruang kelas: "A1.01"
-  capacity Int     @default(40)
-
-  // Status Pendaftaran
-  isEnrollmentOpen Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relasi KRS
-  krsEnrollments KrsEnrollment[]
-
-  // Relasi Nilai Akhir
-  finalGrades FinalGrade[]
-
-  // Constraint: Satu course hanya bisa punya satu kelas per section per semester
   @@unique([courseId, academicSemesterId, section])
   @@index([lecturerId])
   @@index([courseId])
   @@index([academicSemesterId])
 }
 
-// 8. Model KrsEnrollment (Pendaftaran KRS)
-// Mencatat mahasiswa mendaftar ke kelas offering tertentu.
-// Memiliki status workflow: PENDING → APPROVED / REJECTED
 model KrsEnrollment {
-  id String @id @default(uuid())
+  id            String           @id @default(uuid())
+  studentId     String
+  classId       String
+  status        KrsStatus        @default(PENDING)
+  note          String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  approvedAt    DateTime?
+  approvedBy    String?
+  submittedAt   DateTime?
+  revisionCount Int              @default(0)
+  approvalLogs  KrsApprovalLog[]
+  class         Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student       User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  // Relasi ke Mahasiswa
-  studentId String
-  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  // Relasi ke Kelas Offering
-  classId String
-  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
-
-  // Status KRS
-  status KrsStatus @default(PENDING)
-
-  // Catatan (opsional, misal alasan reject)
-  note String? @db.Text
-
-  // Revision tracking
-  revisionCount Int @default(0) // Berapa kali KRS direvisi setelah penolakan
-
-  // Tracking approval
-  submittedAt DateTime? // Kapan mahasiswa submit KRS
-  approvedAt  DateTime? // Kapan KRS diapprove
-  approvedBy  String? // userId yang approve
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relasi audit trail
-  approvalLogs KrsApprovalLog[]
-
-  // Constraint: Satu mahasiswa hanya bisa mendaftar ke satu kelas offering 1x
   @@unique([studentId, classId])
   @@index([studentId])
   @@index([classId])
   @@index([status])
 }
 
-// 9. Model AcademicSemester (Tahun Akademik + Semester)
-// Master data yang dikelola oleh Admin.
-// Mengontrol status semester: DRAFT → OPEN → CLOSED
 model AcademicSemester {
-  id String @id @default(uuid())
-
-  // Tahun Akademik: "2025/2026"
+  id           String         @id @default(uuid())
   academicYear String
-  // Tipe Semester
   semesterType SemesterType
+  status       SemesterStatus @default(DRAFT)
+  startDate    DateTime?
+  endDate      DateTime?
+  isActive     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  maxSks       Int            @default(24)
+  isAutoKrs    Boolean        @default(true)
+  classes      Class[]
+  finalGrades  FinalGrade[]
 
-  // Status Semester
-  status SemesterStatus @default(DRAFT)
-
-  // Batas maksimum SKS per mahasiswa di semester ini (default 24)
-  maxSks Int @default(24)
-
-  // Tanggal penting
-  startDate DateTime? // Mulai semester
-  endDate   DateTime? // Selesai semester
-
-  isActive Boolean @default(false) // Hanya satu semester aktif
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relasi
-  classes     Class[]
-  finalGrades FinalGrade[]
-
-  // Constraint: Satu semester per tahun akademik
   @@unique([academicYear, semesterType])
 }
 
-// 10. Model FinalGrade (Nilai Akhir Mata Kuliah)
-// Diinput oleh Dosen per mahasiswa per kelas.
-// Terpisah dari Submission/Assignment — ini nilai final yang masuk transkrip.
 model FinalGrade {
-  id String @id @default(uuid())
-
-  // Mahasiswa
-  studentId String
-  student   User   @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
-
-  // Kelas Offering
-  classId String
-  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
-
-  // Semester Akademik
+  id                 String           @id @default(uuid())
+  studentId          String
+  classId            String
   academicSemesterId String
+  lecturerId         String
+  letterGrade        String
+  gradePoint         Float
+  numericScore       Float?
+  status             GradeStatus      @default(DRAFT)
+  note               String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
   academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id])
+  class              Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lecturer           User             @relation("LecturerGrades", fields: [lecturerId], references: [id])
+  student            User             @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
 
-  // Dosen yang memberi nilai
-  lecturerId String
-  lecturer   User   @relation("LecturerGrades", fields: [lecturerId], references: [id])
-
-  // Nilai
-  letterGrade  String // A, A-, B+, B, B-, C+, C, D, E
-  gradePoint   Float // 4.0, 3.7, 3.3, ...
-  numericScore Float? // Skor numerik (opsional, untuk referensi)
-
-  // Status
-  status GradeStatus @default(DRAFT)
-
-  // Catatan
-  note String? @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Constraint: Satu nilai per mahasiswa per kelas
   @@unique([studentId, classId])
   @@index([studentId])
   @@index([classId])
@@ -353,76 +199,73 @@ model FinalGrade {
   @@index([lecturerId])
 }
 
-// 11. Model KrsApprovalLog (Audit Trail Persetujuan KRS)
-// Mencatat setiap perubahan status KRS untuk traceability.
 model KrsApprovalLog {
-  id String @id @default(uuid())
-
-  // Relasi ke KRS Enrollment
+  id           String        @id @default(uuid())
   enrollmentId String
+  fromStatus   KrsStatus
+  toStatus     KrsStatus
+  actorId      String?
+  actorType    String
+  note         String?
+  createdAt    DateTime      @default(now())
   enrollment   KrsEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-
-  // Status transition
-  fromStatus KrsStatus
-  toStatus   KrsStatus
-
-  // Siapa yang melakukan aksi
-  actorId   String? // null untuk SYSTEM
-  actorType String // "DOSPEM", "SYSTEM", "MAHASISWA"
-
-  // Catatan
-  note String? @db.Text
-
-  createdAt DateTime @default(now())
 }
 
-// ===== FORUM DISKUSI =====
-
-// 12. Model ForumThread (Topik Diskusi)
-// Thread diskusi dalam sebuah mata kuliah. Bersifat course-scoped.
 model ForumThread {
-  id      String @id @default(uuid())
-  title   String
-  content String @db.Text
-
-  // Thread bisa di-pin oleh dosen agar selalu muncul di atas
-  isPinned Boolean @default(false)
-
-  // Relasi ke Course
-  courseId String
-  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  // Pembuat thread
-  authorId String
-  author   User @relation("ThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-
-  // Balasan
-  replies ForumReply[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String       @id @default(uuid())
+  title     String
+  content   String
+  isPinned  Boolean      @default(false)
+  courseId  String
+  authorId  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  replies   ForumReply[]
+  author    User         @relation("ThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   @@index([authorId])
 }
 
-// 13. Model ForumReply (Balasan di Thread)
-// Balasan terhadap topik diskusi. Flat (tidak nested/threaded).
 model ForumReply {
-  id      String @id @default(uuid())
-  content String @db.Text
-
-  // Relasi ke Thread
-  threadId String
-  thread   ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-
-  // Pembuat reply
-  authorId String
-  author   User @relation("ReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String      @id @default(uuid())
+  content   String
+  threadId  String
+  authorId  String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  author    User        @relation("ReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@index([threadId])
   @@index([authorId])
+}
+
+enum Role {
+  ADMIN
+  DOSEN
+  MAHASISWA
+}
+
+enum SemesterType {
+  GANJIL
+  GENAP
+}
+
+enum KrsStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SemesterStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum GradeStatus {
+  DRAFT
+  FINALIZED
 }

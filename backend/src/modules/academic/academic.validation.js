@@ -30,6 +30,7 @@ const updateSemesterSchema = z.object({
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     maxSks: z.number().int().min(1, 'Minimal 1 SKS').max(36, 'Maksimal 36 SKS').optional(),
+    isAutoKrs: z.boolean().optional(),
   }),
 });
 

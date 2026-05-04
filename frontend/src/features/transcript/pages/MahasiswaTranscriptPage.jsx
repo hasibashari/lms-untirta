@@ -25,33 +25,62 @@ const MahasiswaTranscriptPage = () => {
 
   // Memoized processed data
   const { semesterDataList, calculatedTotalSks } = useMemo(() => {
-    // Sorting courses valid only
+    // Sorting courses chronologically by academic year and type
     const sortedCourses = [...(courses || [])].sort((a, b) => {
-      if (a.semester !== b.semester) return (a.semester || 0) - (b.semester || 0);
-      return (a.courseCode || '').localeCompare(b.courseCode || '');
+      // Sort by Year first (descending to show newest first)
+      if (a.academicYear !== b.academicYear) {
+        return (b.academicYear || '').localeCompare(a.academicYear || '');
+      }
+      // Then by Semester Type (GANJIL should come after GENAP if we want newest first)
+      return (b.semesterType || '').localeCompare(a.semesterType || '');
     });
-    const validCourses = sortedCourses.filter(c => c.letterGrade && c.letterGrade !== '-');
+
+    const validCourses = sortedCourses;
 
     // Calculate generic total for header
     let totalSks = 0;
-    validCourses.forEach(c => totalSks += c.sks);
-
-    // Group courses by semester
-    const grouped = {};
-    validCourses.forEach((course) => {
-      const sem = course.semester || 1;
-      if (!grouped[sem]) {
-        grouped[sem] = [];
+    validCourses.forEach(c => {
+      if (c.letterGrade && c.letterGrade !== '-') {
+        totalSks += c.sks;
       }
-      grouped[sem].push(course);
     });
 
-    const semesters = Object.keys(grouped).sort((a, b) => Number(a) - Number(b));
+    // Group courses by Academic Semester ID (Period)
+    const grouped = {};
+    const periodMeta = {}; // Store title info for each period
 
-    const aggregated = semesters.reduce(
-      (acc, sem) => {
-        const coursesInSem = grouped[sem];
-        const { semSks, semMutu } = coursesInSem.reduce(
+    validCourses.forEach((course) => {
+      const periodId = course.academicSemesterId || 'legacy';
+      if (!grouped[periodId]) {
+        grouped[periodId] = [];
+        periodMeta[periodId] = {
+          year: course.academicYear || 'Legacy',
+          type: course.semesterType || 'Data Lama',
+          title: course.academicYear 
+            ? `${course.academicYear} - ${course.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
+            : 'Data Akademik Terlampau'
+        };
+      }
+      grouped[periodId].push(course);
+    });
+
+    const periodIds = Object.keys(grouped).sort((a, b) => {
+      // Sort periods (newest first)
+      const metaA = periodMeta[a];
+      const metaB = periodMeta[b];
+      if (metaA.year !== metaB.year) return metaB.year.localeCompare(metaA.year);
+      return metaB.type.localeCompare(metaA.type);
+    });
+
+    const aggregated = periodIds.reduce(
+      (acc, pId) => {
+        const coursesInSem = grouped[pId];
+        const meta = periodMeta[pId];
+
+        // Only calculate IP/IPK from graded courses
+        const gradedCoursesInSem = coursesInSem.filter(c => c.letterGrade && c.letterGrade !== '-');
+        
+        const { semSks, semMutu } = gradedCoursesInSem.reduce(
           (totals, c) => ({
             semSks: totals.semSks + c.sks,
             semMutu: totals.semMutu + c.sks * (c.gradePoint || 0),
@@ -63,9 +92,6 @@ const MahasiswaTranscriptPage = () => {
         const cumulativeMutu = acc.cumulativeMutu + semMutu;
         const ip = semSks > 0 ? semMutu / semSks : 0;
         const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
-        const isGasal = Number(sem) % 2 !== 0;
-        const semesterType = isGasal ? 'Gasal' : 'Genap';
-        const semesterTitle = `Semester ${sem} - ${semesterType}`;
 
         return {
           cumulativeSks,
@@ -73,8 +99,8 @@ const MahasiswaTranscriptPage = () => {
           list: [
             ...acc.list,
             {
-              semester: sem,
-              semesterTitle,
+              semester: pId,
+              semesterTitle: meta.title,
               courses: coursesInSem,
               ip,
               ipk,
@@ -86,7 +112,7 @@ const MahasiswaTranscriptPage = () => {
     );
 
     return {
-      semesterDataList: aggregated.list.reverse(),
+      semesterDataList: aggregated.list,
       calculatedTotalSks: totalSks,
     };
   }, [courses]);

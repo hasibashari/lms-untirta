@@ -9,8 +9,10 @@ export const getContextForUser = async (user, userMessage) => {
   const isAskingAboutMaterials = msg.includes("materi") || msg.includes("bahas") || msg.includes("isi") || msg.includes("tentang");
   const isAskingAboutAssignments = msg.includes("tugas") || msg.includes("deadline") || msg.includes("kumpul") || msg.includes("nilai");
   const isAskingAboutSchedules = msg.includes("jadwal") || msg.includes("kapan") || msg.includes("jam") || msg.includes("hari") || msg.includes("ruang");
-  const isAskingAboutCatalog = msg.includes("mata kuliah") || msg.includes("daftar") || msg.includes("apa saja") || msg.includes("katalog");
-  const isAskingAboutAdvisor = msg.includes("dospem") || msg.includes("pembimbing");
+   const isAskingAboutCatalog = msg.includes("mata kuliah") || msg.includes("daftar") || msg.includes("apa saja") || msg.includes("katalog");
+   const isAskingAboutAdvisor = msg.includes("dospem") || msg.includes("pembimbing") || msg.includes("bimbingan");
+   const isAskingAboutGrades = msg.includes("nilai") || msg.includes("ipk") || msg.includes("ip ") || msg.includes("transkrip") || msg.includes("hasil");
+    const isAskingAboutStudents = msg.includes("mahasiswa") || msg.includes("peserta") || msg.includes("siapa saja") || msg.includes("daftar nama") || msg.includes("berapa") || msg.includes("jumlah");
 
   try {
     // 1. Katalog Mata Kuliah (Hanya jika benar-benar ditanya)
@@ -29,6 +31,15 @@ export const getContextForUser = async (user, userMessage) => {
         select: { advisor: { select: { name: true, email: true } } }
       });
       context.DosenPembimbingAkademik = studentWithAdvisor?.advisor || "Belum ditentukan";
+    }
+
+    // 2b. Daftar Mahasiswa Bimbingan (Untuk Dosen)
+    if (isAskingAboutAdvisor && user.role === "DOSEN") {
+      const lecturerWithAdvisees = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { advisedStudents: { select: { name: true, nim: true, email: true } } }
+      });
+      context.DaftarMahasiswaBimbinganAnda = lecturerWithAdvisees?.advisedStudents || [];
     }
 
     if (user.role === "MAHASISWA") {
@@ -91,6 +102,29 @@ export const getContextForUser = async (user, userMessage) => {
 
         return data;
       });
+
+      // 3. Info Nilai Akhir (Hanya jika ditanya)
+      if (isAskingAboutGrades) {
+        const grades = await prisma.finalGrade.findMany({
+          where: { studentId: user.id },
+          select: {
+            letterGrade: true,
+            gradePoint: true,
+            class: {
+              select: {
+                course: { select: { title: true } }
+              }
+            },
+            academicSemester: { select: { academicYear: true, semesterType: true } }
+          }
+        });
+        context.NilaiAkhirAnda = grades.map(g => ({
+          MataKuliah: g.class.course.title,
+          Nilai: g.letterGrade,
+          Bobot: g.gradePoint,
+          Semester: `${g.academicSemester.academicYear} ${g.academicSemester.semesterType}`
+        }));
+      }
     } else if (user.role === "DOSEN") {
       const teaching = await prisma.class.findMany({
         where: { lecturerId: user.id },
@@ -105,7 +139,11 @@ export const getContextForUser = async (user, userMessage) => {
                 select: { title: true, _count: { select: { submissions: true } } }
               } : false
             } 
-          }
+          },
+          krsEnrollments: isAskingAboutStudents ? {
+            where: { status: "APPROVED" },
+            select: { student: { select: { name: true } } }
+          } : false
         }
       });
 
@@ -114,8 +152,49 @@ export const getContextForUser = async (user, userMessage) => {
         if (isAskingAboutSchedules) data.Jadwal = c.schedule;
         if (isAskingAboutMaterials) data.DaftarMateri = c.course.materials.map(m => m.title);
         if (isAskingAboutAssignments) data.InfoTugas = c.course.assignments.map(a => `${a.title} (${a._count.submissions} kumpul)`);
+        
+        // Ambil daftar mahasiswa jika ditanya
+        if (isAskingAboutStudents) {
+          data.DaftarMahasiswa = c.krsEnrollments
+            .filter(e => e.status === "APPROVED")
+            .map(e => e.student.name);
+        }
+
         return data;
       });
+    } else if (user.role === "ADMIN") {
+      const isAskingAboutStats = msg.includes("statistik") || msg.includes("berapa") || msg.includes("jumlah") || msg.includes("total");
+
+      if (isAskingAboutStats) {
+        const studentCount = await prisma.user.count({ where: { role: "MAHASISWA" } });
+        const lecturerCount = await prisma.user.count({ where: { role: "DOSEN" } });
+        const courseCount = await prisma.course.count();
+        const activeSemester = await prisma.academicSemester.findFirst({ where: { isActive: true } });
+
+        context.StatistikSistem = {
+          TotalMahasiswa: studentCount,
+          TotalDosen: lecturerCount,
+          TotalMataKuliah: courseCount,
+          SemesterAktif: activeSemester ? `${activeSemester.academicYear} (${activeSemester.semesterType})` : "Tidak ada semester aktif"
+        };
+      }
+
+      // Tambahan: Info Kelas untuk Admin (jika bertanya jadwal/jumlah mahasiswa)
+      if (isAskingAboutStudents || isAskingAboutSchedules) {
+        const classes = await prisma.class.findMany({
+          take: 10,
+          select: {
+            section: true,
+            course: { select: { title: true } },
+            _count: { select: { krsEnrollments: { where: { status: "APPROVED" } } } }
+          }
+        });
+        context.MonitorKelasLMS = classes.map(c => ({
+          MataKuliah: c.course.title,
+          Kelas: c.section,
+          JumlahMahasiswa: c._count.krsEnrollments
+        }));
+      }
     }
   } catch (error) {
     console.error("Error in getContextForUser:", error);

@@ -37,6 +37,7 @@ message Semester {
   string createdAt = 9;
   string updatedAt = 10;
   CountDetails _count = 11;
+  bool isAutoKrs = 12;
 }
 
 message SemesterResponse {
@@ -64,6 +65,7 @@ message UpdateSemesterRequest {
   string startDate = 2;
   string endDate = 3;
   int32 maxSks = 4;
+  bool isAutoKrs = 5;
 }
 
 message UpdateStatusRequest {

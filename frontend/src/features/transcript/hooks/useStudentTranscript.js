@@ -6,6 +6,6 @@ export const useStudentTranscript = (studentId) => {
     queryKey: ['student-transcript', studentId],
     queryFn: () => getStudentTranscript(studentId),
     enabled: !!studentId,
-    staleTime: 10 * 60 * 1000, // 10 minutes (transcripts change rarely)
+    staleTime: 30 * 1000, // 30 seconds
   });
 };

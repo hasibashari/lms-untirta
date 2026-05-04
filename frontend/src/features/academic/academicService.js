@@ -11,12 +11,15 @@ export const getAllSemesters = () => {
 
 
 
-/**
- * [ADMIN] Create a new academic semester
- * @param {Object} payload - { academicYear, semesterType, startDate?, endDate? }
- */
 export const createSemester = (payload) => {
   return api.post('/academic-semesters', payload);
+};
+
+/**
+ * [ADMIN/DOSEN] Update semester configuration (isAutoKrs, maxSks, dates)
+ */
+export const updateSemester = (id, payload) => {
+  return api.put(`/academic-semesters/${id}`, payload);
 };
 
 

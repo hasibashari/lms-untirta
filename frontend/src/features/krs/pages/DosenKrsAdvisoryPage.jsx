@@ -7,8 +7,9 @@ import {
 import {
   getAdvisoryStudents,
   updateEnrollmentStatus,
+  bulkUpdateEnrollmentStatus,
 } from '../krsService';
-import { getAllSemesters } from '@/features/academic/academicService';
+import { getAllSemesters, updateSemester } from '@/features/academic/academicService';
 import SemesterFilter from '@/components/shared/SemesterFilter';
 import KrsStatusBadge from '../components/KrsStatusBadge';
 import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
@@ -38,6 +39,8 @@ const DosenAdvisoryPage = () => {
   const [revokeNote, setRevokeNote] = useState('');
   const [revokingId, setRevokingId] = useState(null);
   const [expandedStudentAll, setExpandedStudentAll] = useState(null);
+  const [isAutoKrs, setIsAutoKrs] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
 
   // Fetch advisory students
   const fetchStudents = useCallback(async () => {
@@ -61,9 +64,54 @@ const DosenAdvisoryPage = () => {
 
   useEffect(() => {
     getAllSemesters()
-      .then(res => setSemesters(res.data?.data || []))
+      .then(res => {
+        // res is already the body { success, data } because of interceptor
+        const list = res.data || [];
+        setSemesters(list);
+      })
       .catch(() => setSemesters([]));
   }, []);
+
+  // Auto-select active semester if none selected yet
+  useEffect(() => {
+    if (semesters.length > 0 && !academicSemesterId) {
+      const active = semesters.find(s => s.status === 'OPEN');
+      if (active) {
+        setAcademicSemesterId(active.id);
+        setIsAutoKrs(active.isAutoKrs ?? true);
+      }
+    }
+  }, [semesters, academicSemesterId]);
+
+  // Sync isAutoKrs state when semester ID changes
+  useEffect(() => {
+    if (academicSemesterId && semesters.length > 0) {
+      const selected = semesters.find(s => s.id === academicSemesterId);
+      if (selected) {
+        setIsAutoKrs(selected.isAutoKrs ?? true);
+      }
+    }
+  }, [academicSemesterId, semesters]);
+
+  const handleToggleAutoKrs = async () => {
+    const activeSem = semesters.find(s => s.id === academicSemesterId) || semesters.find(s => s.status === 'OPEN');
+    if (!activeSem) {
+      showToast('Pilih semester aktif terlebih dahulu', 'error');
+      return;
+    }
+
+    setIsToggling(true);
+    const newValue = !isAutoKrs;
+    try {
+      await updateSemester(activeSem.id, { isAutoKrs: newValue });
+      setIsAutoKrs(newValue);
+      showToast(`Mode ${newValue ? 'Auto-Approval' : 'Manual Approval'} diaktifkan`);
+    } catch {
+      showToast('Gagal mengubah pengaturan', 'error');
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   // Show temporary toast
   const showToast = (msg, type = 'success') => {
@@ -99,14 +147,46 @@ const DosenAdvisoryPage = () => {
         icon={UserCheck}
       />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-        <SemesterFilter
-          semesters={semesters}
-          academicSemesterId={academicSemesterId}
-          onAcademicSemesterChange={(val) => setAcademicSemesterId(val === 'all' ? null : val)}
-        />
+      {/* Mode Control Bar */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${isAutoKrs ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-600'}`}>
+            <ShieldOff size={20} />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800">Mode Persetujuan KRS</h4>
+            <p className="text-xs text-slate-500">Saat ini: <b>{isAutoKrs ? 'Otomatis' : 'Manual'}</b></p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 mr-4 border-r pr-4 border-slate-100">
+            <span className={`text-[10px] font-bold uppercase ${isAutoKrs ? 'text-blue-600' : 'text-slate-400'}`}>Auto</span>
+            <button
+              onClick={handleToggleAutoKrs}
+              disabled={isToggling}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isAutoKrs ? 'bg-blue-600' : 'bg-slate-200'}`}
+            >
+              <span
+                className={`${isAutoKrs ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              />
+            </button>
+            <span className={`text-[10px] font-bold uppercase ${!isAutoKrs ? 'text-slate-700' : 'text-slate-400'}`}>Manual</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 whitespace-nowrap">Filter Semester:</span>
+            <SemesterFilter
+              semesters={semesters}
+              selectedId={academicSemesterId}
+              onSelect={setAcademicSemesterId}
+              hideAllOption={true}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* Advisory Content */}
 
       {/* Content */}
       {loading ? (
@@ -156,10 +236,10 @@ const DosenAdvisoryPage = () => {
                   <div key={student.id} className="bg-white rounded-xl border overflow-hidden">
                     {/* Student Header */}
                     <div
-                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                      className="flex flex-col md:flex-row md:items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors gap-4"
                       onClick={() => setExpandedStudentAll(isExpanded ? null : student.id)}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-[240px]">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm">
                           {student.name?.charAt(0)}
                         </div>
@@ -168,16 +248,67 @@ const DosenAdvisoryPage = () => {
                           <p className="text-xs text-slate-500">{student.email}</p>
                         </div>
                       </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 justify-end">
-              <span className="text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full whitespace-nowrap">{student.stats?.total || 0} MK</span>
-              {student.stats?.approved > 0 && (
-                <span className="text-[10px] sm:text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">{student.stats.approved} Disetujui</span>
-              )}
-              {student.stats?.rejected > 0 && (
-                <span className="text-[10px] sm:text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full whitespace-nowrap">{student.stats.rejected} Ditolak</span>
-              )}
-              {isExpanded ? <ChevronUp size={16} className="text-slate-400 ml-1" /> : <ChevronDown size={16} className="text-slate-400 ml-1" />}
-            </div>
+
+                      {/* Monitoring SKS Progress */}
+                      <div className="flex-1 max-w-xs">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Beban SKS</span>
+                          <span className={`text-xs font-bold ${student.stats.totalSks > 20 ? 'text-orange-600' : 'text-blue-600'}`}>
+                            {student.stats.totalSks} / 24
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-500 ${
+                              student.stats.totalSks > 22 ? 'bg-red-500' : 
+                              student.stats.totalSks > 18 ? 'bg-orange-500' : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${Math.min((student.stats.totalSks / 24) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 justify-end">
+                        <div className="hidden sm:flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-full whitespace-nowrap">{student.stats?.total || 0} Mata Kuliah</span>
+                          {student.stats?.pending > 0 && (
+                            <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-1 rounded-full whitespace-nowrap">{student.stats.pending} Pending</span>
+                          )}
+                          {student.stats?.approved > 0 && (
+                            <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">{student.stats.approved} Disetujui</span>
+                          )}
+                        </div>
+                        
+                        {/* Quick Action: Approve All for this student */}
+                        {student.stats.pending > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const pendingIds = student.enrollments
+                                .filter(en => en.status === 'PENDING')
+                                .map(en => en.id);
+                              if (pendingIds.length > 0) {
+                                bulkUpdateEnrollmentStatus({
+                                  enrollmentIds: pendingIds,
+                                  status: 'APPROVED'
+                                }).then(() => {
+                                  toast.success(`Berhasil menyetujui ${pendingIds.length} mata kuliah ${student.name}`);
+                                  fetchStudents();
+                                }).catch(err => {
+                                  toast.error(err?.message || 'Gagal menyetujui KRS');
+                                });
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-shadow shadow-sm"
+                          >
+                            Setujui Semua
+                          </button>
+                        )}
+
+                        <div className="text-slate-400">
+                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Expanded Enrollment Details */}
