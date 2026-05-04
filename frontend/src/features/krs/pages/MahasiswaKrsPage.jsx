@@ -470,9 +470,9 @@ const StudyPlan = () => {
         </h3>
         <div className="relative flex justify-between">
           {/* Progress Line */}
-          <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-100 -z-0" />
+          <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-100 z-0" />
           <div 
-            className="absolute top-5 left-0 h-0.5 bg-blue-500 transition-all duration-1000 -z-0" 
+            className="absolute top-5 left-0 h-0.5 bg-blue-500 transition-all duration-1000 z-0" 
             style={{ width: enrollments.length > 0 ? (enrollmentStats.pending === 0 && enrollmentStats.approved > 0 ? '100%' : '50%') : '0%' }}
           />
 
@@ -506,7 +506,7 @@ const StudyPlan = () => {
 
       {/* ==================== ADVISOR CARD ==================== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden">
+        <div className="md:col-span-2 bg-linear-to-br from-blue-600 to-indigo-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden">
           <div className="absolute -right-10 -bottom-10 opacity-10">
             <UserCheck size={160} />
           </div>
@@ -719,7 +719,7 @@ const StudyPlan = () => {
                             <p className="text-sm text-slate-600">Dosen: {cls.lecturer.name}</p>
                           )}
                           <p className="text-sm text-slate-500 mt-1">
-                            Kapasitas: {cls.currentEnrollment || 0}/{cls.capacity || '∞'}
+                            Kapasitas: {cls.krsEnrollmentsCount || 0}/{cls.capacity || '∞'}
                           </p>
                         </div>
                         <Button
@@ -803,7 +803,7 @@ const StudyPlan = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-center text-sm text-slate-600">
-                            {cls.currentEnrollment || 0}/{cls.capacity || '∞'}
+                            {cls.krsEnrollmentsCount || 0}/{cls.capacity || '∞'}
                           </TableCell>
                           <TableCell className="text-center">
                             <Button

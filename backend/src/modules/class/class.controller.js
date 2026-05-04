@@ -11,6 +11,7 @@ const grpcGetClassById = util.promisify(classClient.GetClassById).bind(classClie
 const grpcGetClassesByLecturer = util.promisify(classClient.GetClassesByLecturer).bind(classClient);
 const grpcGetClassesByCourse = util.promisify(classClient.GetClassesByCourse).bind(classClient);
 const grpcGetOpenClasses = util.promisify(classClient.GetOpenClasses).bind(classClient);
+const grpcGetClassStats = util.promisify(classClient.GetClassStats).bind(classClient);
 const grpcUpdateClass = util.promisify(classClient.UpdateClass).bind(classClient);
 const grpcToggleEnrollment = util.promisify(classClient.ToggleEnrollment).bind(classClient);
 const grpcDeleteClass = util.promisify(classClient.DeleteClass).bind(classClient);
@@ -44,12 +45,33 @@ export const getAll = async (req, res) => {
       limit: req.query.limit || '10',
       academicSemesterId: req.query.academicSemesterId || '',
       courseId: req.query.courseId || '',
+      search: req.query.search || '',
+      isEnrollmentOpen: req.query.isEnrollmentOpen || '',
     }, meta);
     sendSuccess(res, {
       statusCode: 200,
       message: 'Daftar kelas offering berhasil diambil',
       data: result.classes,
       pagination: result.pagination,
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+
+export const getStats = async (req, res) => {
+  try {
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetClassStats({
+      academicSemesterId: req.query.academicSemesterId || '',
+    }, meta);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Statistik kelas berhasil diambil',
+      data: result,
     });
   } catch (error) {
     if (error.code) {

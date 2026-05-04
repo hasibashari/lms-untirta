@@ -147,7 +147,7 @@ const MyClasses = () => {
               teacher={{ name: enrollment.class.lecturer?.name || '-' }}
               semester={enrollment.class.course.semester}
               sks={enrollment.class.course.sks}
-              studentsCount={enrollment.class._count?.krsEnrollments || 0}
+              studentsCount={enrollment.class.krsEnrollmentsCount || 0}
               materialsCount={enrollment.class.course._count?.materials || 0}
               onClick={() => navigate(`/mahasiswa/courses/${enrollment.class.course.id}`)}
             />

@@ -6,6 +6,7 @@ package classPackage;
 service ClassService {
   rpc CreateClass (CreateClassRequest) returns (ClassResponse);
   rpc GetAllClasses (GetAllClassesRequest) returns (ListClassesResponse);
+  rpc GetClassStats (GetClassStatsRequest) returns (ClassStatsResponse);
   rpc GetClassById (GetClassByIdRequest) returns (ClassResponse);
   rpc GetClassesByLecturer (GetClassesByLecturerRequest) returns (ListClassesResponse);
   rpc GetClassesByCourse (GetClassesByCourseRequest) returns (ListClassesResponse);
@@ -83,12 +84,25 @@ message GetAllClassesRequest {
   string limit = 2;
   string academicSemesterId = 3;
   string courseId = 4;
+  string search = 5;
+  string isEnrollmentOpen = 6;
 }
 
 message ListClassesResponse {
   string message = 1;
   repeated Class classes = 2;
   PaginationMeta pagination = 3;
+}
+
+message GetClassStatsRequest {
+  string academicSemesterId = 1;
+}
+
+message ClassStatsResponse {
+  int32 totalClasses = 1;
+  int32 openEnrollment = 2;
+  int32 activeSemesterClasses = 3;
+  int32 activeSemesterOpen = 4;
 }
 
 message GetClassByIdRequest {

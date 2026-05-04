@@ -35,6 +35,9 @@ const classSelect = {
       email: true,
     },
   },
+  _count: {
+    select: { krsEnrollments: true },
+  },
 };
 
 const mapClassItemMessage = (item) => {
@@ -127,7 +130,7 @@ const ClassService = {
    */
   GetAllClasses: async (call, callback) => {
     try {
-      const { page, limit, academicSemesterId, courseId } = call.request;
+      const { page, limit, academicSemesterId, courseId, search, isEnrollmentOpen } = call.request;
 
       const pageNum = parseInt(page) || 1;
       const limitNum = parseInt(limit) || 10;
@@ -136,18 +139,25 @@ const ClassService = {
       const where = {};
       if (academicSemesterId) where.academicSemesterId = academicSemesterId;
       if (courseId) where.courseId = courseId;
+      
+      if (isEnrollmentOpen === 'true') where.isEnrollmentOpen = true;
+      if (isEnrollmentOpen === 'false') where.isEnrollmentOpen = false;
+
+      if (search) {
+        where.OR = [
+          { section: { contains: search, mode: 'insensitive' } },
+          { schedule: { contains: search, mode: 'insensitive' } },
+          { room: { contains: search, mode: 'insensitive' } },
+          { course: { title: { contains: search, mode: 'insensitive' } } },
+          { course: { code: { contains: search, mode: 'insensitive' } } },
+          { lecturer: { name: { contains: search, mode: 'insensitive' } } },
+        ];
+      }
 
       const [classes, total] = await Promise.all([
         prisma.class.findMany({
           where,
-          select: {
-            ...classSelect,
-            _count: {
-              select: {
-                krsEnrollments: true,
-              },
-            },
-          },
+          select: classSelect,
           orderBy: [
             { academicSemester: { academicYear: 'desc' } },
             { academicSemester: { semesterType: 'asc' } },
@@ -178,6 +188,31 @@ const ClassService = {
   },
 
   /**
+   * Mengambil statistik kelas (global atau per semester).
+   */
+  GetClassStats: async (call, callback) => {
+    try {
+      const { academicSemesterId } = call.request;
+
+      const [totalClasses, openEnrollment, activeSemesterClasses, activeSemesterOpen] = await Promise.all([
+        prisma.class.count(),
+        prisma.class.count({ where: { isEnrollmentOpen: true } }),
+        academicSemesterId ? prisma.class.count({ where: { academicSemesterId } }) : Promise.resolve(0),
+        academicSemesterId ? prisma.class.count({ where: { academicSemesterId, isEnrollmentOpen: true } }) : Promise.resolve(0),
+      ]);
+
+      callback(null, {
+        totalClasses,
+        openEnrollment,
+        activeSemesterClasses,
+        activeSemesterOpen,
+      });
+    } catch (error) {
+      callback({ code: grpc.status.INTERNAL, details: error.message });
+    }
+  },
+
+  /**
    * Mengambil detail kelas berdasarkan ID.
    * @param {Object} call - Request gRPC
    * @param {Function} callback - Callback gRPC
@@ -186,12 +221,7 @@ const ClassService = {
     try {
       const classData = await prisma.class.findUnique({
         where: { id: call.request.id },
-        select: {
-          ...classSelect,
-          _count: {
-            select: { krsEnrollments: true }
-          }
-        },
+          select: classSelect,
       });
 
       if (!classData) return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas offering tidak ditemukan' });

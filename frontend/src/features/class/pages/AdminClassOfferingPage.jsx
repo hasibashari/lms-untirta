@@ -21,11 +21,21 @@ import {
 } from 'lucide-react';
 import {
   getAllClasses,
+  getClassStats,
   createClass,
   updateClass,
   toggleClassEnrollment,
   deleteClass,
 } from '../classService';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { getAllCourses } from '../../course/courseService';
 import { getAllSemesters } from '../../academic/academicService';
 import { getDosen } from '../../user/userService';
@@ -64,10 +74,27 @@ const AdminClassesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterSemester, setFilterSemester] = useState('all');
   const [filterEnrollment, setFilterEnrollment] = useState('all');
+
+  // Stats state
+  const [stats, setStats] = useState({
+    total: 0,
+    open: 0,
+    closed: 0,
+    activeSemClasses: 0,
+    activeSemOpen: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -99,30 +126,94 @@ const AdminClassesPage = () => {
     else toast.success(message);
   }, []);
 
-  // Fetch all data
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch Metadata (Courses, Semesters, Dosen) - Only once
+  const fetchMetadata = useCallback(async () => {
     try {
-      const [classesRes, coursesRes, semestersRes, dosenRes] = await Promise.all([
-        getAllClasses(),
-        getAllCourses(),
+      const [coursesRes, semestersRes, dosenRes] = await Promise.all([
+        getAllCourses({ limit: 1000 }), // Get all for dropdowns
         getAllSemesters(),
         getDosen(),
       ]);
-
-      setClasses(classesRes?.data || []);
       setCourses(coursesRes?.data || []);
       setSemesters(semestersRes?.data || []);
       setDosenList(dosenRes?.data || []);
     } catch (err) {
-      setError(err?.message || 'Gagal memuat data');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch metadata:', err);
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // Fetch Classes (Paginated & Filtered)
+  const fetchClasses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getAllClasses({
+        page,
+        limit,
+        search: debouncedSearch,
+        academicSemesterId: filterSemester !== 'all' ? filterSemester : '',
+        isEnrollmentOpen: filterEnrollment === 'open' ? 'true' : filterEnrollment === 'closed' ? 'false' : '',
+      });
+      setClasses(res?.data || []);
+      setTotalItems(res?.pagination?.total || 0);
+      setTotalPages(res?.pagination?.totalPages || 0);
+    } catch (err) {
+      setError(err?.message || 'Gagal memuat data kelas');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, debouncedSearch, filterSemester, filterEnrollment]);
+
+  // Fetch Stats
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      // Find active semester ID
+      const activeSem = semesters.find(s => s.isActive);
+      const res = await getClassStats({
+        academicSemesterId: activeSem?.id || '',
+      });
+      
+      const data = res?.data || {};
+      setStats({
+        total: data.totalClasses || 0,
+        open: data.openEnrollment || 0,
+        closed: (data.totalClasses || 0) - (data.openEnrollment || 0),
+        activeSemClasses: data.activeSemesterClasses || 0,
+        activeSemOpen: data.activeSemesterOpen || 0,
+      });
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [semesters]);
+
+  useEffect(() => {
+    fetchMetadata();
+  }, [fetchMetadata]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  useEffect(() => {
+    if (semesters.length > 0) {
+      fetchStats();
+    }
+  }, [fetchStats, semesters]);
+
+  const fetchData = useCallback(async () => {
+    await Promise.all([fetchClasses(), fetchStats()]);
+  }, [fetchClasses, fetchStats]);
 
   // Active semester (for default selection in create form)
   const activeSemester = useMemo(() =>
@@ -130,45 +221,10 @@ const AdminClassesPage = () => {
     [semesters]
   );
 
-  // Filtered classes
-  const filteredClasses = useMemo(() => {
-    return classes.filter(cls => {
-      // Search filter
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const matches =
-          cls.course?.title?.toLowerCase().includes(q) ||
-          cls.course?.code?.toLowerCase().includes(q) ||
-          cls.lecturer?.name?.toLowerCase().includes(q) ||
-          cls.section?.toLowerCase().includes(q);
-        if (!matches) return false;
-      }
+  // Filtered classes (Now just an alias since backend does the work)
+  const filteredClasses = classes;
 
-      // Semester filter
-      if (filterSemester !== 'all' && cls.academicSemesterId !== filterSemester) {
-        return false;
-      }
-
-      // Enrollment filter
-      if (filterEnrollment === 'open' && !cls.isEnrollmentOpen) return false;
-      if (filterEnrollment === 'closed' && cls.isEnrollmentOpen) return false;
-
-      return true;
-    });
-  }, [classes, searchQuery, filterSemester, filterEnrollment]);
-
-  // Stats
-  const stats = useMemo(() => {
-    const total = classes.length;
-    const open = classes.filter(c => c.isEnrollmentOpen).length;
-    const activeSemClasses = activeSemester
-      ? classes.filter(c => c.academicSemesterId === activeSemester.id).length
-      : 0;
-    const activeSemOpen = activeSemester
-      ? classes.filter(c => c.academicSemesterId === activeSemester.id && c.isEnrollmentOpen).length
-      : 0;
-    return { total, open, closed: total - open, activeSemClasses, activeSemOpen };
-  }, [classes, activeSemester]);
+  // Stats (Now using state)
 
   // Open create modal
   const handleOpenCreate = () => {
@@ -338,7 +394,13 @@ const AdminClassesPage = () => {
       </div>
 
       {/* Stats Cards */}
-      {!loading && !error && (
+      {statsLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 h-24 animate-pulse" />
+          ))}
+        </div>
+      ) : !error && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -388,7 +450,7 @@ const AdminClassesPage = () => {
       )}
 
       {/* Warning: No classes for active semester */}
-      {!loading && activeSemester && stats.activeSemClasses === 0 && (
+      {!loading && !statsLoading && activeSemester && stats.activeSemClasses === 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
           <div className="text-sm text-amber-800 min-w-0 flex-1">
@@ -462,7 +524,7 @@ const AdminClassesPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-gray-500">
           <div className="flex items-center gap-2 min-w-0">
             <BookOpen size={16} className="shrink-0" />
-            <span className="truncate">{filteredClasses.length} dari {classes.length} kelas offering</span>
+            <span className="truncate">Menampilkan {(page - 1) * limit + 1} - {Math.min(page * limit, totalItems)} dari {totalItems} kelas offering</span>
           </div>
           {activeSemester && stats.activeSemClasses > 0 && (
             <div className="flex flex-wrap items-center gap-2">
@@ -572,7 +634,7 @@ const AdminClassesPage = () => {
                     {cls.schedule && <p className="text-xs text-slate-500 mt-1 truncate"><Clock size={12} className="inline mr-1" />{cls.schedule}</p>}
                     <p className="text-xs text-slate-500 mt-1">
                       <Users size={12} className="inline mr-1" />
-                      {cls._count?.krsEnrollments || 0}/{cls.capacity} mahasiswa
+                      {cls.krsEnrollmentsCount || 0}/{cls.capacity} mahasiswa
                     </p>
                   </div>
                   <div className="flex flex-col gap-1 shrink-0">
@@ -620,7 +682,7 @@ const AdminClassesPage = () => {
               <TableBody>
                 {filteredClasses.map((cls, index) => (
                   <TableRow key={cls.id} className="hover:bg-slate-50">
-                    <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
+                    <TableCell className="text-center text-slate-500">{(page - 1) * limit + index + 1}</TableCell>
 
                     {/* Collapsed: Mata Kuliah & Kelas */}
                     <TableCell>
@@ -698,7 +760,7 @@ const AdminClassesPage = () => {
                           <span className="truncate">{cls.isEnrollmentOpen ? 'Buka' : 'Tutup'}</span>
                         </button>
                         <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {cls._count?.krsEnrollments || 0} / {cls.capacity} Kuota
+                          {cls.krsEnrollmentsCount || 0} / {cls.capacity} Kuota
                         </span>
                       </div>
                     </TableCell>
@@ -727,6 +789,61 @@ const AdminClassesPage = () => {
               </TableBody>
             </Table>
           </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-center py-6">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              
+              {[...Array(totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                if (
+                  pageNum === 1 || 
+                  pageNum === totalPages || 
+                  (pageNum >= page - 1 && pageNum <= page + 1)
+                ) {
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        isActive={page === pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className="cursor-pointer"
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                }
+                if (
+                  (pageNum === 2 && page > 3) || 
+                  (pageNum === totalPages - 1 && page < totalPages - 2)
+                ) {
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  );
+                }
+                return null;
+              })}
+
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 

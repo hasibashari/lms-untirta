@@ -18,16 +18,17 @@ const STATUS_CONFIG = {
   },
 };
 
-const KrsStatusBadge = ({ status, className = '' }) => {
+const KrsStatusBadge = ({ status, className = '', hideLabel = false }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   const Icon = config.icon;
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${config.className} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold border ${config.className} ${className} ${hideLabel ? 'px-1 justify-center' : ''}`}
+      title={hideLabel ? config.label : undefined}
     >
       <Icon size={12} />
-      {config.label}
+      {!hideLabel && config.label}
     </span>
   );
 };

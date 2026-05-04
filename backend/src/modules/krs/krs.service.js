@@ -206,7 +206,7 @@ const getAvailableClasses = async (studentId, filters = {}) => {
     schedule: cls.schedule,
     room: cls.room,
     capacity: cls.capacity,
-    enrolledCount: cls._count.krsEnrollments,
+    krsEnrollmentsCount: cls._count.krsEnrollments,
     isEnrollmentOpen: cls.isEnrollmentOpen,
     course: {
       id: cls.course.id,
@@ -609,7 +609,10 @@ const getMyKRS = async (studentId, filters = {}) => {
       submittedAt: e.submittedAt,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
-      class: e.class,
+      class: {
+        ...e.class,
+        krsEnrollmentsCount: e.class._count?.krsEnrollments || 0,
+      },
     })),
     summary: {
       totalCourses: enrollments.length,

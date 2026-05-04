@@ -17,6 +17,7 @@ import {
   update,
   toggleEnrollment,
   remove,
+  getStats,
 } from './class.controller.js';
 
 const router = express.Router();
@@ -97,6 +98,13 @@ router.get(
   authenticateToken,
   authorizeRole('MAHASISWA', 'ADMIN'),
   getOpen
+);
+
+router.get(
+  '/stats',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  getStats
 );
 
 /**
