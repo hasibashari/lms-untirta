@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getUserById, updateUser } from '../userService';
+import { getUserById } from '../userService';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import PageLoader from '../../../components/shared/PageLoader';
+import { useUpdateUser } from '../hooks/useUsers';
 
 export default function AdminUserEditPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const updateUserMutation = useUpdateUser();
 
   const [form, setForm] = useState({
     name: '',
@@ -19,7 +21,6 @@ export default function AdminUserEditPage() {
     password: '',
   });
 
-  const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -44,7 +45,6 @@ export default function AdminUserEditPage() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     try {
       const payload = { ...form };
@@ -52,12 +52,10 @@ export default function AdminUserEditPage() {
         delete payload.password;
       }
 
-      await updateUser(id, payload);
+      await updateUserMutation.mutateAsync({ id, payload });
       navigate('/admin/users', { state: { flash: 'User sukses di-update.' } });
     } catch (err) {
       setError(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -148,8 +146,8 @@ export default function AdminUserEditPage() {
             </div>
 
             <div className='flex gap-2 pt-2'>
-              <Button type='submit' disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+              <Button type='submit' disabled={updateUserMutation.isPending}>
+                {updateUserMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
               </Button>
               <Button
                 type='button'

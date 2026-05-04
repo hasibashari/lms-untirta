@@ -19,11 +19,11 @@ async function main() {
 
   // 3. Buat Dosen
   const dosen = await prisma.user.upsert({
-    where: { email: 'dosen@untirta.ac.id' },
+    where: { email: 'budi.santoso@untirta.ac.id' },
     update: { isDospem: true },
     create: {
-      email: 'dosen@untirta.ac.id',
-      name: 'Pak Dosen Santoso',
+      email: 'budi.santoso@untirta.ac.id',
+      name: 'Budi Santoso ST.,MT',
       password: hashedPassword,
       role: 'DOSEN',
       isDospem: true,
@@ -32,14 +32,14 @@ async function main() {
 
   // 4. Buat Mahasiswa
   const mahasiswa = await prisma.user.upsert({
-    where: { email: 'mahasiswa@untirta.ac.id' },
+    where: { email: 'budi@untirta.ac.id' },
     update: {
       nim: '230000001',
       advisorId: dosen.id,
     },
     create: {
-      email: 'mahasiswa@untirta.ac.id',
-      name: 'Budi Mahasiswa',
+      email: 'budi@untirta.ac.id',
+      name: 'Budi Setiawan',
       password: hashedPassword,
       role: 'MAHASISWA',
       nim: '230000001',

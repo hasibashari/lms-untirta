@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, deleteUser } from '../userService';
+import { getUsers, deleteUser, createUser, updateUser } from '../userService';
 import { toast } from 'react-hot-toast';
 
 export const useUsers = (params) => {
@@ -22,6 +22,26 @@ export const useDeleteUser = () => {
     },
     onError: (error) => {
       toast.error(error.message || 'Gagal menghapus user');
+    }
+  });
+};
+
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload) => createUser(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  });
+};
+
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }) => updateUser(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     }
   });
 };

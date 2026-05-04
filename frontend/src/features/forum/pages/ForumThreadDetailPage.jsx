@@ -77,7 +77,7 @@ export default function ForumThreadDetailPage() {
   }, [fetchThread]);
 
   // Permissions
-  const isOwner = currentUser && thread?.author?.id === currentUser.id;
+  const isOwner = currentUser && thread?.author?.id && String(thread.author.id) === String(currentUser.id);
   const isModerator = currentUser && (currentUser.role === 'DOSEN' || currentUser.role === 'ADMIN');
 
   const handleTogglePin = async () => {

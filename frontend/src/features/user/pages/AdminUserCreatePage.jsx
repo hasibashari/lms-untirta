@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUser } from '../userService';
+import { useCreateUser } from '../hooks/useUsers';
 import Breadcrumb from '../../../components/navigation/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export default function CreateUser() {
   const navigate = useNavigate();
+  const createUserMutation = useCreateUser();
 
   const [form, setForm] = useState({
     name: '',
@@ -17,7 +18,6 @@ export default function CreateUser() {
     role: 'DOSEN',
   });
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleChange = e => {
@@ -27,17 +27,14 @@ export default function CreateUser() {
   const handleSubmit = async e => {
     e.preventDefault();
 
-    setLoading(true);
     setError(null);
     try {
-      await createUser(form);
+      await createUserMutation.mutateAsync(form);
       navigate('/admin/users', {
         state: { flash: 'User berhasil dibuat.' },
       });
     } catch (err) {
       setError(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -124,8 +121,8 @@ export default function CreateUser() {
             </div>
 
             <div className='flex gap-2'>
-              <Button type='submit' disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Simpan'}
+              <Button type='submit' disabled={createUserMutation.isPending}>
+                {createUserMutation.isPending ? 'Menyimpan...' : 'Simpan'}
               </Button>
               <Button
                 type='button'

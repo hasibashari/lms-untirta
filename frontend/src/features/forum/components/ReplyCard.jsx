@@ -38,8 +38,11 @@ export default function ReplyCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
 
-  const isOwner = reply.author?.id === currentUserId;
+  // Robust ID comparison using String() and truthy check
+  const isOwner = currentUserId && reply.author?.id && String(reply.author.id) === String(currentUserId);
   const isModerator = currentUserRole === 'DOSEN' || currentUserRole === 'ADMIN';
+  
+  // Mahasiswa can only edit/delete their own. Moderators can delete any.
   const canEdit = isOwner;
   const canDelete = isOwner || isModerator;
 
@@ -60,22 +63,24 @@ export default function ReplyCard({
   const isEdited = reply.updatedAt && reply.updatedAt !== reply.createdAt;
 
   // Max depth indentation to prevent layout breaking on mobile
-  const maxDepth = 3;
+  const maxDepth = 4;
   const shouldIndent = depth > 0 && depth <= maxDepth;
 
   return (
     <div className={`
       group transition-all
-      ${shouldIndent ? 'ml-4 sm:ml-10 border-l-2 border-slate-100 pl-4 sm:pl-6' : ''}
+      ${shouldIndent ? 'ml-3 sm:ml-8 border-l-2 border-slate-200 pl-3 sm:pl-6' : ''}
     `}>
       <div className="flex gap-3 sm:gap-4 p-4 sm:p-5 relative">
-        {/* Connection line for visual hierarchy */}
+        {/* Connection line for visual hierarchy (L-shape connector) */}
         {depth > 0 && (
-          <div className="absolute left-0 top-0 bottom-0 w-2.5 -ml-2.5 border-b-2 border-slate-100 rounded-bl-xl pointer-events-none" style={{ height: '1.5rem' }}></div>
+          <div 
+            className="absolute -left-3 sm:-left-6 top-0 w-3 sm:w-6 h-8 border-l-2 border-b-2 border-slate-200 rounded-bl-xl pointer-events-none"
+          ></div>
         )}
 
         {/* Avatar */}
-        <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm uppercase ring-2 ring-background">
+        <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm uppercase ring-2 ring-background z-10">
           {reply.author?.name?.charAt(0) || '?'}
         </div>
 
@@ -131,18 +136,19 @@ export default function ReplyCard({
           {/* Actions */}
           {!isEditing && (
             <div className="flex items-center gap-4 mt-3">
-              {/* Reply Button */}
+              {/* Reply Button - anyone can reply */}
               <button
                 onClick={() => setIsReplying(!isReplying)}
                 className={`
-                  inline-flex items-center gap-1.5 text-[11px] font-bold transition
-                  ${isReplying ? 'text-primary' : 'text-muted-foreground hover:text-primary'}
-                `}
+                inline-flex items-center gap-1.5 text-[11px] font-bold transition
+                ${isReplying ? 'text-primary' : 'text-muted-foreground hover:text-primary'}
+              `}
               >
                 <MessageSquare size={12} className={isReplying ? 'fill-primary/20' : ''} />
                 Balas
               </button>
 
+              {/* Edit - ONLY Author */}
               {canEdit && (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -153,6 +159,7 @@ export default function ReplyCard({
                 </button>
               )}
 
+              {/* Delete - Author or Moderator */}
               {canDelete && (
                 <>
                   {isDeleting ? (
