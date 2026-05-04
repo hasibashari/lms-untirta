@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { signToken } from '../../config/jwt.js';
 import { ROLES } from '../../config/roles.js';
 import { AppError } from '../../config/errors.js';
+import cache from '../../utils/cache.js';
 
 // ======= REGISTER USER =======
 const registerUser = async ({ email, name, password }) => {
@@ -95,32 +96,40 @@ const loginUser = async ({ email, password }) => {
 };
 
 // ======= GET USER BY ID =======
-const getUserById = async userId => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      nim: true,
-      role: true,
-      isDospem: true,
-      advisorId: true,
-      advisor: {
+const getUserById = async (userId) => {
+  const cacheKey = `user:profile:${userId}`;
+
+  return await cache.getOrSet(
+    cacheKey,
+    async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
         select: {
           id: true,
           name: true,
           email: true,
+          nim: true,
+          role: true,
+          isDospem: true,
+          advisorId: true,
+          advisor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
-      },
+      });
+
+      if (!user) {
+        throw new AppError(404, 'User tidak ditemukan');
+      }
+
+      return user;
     },
-  });
-
-  if (!user) {
-    throw new AppError(404, 'User tidak ditemukan');
-  }
-
-  return user;
+    1800 // Cache for 30 minutes
+  );
 };
 
 export { registerUser, loginUser, getUserById };

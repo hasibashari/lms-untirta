@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lms.untirta.ac.id/sitemap.xml
