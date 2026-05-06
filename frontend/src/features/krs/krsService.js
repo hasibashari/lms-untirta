@@ -13,6 +13,7 @@ export const getAvailableClasses = (params = {}) => {
   if (params.search) query.append('search', params.search);
   if (params.page) query.append('page', params.page);
   if (params.limit) query.append('limit', params.limit);
+  if (params._t) query.append('_t', params._t);
   const qs = query.toString();
   return api.get(`/krs/available${qs ? `?${qs}` : ''}`);
 };
@@ -24,6 +25,7 @@ export const getAvailableClasses = (params = {}) => {
 export const getMyKRS = (params = {}) => {
   const query = new URLSearchParams();
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  if (params._t) query.append('_t', params._t);
   const qs = query.toString();
   return api.get(`/krs/my-krs${qs ? `?${qs}` : ''}`);
 };

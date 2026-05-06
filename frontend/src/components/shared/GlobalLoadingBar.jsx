@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion as Motion, AnimatePresence } from 'motion/react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 
 const GlobalLoadingBar = () => {
@@ -23,56 +23,71 @@ const GlobalLoadingBar = () => {
 
   // Trigger on route change
   useEffect(() => {
-    setActive(true);
-    setProgress(30); 
-    
+    // Use timeout to avoid synchronous setState in effect warning
     const timer = setTimeout(() => {
+      setActive(true);
+      setProgress(30);
+    }, 0);
+    
+    const finishTimer = setTimeout(() => {
       if (isFetching === 0 && isMutating === 0 && !apiActive) {
         setProgress(100);
         setTimeout(() => setActive(false), 200);
       }
     }, 600);
 
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(finishTimer);
+    };
+  }, [location.pathname, isFetching, isMutating, apiActive]);
 
   // Sync with global fetching state
   useEffect(() => {
     const isSomethingLoading = isFetching > 0 || isMutating > 0 || apiActive;
     
     if (isSomethingLoading) {
-      setActive(true);
+      // Use timeout to avoid synchronous setState in effect warning
+      const timer = setTimeout(() => {
+        setActive(true);
+      }, 0);
+
+      let interval;
       if (progress < 90) {
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
           setProgress(prev => {
             if (prev >= 95) return prev;
             return prev + (95 - prev) * 0.1;
           });
         }, 300);
-        return () => clearInterval(interval);
       }
+      return () => {
+        clearTimeout(timer);
+        if (interval) clearInterval(interval);
+      };
     } else {
       const timer = setTimeout(() => {
         setProgress(100);
-        setTimeout(() => {
+        const hideTimer = setTimeout(() => {
           setActive(false);
           setProgress(0);
         }, 300);
+        return () => clearTimeout(hideTimer);
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [isFetching, isMutating, apiActive]);
+  }, [isFetching, isMutating, apiActive, progress]);
 
   return (
     <AnimatePresence>
       {active && (
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed top-0 left-0 right-0 h-[3px] z-[9999] pointer-events-none"
+          className="fixed top-0 left-0 right-0 h-[3px] z-9999 pointer-events-none"
         >
-          <motion.div
+          <Motion.div
             initial={{ width: '0%' }}
             animate={{ width: `${progress}%` }}
             transition={{ 
@@ -87,7 +102,7 @@ const GlobalLoadingBar = () => {
               backgroundSize: '200% 100%'
             }}
           />
-        </motion.div>
+        </Motion.div>
       )}
     </AnimatePresence>
   );

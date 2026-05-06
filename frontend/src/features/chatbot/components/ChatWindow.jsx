@@ -1,47 +1,47 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, X, Loader2, BotMessageSquare, AlertTriangle } from 'lucide-react';
+import { Send, X, Loader2, BotMessageSquare, AlertTriangle, Info, RotateCcw } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from '../hooks/useChat';
 import { useAuth } from '../../../contexts/AuthContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const ChatWindow = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  
+  // Load messages from localStorage on initial render
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('untirtabot_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
-  const isInitialized = useRef(false);
   
   const chatMutation = useChat();
 
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    if (user && !isInitialized.current) {
-      const welcome = `Halo ${user.name}! Saya UntirtaBot. Ada yang bisa saya bantu terkait ${
-        user.role === 'DOSEN' 
-          ? 'jadwal mengajar, materi kuliah, atau penilaian mahasiswa?' 
-          : user.role === 'ADMIN'
-          ? 'statistik sistem atau manajemen data LMS?'
-          : 'jadwal, materi, atau informasi akademik lainnya?'
-      }`;
-      
-      // Defer state update to avoid synchronous cascading render warning
-      const timer = setTimeout(() => {
-        setMessages([{ role: 'bot', content: welcome }]);
-        isInitialized.current = true;
-      }, 0);
+    localStorage.setItem('untirtabot_messages', JSON.stringify(messages));
+  }, [messages]);
 
-      return () => clearTimeout(timer);
+  const clearHistory = () => {
+    if (window.confirm('Hapus riwayat percakapan?')) {
+      setMessages([]);
+      localStorage.removeItem('untirtabot_messages');
     }
-  }, [user]);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    if (isOpen) {
+    // Only scroll to bottom if there are messages.
+    // If empty (Hero State), stay at the top.
+    if (isOpen && messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages.length, isOpen]);
 
   const quickActions = useMemo(() => {
     if (!user) return [];
@@ -98,29 +98,94 @@ export const ChatWindow = ({ isOpen, onClose }) => {
   return (
     <div className="fixed bottom-20 right-6 w-80 md:w-96 h-[500px] bg-background border border-border rounded-2xl shadow-xl flex flex-col overflow-hidden z-50 animate-in slide-in-from-bottom-5 duration-300">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 flex justify-between items-center shrink-0">
+      <div className="bg-primary text-primary-foreground p-4 flex justify-between items-center shrink-0 shadow-md">
         <div className="flex items-center gap-2">
-          <BotMessageSquare size={20} />
-          <h3 className="font-semibold">UntirtaBot</h3>
+          <div className="bg-primary-foreground/20 p-1.5 rounded-lg">
+            <BotMessageSquare size={20} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm leading-tight">UntirtaBot</h3>
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[10px] text-primary-foreground/70 font-medium uppercase tracking-wider">Online</span>
+            </div>
+          </div>
         </div>
-        <button onClick={onClose} className="hover:bg-primary-foreground/10 p-1 rounded-full transition-colors">
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={clearHistory}
+                  className="hover:bg-primary-foreground/10 p-1.5 rounded-lg transition-colors"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Bersihkan Riwayat</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="p-1.5 text-primary-foreground/70 cursor-help">
+                  <Info size={16} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[200px] text-xs">
+                Sistem menggunakan API Gratis. Gangguan mungkin terjadi jika kuota harian habis.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <button onClick={onClose} className="hover:bg-primary-foreground/10 p-1.5 rounded-lg transition-colors ml-1">
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Warning Banner */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-2 text-[10px] text-yellow-600 font-medium text-center flex items-center justify-center gap-2">
-        <AlertTriangle size={12} className="shrink-0" />
-        <span>Sistem menggunakan API Gratis. Gangguan mungkin terjadi jika kuota harian habis.</span>
-      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 bg-muted/10">
+        {/* Hero Section for Empty State */}
+        {messages.length === 0 && (
+          <div className="py-8 px-2 text-center animate-in fade-in zoom-in duration-500">
+            <div className="w-16 h-16 bg-primary/10 text-primary mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-primary/20">
+              <BotMessageSquare size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-foreground">Ada yang bisa saya bantu?</h2>
+            <p className="text-muted-foreground text-sm mt-2 max-w-[240px] mx-auto">
+              Tanyakan apapun seputar akademik, jadwal, atau bantuan sistem.
+            </p>
+
+            {/* Quick Action Grid (Empty State) */}
+            <div className="grid grid-cols-2 gap-3 mt-8">
+              {quickActions.map((action, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => sendMessage(action.text)}
+                  disabled={chatMutation.isPending}
+                  className="p-4 bg-background hover:bg-muted border border-border rounded-xl text-left transition-all duration-200 group hover:shadow-md hover:border-primary/30 active:scale-95 disabled:opacity-50"
+                >
+                  <span className="text-xl mb-2 block group-hover:scale-125 transition-transform origin-left">
+                    {action.label.split(' ')[0]}
+                  </span>
+                  <span className="text-xs font-semibold text-foreground block leading-tight">
+                    {action.label.split(' ').slice(1).join(' ')}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground mt-1 block leading-tight opacity-70">
+                    Klik untuk bertanya
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.map((msg, idx) => (
           <ChatMessage key={idx} role={msg.role} content={msg.content} />
         ))}
         {chatMutation.isPending && (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm p-2">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm p-2 animate-pulse">
             <Loader2 size={16} className="animate-spin" />
             <span>UntirtaBot sedang mengetik...</span>
           </div>
@@ -128,19 +193,22 @@ export const ChatWindow = ({ isOpen, onClose }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Actions */}
-      <div className="px-4 py-2 flex gap-2 overflow-x-auto bg-background scrollbar-hide shrink-0 border-t border-border">
-        {quickActions.map((action, idx) => (
-          <button
-            key={idx}
-            onClick={() => sendMessage(action.text)}
-            disabled={chatMutation.isPending}
-            className="whitespace-nowrap px-3 py-1.5 bg-muted hover:bg-muted/80 text-muted-foreground rounded-full text-[11px] transition-colors border border-border disabled:opacity-50"
-          >
-            {action.label}
-          </button>
-        ))}
-      </div>
+      {/* Quick Actions (Ongoing Chat - Compact) */}
+      {messages.length > 0 && (
+        <div className="px-4 py-2 flex gap-2 overflow-x-auto bg-background scrollbar-hide shrink-0 border-t border-border animate-in slide-in-from-bottom-2">
+          {quickActions.map((action, idx) => (
+            <button
+              key={idx}
+              onClick={() => sendMessage(action.text)}
+              disabled={chatMutation.isPending}
+              className="whitespace-nowrap px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-muted-foreground rounded-full text-[11px] transition-all duration-200 border border-border disabled:opacity-50 hover:scale-105 active:scale-95"
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
+
 
       {/* Input Form */}
       <div className="p-4 bg-background border-t border-border shrink-0">

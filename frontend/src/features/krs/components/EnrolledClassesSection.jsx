@@ -59,7 +59,7 @@ const EnrolledClassRow = memo(({ enrollment, index, isDropping, isRevising, hand
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDrop(enrollment.id)}
+                onClick={() => handleDrop(enrollment.class?.id)}
                 disabled={isDropping}
                 className="h-8 px-2 border-red-200 text-red-500 hover:bg-red-50"
                 title="Batalkan"
@@ -112,7 +112,7 @@ const EnrolledClassCard = memo(({ enrollment, index, isDropping, isRevising, han
           )}
           {canDrop(enrollment.status) && (
             <Button
-              variant="outline" size="sm" onClick={() => handleDrop(enrollment.id)}
+              variant="outline" size="sm" onClick={() => handleDrop(enrollment.class?.id)}
               disabled={isDropping} className="border-red-200 text-red-500"
             >
               <Trash2 size={14} />

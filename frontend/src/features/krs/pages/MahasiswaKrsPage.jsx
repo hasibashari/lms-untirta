@@ -6,6 +6,9 @@ import {
   X,
   Lock,
   BookOpen,
+  Info,
+  Printer,
+  Search,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -17,8 +20,6 @@ import {
 } from '../krsService';
 import { getStudentSemesters } from '@/features/academic/academicService';
 import { Button } from '@/components/ui/button';
-import StatCard from '@/components/ui/StatCard';
-import InfoBanner from '@/components/ui/InfoBanner';
 import {
   Pagination,
   PaginationContent,
@@ -31,8 +32,6 @@ import {
 
 // Sub-components
 import KrsHeader from '../components/KrsHeader';
-import SemesterSummarySection from '../components/SemesterSummarySection';
-import AdvisorBar from '../components/AdvisorBar';
 import AvailableClassesSection from '../components/AvailableClassesSection';
 import EnrolledClassesSection from '../components/EnrolledClassesSection';
 
@@ -133,8 +132,12 @@ const KartuRencanaStudi = () => {
           limit: itemsPerPage,
           search: debouncedSearch,
           semester: selectedCourseSemester !== 'all' ? selectedCourseSemester : undefined,
+          _t: Date.now(), // Cache buster
         }),
-        getMyKRS({ academicSemesterId: selectedSemesterId }),
+        getMyKRS({ 
+          academicSemesterId: selectedSemesterId,
+          _t: Date.now(), // Cache buster
+        }),
       ]);
 
       // Backend send classes in .data and pagination in ._meta
@@ -199,10 +202,11 @@ const KartuRencanaStudi = () => {
     setActionError(null);
     try {
       await enrollClass(classId);
-      showSuccess('Berhasil menambahkan kelas ke KRS.');
       queryClient.invalidateQueries({ queryKey: ['student-transcript'] });
       queryClient.invalidateQueries({ queryKey: ['student-semesters'] });
+      queryClient.invalidateQueries({ queryKey: ['my-classes'] });
       await fetchData();
+      showSuccess('Berhasil menambahkan kelas ke KRS.');
     } catch (err) {
       const responseData = err?.response?.data;
       if (responseData?.code === 'SKS_LIMIT_EXCEEDED') {
@@ -225,10 +229,11 @@ const KartuRencanaStudi = () => {
     setActionError(null);
     try {
       await dropClass(classId);
-      showSuccess('Berhasil menghapus kelas dari KRS');
       queryClient.invalidateQueries({ queryKey: ['student-transcript'] });
       queryClient.invalidateQueries({ queryKey: ['student-semesters'] });
+      queryClient.invalidateQueries({ queryKey: ['my-classes'] });
       await fetchData();
+      showSuccess('Berhasil menghapus kelas dari KRS');
     } catch (err) {
       showError(err?.response?.data?.message || err?.message || 'Gagal menghapus kelas');
     } finally {
@@ -242,6 +247,7 @@ const KartuRencanaStudi = () => {
     setActionError(null);
     try {
       const res = await reviseEnrollment(enrollmentId);
+      queryClient.invalidateQueries({ queryKey: ['my-classes'] });
       showSuccess(res?.data?.message || 'KRS berhasil direvisi.');
       await fetchData();
     } catch (err) {
@@ -249,7 +255,7 @@ const KartuRencanaStudi = () => {
     } finally {
       setRevising(null);
     }
-  }, [isReadOnly, fetchData]);
+  }, [isReadOnly, fetchData, queryClient]);
 
   const handleSemesterChange = (newId) => {
     setSelectedSemesterId(newId);
@@ -292,6 +298,13 @@ const KartuRencanaStudi = () => {
         handlePrintKrs={handlePrintKrs}
         isPrinting={isPrinting}
         hasEnrollments={enrollments.length > 0}
+        semesters={semesters}
+        selectedSemesterId={selectedSemesterId}
+        handleSemesterChange={handleSemesterChange}
+        semesterLabel={semesterLabel}
+        user={user}
+        totalSKS={totalSKS}
+        maxSKS={summary.maxSKS || 24}
       />
 
       {/* Unified Page Content Loading */}
@@ -316,60 +329,23 @@ const KartuRencanaStudi = () => {
         </div>
       ) : (
         <>
-          <SemesterSummarySection
-            user={user}
-            semesters={semesters}
-            selectedSemesterId={selectedSemesterId}
-            semestersLoading={semestersLoading}
-            handleSemesterChange={handleSemesterChange}
-            currentSemester={currentSemester}
-            semesterLabel={semesterLabel}
-          />
-
           {isReadOnly && (
-            <div className="bg-muted/50 border border-border rounded-xl p-4 flex items-start gap-3">
-              <Lock size={20} className="text-muted-foreground mt-0.5 shrink-0" />
-              <div className="text-sm text-foreground">
-                <strong>Semester sudah ditutup.</strong> Anda hanya dapat melihat data KRS semester ini.
-                Pengisian dan perubahan KRS tidak tersedia.
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+              <Lock size={18} className="text-slate-400 mt-0.5 shrink-0" />
+              <div className="text-sm text-slate-600">
+                <strong className="text-slate-900">Semester ini sudah ditutup.</strong> Anda hanya dapat melihat riwayat KRS. 
+                Pendaftaran baru atau pembatalan tidak tersedia.
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-            <StatCard
-              className="col-span-1"
-              value={summary.totalCourses || enrollments.length}
-              label="Total Mata Kuliah"
-              variant="primary"
-            />
-            <StatCard
-              className="col-span-1"
-              value={totalSKS}
-              label="Total SKS"
-              variant="primary"
-            />
-            <StatCard
-              className="col-span-2 lg:col-span-1"
-              value={summary.maxSKS || 24}
-              label="Maks SKS"
-              variant={totalSKS > (summary.maxSKS || 24) ? 'danger' : 'primary'}
-            />
-          </div>
-
-          {summary.maxSKS && !isReadOnly && (
-            <InfoBanner variant="info">
-              Batas maksimum SKS semester ini: <strong>{summary.maxSKS} SKS</strong>. Anda telah
-              mengambil <strong>{totalSKS} SKS</strong> ({summary.maxSKS - totalSKS} SKS tersisa).
-            </InfoBanner>
-          )}
-
-          <AdvisorBar advisor={user?.advisor} />
-
           {!isReadOnly && currentSemester && (
-            <InfoBanner variant="info">
-              Masa pengambilan Rencana Studi semester {semesterLabel(currentSemester)} sedang berlangsung.
-            </InfoBanner>
+            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+              <Info size={18} className="text-blue-500 mt-0.5 shrink-0" />
+              <div className="text-sm text-blue-800">
+                <strong className="text-blue-900">Masa Pengisian KRS Terbuka.</strong> Silakan pilih mata kuliah yang ditawarkan di bawah ini. Pastikan konsultasi dengan Dosen PA.
+              </div>
+            </div>
           )}
 
           {/* Action Messages */}
@@ -402,9 +378,10 @@ const KartuRencanaStudi = () => {
             </div>
           )}
 
-          {/* Tabs Navigation */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-1">
-            <div className="flex p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200 w-full sm:w-fit shadow-sm overflow-x-hidden">
+          {/* Tabs Navigation & Actions Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-1">
+            {/* Left: Tabs */}
+            <div className="flex p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200 w-full sm:w-fit shadow-sm">
               <button
                 onClick={() => setActiveTab('offered')}
                 disabled={isReadOnly}
@@ -439,6 +416,33 @@ const KartuRencanaStudi = () => {
                   </span>
                 )}
               </button>
+            </div>
+
+            {/* Right: Contextual Actions */}
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              {activeTab === 'offered' ? (
+                <div className="relative flex-1 lg:w-72 lg:flex-none">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari Mata Kuliah atau Kode..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 w-full lg:w-auto">
+                  <Button
+                    onClick={handlePrintKrs}
+                    variant="outline"
+                    className="flex-1 lg:flex-none gap-2 h-10 border-slate-200 hover:bg-slate-50 hover:text-blue-600 text-slate-600 font-bold text-sm rounded-xl shadow-sm"
+                  >
+                    <Printer size={16} />
+                    Cetak KRS
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

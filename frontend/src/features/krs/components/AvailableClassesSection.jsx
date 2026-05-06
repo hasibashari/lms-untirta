@@ -109,8 +109,6 @@ const AvailableClassesSection = ({
   user,
   availableClasses,
   error,
-  searchQuery,
-  setSearchQuery,
   selectedCourseSemester,
   setSelectedCourseSemester,
   currentPage,
@@ -127,15 +125,15 @@ const AvailableClassesSection = ({
       />
 
       {/* Filter Bar */}
-      <div className="p-4 space-y-4 border-b border-slate-200 bg-slate-50/50">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="w-full sm:w-48 shrink-0">
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Tingkat Semester</label>
+      <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+        <div className="flex flex-col sm:flex-row items-end gap-4">
+          <div className="w-full sm:w-64 shrink-0">
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wider">Tingkat Semester</label>
             <Select
               value={selectedCourseSemester}
               onValueChange={setSelectedCourseSemester}
             >
-              <SelectTrigger className="w-full bg-white border-slate-200 h-10">
+              <SelectTrigger className="w-full bg-white border-slate-200 h-10 font-medium">
                 <SelectValue placeholder="Semua Semester" />
               </SelectTrigger>
               <SelectContent>
@@ -148,15 +146,10 @@ const AvailableClassesSection = ({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Cari Mata Kuliah atau Dosen</label>
-            <input
-              type="text"
-              placeholder="Masukkan kata kunci..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm shadow-sm"
-            />
+          <div className="flex-1 text-right">
+            <p className="text-[10px] text-slate-400 font-medium italic">
+              * Pencarian dapat dilakukan pada baris tab di atas
+            </p>
           </div>
         </div>
       </div>
