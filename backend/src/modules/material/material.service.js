@@ -65,12 +65,11 @@ const createMaterial = async (courseId, teacherId, data) => {
 const getMaterials = async (courseId, userId, userRole) => {
   // Jika mahasiswa, pastikan sudah terdaftar di kelas
   if (userRole === 'MAHASISWA') {
-    const enrollment = await prisma.enrollment.findUnique({
+    const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
-        userId_courseId: {
-          userId: userId,
-          courseId: courseId,
-        },
+        studentId: userId,
+        class: { courseId: courseId },
+        status: 'APPROVED',
       },
     });
     if (!enrollment) {
@@ -125,12 +124,11 @@ const getMaterialById = async (materialId, userId, userRole) => {
   }
 
   if (userRole === 'MAHASISWA') {
-    const enrollment = await prisma.enrollment.findUnique({
+    const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
-        userId_courseId: {
-          userId: userId,
-          courseId: material.course.id,
-        },
+        studentId: userId,
+        class: { courseId: material.course.id },
+        status: 'APPROVED',
       },
     });
 

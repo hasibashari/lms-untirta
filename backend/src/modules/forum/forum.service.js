@@ -32,16 +32,15 @@ const validateCourseAccess = async (courseId, userId, userRole) => {
   }
 
   if (userRole === 'MAHASISWA') {
-    const enrollment = await prisma.enrollment.findUnique({
+    const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
-        userId_courseId: {
-          userId: userId,
-          courseId: courseId,
-        },
+        studentId: userId,
+        class: { courseId: courseId },
+        status: 'APPROVED',
       },
     });
     if (!enrollment) {
-      throw new AppError(403, 'Anda belum terdaftar di mata kuliah ini');
+      throw new AppError(403, 'Anda belum terdaftar di mata kuliah ini (KRS belum disetujui)');
     }
   }
 

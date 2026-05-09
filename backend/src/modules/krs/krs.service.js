@@ -412,20 +412,6 @@ const enrollClass = async (studentId, classId) => {
       },
     });
 
-    // 7. Create LMS enrollment bridge
-    await tx.enrollment.upsert({
-      where: {
-        userId_courseId: {
-          userId: studentId,
-          courseId: classData.courseId,
-        },
-      },
-      create: {
-        userId: studentId,
-        courseId: classData.courseId,
-      },
-      update: {},
-    });
 
     return {
       id: enrollment.id,
@@ -479,12 +465,6 @@ const dropClass = async (studentId, classId) => {
       },
     });
 
-    await tx.enrollment.deleteMany({
-      where: {
-        userId: studentId,
-        courseId: enrollment.class.courseId,
-      },
-    });
 
     return {
       message: `Berhasil menghapus ${enrollment.class.course.code} - ${enrollment.class.course.title} (Kelas ${enrollment.class.section}) dari KRS`,
@@ -740,30 +720,8 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
         );
       }
 
-      await tx.enrollment.upsert({
-        where: {
-          userId_courseId: {
-            userId: enrollment.studentId,
-            courseId: enrollment.class.courseId,
-          },
-        },
-        create: {
-          userId: enrollment.studentId,
-          courseId: enrollment.class.courseId,
-        },
-        update: {}, // do nothing if already exists
-      });
     }
 
-    // 2b. If revoking (APPROVED → REJECTED), remove bridge Enrollment
-    if (isRevoke) {
-      await tx.enrollment.deleteMany({
-        where: {
-          userId: enrollment.studentId,
-          courseId: enrollment.class.courseId,
-        },
-      });
-    }
 
     // 3. Buat audit log
     await tx.krsApprovalLog.create({

@@ -34,21 +34,40 @@ export const courseService = {
           details: 'User tersebut bukan mahasiswa',
         });
 
-      const existingEnrollment = await prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId: student.id, courseId: courseId } },
+      const activeClass = await prisma.class.findFirst({
+        where: {
+          courseId: courseId,
+          academicSemester: { isActive: true },
+        },
+      });
+
+      if (!activeClass)
+        return callback({
+          code: grpc.status.FAILED_PRECONDITION,
+          details: 'Tidak ada kelas aktif untuk mata kuliah ini di semester berjalan',
+        });
+
+      const existingEnrollment = await prisma.krsEnrollment.findFirst({
+        where: { studentId: student.id, classId: activeClass.id },
       });
 
       if (existingEnrollment)
         return callback({
           code: grpc.status.ALREADY_EXISTS,
-          details: 'Mahasiswa sudah terdaftar di kelas ini',
+          details: 'Mahasiswa sudah terdaftar di kelas ini (KRS)',
         });
 
-      const enrollment = await prisma.enrollment.create({
-        data: { userId: student.id, courseId: courseId },
+      const enrollment = await prisma.krsEnrollment.create({
+        data: {
+          studentId: student.id,
+          classId: activeClass.id,
+          status: 'APPROVED',
+          approvedAt: new Date(),
+          submittedAt: new Date(),
+        },
         select: {
           id: true,
-          enrolledAt: true,
+          createdAt: true,
           student: {
             select: {
               id: true,
@@ -61,7 +80,7 @@ export const courseService = {
 
       callback(null, {
         enrollmentId: enrollment.id,
-        enrolledAt: enrollment.enrolledAt.toISOString(),
+        enrolledAt: enrollment.createdAt.toISOString(),
         student: enrollment.student,
       });
     } catch (error) {
@@ -94,28 +113,47 @@ export const courseService = {
           details: 'User tersebut bukan mahasiswa',
         });
 
-      const existingEnrollment = await prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId: student.id, courseId: courseId } },
+      const activeClass = await prisma.class.findFirst({
+        where: {
+          courseId: courseId,
+          academicSemester: { isActive: true },
+        },
+      });
+
+      if (!activeClass)
+        return callback({
+          code: grpc.status.FAILED_PRECONDITION,
+          details: 'Tidak ada kelas aktif untuk mata kuliah ini di semester berjalan',
+        });
+
+      const existingEnrollment = await prisma.krsEnrollment.findFirst({
+        where: { studentId: student.id, classId: activeClass.id },
       });
 
       if (existingEnrollment)
         return callback({
           code: grpc.status.ALREADY_EXISTS,
-          details: 'Mahasiswa sudah terdaftar di kelas ini',
+          details: 'Mahasiswa sudah terdaftar di kelas ini (KRS)',
         });
 
-      const enrollment = await prisma.enrollment.create({
-        data: { userId: student.id, courseId: courseId },
+      const enrollment = await prisma.krsEnrollment.create({
+        data: {
+          studentId: student.id,
+          classId: activeClass.id,
+          status: 'APPROVED',
+          approvedAt: new Date(),
+          submittedAt: new Date(),
+        },
         select: {
           id: true,
-          enrolledAt: true,
+          createdAt: true,
           student: { select: { id: true, name: true, email: true } },
         },
       });
 
       callback(null, {
         enrollmentId: enrollment.id,
-        enrolledAt: enrollment.enrolledAt.toISOString(),
+        enrolledAt: enrollment.createdAt.toISOString(),
         student: enrollment.student,
       });
     } catch (error) {
@@ -127,40 +165,49 @@ export const courseService = {
   GetEnrolledCourses: async (call, callback) => {
     try {
       const { studentId } = call.request;
-      const enrollments = await prisma.enrollment.findMany({
-        where: { userId: studentId },
+      const enrollments = await prisma.krsEnrollment.findMany({
+        where: { studentId: studentId, status: 'APPROVED' },
         select: {
           id: true,
-          enrolledAt: true,
-          course: {
+          createdAt: true,
+          class: {
             select: {
-              id: true,
-              title: true,
-              code: true,
-              semester: true,
-              sks: true,
-              teacher: { select: { id: true, name: true } },
-              _count: { select: { materials: true, students: true } },
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                  code: true,
+                  semester: true,
+                  sks: true,
+                  teacher: { select: { id: true, name: true } },
+                  _count: {
+                    select: {
+                      materials: true,
+                      krsEnrollments: { where: { status: 'APPROVED' } },
+                    },
+                  },
+                },
+              },
             },
           },
         },
-        orderBy: { enrolledAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
 
       const courses = enrollments.map(e => ({
         enrollmentId: e.id,
-        joinedAt: e.enrolledAt.toISOString(),
+        joinedAt: e.createdAt.toISOString(),
         course: {
-          id: e.course.id,
-          title: e.course.title,
-          code: e.course.code,
-          semester: e.course.semester,
-          sks: e.course.sks,
-          teacher: e.course.teacher
-            ? { id: e.course.teacher.id, name: e.course.teacher.name }
+          id: e.class.course.id,
+          title: e.class.course.title,
+          code: e.class.course.code,
+          semester: e.class.course.semester,
+          sks: e.class.course.sks,
+          teacher: e.class.course.teacher
+            ? { id: e.class.course.teacher.id, name: e.class.course.teacher.name }
             : null,
-          materialsCount: e.course._count.materials || 0,
-          studentsCount: e.course._count.students || 0,
+          materialsCount: e.class.course._count.materials || 0,
+          studentsCount: e.class.course._count.krsEnrollments || 0,
         },
       }));
 
@@ -186,7 +233,7 @@ export const courseService = {
           _count: {
             select: {
               materials: true,
-              students: true,
+              krsEnrollments: { where: { status: 'APPROVED' } },
             },
           },
         },
@@ -201,7 +248,7 @@ export const courseService = {
         sks: c.sks,
         createdAt: c.createdAt.toISOString(),
         materialsCount: c._count.materials || 0,
-        studentsCount: c._count.students || 0,
+        studentsCount: c._count.krsEnrollments || 0,
       }));
 
       callback(null, { courses: formatted });
@@ -225,11 +272,14 @@ export const courseService = {
         });
       }
 
-      const enrollments = await prisma.enrollment.findMany({
-        where: { courseId },
+      const enrollments = await prisma.krsEnrollment.findMany({
+        where: {
+          class: { courseId: courseId },
+          status: 'APPROVED',
+        },
         select: {
           id: true,
-          enrolledAt: true,
+          createdAt: true,
           student: {
             select: {
               id: true,
@@ -238,12 +288,12 @@ export const courseService = {
             },
           },
         },
-        orderBy: { enrolledAt: 'asc' },
+        orderBy: { createdAt: 'asc' },
       });
 
       const formatted = enrollments.map(e => ({
         enrollmentId: e.id,
-        enrolledAt: e.enrolledAt.toISOString(),
+        enrolledAt: e.createdAt.toISOString(),
         student: e.student,
       }));
       callback(null, { enrollments: formatted });
@@ -269,9 +319,12 @@ export const courseService = {
       const availableStudents = await prisma.user.findMany({
         where: {
           role: 'MAHASISWA',
-          enrollments: {
+          krsEnrollments: {
             none: {
-              courseId: courseId,
+              class: {
+                courseId: courseId,
+              },
+              status: 'APPROVED',
             },
           },
         },
@@ -328,7 +381,7 @@ export const courseService = {
             },
             _count: {
               select: {
-                students: true,
+                krsEnrollments: { where: { status: 'APPROVED' } },
                 materials: true,
                 assignments: true,
               },
@@ -344,7 +397,7 @@ export const courseService = {
       const data = courses.map(c => ({
         ...c,
         createdAt: c.createdAt.toISOString(),
-        studentsCount: c._count.students,
+        studentsCount: c._count.krsEnrollments,
         materialsCount: c._count.materials,
         assignmentsCount: c._count.assignments,
         teacher: c.teacher || null,
@@ -513,7 +566,14 @@ export const courseService = {
       const { courseId } = call.request;
       const course = await prisma.course.findUnique({
         where: { id: courseId },
-        select: { id: true, _count: { select: { students: true } } },
+        select: {
+          id: true,
+          _count: {
+            select: {
+              krsEnrollments: { where: { status: 'APPROVED' } },
+            },
+          },
+        },
       });
       if (!course)
         return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
@@ -521,7 +581,7 @@ export const courseService = {
       await prisma.course.delete({ where: { id: courseId } });
       callback(null, {
         message: 'Kelas berhasil dihapus',
-        deletedEnrollments: course._count.students,
+        deletedStudents: course._count.krsEnrollments,
       });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });

@@ -13,12 +13,11 @@ const getAssignmentsByCourse = async (courseId, userId, userRole) => {
   }
 
   if (userRole === 'MAHASISWA') {
-    const enrollment = await prisma.enrollment.findUnique({
+    const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
-        userId_courseId: {
-          userId,
-          courseId,
-        },
+        studentId: userId,
+        class: { courseId: courseId },
+        status: 'APPROVED',
       },
     });
 

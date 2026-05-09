@@ -19,7 +19,6 @@ model User {
   nim             String?         @unique
   classesTeaching Class[]         @relation("LecturerClasses")
   coursesTeaching Course[]        @relation("TeacherCourses")
-  enrollments     Enrollment[]
   gradesGiven     FinalGrade[]    @relation("LecturerGrades")
   finalGrades     FinalGrade[]    @relation("StudentGrades")
   forumReplies    ForumReply[]    @relation("ReplyAuthor")
@@ -45,23 +44,10 @@ model Course {
   assignments  Assignment[]
   classes      Class[]
   teacher      User          @relation("TeacherCourses", fields: [teacherId], references: [id])
-  students     Enrollment[]
   forumThreads ForumThread[]
   materials    Material[]
 }
 
-model Enrollment {
-  id         String   @id @default(uuid())
-  userId     String
-  courseId   String
-  enrolledAt DateTime @default(now())
-  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  student    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, courseId])
-  @@index([userId])
-  @@index([courseId])
-}
 
 model Material {
   id          String   @id @default(uuid())

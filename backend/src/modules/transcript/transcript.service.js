@@ -18,39 +18,44 @@ const getStudyResults = async (studentId, filters = {}) => {
   const whereClause = { userId: studentId };
 
   // Get all enrollments with assignments and grades
-  const enrollments = await prisma.enrollment.findMany({
-    where: whereClause,
+  // Get all approved KRS enrollments
+  const enrollments = await prisma.krsEnrollment.findMany({
+    where: { studentId: studentId, status: 'APPROVED' },
     select: {
-      enrolledAt: true,
-      course: {
+      createdAt: true,
+      class: {
         select: {
-          id: true,
-          title: true,
-          code: true,
-          semester: true,
-          sks: true,
-          teacher: {
-            select: {
-              name: true,
-            },
-          },
-          assignments: {
+          course: {
             select: {
               id: true,
               title: true,
-              submissions: {
-                where: { studentId },
+              code: true,
+              semester: true,
+              sks: true,
+              assignments: {
                 select: {
-                  grade: true,
+                  id: true,
+                  title: true,
+                  submissions: {
+                    where: { studentId },
+                    select: {
+                      grade: true,
+                    },
+                  },
                 },
               },
+            },
+          },
+          lecturer: {
+            select: {
+              name: true,
             },
           },
         },
       },
     },
     orderBy: {
-      enrolledAt: 'asc',
+      createdAt: 'asc',
     },
   });
 
@@ -71,14 +76,14 @@ const getStudyResults = async (studentId, filters = {}) => {
       courseCode: course.code,
       courseName: course.title,
       semester: course.semester,
-      teacherName: course.teacher?.name || 'Unknown',
+      teacherName: enrollment.class.lecturer?.name || 'Unknown',
       sks: course.sks || 3,
       averageScore,
       letterGrade,
       gradePoint,
       totalAssignments: course.assignments.length,
       gradedAssignments: gradedCount,
-      enrolledAt: enrollment.enrolledAt,
+      enrolledAt: enrollment.createdAt,
     };
   });
 
@@ -320,16 +325,12 @@ const getAcademicSummary = async (studentId) => {
     throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
-  // Hitung dari enrollment lama
-  const legacyResult = await getStudyResults(studentId);
-
-  // Hitung dari KRS baru (student view — respects grade visibility)
+  // Get from KRS result (now the only source)
   const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView: true });
 
   return {
     student,
-    legacy: legacyResult.summary,
-    krs: krsResult.summary,
+    summary: krsResult.summary,
   };
 };
 
@@ -356,7 +357,6 @@ const getStudentList = async (filters = {}, query = {}) => {
         createdAt: true,
         _count: {
           select: {
-            enrollments: true,
             krsEnrollments: true,
           },
         },
@@ -375,7 +375,6 @@ const getStudentList = async (filters = {}, query = {}) => {
       email: s.email,
       nim: s.nim,
       createdAt: s.createdAt,
-      totalEnrollments: s._count.enrollments,
       totalKrsEnrollments: s._count.krsEnrollments,
     })),
     pagination: meta(total),
@@ -394,47 +393,11 @@ const getFullStudentTranscript = async (studentId, options = {}) => {
     throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
-  const legacyResult = await getStudyResults(studentId, {});
-  const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView });
-
-  // Combine all courses and compute unified GPA
-  // Deduplicate by courseId (prefer KRS result if exists)
-  const courseMap = new Map();
-  for (const course of legacyResult.courses) {
-    courseMap.set(course.courseId, { ...course, source: 'legacy' });
-  }
-  for (const course of krsResult.courses) {
-    courseMap.set(course.courseId, { ...course, source: 'krs' });
-  }
-  const unifiedCourses = Array.from(courseMap.values());
-
-  // GPA only from CLOSED semesters (KRS courses) + legacy courses
-  const gpaEligible = unifiedCourses.filter(c =>
-    c.source === 'legacy' || c.semesterStatus === 'CLOSED'
-  );
-  const unifiedGPA = calculateGPA(gpaEligible);
-
-  // Grade distribution
-  const gradeDistribution = { A: 0, 'A-': 0, 'B+': 0, B: 0, 'B-': 0, 'C+': 0, C: 0, D: 0, E: 0, '-': 0 };
-  for (const course of unifiedCourses) {
-    const grade = course.letterGrade || '-';
-    if (gradeDistribution[grade] !== undefined) {
-      gradeDistribution[grade]++;
-    }
-  }
-
   return {
     student,
-    courses: unifiedCourses,
-    summary: {
-      totalCourses: unifiedCourses.length,
-      completedCourses: unifiedGPA.completedCourses,
-      totalSKS: unifiedGPA.totalSKS,
-      ipk: unifiedGPA.ipk,
-    },
+    courses: krsResult.courses,
+    summary: krsResult.summary,
     gradeDistribution,
-    legacy: legacyResult.summary,
-    krs: krsResult.summary,
   };
 };
 

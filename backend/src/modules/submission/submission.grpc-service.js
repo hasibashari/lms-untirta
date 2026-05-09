@@ -84,12 +84,11 @@ export const submissionService = {
         return callback({ code: grpc.status.NOT_FOUND, details: 'Tugas tidak ditemukan' });
       }
 
-      const enrollment = await prisma.enrollment.findUnique({
+      const enrollment = await prisma.krsEnrollment.findFirst({
         where: {
-          userId_courseId: {
-            userId: studentId,
-            courseId: assignment.courseId,
-          },
+          studentId: studentId,
+          class: { courseId: assignment.courseId },
+          status: 'APPROVED',
         },
       });
 
@@ -211,35 +210,39 @@ export const submissionService = {
     try {
       const { studentId } = call.request;
 
-      const enrollments = await prisma.enrollment.findMany({
-        where: { userId: studentId },
+      const enrollments = await prisma.krsEnrollment.findMany({
+        where: { studentId: studentId, status: 'APPROVED' },
         select: {
-          course: {
+          class: {
             select: {
-              id: true,
-              title: true,
-              code: true,
-              teacher: {
-                select: {
-                  name: true,
-                },
-              },
-              assignments: {
+              course: {
                 select: {
                   id: true,
                   title: true,
-                  dueDate: true,
-                  submissions: {
-                    where: { studentId },
+                  code: true,
+                  teacher: {
                     select: {
-                      id: true,
-                      grade: true,
-                      feedback: true,
-                      submittedAt: true,
+                      name: true,
                     },
                   },
+                  assignments: {
+                    select: {
+                      id: true,
+                      title: true,
+                      dueDate: true,
+                      submissions: {
+                        where: { studentId },
+                        select: {
+                          id: true,
+                          grade: true,
+                          feedback: true,
+                          submittedAt: true,
+                        },
+                      },
+                    },
+                    orderBy: { dueDate: 'desc' },
+                  },
                 },
-                orderBy: { dueDate: 'desc' },
               },
             },
           },
@@ -249,7 +252,7 @@ export const submissionService = {
       const result = [];
 
       for (const enrollment of enrollments) {
-        const course = enrollment.course;
+        const course = enrollment.class.course;
 
         for (const assignment of course.assignments) {
           const submission = assignment.submissions[0] || null;
@@ -290,12 +293,12 @@ export const submissionService = {
     try {
       const { studentId } = call.request;
 
-      const enrollments = await prisma.enrollment.findMany({
-        where: { userId: studentId },
-        select: { courseId: true },
+      const enrollments = await prisma.krsEnrollment.findMany({
+        where: { studentId: studentId, status: 'APPROVED' },
+        select: { class: { select: { courseId: true } } },
       });
 
-      const courseIds = enrollments.map(e => e.courseId);
+      const courseIds = enrollments.map(e => e.class.courseId);
       const now = new Date();
 
       const [totalAssignments, pendingAssignments, gradedAssignments] = await Promise.all([
@@ -398,7 +401,7 @@ export const submissionService = {
           id: true,
           _count: {
             select: {
-              students: true,
+              krsEnrollments: { where: { status: 'APPROVED' } },
               materials: true,
               assignments: true,
             },
@@ -413,7 +416,7 @@ export const submissionService = {
       let totalAssignments = 0;
 
       for (const course of courses) {
-        totalStudents += course._count.students;
+        totalStudents += course._count.krsEnrollments;
         totalMaterials += course._count.materials;
         totalAssignments += course._count.assignments;
       }
