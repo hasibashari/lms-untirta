@@ -68,6 +68,7 @@ message CourseBasic {
   int32 materialsCount = 7;
   int32 studentsCount = 8;
   optional string createdAt = 9;
+  optional string description = 10;
 }
 
 message EnrolledCoursesResponse {

@@ -176,6 +176,7 @@ export const courseService = {
                 select: {
                   id: true,
                   title: true,
+                  description: true,
                   code: true,
                   semester: true,
                   sks: true,
@@ -183,7 +184,15 @@ export const courseService = {
                   _count: {
                     select: {
                       materials: true,
-                      krsEnrollments: { where: { status: 'APPROVED' } },
+                    },
+                  },
+                  classes: {
+                    select: {
+                      _count: {
+                        select: {
+                          krsEnrollments: { where: { status: 'APPROVED' } },
+                        },
+                      },
                     },
                   },
                 },
@@ -194,22 +203,28 @@ export const courseService = {
         orderBy: { createdAt: 'desc' },
       });
 
-      const courses = enrollments.map(e => ({
-        enrollmentId: e.id,
-        joinedAt: e.createdAt.toISOString(),
-        course: {
-          id: e.class.course.id,
-          title: e.class.course.title,
-          code: e.class.course.code,
-          semester: e.class.course.semester,
-          sks: e.class.course.sks,
-          teacher: e.class.course.teacher
-            ? { id: e.class.course.teacher.id, name: e.class.course.teacher.name }
-            : null,
-          materialsCount: e.class.course._count.materials || 0,
-          studentsCount: e.class.course._count.krsEnrollments || 0,
-        },
-      }));
+      const courses = enrollments.map(e => {
+        const course = e.class.course;
+        const studentsCount = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+        
+        return {
+          enrollmentId: e.id,
+          joinedAt: e.createdAt.toISOString(),
+          course: {
+            id: course.id,
+            title: course.title,
+            code: course.code,
+            semester: course.semester,
+            sks: course.sks,
+            teacher: course.teacher
+              ? { id: course.teacher.id, name: course.teacher.name }
+              : null,
+            materialsCount: course._count.materials || 0,
+            studentsCount: studentsCount,
+            description: course.description,
+          },
+        };
+      });
 
       callback(null, { courses });
     } catch (error) {
@@ -226,6 +241,7 @@ export const courseService = {
         select: {
           id: true,
           title: true,
+          description: true,
           code: true,
           semester: true,
           sks: true,
@@ -233,23 +249,35 @@ export const courseService = {
           _count: {
             select: {
               materials: true,
-              krsEnrollments: { where: { status: 'APPROVED' } },
+            },
+          },
+          classes: {
+            select: {
+              _count: {
+                select: {
+                  krsEnrollments: { where: { status: 'APPROVED' } },
+                },
+              },
             },
           },
         },
         orderBy: { createdAt: 'desc' },
       });
 
-      const formatted = courses.map(c => ({
-        id: c.id,
-        title: c.title,
-        code: c.code,
-        semester: c.semester,
-        sks: c.sks,
-        createdAt: c.createdAt.toISOString(),
-        materialsCount: c._count.materials || 0,
-        studentsCount: c._count.krsEnrollments || 0,
-      }));
+      const formatted = courses.map(c => {
+        const studentsCount = c.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+        return {
+          id: c.id,
+          title: c.title,
+          code: c.code,
+          semester: c.semester,
+          sks: c.sks,
+          createdAt: c.createdAt.toISOString(),
+          materialsCount: c._count.materials || 0,
+          studentsCount: studentsCount,
+          description: c.description,
+        };
+      });
 
       callback(null, { courses: formatted });
     } catch (error) {
@@ -381,9 +409,17 @@ export const courseService = {
             },
             _count: {
               select: {
-                krsEnrollments: { where: { status: 'APPROVED' } },
                 materials: true,
                 assignments: true,
+              },
+            },
+            classes: {
+              select: {
+                _count: {
+                  select: {
+                    krsEnrollments: { where: { status: 'APPROVED' } },
+                  },
+                },
               },
             },
           },
@@ -394,14 +430,17 @@ export const courseService = {
         prisma.course.count({ where }),
       ]);
 
-      const data = courses.map(c => ({
-        ...c,
-        createdAt: c.createdAt.toISOString(),
-        studentsCount: c._count.krsEnrollments,
-        materialsCount: c._count.materials,
-        assignmentsCount: c._count.assignments,
-        teacher: c.teacher || null,
-      }));
+      const data = courses.map(c => {
+        const studentsCount = c.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+        return {
+          ...c,
+          createdAt: c.createdAt.toISOString(),
+          studentsCount: studentsCount,
+          materialsCount: c._count.materials,
+          assignmentsCount: c._count.assignments,
+          teacher: c.teacher || null,
+        };
+      });
 
       callback(null, { data, pagination: meta(total) });
     } catch (error) {
@@ -570,7 +609,16 @@ export const courseService = {
           id: true,
           _count: {
             select: {
-              krsEnrollments: { where: { status: 'APPROVED' } },
+              materials: true,
+            },
+          },
+          classes: {
+            select: {
+              _count: {
+                select: {
+                  krsEnrollments: { where: { status: 'APPROVED' } },
+                },
+              },
             },
           },
         },
@@ -579,9 +627,10 @@ export const courseService = {
         return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
 
       await prisma.course.delete({ where: { id: courseId } });
+      const totalStudents = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
       callback(null, {
         message: 'Kelas berhasil dihapus',
-        deletedStudents: course._count.krsEnrollments,
+        deletedStudents: totalStudents,
       });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });

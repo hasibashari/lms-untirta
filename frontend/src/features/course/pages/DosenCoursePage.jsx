@@ -216,6 +216,13 @@ export default function CourseHome() {
               {course?.title || 'Nama Kelas'}
             </h1>
 
+            {/* Description (if available) */}
+            {course?.description && (
+              <p className="text-white/80 text-sm max-w-2xl leading-relaxed mt-2 mb-4 line-clamp-3 md:line-clamp-none">
+                {course.description}
+              </p>
+            )}
+
             {/* Teacher Info (You) */}
             <div className="flex items-center gap-3 text-white/90 mb-4">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">

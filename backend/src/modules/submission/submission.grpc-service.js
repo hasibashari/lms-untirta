@@ -401,9 +401,17 @@ export const submissionService = {
           id: true,
           _count: {
             select: {
-              krsEnrollments: { where: { status: 'APPROVED' } },
               materials: true,
               assignments: true,
+            },
+          },
+          classes: {
+            select: {
+              _count: {
+                select: {
+                  krsEnrollments: { where: { status: 'APPROVED' } },
+                },
+              },
             },
           },
         },
@@ -416,7 +424,8 @@ export const submissionService = {
       let totalAssignments = 0;
 
       for (const course of courses) {
-        totalStudents += course._count.krsEnrollments;
+        const studentsInCourse = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+        totalStudents += studentsInCourse;
         totalMaterials += course._count.materials;
         totalAssignments += course._count.assignments;
       }

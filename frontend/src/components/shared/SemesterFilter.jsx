@@ -37,7 +37,7 @@ const SemesterFilter = ({
           Periode Akademik
         </label>
         <Select 
-          value={currentId || (hideAllOption ? undefined : 'all')} 
+          value={currentId || (hideAllOption ? '' : 'all')} 
           onValueChange={handleChange}
           disabled={semesters.length === 0}
         >
