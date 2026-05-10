@@ -20,7 +20,7 @@ import Breadcrumb from '../../../components/navigation/Breadcrumb';
  * Mendukung instruksi berbasis Markdown
  */
 export default function CreateAssignment() {
-  const { courseId, assignmentId } = useParams();
+  const { classId, assignmentId } = useParams();
   const navigate = useNavigate();
 
   // Mode edit jika ada assignmentId
@@ -70,7 +70,7 @@ export default function CreateAssignment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
 
     // Validation
     if (!title.trim()) {
@@ -98,10 +98,10 @@ export default function CreateAssignment() {
         await updateAssignment(assignmentId, payload);
       } else {
         // Mode Create: Buat tugas baru
-        await createAssignment(courseId, payload);
+        await createAssignment(classId, payload);
       }
 
-      navigate(`/dosen/courses/${courseId}/assignments`);
+      navigate(`/dosen/classes/${classId}/assignments`);
     } catch (err) {
       setError(
         err?.response?.data?.message || err?.message || 'Gagal menyimpan tugas'
@@ -111,7 +111,7 @@ export default function CreateAssignment() {
     }
   };
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -138,8 +138,8 @@ export default function CreateAssignment() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
-          { label: 'Tugas', to: `/dosen/courses/${courseId}/assignments` },
+          { label: 'Kelas', to: `/dosen/classes/${classId}` },
+          { label: 'Tugas', to: `/dosen/classes/${classId}/assignments` },
           { label: isEditMode ? 'Edit Tugas' : 'Buat Tugas' },
         ]}
       />
@@ -265,7 +265,7 @@ export default function CreateAssignment() {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-4">
               <button
                 type="button"
-                onClick={() => navigate(`/dosen/courses/${courseId}/assignments`)}
+                onClick={() => navigate(`/dosen/classes/${classId}/assignments`)}
                 className="inline-flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl font-medium transition"
               >
                 <X size={18} />
@@ -332,7 +332,7 @@ function AssignmentPreview({ title, description, dueDate }) {
       </div>
 
       {/* Assignment Card */}
-      <div className="bg-card rounded-xl border border-border shadow-sm shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         {/* Header Section */}
         <div className="bg-linear-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
           <div className="flex items-start justify-between">

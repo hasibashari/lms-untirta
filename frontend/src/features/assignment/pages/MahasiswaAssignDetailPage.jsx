@@ -25,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export default function AssignmentDetail() {
-  const { courseId, assignmentId } = useParams();
+  const { classId, assignmentId } = useParams();
 
   const [assignment, setAssignment] = useState(null); // State baru untuk detail assignment
   const [status, setStatus] = useState(null); // Status submission
@@ -268,13 +268,13 @@ export default function AssignmentDetail() {
       <Breadcrumb
         items={[
           { label: 'Kelas Saya', to: '/mahasiswa/classes' },
-          { label: 'Kelas', to: `/mahasiswa/courses/${courseId}` },
-          { label: 'Tugas', to: `/mahasiswa/courses/${courseId}/assignments` },
+          { label: 'Kelas', to: `/mahasiswa/classes/${classId}` },
+          { label: 'Tugas', to: `/mahasiswa/classes/${classId}/assignments` },
           { label: assignment.title }, // Gunakan assignment.title
         ]}
       />
 
-      <BackButton fallback={`/mahasiswa/courses/${courseId}/assignments`} />
+      <BackButton fallback={`/mahasiswa/classes/${classId}/assignments`} />
 
       {/* Header */}
       <div className="flex items-start gap-4">

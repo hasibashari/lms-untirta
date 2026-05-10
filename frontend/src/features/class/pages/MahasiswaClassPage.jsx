@@ -36,7 +36,7 @@ const MyClasses = () => {
           Kelas Saya
         </h1>
         <p className="text-slate-500 mt-1">
-          Daftar lengkap kelas offering yang Anda ikuti
+          Daftar lengkap kelas yang Anda ikuti
         </p>
       </div>
 
@@ -59,7 +59,7 @@ const MyClasses = () => {
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <BookOpen size={16} />
           <span>
-            {filteredClasses.length} dari {approvedEnrollments.length} kelas offering
+            {filteredClasses.length} dari {approvedEnrollments.length} kelas
           </span>
         </div>
       )}
@@ -100,7 +100,7 @@ const MyClasses = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <BookOpen size={32} className="text-slate-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum Ada Kelas Offering</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum Ada Kelas</h3>
           <p className="text-slate-500 max-w-sm mx-auto mb-4">
             Anda belum memiliki kelas yang disetujui. Silakan isi KRS melalui menu KRS.
           </p>
@@ -149,7 +149,7 @@ const MyClasses = () => {
               sks={enrollment.class.course.sks}
               studentsCount={enrollment.class.krsEnrollmentsCount || 0}
               materialsCount={enrollment.class.course._count?.materials || 0}
-              onClick={() => navigate(`/mahasiswa/courses/${enrollment.class.course.id}`)}
+              onClick={() => navigate(`/mahasiswa/classes/${enrollment.classId}`)}
             />
           ))}
         </div>

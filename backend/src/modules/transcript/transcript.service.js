@@ -61,7 +61,7 @@ const getStudyResults = async (studentId, filters = {}) => {
 
   // Calculate grades per course using shared grading utility
   const coursesWithGrades = enrollments.map(enrollment => {
-    const course = enrollment.course;
+    const course = enrollment.class.course;
 
     // Flatten submissions dari semua assignments
     const allSubmissions = course.assignments.flatMap(a =>
@@ -383,7 +383,6 @@ const getStudentList = async (filters = {}, query = {}) => {
 
 
 const getFullStudentTranscript = async (studentId, options = {}) => {
-  const isStudentView = options.isStudentView === true;
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     select: { id: true, name: true, email: true, nim: true, createdAt: true },
@@ -393,10 +392,21 @@ const getFullStudentTranscript = async (studentId, options = {}) => {
     throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
+  // Get data using the class-based transcript logic
+  const krsResult = await getTranscriptByClass(studentId, {}, options);
+
+  // Calculate grade distribution from all courses
+  const gradeDistribution = krsResult.courses.reduce((acc, c) => {
+    const grade = c.letterGrade || '-';
+    acc[grade] = (acc[grade] || 0) + 1;
+    return acc;
+  }, {});
+
   return {
     student,
     courses: krsResult.courses,
     summary: krsResult.summary,
+    semesterBreakdown: krsResult.semesterBreakdown,
     gradeDistribution,
   };
 };

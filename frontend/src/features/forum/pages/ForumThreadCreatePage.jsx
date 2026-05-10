@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
  * ForumThreadCreatePage — Halaman untuk membuat atau mengedit thread diskusi.
  */
 export default function ForumThreadCreatePage() {
-  const { courseId, threadId } = useParams();
+  const { classId, threadId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,11 +34,11 @@ export default function ForumThreadCreatePage() {
         })
         .catch(() => {
           toast.error('Gagal memuat data diskusi');
-          navigate(`${rolePrefix}/courses/${courseId}/forum`);
+          navigate(`${rolePrefix}/classes/${classId}/forum`);
         })
         .finally(() => setLoading(false));
     }
-  }, [isEdit, threadId, courseId, navigate, rolePrefix]);
+  }, [isEdit, threadId, classId, navigate, rolePrefix]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,14 +52,14 @@ export default function ForumThreadCreatePage() {
           content: content.trim(),
         });
         toast.success('Diskusi berhasil diperbarui!');
-        navigate(`${rolePrefix}/courses/${courseId}/forum/${threadId}`, { replace: true });
+        navigate(`${rolePrefix}/classes/${classId}/forum/${threadId}`, { replace: true });
       } else {
-        const res = await createThread(courseId, {
+        const res = await createThread(classId, {
           title: title.trim(),
           content: content.trim(),
         });
         toast.success('Diskusi berhasil dibuat!');
-        navigate(`${rolePrefix}/courses/${courseId}/forum/${res.data.id}`, { replace: true });
+        navigate(`${rolePrefix}/classes/${classId}/forum/${res.data.id}`, { replace: true });
       }
     } catch {
       // Error handled by apiService interceptor
@@ -83,14 +83,14 @@ export default function ForumThreadCreatePage() {
       <Breadcrumb
         items={[
           { label: isDosen ? 'Dashboard' : 'Kelas Saya', to: isDosen ? '/dosen/dashboard' : '/mahasiswa/classes' },
-          { label: 'Forum', to: `${rolePrefix}/courses/${courseId}/forum` },
+          { label: 'Forum', to: `${rolePrefix}/classes/${classId}/forum` },
           { label: isEdit ? 'Edit Diskusi' : 'Buat Diskusi' },
         ]}
       />
 
       {/* Back link */}
       <button
-        onClick={() => navigate(isEdit ? `${rolePrefix}/courses/${courseId}/forum/${threadId}` : `${rolePrefix}/courses/${courseId}/forum`)}
+        onClick={() => navigate(isEdit ? `${rolePrefix}/classes/${classId}/forum/${threadId}` : `${rolePrefix}/classes/${classId}/forum`)}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition"
       >
         <ArrowLeft size={16} />
@@ -153,7 +153,7 @@ export default function ForumThreadCreatePage() {
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
             <button
               type="button"
-              onClick={() => navigate(isEdit ? `${rolePrefix}/courses/${courseId}/forum/${threadId}` : `${rolePrefix}/courses/${courseId}/forum`)}
+              onClick={() => navigate(isEdit ? `${rolePrefix}/classes/${classId}/forum/${threadId}` : `${rolePrefix}/classes/${classId}/forum`)}
               disabled={submitting}
               className="px-6 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition"
             >

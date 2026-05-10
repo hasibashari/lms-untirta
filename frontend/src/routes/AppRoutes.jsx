@@ -144,21 +144,20 @@ function AppRoutes() {
             <Route path="/dosen/submissions" element={<Lazy component={DosenAllSubmissions} />} />
             <Route path="/dosen/grades" element={<Lazy component={DosenGradeList} />} />
             <Route path="/dosen/classes/:classId/grades" element={<Lazy component={DosenGrading} />} />
-            <Route path="/dosen/courses/:courseId/grades" element={<Lazy component={DosenCourseGrades} />} />
-            <Route path="/dosen/courses/:courseId" element={<Lazy component={DosenCourseHome} />} />
-            <Route path="/dosen/courses/:courseId/materials" element={<Lazy component={DosenMaterials} />} />
-            <Route path="/dosen/courses/:courseId/materials/new" element={<Lazy component={DosenCreateMaterial} />} />
-            <Route path="/dosen/courses/:courseId/materials/:materialId/edit" element={<Lazy component={DosenCreateMaterial} />} />
-            <Route path="/dosen/courses/:courseId/students" element={<Lazy component={DosenStudents} />} />
-            <Route path="/dosen/courses/:courseId/assignments" element={<Lazy component={DosenAssignments} />} />
-            <Route path="/dosen/courses/:courseId/assignments/new" element={<Lazy component={DosenCreateAssignment} />} />
-            <Route path="/dosen/courses/:courseId/assignments/:assignmentId/edit" element={<Lazy component={DosenCreateAssignment} />} />
-            <Route path="/dosen/courses/:courseId/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
+            <Route path="/dosen/classes/:classId/materials" element={<Lazy component={DosenMaterials} />} />
+            <Route path="/dosen/classes/:classId/materials/new" element={<Lazy component={DosenCreateMaterial} />} />
+            <Route path="/dosen/classes/:classId/materials/:materialId/edit" element={<Lazy component={DosenCreateMaterial} />} />
+            <Route path="/dosen/classes/:classId/students" element={<Lazy component={DosenStudents} />} />
+            <Route path="/dosen/classes/:classId/assignments" element={<Lazy component={DosenAssignments} />} />
+            <Route path="/dosen/classes/:classId/assignments/new" element={<Lazy component={DosenCreateAssignment} />} />
+            <Route path="/dosen/classes/:classId/assignments/:assignmentId/edit" element={<Lazy component={DosenCreateAssignment} />} />
+            <Route path="/dosen/classes/:classId/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
             <Route path="/dosen/assignments/:assignmentId/submissions" element={<Lazy component={DosenSubmissions} />} />
-            <Route path="/dosen/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
-            <Route path="/dosen/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
-            <Route path="/dosen/courses/:courseId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
-            <Route path="/dosen/courses/:courseId/forum/:threadId/edit" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/dosen/classes/:classId/forum" element={<Lazy component={ForumThreadList} />} />
+            <Route path="/dosen/classes/:classId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/dosen/classes/:classId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
+            <Route path="/dosen/classes/:classId/forum/:threadId/edit" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/dosen/classes/:classId" element={<Lazy component={DosenCourseHome} />} />
           </Route>
         </Route>
       </Route>
@@ -172,17 +171,17 @@ function AppRoutes() {
             <Route path="/mahasiswa/grades" element={<Lazy component={MahasiswaGrades} />} />
             <Route path="/mahasiswa/krs" element={<Lazy component={KartuRencanaStudi} />} />
             <Route path="/mahasiswa/study-result" element={<Lazy component={MahasiswaStudyResult} />} />
-            <Route path="/mahasiswa/courses/:courseId" element={<Lazy component={MahasiswaCourseHome} />} />
-            <Route path="/mahasiswa/courses/:courseId/materials" element={<Lazy component={MahasiswaCourseMaterials} />} />
-            <Route path="/mahasiswa/courses/:courseId/assignments" element={<Lazy component={MahasiswaAssignments} />} />
-            <Route path="/mahasiswa/courses/:courseId/assignments/:assignmentId" element={<Lazy component={MahasiswaAssignmentDetail} />} />
-            <Route path="/mahasiswa/courses/:courseId/forum" element={<Lazy component={ForumThreadList} />} />
-            <Route path="/mahasiswa/courses/:courseId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
-            <Route path="/mahasiswa/courses/:courseId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
-            <Route path="/mahasiswa/courses/:courseId/forum/:threadId/edit" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/mahasiswa/classes/:classId" element={<Lazy component={MahasiswaCourseHome} />} />
+            <Route path="/mahasiswa/classes/:classId/materials" element={<Lazy component={MahasiswaCourseMaterials} />} />
+            <Route path="/mahasiswa/classes/:classId/assignments" element={<Lazy component={MahasiswaAssignments} />} />
+            <Route path="/mahasiswa/classes/:classId/assignments/:assignmentId" element={<Lazy component={MahasiswaAssignmentDetail} />} />
+            <Route path="/mahasiswa/classes/:classId/forum" element={<Lazy component={ForumThreadList} />} />
+            <Route path="/mahasiswa/classes/:classId/forum/new" element={<Lazy component={ForumThreadCreate} />} />
+            <Route path="/mahasiswa/classes/:classId/forum/:threadId" element={<Lazy component={ForumThreadDetail} />} />
+            <Route path="/mahasiswa/classes/:classId/forum/:threadId/edit" element={<Lazy component={ForumThreadCreate} />} />
           </Route>
           <Route element={<LearningLayout />}>
-            <Route path="/mahasiswa/courses/:courseId/materials/:materialId" element={<Lazy component={MahasiswaMaterialDetail} />} />
+            <Route path="/mahasiswa/classes/:classId/materials/:materialId" element={<Lazy component={MahasiswaMaterialDetail} />} />
           </Route>
         </Route>
       </Route>

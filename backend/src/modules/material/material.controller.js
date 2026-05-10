@@ -9,7 +9,7 @@ import { buildFileUrl } from '../../middlewares/upload.middleware.js';
 
 const createMaterial = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const { classId } = req.params;
     const { title, content, videoUrl } = req.body;
 
     // Jika ada file yang di-upload, simpan metadata sementara ke Redis
@@ -23,7 +23,7 @@ const createMaterial = async (req, res) => {
     // Panggil service untuk membuat materi. `req.user` diasumsikan berasal
     // dari middleware autentikasi yang menyisipkan info user ke request.
     const result = await materialService.createMaterial(
-      courseId,
+      classId,
       req.user.id,
       { title, content, fileUrl, videoUrl }
     );
@@ -38,9 +38,9 @@ const createMaterial = async (req, res) => {
 
 const getMaterials = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const { classId } = req.params;
     // Ambil daftar materi; service akan menangani hak akses berdasar role/userId
-    const result = await materialService.getMaterials(courseId, req.user.id, req.user.role);
+    const result = await materialService.getMaterials(classId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Daftar materi berhasil diambil', data: result });
   } catch (error) {
     return handleError(res, error);

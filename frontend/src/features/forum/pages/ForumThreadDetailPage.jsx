@@ -36,7 +36,7 @@ const formatDateTime = (dateStr) => {
 };
 
 export default function ForumThreadDetailPage() {
-  const { courseId, threadId } = useParams();
+  const { classId, threadId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -92,7 +92,7 @@ export default function ForumThreadDetailPage() {
     try {
       await deleteThread(threadId);
       toast.success('Diskusi berhasil dihapus');
-      navigate(`${rolePrefix}/courses/${courseId}/forum`, { replace: true });
+      navigate(`${rolePrefix}/classes/${classId}/forum`, { replace: true });
     } catch { /* error handled by apiService */ }
   };
 
@@ -180,14 +180,14 @@ export default function ForumThreadDetailPage() {
       <Breadcrumb
         items={[
           { label: isDosen ? 'Dashboard' : 'Kelas Saya', to: isDosen ? '/dosen/dashboard' : '/mahasiswa/classes' },
-          { label: 'Forum', to: `${rolePrefix}/courses/${courseId}/forum` },
+          { label: 'Forum', to: `${rolePrefix}/classes/${classId}/forum` },
           { label: thread.title },
         ]}
       />
 
       {/* Back link */}
       <button
-        onClick={() => navigate(`${rolePrefix}/courses/${courseId}/forum`)}
+        onClick={() => navigate(`${rolePrefix}/classes/${classId}/forum`)}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition"
       >
         <ArrowLeft size={16} />
@@ -246,7 +246,7 @@ export default function ForumThreadDetailPage() {
               )}
               {isOwner && (
                 <button
-                  onClick={() => navigate(`${rolePrefix}/courses/${courseId}/forum/${threadId}/edit`)}
+                  onClick={() => navigate(`${rolePrefix}/classes/${classId}/forum/${threadId}/edit`)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition"
                 >
                   <Pencil size={14} />

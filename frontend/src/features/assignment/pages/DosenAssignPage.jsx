@@ -23,7 +23,7 @@ import ConfirmDialog from '../../../components/shared/ConfirmDialog';
  * Menampilkan semua tugas dengan status dan navigasi ke submissions
  */
 export default function Assignments() {
-  const { courseId } = useParams();
+  const { classId } = useParams();
   const navigate = useNavigate();
 
   const [assignments, setAssignments] = useState([]);
@@ -33,14 +33,14 @@ export default function Assignments() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
 
     setLoading(true);
-    getAssignments(courseId)
+    getAssignments(classId)
       .then(res => setAssignments(res.data || []))
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
-  }, [courseId]);
+  }, [classId]);
 
   // Handler untuk menghapus tugas
   const handleDelete = async () => {
@@ -101,7 +101,7 @@ export default function Assignments() {
     return 'Kurang dari 1 jam';
   };
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -116,7 +116,7 @@ export default function Assignments() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
+          { label: 'Kelas', to: `/dosen/classes/${classId}` },
           { label: 'Tugas' },
         ]}
       />
@@ -133,7 +133,7 @@ export default function Assignments() {
         </div>
 
         <button
-          onClick={() => navigate(`/dosen/courses/${courseId}/assignments/new`)}
+          onClick={() => navigate(`/dosen/classes/${classId}/assignments/new`)}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition shadow-lg shadow-blue-200"
         >
           <Plus size={20} />
@@ -208,7 +208,7 @@ export default function Assignments() {
             penilaian kepada mahasiswa.
           </p>
           <button
-            onClick={() => navigate(`/dosen/courses/${courseId}/assignments/new`)}
+            onClick={() => navigate(`/dosen/classes/${classId}/assignments/new`)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             <Plus size={18} />
@@ -239,16 +239,16 @@ export default function Assignments() {
             <AssignmentCard
               key={assignment.id}
               assignment={assignment}
-              courseId={courseId}
+              classId={classId}
               isDeadlinePassed={isDeadlinePassed(assignment.dueDate)}
               isDeadlineNear={isDeadlineNear(assignment.dueDate)}
               formatDate={formatDate}
               getRelativeTime={getRelativeTime}
               onViewSubmissions={() =>
-                navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/submissions`)
+                navigate(`/dosen/classes/${classId}/assignments/${assignment.id}/submissions`)
               }
               onEdit={() =>
-                navigate(`/dosen/courses/${courseId}/assignments/${assignment.id}/edit`)
+                navigate(`/dosen/classes/${classId}/assignments/${assignment.id}/edit`)
               }
               onDelete={() => setDeleteConfirm(assignment)}
             />

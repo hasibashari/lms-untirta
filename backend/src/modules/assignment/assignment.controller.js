@@ -5,19 +5,19 @@ import { handleError } from '../../utils/errorHandler.js';
 // ======= CREATE ASSIGNMENT =======
 const create = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const result = await assignmentService.createAssignment(courseId, req.user.id, req.body);
+    const { classId } = req.params;
+    const result = await assignmentService.createAssignment(classId, req.user.id, req.body);
     sendSuccess(res, { statusCode: 201, message: 'Tugas berhasil dibuat', data: result });
   } catch (error) {
     return handleError(res, error);
   }
 };
 
-// ======= GET ASSIGNMENTS BY COURSE =======
+// ======= GET ASSIGNMENTS BY CLASS =======
 const getAssignments = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const result = await assignmentService.getAssignmentsByCourse(courseId, req.user.id, req.user.role);
+    const { classId } = req.params;
+    const result = await assignmentService.getAssignmentsByClass(classId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Daftar tugas berhasil diambil', data: result });
   } catch (error) {
     return handleError(res, error);

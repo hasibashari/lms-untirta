@@ -2,6 +2,8 @@ import express from 'express';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import validate from '../../middlewares/validate.middleware.js';
 import {
+  getThreads,
+  createThread,
   getThreadById,
   updateThread,
   deleteThread,
@@ -14,11 +16,16 @@ import {
   updateThreadSchema,
   createReplySchema,
   updateReplySchema,
+  createThreadSchema,
 } from './forum.validation.js';
 
 // Router untuk thread-level endpoints
 // Dipasang di: /api/forum
 const forumRouter = express.Router();
+
+// Class-based forum routes
+forumRouter.get('/class/:classId', authenticateToken, getThreads);
+forumRouter.post('/class/:classId', authenticateToken, validate(createThreadSchema), createThread);
 
 // Thread detail, update, delete, pin
 forumRouter.get('/threads/:threadId', authenticateToken, getThreadById);

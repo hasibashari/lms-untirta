@@ -239,7 +239,7 @@ function FilePreviewCard({ url }) {
  * Mode B: Lihat submissions untuk assignment tertentu
  */
 export default function Submissions() {
-  const { courseId, assignmentId } = useParams();
+  const { classId, assignmentId } = useParams();
   const navigate = useNavigate();
 
   // Data state
@@ -254,7 +254,7 @@ export default function Submissions() {
 
   // Fetch data
   useEffect(() => {
-    if (!courseId || !assignmentId) return;
+    if (!classId || !assignmentId) return;
     
     const startTimer = setTimeout(() => {
       setLoading(true);
@@ -264,7 +264,7 @@ export default function Submissions() {
     // Fetch submissions and assignment info
     Promise.all([
       getSubmissions(assignmentId),
-      getAssignments(courseId),
+      getAssignments(classId),
     ])
       .then(([subRes, assignRes]) => {
         setSubmissions(subRes.data || []);
@@ -276,7 +276,7 @@ export default function Submissions() {
       .finally(() => setLoading(false));
 
     return () => clearTimeout(startTimer);
-  }, [courseId, assignmentId]);
+  }, [classId, assignmentId]);
 
   // Handle grade submission
   const handleGrade = async (submissionId, grade, feedback) => {
@@ -340,7 +340,7 @@ export default function Submissions() {
     return new Date(submittedAt) > new Date(dueDate);
   };
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -355,8 +355,8 @@ export default function Submissions() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
-          { label: 'Tugas', to: `/dosen/courses/${courseId}/assignments` },
+          { label: 'Kelas', to: `/dosen/classes/${classId}` },
+          { label: 'Tugas', to: `/dosen/classes/${classId}/assignments` },
           { label: 'Submissions' },
         ]}
       />
@@ -374,7 +374,7 @@ export default function Submissions() {
             Silakan pilih tugas dari daftar tugas untuk melihat submission.
           </p>
           <button
-            onClick={() => navigate(`/dosen/courses/${courseId}/assignments`)}
+            onClick={() => navigate(`/dosen/classes/${classId}/assignments`)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Lihat Daftar Tugas
@@ -389,7 +389,7 @@ export default function Submissions() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex items-start gap-4">
               <button
-                onClick={() => navigate(`/dosen/courses/${courseId}/assignments`)}
+                onClick={() => navigate(`/dosen/classes/${classId}/assignments`)}
                 className="shrink-0 p-2 hover:bg-slate-100 rounded-lg transition"
               >
                 <ArrowLeft size={20} className="text-slate-600" />

@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
  * Terinspirasi dari Dicoding: menampilkan overview kelas dan silabus
  */
 const CourseHome = () => {
-  const { courseId } = useParams();
+  const { classId } = useParams();
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [materials, setMaterials] = useState([]);
@@ -32,14 +32,14 @@ const CourseHome = () => {
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(() => {
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
     setLoading(true);
     setError(null);
 
     Promise.all([
-      getAssignments(courseId),
+      getAssignments(classId),
       getMyKRS(),
-      getMaterials(courseId),
+      getMaterials(classId),
     ])
       .then(([assignmentsRes, krsRes, materialsRes]) => {
         setAssignments(assignmentsRes.data);
@@ -49,7 +49,7 @@ const CourseHome = () => {
           (item) => item.status === 'APPROVED'
         );
         const foundEnrollment = approvedEnrollments.find(
-          (item) => item.class?.course?.id === courseId
+          (item) => item.classId === classId || item.classId === parseInt(classId)
         );
         if (foundEnrollment) {
           setCourse({
@@ -66,7 +66,7 @@ const CourseHome = () => {
         setError(err.message || 'Gagal memuat data kelas');
       })
       .finally(() => setLoading(false));
-  }, [courseId]);
+  }, [classId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -76,7 +76,7 @@ const CourseHome = () => {
     return () => clearTimeout(timer);
   }, [fetchData]);
 
-  if (!courseId) {
+  if (!classId) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -164,7 +164,7 @@ const CourseHome = () => {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link
-          to={`/mahasiswa/courses/${courseId}/materials`}
+          to={`/mahasiswa/classes/${classId}/materials`}
           className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
         >
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
@@ -180,7 +180,7 @@ const CourseHome = () => {
         </Link>
 
         <Link
-          to={`/mahasiswa/courses/${courseId}/assignments`}
+          to={`/mahasiswa/classes/${classId}/assignments`}
           className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
         >
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
@@ -196,7 +196,7 @@ const CourseHome = () => {
         </Link>
 
         <Link
-          to={`/mahasiswa/courses/${courseId}/forum`}
+          to={`/mahasiswa/classes/${classId}/forum`}
           className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
         >
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
@@ -232,7 +232,7 @@ const CourseHome = () => {
             {materials.map((material, index) => (
               <Link
                 key={material.id}
-                to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
+                to={`/mahasiswa/classes/${classId}/materials/${material.id}`}
                 className="flex items-center gap-4 p-4 sm:p-5 hover:bg-muted/50 transition-colors group"
               >
                 {/* Order Number */}
@@ -258,7 +258,7 @@ const CourseHome = () => {
         {materials.length > 0 && (
           <div className="p-4 bg-muted/30 border-t border-border">
             <Link
-              to={`/mahasiswa/courses/${courseId}/materials`}
+              to={`/mahasiswa/classes/${classId}/materials`}
               className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary font-medium transition-colors"
             >
               Lihat Seluruh Materi
@@ -268,8 +268,8 @@ const CourseHome = () => {
         )}
       </section>
 
-      {/* Recent Assignments */}
-      {assignments.length > 0 && (
+      {/* Recent Assignments - Only show pending/overdue */}
+      {assignments.filter(a => a.status === 'pending' || a.status === 'overdue').length > 0 && (
         <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -277,7 +277,7 @@ const CourseHome = () => {
               <p className="text-sm text-slate-500 mt-1">Evaluasi yang perlu Anda perhatikan</p>
             </div>
             <Link
-              to={`/mahasiswa/courses/${courseId}/assignments`}
+              to={`/mahasiswa/classes/${classId}/assignments`}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
             >
               Lihat Semua
@@ -285,11 +285,14 @@ const CourseHome = () => {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {assignments.slice(0, 4).map((assignment) => (
+            {assignments
+              .filter(a => a.status === 'pending' || a.status === 'overdue')
+              .slice(0, 4)
+              .map((assignment) => (
               <div
                 key={assignment.id}
                 onClick={() =>
-                  navigate(`/mahasiswa/courses/${courseId}/assignments/${assignment.id}`)
+                  navigate(`/mahasiswa/classes/${classId}/assignments/${assignment.id}`)
                 }
                 className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-5 hover:bg-slate-50 transition-colors cursor-pointer group"
               >
@@ -318,11 +321,17 @@ const CourseHome = () => {
 
                 {/* Status Badge */}
                 <div className="shrink-0 mt-2 sm:mt-0">
-                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${assignment.status === 'submitted'
+                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${assignment.status === 'submitted' || assignment.status === 'graded'
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : assignment.status === 'overdue'
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}>
-                    {assignment.status === 'submitted' ? 'Selesai' : 'Belum Dikerjakan'}
+                    {assignment.status === 'submitted' || assignment.status === 'graded'
+                      ? 'Selesai'
+                      : assignment.status === 'overdue'
+                        ? 'Terlambat'
+                        : 'Belum Dikerjakan'}
                   </span>
                 </div>
               </div>

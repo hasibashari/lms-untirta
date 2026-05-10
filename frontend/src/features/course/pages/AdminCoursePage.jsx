@@ -204,7 +204,7 @@ const Courses = () => {
             Buat dan kelola katalog mata kuliah untuk sistem KRS
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Jadwal dan ruangan diatur saat membuat Kelas Offering agar sesuai per semester dan section.
+            Jadwal dan ruangan diatur saat membuat Kelas agar sesuai per semester dan section.
           </p>
         </div>
 

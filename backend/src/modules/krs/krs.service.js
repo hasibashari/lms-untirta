@@ -486,6 +486,7 @@ const getMyKRS = async (studentId, filters = {}) => {
     where,
     select: {
       id: true,
+      classId: true,
       status: true,
       note: true,
       submittedAt: true,
@@ -562,6 +563,7 @@ const getMyKRS = async (studentId, filters = {}) => {
   return {
     enrollments: enrollments.map(e => ({
       id: e.id,
+      classId: e.classId,
       status: e.status,
       note: e.note,
       submittedAt: e.submittedAt,

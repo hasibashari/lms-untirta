@@ -17,14 +17,14 @@ import {
 const router = express.Router();
 
 router.post(
-  '/course/:courseId',
+  '/class/:classId',
   authenticateToken,
   authorizeRole('DOSEN'),
   validate(createAssignmentSchema),
   create,
 );
 
-router.get('/course/:courseId', authenticateToken, getAssignments);
+router.get('/class/:classId', authenticateToken, getAssignments);
 
 router.get(
   '/:assignmentId',

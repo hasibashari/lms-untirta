@@ -4,8 +4,8 @@ import { handleError } from '../../utils/errorHandler.js';
 
 const getThreads = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const result = await forumService.getThreads(courseId, req.user.id, req.user.role);
+    const { classId } = req.params;
+    const result = await forumService.getThreads(classId, req.user.id, req.user.role);
     sendSuccess(res, { statusCode: 200, message: 'Daftar diskusi berhasil diambil', data: result });
   } catch (error) {
     return handleError(res, error);
@@ -24,9 +24,9 @@ const getThreadById = async (req, res) => {
 
 const createThread = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const { classId } = req.params;
     const { title, content } = req.body;
-    const result = await forumService.createThread(courseId, req.user.id, { title, content });
+    const result = await forumService.createThread(classId, req.user.id, { title, content });
     sendSuccess(res, { statusCode: 201, message: 'Diskusi berhasil dibuat', data: result });
   } catch (error) {
     return handleError(res, error);

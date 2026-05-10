@@ -13,7 +13,7 @@ export const courseService = {
         where: { id: courseId },
       });
       if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+        return callback({ code: grpc.status.NOT_FOUND, details: 'Mata kuliah tidak ditemukan' });
 
       if (teacherRole === 'DOSEN' && course.teacherId !== teacherId) {
         return callback({
@@ -95,7 +95,7 @@ export const courseService = {
 
       const course = await prisma.course.findUnique({ where: { id: courseId } });
       if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+        return callback({ code: grpc.status.NOT_FOUND, details: 'Mata kuliah tidak ditemukan' });
 
       if (teacherRole === 'DOSEN' && course.teacherId !== teacherId) {
         return callback({
@@ -172,6 +172,11 @@ export const courseService = {
           createdAt: true,
           class: {
             select: {
+              _count: {
+                select: {
+                  krsEnrollments: { where: { status: 'APPROVED' } },
+                },
+              },
               course: {
                 select: {
                   id: true,
@@ -183,7 +188,6 @@ export const courseService = {
                   _count: {
                     select: {
                       materials: true,
-                      krsEnrollments: { where: { status: 'APPROVED' } },
                     },
                   },
                 },
@@ -198,8 +202,8 @@ export const courseService = {
         enrollmentId: e.id,
         joinedAt: e.createdAt.toISOString(),
         course: {
-          id: e.class.course.id,
-          title: e.class.course.title,
+          id: e.class.id, // Use Class ID so navigation works correctly
+          title: `${e.class.course.title} - ${e.class.section}`,
           code: e.class.course.code,
           semester: e.class.course.semester,
           sks: e.class.course.sks,
@@ -207,7 +211,8 @@ export const courseService = {
             ? { id: e.class.course.teacher.id, name: e.class.course.teacher.name }
             : null,
           materialsCount: e.class.course._count.materials || 0,
-          studentsCount: e.class.course._count.krsEnrollments || 0,
+          studentsCount: e.class._count.krsEnrollments || 0,
+          courseId: e.class.course.id, // Keep original courseId for reference
         },
       }));
 
@@ -217,38 +222,54 @@ export const courseService = {
     }
   },
 
-  // Mendapatkan semua course yang diajar
+  // Mendapatkan semua kelas yang diajar
   GetTeachingCourses: async (call, callback) => {
     try {
       const { teacherId } = call.request;
-      const courses = await prisma.course.findMany({
-        where: { teacherId },
-        select: {
-          id: true,
-          title: true,
-          code: true,
-          semester: true,
-          sks: true,
-          createdAt: true,
+
+      // Find classes where the teacher is either the lecturer or the course teacher
+      const classes = await prisma.class.findMany({
+        where: {
+          OR: [
+            { lecturerId: teacherId },
+            { course: { teacherId: teacherId } }
+          ]
+        },
+        include: {
+          course: {
+            select: {
+              id: true,
+              title: true,
+              code: true,
+              semester: true,
+              sks: true,
+              _count: {
+                select: {
+                  materials: true
+                }
+              }
+            }
+          },
           _count: {
             select: {
-              materials: true,
-              krsEnrollments: { where: { status: 'APPROVED' } },
-            },
-          },
+              krsEnrollments: { where: { status: 'APPROVED' } }
+            }
+          }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'desc' }
       });
 
-      const formatted = courses.map(c => ({
-        id: c.id,
-        title: c.title,
-        code: c.code,
-        semester: c.semester,
-        sks: c.sks,
-        createdAt: c.createdAt.toISOString(),
-        materialsCount: c._count.materials || 0,
-        studentsCount: c._count.krsEnrollments || 0,
+      const formatted = classes.map(cls => ({
+        id: cls.id, // This is now the Class ID
+        title: `${cls.course.title} - ${cls.section}`,
+        code: cls.course.code,
+        semester: cls.course.semester,
+        sks: cls.course.sks,
+        createdAt: cls.createdAt.toISOString(),
+        materialsCount: cls.course._count.materials || 0,
+        studentsCount: cls._count.krsEnrollments || 0,
+        section: cls.section,
+        courseId: cls.course.id
       }));
 
       callback(null, { courses: formatted });
@@ -257,24 +278,47 @@ export const courseService = {
     }
   },
 
-  // Mendapatkan semua mahasiswa dalam satu kelas
+  // Mendapatkan semua mahasiswa dalam satu kelas (bisa Class ID atau Course ID)
   GetStudentsByCourse: async (call, callback) => {
     try {
       const { courseId, userId, userRole } = call.request;
-      const course = await prisma.course.findUnique({ where: { id: courseId } });
-      if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+      
+      // Try finding by Class ID first
+      let classOffering = await prisma.class.findUnique({
+        where: { id: courseId },
+        include: { course: true }
+      });
 
-      if (userRole === 'DOSEN' && course.teacherId !== userId) {
-        return callback({
-          code: grpc.status.PERMISSION_DENIED,
-          details: 'Akses ditolak: Ini bukan kelas Anda',
-        });
+      let whereClause;
+      if (classOffering) {
+        // ID provided is a Class ID
+        whereClause = { classId: classOffering.id };
+        
+        // Authorization check
+        if (userRole === 'DOSEN' && classOffering.lecturerId !== userId && classOffering.course.teacherId !== userId) {
+          return callback({
+            code: grpc.status.PERMISSION_DENIED,
+            details: 'Akses ditolak: Ini bukan kelas Anda',
+          });
+        }
+      } else {
+        // Try finding by Course ID
+        const course = await prisma.course.findUnique({ where: { id: courseId } });
+        if (!course)
+          return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas atau Mata kuliah tidak ditemukan' });
+
+        if (userRole === 'DOSEN' && course.teacherId !== userId) {
+          return callback({
+            code: grpc.status.PERMISSION_DENIED,
+            details: 'Akses ditolak: Ini bukan mata kuliah Anda',
+          });
+        }
+        whereClause = { class: { courseId: courseId } };
       }
 
       const enrollments = await prisma.krsEnrollment.findMany({
         where: {
-          class: { courseId: courseId },
+          ...whereClause,
           status: 'APPROVED',
         },
         select: {
@@ -305,15 +349,34 @@ export const courseService = {
   GetAvailableStudentsForCourse: async (call, callback) => {
     try {
       const { courseId, userId, userRole } = call.request;
-      const course = await prisma.course.findUnique({ where: { id: courseId } });
-      if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+      
+      // Check if it's a Class ID or Course ID
+      const classOffering = await prisma.class.findUnique({
+        where: { id: courseId },
+        include: { course: true }
+      });
 
-      if (userRole === 'DOSEN' && course.teacherId !== userId) {
-        return callback({
-          code: grpc.status.PERMISSION_DENIED,
-          details: 'Akses ditolak: Ini bukan kelas Anda',
-        });
+      let finalCourseId;
+      if (classOffering) {
+        finalCourseId = classOffering.courseId;
+        if (userRole === 'DOSEN' && classOffering.lecturerId !== userId && classOffering.course.teacherId !== userId) {
+          return callback({
+            code: grpc.status.PERMISSION_DENIED,
+            details: 'Akses ditolak: Ini bukan kelas Anda',
+          });
+        }
+      } else {
+        const course = await prisma.course.findUnique({ where: { id: courseId } });
+        if (!course)
+          return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas atau Mata kuliah tidak ditemukan' });
+
+        if (userRole === 'DOSEN' && course.teacherId !== userId) {
+          return callback({
+            code: grpc.status.PERMISSION_DENIED,
+            details: 'Akses ditolak: Ini bukan mata kuliah Anda',
+          });
+        }
+        finalCourseId = courseId;
       }
 
       const availableStudents = await prisma.user.findMany({
@@ -322,7 +385,7 @@ export const courseService = {
           krsEnrollments: {
             none: {
               class: {
-                courseId: courseId,
+                courseId: finalCourseId,
               },
               status: 'APPROVED',
             },
@@ -381,7 +444,7 @@ export const courseService = {
             },
             _count: {
               select: {
-                krsEnrollments: { where: { status: 'APPROVED' } },
+                classes: true,
                 materials: true,
                 assignments: true,
               },
@@ -397,7 +460,7 @@ export const courseService = {
       const data = courses.map(c => ({
         ...c,
         createdAt: c.createdAt.toISOString(),
-        studentsCount: c._count.krsEnrollments,
+        studentsCount: 0,
         materialsCount: c._count.materials,
         assignmentsCount: c._count.assignments,
         teacher: c.teacher || null,
@@ -416,7 +479,7 @@ export const courseService = {
       if (existingCourse)
         return callback({
           code: grpc.status.ALREADY_EXISTS,
-          details: 'Kode kelas sudah digunakan',
+          details: 'Kode mata kuliah sudah digunakan',
         });
 
       const semesterValue =
@@ -486,7 +549,7 @@ export const courseService = {
       const courseId = data.courseId;
       const course = await prisma.course.findUnique({ where: { id: courseId } });
       if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+        return callback({ code: grpc.status.NOT_FOUND, details: 'Mata kuliah tidak ditemukan' });
 
       let semesterValue;
       if (data.semester !== undefined) {
@@ -508,7 +571,7 @@ export const courseService = {
         if (existingCourse)
           return callback({
             code: grpc.status.ALREADY_EXISTS,
-            details: 'Kode kelas sudah digunakan',
+            details: 'Kode mata kuliah sudah digunakan',
           });
       }
 
@@ -570,18 +633,18 @@ export const courseService = {
           id: true,
           _count: {
             select: {
-              krsEnrollments: { where: { status: 'APPROVED' } },
+              classes: true,
             },
           },
         },
       });
       if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+        return callback({ code: grpc.status.NOT_FOUND, details: 'Mata kuliah tidak ditemukan' });
 
       await prisma.course.delete({ where: { id: courseId } });
       callback(null, {
-        message: 'Kelas berhasil dihapus',
-        deletedStudents: course._count.krsEnrollments,
+        message: 'Mata kuliah berhasil dihapus',
+        deletedStudents: 0,
       });
     } catch (error) {
       callback({ code: grpc.status.INTERNAL, details: error.message });
@@ -593,7 +656,7 @@ export const courseService = {
       const { courseId, teacherId } = call.request;
       const course = await prisma.course.findUnique({ where: { id: courseId } });
       if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+        return callback({ code: grpc.status.NOT_FOUND, details: 'Mata kuliah tidak ditemukan' });
 
       const teacher = await prisma.user.findUnique({ where: { id: teacherId } });
       if (!teacher)

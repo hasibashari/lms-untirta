@@ -54,7 +54,7 @@ const AdminDashboard = () => {
         </button>
         <button
           onClick={() => navigate('/admin/courses')}
-          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-white/25 rounded-lg transition"
         >
           Kelola Kelas
         </button>

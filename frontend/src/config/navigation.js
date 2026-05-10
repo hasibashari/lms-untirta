@@ -5,7 +5,7 @@ const ADMIN_NAV_ITEMS = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard, exact: true },
   { label: 'Users', to: '/admin/users', icon: Users },
   { label: 'Mata Kuliah', to: '/admin/courses', icon: BookOpen },
-  { label: 'Kelas Offering', to: '/admin/classes', icon: Layers },
+  { label: 'Kelas', to: '/admin/classes', icon: Layers },
   { label: 'Konfigurasi Akademik', to: '/admin/academic', icon: Calendar },
   { label: 'Dosen Pembimbing', to: '/admin/advisor-assignment', icon: UserCheck },
   { label: 'Monitoring KRS', to: '/admin/krs', icon: FileCheck },

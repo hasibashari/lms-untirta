@@ -11,7 +11,7 @@ import PageLoader from '../../../components/shared/PageLoader';
  */
 const MahasiswaDashboard = () => {
   const { data, isLoading, error: fetchError } = useMahasiswaDashboardData();
-  
+
   const approvedEnrollments = data?.approvedEnrollments || [];
   const stats = data?.stats || null;
 
@@ -63,7 +63,7 @@ const MahasiswaDashboard = () => {
       >
         <Link
           to="/mahasiswa/classes"
-          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-white/25 rounded-lg transition"
         >
           Lihat Kelas
         </Link>

@@ -23,7 +23,7 @@ import ConfirmDialog from '../../../components/shared/ConfirmDialog';
  * Menampilkan semua materi dengan opsi reorder, edit, dan delete
  */
 export default function Materials() {
-  const { courseId } = useParams();
+  const { classId } = useParams();
   const navigate = useNavigate();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,14 +35,14 @@ export default function Materials() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
 
     setLoading(true);
-    getMaterials(courseId)
+    getMaterials(classId)
       .then(res => setMaterials(res.data || []))
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
-  }, [courseId]);
+  }, [classId]);
 
   const openPreview = async (materialId) => {
     setPreviewLoading(true);
@@ -77,7 +77,7 @@ export default function Materials() {
     mat.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -92,7 +92,7 @@ export default function Materials() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
+          { label: 'Kelas', to: `/dosen/classes/${classId}` },
           { label: 'Materi' },
         ]}
       />
@@ -109,7 +109,7 @@ export default function Materials() {
         </div>
 
         <Link
-          to={`/dosen/courses/${courseId}/materials/new`}
+          to={`/dosen/classes/${classId}/materials/new`}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition shadow-md"
         >
           <Plus size={20} />
@@ -180,7 +180,7 @@ export default function Materials() {
             Mulai dengan menambahkan materi pertama untuk kelas ini.
           </p>
           <Link
-            to={`/dosen/courses/${courseId}/materials/new`}
+            to={`/dosen/classes/${classId}/materials/new`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition"
           >
             <Plus size={18} />
@@ -212,9 +212,8 @@ export default function Materials() {
               key={material.id}
               material={material}
               index={index}
-              courseId={courseId}
               onPreview={() => openPreview(material.id)}
-              onEdit={() => navigate(`/dosen/courses/${courseId}/materials/${material.id}/edit`)}
+              onEdit={() => navigate(`/dosen/classes/${classId}/materials/${material.id}/edit`)}
               onDelete={() => setDeleteConfirm(material)}
             />
           ))}

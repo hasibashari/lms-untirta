@@ -15,7 +15,7 @@ import Breadcrumb from '../../../components/navigation/Breadcrumb';
  * Mahasiswa mendaftar sendiri melalui KRS, dosen hanya bisa melihat
  */
 export default function Students() {
-  const { courseId } = useParams();
+  const { classId } = useParams();
 
   // State untuk data
   const [students, setStudents] = useState([]);
@@ -25,12 +25,12 @@ export default function Students() {
 
   // Fetch students
   useEffect(() => {
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
     const startTimer = setTimeout(() => {
       setLoading(true);
     }, 0);
 
-    getCourseStudents(courseId)
+    getCourseStudents(classId)
       .then(res => {
         // API returns: [{ enrollmentId, enrolledAt, student: { id, name, email } }]
         // Transform to flat structure: [{ id, name, email, enrollmentId, enrolledAt }]
@@ -48,7 +48,7 @@ export default function Students() {
       .finally(() => setLoading(false));
 
     return () => clearTimeout(startTimer);
-  }, [courseId]);
+  }, [classId]);
 
   // Filter students by search
   const filteredStudents = students.filter(student =>
@@ -66,7 +66,7 @@ export default function Students() {
     });
   };
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -81,7 +81,7 @@ export default function Students() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
+          { label: 'Kelas', to: `/dosen/classes/${classId}` },
           { label: 'Mahasiswa' },
         ]}
       />
