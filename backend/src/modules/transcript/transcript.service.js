@@ -384,18 +384,28 @@ const getStudentList = async (filters = {}, query = {}) => {
 
 const getFullStudentTranscript = async (studentId, options = {}) => {
   const isStudentView = options.isStudentView === true;
-  const student = await prisma.user.findUnique({
-    where: { id: studentId },
-    select: { id: true, name: true, email: true, nim: true, createdAt: true },
+
+  // Use getTranscriptByClass to get the core data (student, courses, summary)
+  const krsResult = await getTranscriptByClass(studentId, {}, { isStudentView });
+
+  // Calculate grade distribution from all courses
+  const gradeDistribution = {
+    'A': 0, 'A-': 0, 'B+': 0, 'B': 0, 'B-': 0, 'C+': 0, 'C': 0, 'D': 0, 'E': 0, '-': 0
+  };
+
+  krsResult.courses.forEach(c => {
+    const grade = c.letterGrade || '-';
+    if (Object.prototype.hasOwnProperty.call(gradeDistribution, grade)) {
+      gradeDistribution[grade]++;
+    } else {
+      gradeDistribution['-']++;
+    }
   });
 
-  if (!student) {
-    throw new AppError(404, 'Mahasiswa tidak ditemukan');
-  }
-
   return {
-    student,
+    student: krsResult.student,
     courses: krsResult.courses,
+    semesterBreakdown: krsResult.semesterBreakdown,
     summary: krsResult.summary,
     gradeDistribution,
   };
