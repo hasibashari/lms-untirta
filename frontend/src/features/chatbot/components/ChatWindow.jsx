@@ -2,21 +2,21 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Send, X, Loader2, BotMessageSquare, AlertTriangle, Info, RotateCcw } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from '../hooks/useChat';
-import { useAuth } from '../../../contexts/AuthContext';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/app/providers/AuthContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
 
 export const ChatWindow = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  
+
   // Load messages from localStorage on initial render
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('untirtabot_messages');
     return saved ? JSON.parse(saved) : [];
   });
-  
+
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
-  
+
   const chatMutation = useChat();
 
   // Save messages to localStorage whenever they change
@@ -45,7 +45,7 @@ export const ChatWindow = ({ isOpen, onClose }) => {
 
   const quickActions = useMemo(() => {
     if (!user) return [];
-    
+
     switch (user.role) {
       case 'DOSEN':
         return [
@@ -76,7 +76,7 @@ export const ChatWindow = ({ isOpen, onClose }) => {
     if (!text.trim() || chatMutation.isPending) return;
 
     setMessages(prev => [...prev, { role: 'user', content: text }]);
-    
+
     chatMutation.mutate(text, {
       onSuccess: (res) => {
         setMessages(prev => [...prev, { role: 'bot', content: res.data.reply }]);
@@ -115,7 +115,7 @@ export const ChatWindow = ({ isOpen, onClose }) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button 
+                <button
                   onClick={clearHistory}
                   className="hover:bg-primary-foreground/10 p-1.5 rounded-lg transition-colors"
                 >

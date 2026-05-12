@@ -14,9 +14,9 @@ import {
   Edit,
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials, deleteMaterial } from '../materialService';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import ConfirmDialog from '../../../components/shared/ConfirmDialog';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 /**
  * Materials - Daftar Materi Kelas (Dosen)

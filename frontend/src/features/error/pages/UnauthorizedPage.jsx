@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ShieldX, ArrowLeft, Home } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@/app/providers/AuthContext';
 
 const ROLE_HOME = {
   ADMIN: '/admin/dashboard',

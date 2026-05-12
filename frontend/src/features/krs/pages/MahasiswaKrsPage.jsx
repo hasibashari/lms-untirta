@@ -10,7 +10,7 @@ import {
   Printer,
   Search,
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/app/providers/AuthContext';
 import {
   getAvailableClasses,
   getMyKRS,
@@ -19,7 +19,7 @@ import {
   reviseEnrollment,
 } from '../krsService';
 import { getStudentSemesters } from '@/features/academic/academicService';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 import {
   Pagination,
   PaginationContent,
@@ -28,7 +28,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
+} from '@/shared/components/ui/pagination';
 
 // Sub-components
 import KrsHeader from '../components/KrsHeader';

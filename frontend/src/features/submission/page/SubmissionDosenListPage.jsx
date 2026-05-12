@@ -28,7 +28,7 @@ import {
   gradeSubmission,
 } from '../submissionService';
 import { getAssignments } from '../../assignment/assignmentService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
  * FilePreviewCard - Component untuk menampilkan file yang dikumpulkan dengan UX yang lebih baik

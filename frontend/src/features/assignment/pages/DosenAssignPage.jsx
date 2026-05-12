@@ -14,9 +14,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { getAssignments, deleteAssignment } from '../assignmentService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import toast from 'react-hot-toast';
-import ConfirmDialog from '../../../components/shared/ConfirmDialog';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 /**
  * Assignments - Daftar Tugas Kelas (Dosen)

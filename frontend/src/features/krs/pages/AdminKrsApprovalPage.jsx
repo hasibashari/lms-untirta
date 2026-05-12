@@ -5,12 +5,12 @@ import {
 } from 'lucide-react';
 import { getKrsMonitoring } from '../krsService';
 import { getAllSemesters } from '@/features/academic/academicService';
-import SemesterFilter from '@/components/shared/SemesterFilter';
+import SemesterFilter from '@/shared/components/forms/SemesterFilter';
 import KrsStatusBadge from '../components/KrsStatusBadge';
-import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+} from '@/shared/components/ui/table';
 
 // ============================================================
 // Admin KRS Monitoring Page (Read-Only)

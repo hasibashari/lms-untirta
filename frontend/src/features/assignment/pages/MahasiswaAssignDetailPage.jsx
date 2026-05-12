@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getAssignmentDetail } from '../assignmentService';
 import { getMyAssignmentStatus, submitAssignment } from '../../submission/submissionService';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import BackButton from '../../../components/navigation/BackButton';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import BackButton from '@/shared/components/navigation/BackButton';
 import toast from 'react-hot-toast';
 import {
   FileText,
@@ -22,7 +22,7 @@ import {
   ExternalLink,
   Eye,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 export default function AssignmentDetail() {
   const { classId, assignmentId } = useParams();

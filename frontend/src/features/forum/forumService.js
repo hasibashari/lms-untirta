@@ -1,4 +1,4 @@
-import api from '../../services/apiService';
+import api from '@/shared/api/apiService';
 
 // ========== Thread CRUD ==========
 

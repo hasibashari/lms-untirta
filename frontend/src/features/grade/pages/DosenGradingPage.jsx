@@ -10,11 +10,11 @@ import {
   inputGrade,
   bulkInputGrades,
   finalizeGrades,
-} from '../../grade/gradeService';
+} from '../gradeService';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
+} from '@/shared/components/ui/table';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 // ============================================================
 // Dosen: Final Grade Input Page

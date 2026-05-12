@@ -1,21 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
-import { register as registerAPI } from '../authService';
-
 // UI components
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import NavLink from '@/components/ui/NavLink';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
+import SocialLoginButtons from '@/shared/components/branding/SocialLoginButtons';
+import { Separator } from '@/shared/components/ui/separator';
+import { Button } from '@/shared/components/ui/button';
+import { Checkbox } from '@/shared/components/ui/checkbox';
+import NavLink from '@/shared/components/ui/NavLink';
+
+import { useRegisterForm } from '../hooks/useRegisterForm';
 
 export default function Register() {
   const { setAuthLayoutBranding } = useOutletContext();
   const navigate = useNavigate();
+  const {
+    formData,
+    agreedToTerms,
+    isLoading,
+    isSuccess,
+    error,
+    showPassword,
+    showConfirmPassword,
+    setAgreedToTerms,
+    setShowPassword,
+    setShowConfirmPassword,
+    handleChange,
+    handleSubmit,
+    handleGoogleRegister,
+    handleFacebookRegister,
+    getPasswordStrength,
+  } = useRegisterForm();
 
   useEffect(() => {
     setAuthLayoutBranding({
@@ -23,72 +40,6 @@ export default function Register() {
       features: ['Akses Ribuan Materi', 'Sertifikat Digital', 'Forum Diskusi Interaktif'],
     });
   }, [setAuthLayoutBranding]);
-
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const handleChange = (e, field) => {
-    setFormData({ ...formData, [field]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!agreedToTerms) {
-      setError('Anda harus menyetujui syarat & ketentuan.');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Konfirmasi password tidak sama.');
-      return;
-    }
-
-    const allowedDomains = ['untirta.ac.id', 'gmail.com'];
-    const emailDomain = formData.email.split('@')[1];
-    if (!allowedDomains.includes(emailDomain)) {
-      setError('Harap gunakan email dengan domain @untirta.ac.id atau @gmail.com');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await registerAPI({
-        name: formData.fullName,
-        email: formData.email,
-        password: formData.password,
-      });
-
-      setIsSuccess(true);
-      // Auto redirect after 5 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 5000);
-    } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Registrasi gagal.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleRegister = () => {
-
-  };
-
-  const handleFacebookRegister = () => {
-
-  };
 
   if (isSuccess) {
     return (
@@ -209,15 +160,7 @@ export default function Register() {
               <div className="mt-2 space-y-1.5">
                 <div className="flex gap-1.5 h-1">
                   {[1, 2, 3, 4].map((step) => {
-                    const getStrength = (pwd) => {
-                      let s = 0;
-                      if (pwd.length >= 8) s++;
-                      if (/[0-9]/.test(pwd)) s++;
-                      if (/[A-Z]/.test(pwd)) s++;
-                      if (/[^A-Za-z0-9]/.test(pwd)) s++;
-                      return s;
-                    };
-                    const strength = getStrength(formData.password);
+                    const strength = getPasswordStrength(formData.password);
                     const isActive = step <= strength;
                     const colors = ['bg-gray-200', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-emerald-500'];
                     return (
@@ -231,13 +174,8 @@ export default function Register() {
                 <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                   Keamanan: {
                     (() => {
-                      const pwd = formData.password;
-                      let s = 0;
-                      if (pwd.length >= 8) s++;
-                      if (/[0-9]/.test(pwd)) s++;
-                      if (/[A-Z]/.test(pwd)) s++;
-                      if (/[^A-Za-z0-9]/.test(pwd)) s++;
-                      return ['Sangat Lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat Kuat'][s];
+                      const strength = getPasswordStrength(formData.password);
+                      return ['Sangat Lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat Kuat'][strength];
                     })()
                   }
                 </p>

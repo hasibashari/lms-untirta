@@ -3,8 +3,8 @@ import toast from 'react-hot-toast';
 import { useParams, Link } from 'react-router-dom';
 import { getAssignments } from '../assignmentService';
 import { getMyKRS } from '../../krs/krsService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import BackButton from '../../../components/navigation/BackButton';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import BackButton from '@/shared/components/navigation/BackButton';
 import {
   Search,
   ClipboardList,

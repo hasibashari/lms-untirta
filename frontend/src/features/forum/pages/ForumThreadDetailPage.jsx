@@ -13,8 +13,8 @@ import {
 import { getThread, togglePin, deleteThread, createReply, updateReply, deleteReply } from '../forumService';
 import ReplyCard from '../components/ReplyCard';
 import ReplyComposer from '../components/ReplyComposer';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 import toast from 'react-hot-toast';
 
 const roleBadge = {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search } from 'lucide-react';
 import CourseCard from '../../course/components/CourseCard';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 /**
  * MyClasses / Kelas Saya

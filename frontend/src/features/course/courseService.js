@@ -1,4 +1,4 @@
-import api from '../../services/apiService';
+import api from '@/shared/api/apiService';
 
 // ========== Course - Dosen ==========
 
@@ -23,7 +23,7 @@ export const getAllCourses = (params = {}) => {
   if (params.limit) query.append('limit', params.limit);
   if (params.search) query.append('search', params.search);
   if (params.semester && params.semester !== 'all') query.append('semester', params.semester);
-  
+
   const queryString = query.toString();
   return api.get(`/courses/admin/all${queryString ? `?${queryString}` : ''}`);
 };

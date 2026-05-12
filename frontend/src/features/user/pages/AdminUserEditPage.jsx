@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getUserById } from '../userService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import PageLoader from '../../../components/shared/PageLoader';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
+import { Card, CardContent } from '@/shared/components/ui/card';
+import PageLoader from '@/shared/components/feedback/PageLoader';
 import { useUpdateUser } from '../hooks/useUsers';
 
 export default function AdminUserEditPage() {

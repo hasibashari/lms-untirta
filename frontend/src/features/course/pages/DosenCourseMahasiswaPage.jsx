@@ -7,7 +7,7 @@ import {
   Info,
 } from 'lucide-react';
 import { getCourseStudents } from '../courseService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
  * Students - Daftar Mahasiswa Kelas (Dosen)

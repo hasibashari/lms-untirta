@@ -16,7 +16,7 @@ import {
 import { getMyCourses, getCourseStudents } from '../courseService';
 import { getMaterials } from '../../material/materialService';
 import { getAssignments } from '../../assignment/assignmentService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
  * TeacherCourseHome - Halaman Detail Kelas Dosen

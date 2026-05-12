@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { BookOpen, ClipboardList, ArrowRight, Award, Clock, LayoutDashboard } from 'lucide-react';
-import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import { useMahasiswaDashboardData } from '../hooks/useMahasiswaDashboard';
-import PageLoader from '../../../components/shared/PageLoader';
+import PageLoader from '@/shared/components/feedback/PageLoader';
 
 /**
  * MahasiswaDashboard

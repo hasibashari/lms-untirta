@@ -11,10 +11,10 @@ import {
   Hash,
 } from 'lucide-react';
 import { createMaterial, getMaterialDetail, updateMaterial } from '../materialService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import MarkdownEditor from '../../../components/ui/MarkdownEditor';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
-import ConfirmDialog from '../../../components/shared/ConfirmDialog';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import MarkdownEditor from '@/shared/components/markdown/MarkdownEditor';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 /**
  * CreateMaterial - Form Pembuatan & Edit Materi

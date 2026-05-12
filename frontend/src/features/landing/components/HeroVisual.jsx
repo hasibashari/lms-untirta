@@ -1,5 +1,5 @@
 import { CheckCircle, Users } from 'lucide-react';
-import FloatingCard from '@/components/ui/FloatingCard';
+import FloatingCard from '@/shared/components/layout/FloatingCard';
 
 /**
  * HeroVisual Component

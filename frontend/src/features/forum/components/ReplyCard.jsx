@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Trash2, Shield, GraduationCap, Check, X, MessageSquare } from 'lucide-react';
 import ReplyComposer from './ReplyComposer';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 
 const roleBadge = {
   DOSEN: { label: 'Dosen', icon: Shield, className: 'bg-blue-100 text-blue-700 border-blue-200' },

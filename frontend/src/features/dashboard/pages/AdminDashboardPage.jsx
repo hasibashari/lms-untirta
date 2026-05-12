@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@/app/providers/AuthContext';
 import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
-import PageLoader from '../../../components/shared/PageLoader';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
+import PageLoader from '@/shared/components/feedback/PageLoader';
 import { useAdminStats } from '../../user/hooks/useAdminStats';
 
 const AdminDashboard = () => {

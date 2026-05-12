@@ -15,8 +15,8 @@ import {
 import { getMyKRS } from '../../krs/krsService';
 import { getMaterials } from '../../material/materialService';
 import { getAssignments } from '../../assignment/assignmentService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import { Button } from '@/components/ui/button';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import { Button } from '@/shared/components/ui/button';
 
 /**
  * CourseHome - Halaman Detail Kelas

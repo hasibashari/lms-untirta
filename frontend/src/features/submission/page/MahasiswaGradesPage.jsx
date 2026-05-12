@@ -12,7 +12,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { getAllMyGrades } from '../submissionService';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 /**
  * MyGrades - Halaman Nilai Terpusat

@@ -8,10 +8,10 @@ import {
   getUsers, updateDospemStatus, assignAdvisor,
   bulkAssignAdvisor, getAdvisorSummary,
 } from '../userService';
-import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+} from '@/shared/components/ui/table';
 
 // ============================================================
 // Admin — Dosen Pembimbing (Advisor) Assignment Page

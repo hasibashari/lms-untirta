@@ -3,7 +3,7 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { Plus, MessageSquare, Search, Loader2 } from 'lucide-react';
 import { getThreads } from '../forumService';
 import ThreadCard from '../components/ThreadCard';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
  * ForumThreadListPage — Halaman daftar thread diskusi per kelas.

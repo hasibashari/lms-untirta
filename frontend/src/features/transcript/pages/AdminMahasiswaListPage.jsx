@@ -4,10 +4,10 @@ import {
   Loader2, AlertCircle, Search, GraduationCap, Users, ChevronRight,
 } from 'lucide-react';
 import { getStudentList } from '../transcriptService';
-import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+} from '@/shared/components/ui/table';
 
 // ============================================================
 // Admin Student List Page (for transcript browsing)

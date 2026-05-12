@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import { getMaterials } from '../materialService';
 import { getMyKRS } from '../../krs/krsService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import { Button } from '@/components/ui/button';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import { Button } from '@/shared/components/ui/button';
 
 /**
  * CourseMaterials - Halaman Daftar Materi / Silabus

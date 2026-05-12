@@ -11,9 +11,9 @@ import {
   FileText,
 } from 'lucide-react';
 import { createAssignment, getAssignmentDetail, updateAssignment } from '../assignmentService';
-import MarkdownEditor from '../../../components/ui/MarkdownEditor';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import MarkdownEditor from '@/shared/components/markdown/MarkdownEditor';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
  * CreateAssignment - Form Buat Tugas Baru (Dosen)

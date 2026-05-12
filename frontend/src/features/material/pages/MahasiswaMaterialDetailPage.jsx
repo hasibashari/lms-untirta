@@ -13,12 +13,12 @@ import {
 import { getMaterialDetail, getMaterials } from '../materialService';
 import { getMyKRS } from '../../krs/krsService';
 import LearningSidebar from '../components/LearningSidebar';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 
 // shadcn/ui components
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
+import { Separator } from '@/shared/components/ui/separator';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,7 +26,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+} from '@/shared/components/ui/breadcrumb';
 
 const MaterialDetail = () => {
   const { classId, materialId } = useParams();

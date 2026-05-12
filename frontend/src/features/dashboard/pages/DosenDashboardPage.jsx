@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
 import { getTeacherDashboardStats, getRecentSubmissions } from '../../submission/submissionService';
-import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 
 /**
  * TeacherDashboard

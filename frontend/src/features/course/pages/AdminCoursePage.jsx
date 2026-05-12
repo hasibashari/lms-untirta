@@ -14,8 +14,8 @@ import {
 import CourseCard from '../components/CourseCard';
 import { getAllCourses, createCourse, updateCourse, deleteCourse } from '../courseService';
 import { getDosen } from '../../user/userService';
-import { Button } from '@/components/ui/button';
-import PaginationComponent from '../../../components/shared/PaginationComponent';
+import { Button } from '@/shared/components/ui/button';
+import PaginationComponent from '@/shared/components/data-display/Pagination';
 
 /**
  * Courses - Kelola Mata Kuliah (Admin)

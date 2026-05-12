@@ -7,7 +7,7 @@ import {
 import { getStudentTranscript } from '../transcriptService';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+} from '@/shared/components/ui/table';
 
 // ============================================================
 // Admin Student Transcript Detail Page
