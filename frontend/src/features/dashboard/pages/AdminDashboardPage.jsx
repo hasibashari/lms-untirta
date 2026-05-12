@@ -44,7 +44,7 @@ const AdminDashboard = () => {
       <DashboardJumbotron
         icon={LayoutDashboard}
         title={`Selamat Datang, ${user?.name || 'Admin'}!`}
-        subtitle="Kelola user, kelas, dan penugasan dosen dari satu tempat."
+        subtitle="Kelola user, kelas, dan penugasan dosen pembimbing dari satu tempat."
       >
         <button
           onClick={() => navigate('/admin/users')}
@@ -104,14 +104,14 @@ const AdminDashboard = () => {
               Lihat Semua Users
             </Button>
             <Button variant='secondary' onClick={() => navigate('/admin/users/new')}>
-              Buat User (Admin/Dosen)
+              Buat User Baru
             </Button>
             <Button variant='secondary' onClick={() => navigate('/admin/courses')}>
               Kelola Kelas
             </Button>
           </div>
           <p className='text-sm text-muted-foreground mt-4'>
-            Fokus utama admin: manajemen user, pembuatan kelas, dan penugasan dosen ke kelas.
+            Fokus utama admin: manajemen user, pembuatan kelas, dan penugasan dosen pembimbing.
           </p>
         </CardContent>
       </Card>

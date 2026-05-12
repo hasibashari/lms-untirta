@@ -20,15 +20,27 @@ import { AppError } from '../../config/errors.js';
 const validateCourseAccess = async (courseId, userId, userRole) => {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    select: { id: true, teacherId: true },
+    select: {
+      id: true,
+      teacherId: true,
+      classes: {
+        select: { lecturerId: true }
+      }
+    },
   });
 
   if (!course) {
     throw new AppError(404, 'Mata kuliah tidak ditemukan');
   }
 
-  if (userRole === 'DOSEN' && course.teacherId !== userId) {
-    throw new AppError(403, 'Akses ditolak: Ini bukan mata kuliah Anda');
+  if (userRole === 'ADMIN') return course;
+
+  if (userRole === 'DOSEN') {
+    const isOwner = course.teacherId === userId;
+    const isLecturer = course.classes.some(c => c.lecturerId === userId);
+    if (!isOwner && !isLecturer) {
+      throw new AppError(403, 'Akses ditolak: Anda bukan pengampu mata kuliah ini');
+    }
   }
 
   if (userRole === 'MAHASISWA') {
@@ -56,23 +68,40 @@ const validateCourseAccess = async (courseId, userId, userRole) => {
  * Pinned threads muncul pertama, lalu diurutkan berdasarkan aktivitas terbaru.
  * Setiap thread menyertakan jumlah reply dan info author.
  */
-const getThreads = async (courseId, userId, userRole) => {
-  await validateCourseAccess(courseId, userId, userRole);
+const getThreads = async (id, userId, userRole) => {
+  // 1. Cari berdasarkan Class ID
+  let classOffering = await prisma.class.findUnique({
+    where: { id: id },
+    select: { courseId: true },
+  });
+
+  let targetCourseId;
+  if (classOffering) {
+    targetCourseId = classOffering.courseId;
+  } else {
+    // 2. Fallback: Cari berdasarkan Course ID
+    const course = await prisma.course.findUnique({
+      where: { id: id },
+      select: { id: true },
+    });
+
+    if (!course) {
+      throw new AppError(404, 'Kelas atau Mata Kuliah tidak ditemukan');
+    }
+    targetCourseId = id;
+  }
+
+  await validateCourseAccess(targetCourseId, userId, userRole);
 
   return await prisma.forumThread.findMany({
-    where: { courseId },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      isPinned: true,
-      createdAt: true,
-      updatedAt: true,
+    where: { courseId: targetCourseId },
+    include: {
       author: {
         select: {
           id: true,
           name: true,
           role: true,
+          avatar: true,
         },
       },
       _count: {
@@ -80,8 +109,8 @@ const getThreads = async (courseId, userId, userRole) => {
       },
     },
     orderBy: [
-      { isPinned: 'desc' },   // Pinned di atas
-      { updatedAt: 'desc' },   // Terbaru di atas
+      { isPinned: 'desc' },
+      { createdAt: 'desc' },
     ],
   });
 };
@@ -149,8 +178,20 @@ const getThreadById = async (threadId, userId, userRole) => {
  * Buat thread baru di forum course.
  * Semua user yang punya akses ke course bisa membuat thread.
  */
-const createThread = async (courseId, userId, data) => {
-  // Validasi akses dilakukan oleh controller melalui route
+const createThread = async (classId, userId, userRole, data) => {
+  const cls = await prisma.class.findUnique({
+    where: { id: classId },
+    select: { courseId: true },
+  });
+
+  if (!cls) {
+    throw new AppError(404, 'Kelas tidak ditemukan');
+  }
+
+  const courseId = cls.courseId;
+  await validateCourseAccess(courseId, userId, userRole);
+
+  // Buat thread baru
   return await prisma.forumThread.create({
     data: {
       title: data.title,
@@ -237,12 +278,21 @@ const deleteThread = async (threadId, userId, userRole) => {
     throw new AppError(404, 'Thread diskusi tidak ditemukan');
   }
 
-  // Cek otorisasi: owner, dosen pengampu course, atau admin
+  // Cek otorisasi: owner, dosen pengampu course/kelas, atau admin
   const isOwner = thread.authorId === userId;
   const isCourseTeacher = userRole === 'DOSEN' && thread.course.teacherId === userId;
+  
+  let isClassLecturer = false;
+  if (userRole === 'DOSEN' && !isCourseTeacher) {
+    const lecturerCheck = await prisma.class.findFirst({
+      where: { courseId: thread.courseId, lecturerId: userId }
+    });
+    isClassLecturer = !!lecturerCheck;
+  }
+
   const isAdmin = userRole === 'ADMIN';
 
-  if (!isOwner && !isCourseTeacher && !isAdmin) {
+  if (!isOwner && !isCourseTeacher && !isClassLecturer && !isAdmin) {
     throw new AppError(403, 'Akses ditolak: Anda tidak memiliki izin untuk menghapus thread ini');
   }
 
@@ -272,9 +322,18 @@ const togglePinThread = async (threadId, userId, userRole) => {
 
   // Hanya dosen pengampu atau admin yang bisa pin/unpin
   const isCourseTeacher = userRole === 'DOSEN' && thread.course.teacherId === userId;
+  
+  let isClassLecturer = false;
+  if (userRole === 'DOSEN' && !isCourseTeacher) {
+    const lecturerCheck = await prisma.class.findFirst({
+      where: { courseId: thread.courseId, lecturerId: userId }
+    });
+    isClassLecturer = !!lecturerCheck;
+  }
+
   const isAdmin = userRole === 'ADMIN';
 
-  if (!isCourseTeacher && !isAdmin) {
+  if (!isCourseTeacher && !isClassLecturer && !isAdmin) {
     throw new AppError(403, 'Akses ditolak: Hanya dosen pengampu yang bisa pin/unpin thread');
   }
 
@@ -401,9 +460,18 @@ const deleteReply = async (replyId, userId, userRole) => {
 
   const isOwner = reply.authorId === userId;
   const isCourseTeacher = userRole === 'DOSEN' && reply.thread.course.teacherId === userId;
+  
+  let isClassLecturer = false;
+  if (userRole === 'DOSEN' && !isCourseTeacher) {
+    const lecturerCheck = await prisma.class.findFirst({
+      where: { courseId: reply.thread.courseId, lecturerId: userId }
+    });
+    isClassLecturer = !!lecturerCheck;
+  }
+
   const isAdmin = userRole === 'ADMIN';
 
-  if (!isOwner && !isCourseTeacher && !isAdmin) {
+  if (!isOwner && !isCourseTeacher && !isClassLecturer && !isAdmin) {
     throw new AppError(403, 'Akses ditolak: Anda tidak memiliki izin untuk menghapus balasan ini');
   }
 

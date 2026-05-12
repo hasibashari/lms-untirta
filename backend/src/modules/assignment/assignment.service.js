@@ -3,31 +3,49 @@ import { AppError } from '../../config/errors.js';
 import cache from '../../utils/cache.js';
 
 // ======= GET ASSIGNMENTS BY CLASS (WITH SUBMISSION STATUS) =======
-const getAssignmentsByClass = async (classId, userId, userRole) => {
-  const classOffering = await prisma.class.findUnique({
-    where: { id: classId },
+const getAssignmentsByClass = async (id, userId, userRole) => {
+  // 1. Cari berdasarkan Class ID
+  let classOffering = await prisma.class.findUnique({
+    where: { id: id },
   });
 
-  if (!classOffering) {
-    throw new AppError(404, 'Kelas tidak ditemukan');
+  let whereClause;
+  let targetCourseId;
+
+  if (classOffering) {
+    whereClause = { classId: id };
+    targetCourseId = classOffering.courseId;
+  } else {
+    // 2. Fallback: Cari berdasarkan Course ID jika Class ID tidak ditemukan
+    const course = await prisma.course.findUnique({
+      where: { id: id },
+    });
+
+    if (!course) {
+      throw new AppError(404, 'Kelas atau Mata Kuliah tidak ditemukan');
+    }
+
+    whereClause = { courseId: id };
+    targetCourseId = id;
   }
 
+  // 3. Validasi akses (Enrollment check)
   if (userRole === 'MAHASISWA') {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        classId: classId,
+        class: { courseId: targetCourseId },
         status: 'APPROVED',
       },
     });
 
     if (!enrollment) {
-      throw new AppError(403, 'Anda belum terdaftar di kelas ini');
+      throw new AppError(403, 'Anda belum terdaftar di mata kuliah ini');
     }
   }
 
   const assignments = await prisma.assignment.findMany({
-    where: { classId },
+    where: whereClause,
     select: {
       id: true,
       title: true,

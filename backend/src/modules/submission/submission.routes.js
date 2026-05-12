@@ -43,7 +43,7 @@ router.post(
 router.patch(
   '/:submissionId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   validate(gradeSubmissionSchema),
   grade,
 );
@@ -51,7 +51,7 @@ router.patch(
 router.get(
   '/:assignmentId/submissions',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   getSubmissions,
 );
 

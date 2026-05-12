@@ -26,7 +26,7 @@ const createThread = async (req, res) => {
   try {
     const { classId } = req.params;
     const { title, content } = req.body;
-    const result = await forumService.createThread(classId, req.user.id, { title, content });
+    const result = await forumService.createThread(classId, req.user.id, req.user.role, { title, content });
     sendSuccess(res, { statusCode: 201, message: 'Diskusi berhasil dibuat', data: result });
   } catch (error) {
     return handleError(res, error);

@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
+import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import validate from '../../middlewares/validate.middleware.js';
 import {
   getThreads,
@@ -24,18 +25,18 @@ import {
 const forumRouter = express.Router();
 
 // Class-based forum routes
-forumRouter.get('/class/:classId', authenticateToken, getThreads);
-forumRouter.post('/class/:classId', authenticateToken, validate(createThreadSchema), createThread);
+forumRouter.get('/class/:classId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), getThreads);
+forumRouter.post('/class/:classId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), validate(createThreadSchema), createThread);
 
 // Thread detail, update, delete, pin
-forumRouter.get('/threads/:threadId', authenticateToken, getThreadById);
-forumRouter.put('/threads/:threadId', authenticateToken, validate(updateThreadSchema), updateThread);
-forumRouter.delete('/threads/:threadId', authenticateToken, deleteThread);
-forumRouter.patch('/threads/:threadId/pin', authenticateToken, togglePinThread);
+forumRouter.get('/threads/:threadId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), getThreadById);
+forumRouter.put('/threads/:threadId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), validate(updateThreadSchema), updateThread);
+forumRouter.delete('/threads/:threadId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), deleteThread);
+forumRouter.patch('/threads/:threadId/pin', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), togglePinThread);
 
 // Reply CRUD
-forumRouter.post('/threads/:threadId/replies', authenticateToken, validate(createReplySchema), createReply);
-forumRouter.put('/replies/:replyId', authenticateToken, validate(updateReplySchema), updateReply);
-forumRouter.delete('/replies/:replyId', authenticateToken, deleteReply);
+forumRouter.post('/threads/:threadId/replies', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), validate(createReplySchema), createReply);
+forumRouter.put('/replies/:replyId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), validate(updateReplySchema), updateReply);
+forumRouter.delete('/replies/:replyId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), deleteReply);
 
 export { forumRouter };

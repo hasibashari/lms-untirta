@@ -29,14 +29,14 @@ router.get('/class/:classId', authenticateToken, getAssignments);
 router.get(
   '/:assignmentId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN', 'MAHASISWA'),
+  authorizeRole('DOSEN', 'MAHASISWA'),
   getAssignmentDetail,
 );
 
 router.put(
   '/:assignmentId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   validate(updateAssignmentSchema),
   updateAssignment,
 );
@@ -44,7 +44,7 @@ router.put(
 router.delete(
   '/:assignmentId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   deleteAssignment,
 );
 

@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   '/class/:classId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   upload.single('file'),
   validate(createMaterialSchema),
   createMaterial
@@ -121,7 +121,7 @@ router.get('/:materialId', authenticateToken, getMaterialById);
 router.put(
   '/:materialId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   upload.single('file'),
   validate(updateMaterialSchema),
   updateMaterial
@@ -161,7 +161,7 @@ router.put(
 router.delete(
   '/:materialId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   deleteMaterial
 );
 
