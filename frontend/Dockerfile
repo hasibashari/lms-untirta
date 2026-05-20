@@ -12,6 +12,10 @@ RUN npm install
 # Salin source code
 COPY . .
 
+# Tambahkan argumen build untuk URL API agar dinamis di production
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build aplikasi frontend
 RUN npm run build
 

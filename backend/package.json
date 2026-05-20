@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "fuser -k 50051/tcp 2>/dev/null; sleep 0.5; exit 0",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "npx prisma migrate deploy && node src/server.js"
   },
   "keywords": [],
   "author": "",
