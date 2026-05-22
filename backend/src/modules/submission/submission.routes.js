@@ -20,13 +20,236 @@ import {
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/submissions/my-grades:
+ *   get:
+ *     summary: Mendapatkan semua daftar nilai mahasiswa (Mahasiswa Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daftar nilai berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Submission'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/my-grades', authenticateToken, authorizeRole('MAHASISWA'), getAllMyGrades);
+
+/**
+ * @swagger
+ * /api/submissions/my-stats:
+ *   get:
+ *     summary: Mendapatkan statistik dasbor mahasiswa (Mahasiswa Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik dasbor mahasiswa berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         totalAssignments:
+ *                           type: integer
+ *                           example: 5
+ *                         submittedAssignments:
+ *                           type: integer
+ *                           example: 3
+ *                         pendingGrades:
+ *                           type: integer
+ *                           example: 1
+ *                         averageGrade:
+ *                           type: number
+ *                           example: 87.5
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
+
+/**
+ * @swagger
+ * /api/submissions/teacher-stats:
+ *   get:
+ *     summary: Mendapatkan statistik dasbor dosen (Dosen Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik dasbor dosen berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         totalStudents:
+ *                           type: integer
+ *                           example: 40
+ *                         totalAssignmentsCreated:
+ *                           type: integer
+ *                           example: 3
+ *                         totalPendingSubmissions:
+ *                           type: integer
+ *                           example: 12
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
+
+/**
+ * @swagger
+ * /api/submissions/recent-submissions:
+ *   get:
+ *     summary: Mendapatkan daftar pengumpulan tugas terbaru (Dosen Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daftar pengumpulan tugas terbaru berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                           submittedAt:
+ *                             type: string
+ *                             format: date-time
+ *                           assignmentTitle:
+ *                             type: string
+ *                             example: "Tugas Praktikum 1"
+ *                           studentName:
+ *                             type: string
+ *                             example: "Budi Santoso"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/recent-submissions', authenticateToken, authorizeRole('DOSEN'), getRecentSubmissions);
 
+/**
+ * @swagger
+ * /api/submissions/{assignmentId}/me:
+ *   get:
+ *     summary: Mendapatkan detail pengumpulan berkas mahasiswa sendiri untuk tugas tertentu (Mahasiswa Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: assignmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID Tugas (UUID)
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan data pengumpulan berkas sendiri
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Submission'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.get('/:assignmentId/me', authenticateToken, authorizeRole('MAHASISWA'), getMyAssignment);
 
+/**
+ * @swagger
+ * /api/submissions/{assignmentId}/submit:
+ *   post:
+ *     summary: Mengirimkan / mengunggah berkas pengumpulan tugas (Mahasiswa Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: assignmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID Tugas (UUID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [file]
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "Berkas tugas (PDF/PNG/JPG/ZIP dll, maksimal 5MB)"
+ *               note:
+ *                 type: string
+ *                 description: "Catatan opsional untuk dosen"
+ *                 example: "Mohon maaf atas keterlambatan pengumpulan tugas."
+ *     responses:
+ *       201:
+ *         description: Berkas tugas berhasil dikirimkan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Submission'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.post(
   '/:assignmentId/submit',
   authenticateToken,
@@ -40,6 +263,60 @@ router.post(
   submit,
 );
 
+/**
+ * @swagger
+ * /api/submissions/{submissionId}:
+ *   patch:
+ *     summary: Memberikan penilaian & feedback untuk berkas pengumpulan mahasiswa (Dosen Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: submissionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID Pengumpulan (UUID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [grade]
+ *             properties:
+ *               grade:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *                 example: 85
+ *                 description: "Nilai angka (0-100)"
+ *               feedback:
+ *                 type: string
+ *                 example: "Kerja bagus, pertahankan!"
+ *                 description: "Umpan balik opsional dari dosen"
+ *     responses:
+ *       200:
+ *         description: Penilaian berhasil disimpan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Submission'
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.patch(
   '/:submissionId',
   authenticateToken,
@@ -48,6 +325,40 @@ router.patch(
   grade,
 );
 
+/**
+ * @swagger
+ * /api/submissions/{assignmentId}/submissions:
+ *   get:
+ *     summary: Mengambil semua daftar berkas tugas yang dikumpulkan mahasiswa (Dosen Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: assignmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID Tugas (UUID)
+ *     responses:
+ *       200:
+ *         description: Daftar berkas berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Submission'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get(
   '/:assignmentId/submissions',
   authenticateToken,
