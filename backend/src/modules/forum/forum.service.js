@@ -101,7 +101,6 @@ const getThreads = async (id, userId, userRole) => {
           id: true,
           name: true,
           role: true,
-          avatar: true,
         },
       },
       _count: {

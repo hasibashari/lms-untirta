@@ -48,7 +48,6 @@ model Course {
   materials    Material[]
 }
 
-
 model Material {
   id          String   @id @default(uuid())
   title       String
@@ -227,7 +226,7 @@ model ForumReply {
   content   String
   threadId  String
   authorId  String
-  parentId  String?      // Menambahkan parentId untuk nested replies
+  parentId  String? // Menambahkan parentId untuk nested replies
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   author    User         @relation("ReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
