@@ -11,10 +11,10 @@ import {
   Hash,
 } from 'lucide-react';
 import { createMaterial, getMaterialDetail, updateMaterial } from '../materialService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import MarkdownEditor from '../../../components/ui/MarkdownEditor';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
-import ConfirmDialog from '../../../components/shared/ConfirmDialog';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import MarkdownEditor from '@/shared/components/markdown/MarkdownEditor';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 /**
  * CreateMaterial - Form Pembuatan & Edit Materi
@@ -32,7 +32,7 @@ import ConfirmDialog from '../../../components/shared/ConfirmDialog';
  * 5. Simpan materi
  */
 export default function CreateMaterial() {
-  const { courseId, materialId } = useParams();
+  const { classId, materialId } = useParams();
   const navigate = useNavigate();
 
   // Mode edit jika ada materialId
@@ -71,7 +71,7 @@ export default function CreateMaterial() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
     if (!title.trim()) {
       setError('Judul materi harus diisi');
       return;
@@ -92,10 +92,10 @@ export default function CreateMaterial() {
         await updateMaterial(materialId, payload);
       } else {
         // Mode Create: Buat materi baru
-        await createMaterial(courseId, payload);
+        await createMaterial(classId, payload);
       }
 
-      navigate(`/dosen/courses/${courseId}/materials`);
+      navigate(`/dosen/classes/${classId}/materials`);
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Gagal menyimpan materi');
     } finally {
@@ -108,10 +108,10 @@ export default function CreateMaterial() {
       setShowLeaveConfirm(true);
       return;
     }
-    navigate(`/dosen/courses/${courseId}/materials`);
+    navigate(`/dosen/classes/${classId}/materials`);
   };
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -138,8 +138,8 @@ export default function CreateMaterial() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: 'Kelas', to: `/dosen/courses/${courseId}` },
-          { label: 'Materi', to: `/dosen/courses/${courseId}/materials` },
+          { label: 'Kelas', to: `/dosen/classes/${classId}` },
+          { label: 'Materi', to: `/dosen/classes/${classId}/materials` },
           { label: isEditMode ? 'Edit Materi' : 'Tambah Materi' },
         ]}
       />
@@ -312,7 +312,7 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
         title="Keluar tanpa menyimpan?"
         description="Perubahan belum disimpan. Jika keluar sekarang, semua perubahan akan hilang."
         confirmText="Keluar"
-        onConfirm={() => navigate(`/dosen/courses/${courseId}/materials`)}
+        onConfirm={() => navigate(`/dosen/classes/${classId}/materials`)}
         onCancel={() => setShowLeaveConfirm(false)}
       />
     </div>

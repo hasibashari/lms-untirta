@@ -61,7 +61,7 @@ const getStudyResults = async (studentId, filters = {}) => {
 
   // Calculate grades per course using shared grading utility
   const coursesWithGrades = enrollments.map(enrollment => {
-    const course = enrollment.course;
+    const course = enrollment.class.course;
 
     // Flatten submissions dari semua assignments
     const allSubmissions = course.assignments.flatMap(a =>
@@ -407,6 +407,7 @@ const getFullStudentTranscript = async (studentId, options = {}) => {
     courses: krsResult.courses,
     semesterBreakdown: krsResult.semesterBreakdown,
     summary: krsResult.summary,
+    semesterBreakdown: krsResult.semesterBreakdown,
     gradeDistribution,
   };
 };

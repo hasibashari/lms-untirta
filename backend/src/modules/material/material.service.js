@@ -10,24 +10,24 @@ import path from 'path';
 // - Operasi database melalui Prisma
 // - Cleanup file yang terkait saat materi dihapus
 
-const createMaterial = async (courseId, teacherId, data) => {
+const createMaterial = async (classId, teacherId, data) => {
   // 1. Cek apakah kelas ada
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
+  const classOffering = await prisma.class.findUnique({
+    where: { id: classId },
   });
 
-  if (!course) {
+  if (!classOffering) {
     throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
-  // 2. Validasi kepemilikan: hanya dosen pemilik (atau admin di luar fungsi ini)
-  if (course.teacherId !== teacherId) {
-    throw new AppError(403, 'Akses ditolak: Ini bukan kelas Anda');
+  // 2. Validasi kepemilikan: hanya dosen pengampu
+  if (classOffering.lecturerId !== teacherId) {
+    throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu kelas ini');
   }
 
   // 3. AUTO-ORDERING: tentukan urutan materi berikutnya di kelas ini
   const lastMaterial = await prisma.material.findFirst({
-    where: { courseId: courseId },
+    where: { classId: classId },
     orderBy: { order: 'desc' }, // ambil materi dengan order terbesar
   });
 
@@ -41,7 +41,8 @@ const createMaterial = async (courseId, teacherId, data) => {
       fileUrl: data.fileUrl,
       videoUrl: data.videoUrl,
       order: newOrder,
-      courseId: courseId,
+      classId: classId,
+      courseId: classOffering.courseId,
     },
     select: {
       id: true,
@@ -51,24 +52,25 @@ const createMaterial = async (courseId, teacherId, data) => {
       videoUrl: true,
       order: true,
       isPublished: true,
+      classId: true,
       courseId: true,
       createdAt: true,
     },
   });
 
   // 5. Invalidate cache list materi kelas
-  await cache.invalidate(`materials:list:${courseId}`);
+  await cache.invalidate(`materials:list:${classId}`);
 
   return result;
 };
 
-const getMaterials = async (courseId, userId, userRole) => {
+const getMaterials = async (classId, userId, userRole) => {
   // Jika mahasiswa, pastikan sudah terdaftar di kelas
   if (userRole === 'MAHASISWA') {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        class: { courseId: courseId },
+        classId: classId,
         status: 'APPROVED',
       },
     });
@@ -78,10 +80,10 @@ const getMaterials = async (courseId, userId, userRole) => {
   }
 
   // Ambil daftar materi, terurut berdasarkan 'order' (naik)
-  // Cache key include courseId
-  return await cache.getOrSet(`materials:list:${courseId}`, async () => {
+  // Cache key include classId
+  return await cache.getOrSet(`materials:list:${classId}`, async () => {
     return await prisma.material.findMany({
-      where: { courseId },
+      where: { classId },
       select: {
         id: true,
         title: true,
@@ -111,6 +113,12 @@ const getMaterialById = async (materialId, userId, userRole) => {
           teacherId: true,
         },
       },
+      class: {
+        select: {
+          id: true,
+          lecturerId: true,
+        },
+      },
     },
   });
 
@@ -118,8 +126,8 @@ const getMaterialById = async (materialId, userId, userRole) => {
     throw new AppError(404, 'Materi tidak ditemukan');
   }
 
-  // Otorisasi: dosen pemilik atau admin boleh, mahasiswa harus terdaftar
-  if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
+  // Otorisasi: dosen pengampu atau admin boleh, mahasiswa harus terdaftar
+  if (userRole === 'DOSEN' && (material.class?.lecturerId !== userId && material.course.teacherId !== userId)) {
     throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
@@ -127,7 +135,7 @@ const getMaterialById = async (materialId, userId, userRole) => {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        class: { courseId: material.course.id },
+        classId: material.classId || undefined,
         status: 'APPROVED',
       },
     });
@@ -177,10 +185,17 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
     where: { id: materialId },
     select: {
       id: true,
+      classId: true,
       course: {
         select: {
           id: true,
           teacherId: true,
+        },
+      },
+      class: {
+        select: {
+          id: true,
+          lecturerId: true,
         },
       },
     },
@@ -190,8 +205,8 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
     throw new AppError(404, 'Materi tidak ditemukan');
   }
 
-  // Hanya dosen pemilik atau admin yang boleh mengedit
-  if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
+  // Hanya dosen pengampu atau admin yang boleh mengedit
+  if (userRole === 'DOSEN' && (material.class?.lecturerId !== userId && material.course.teacherId !== userId)) {
     throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
@@ -217,6 +232,7 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
       videoUrl: true,
       order: true,
       isPublished: true,
+      classId: true,
       courseId: true,
       updatedAt: true,
     },
@@ -224,7 +240,7 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
 
   // Invalidate caches
   await cache.invalidate(`material:detail:${materialId}`);
-  await cache.invalidate(`materials:list:${updated.courseId}`);
+  await cache.invalidate(`materials:list:${updated.classId}`);
 
   return updated;
 };
@@ -236,10 +252,17 @@ const deleteMaterial = async (materialId, userId, userRole) => {
     select: {
       id: true,
       fileUrl: true,
+      classId: true,
       course: {
         select: {
           id: true,
           teacherId: true,
+        },
+      },
+      class: {
+        select: {
+          id: true,
+          lecturerId: true,
         },
       },
     },
@@ -250,7 +273,7 @@ const deleteMaterial = async (materialId, userId, userRole) => {
   }
 
   // Otorisasi penghapusan
-  if (userRole === 'DOSEN' && material.course.teacherId !== userId) {
+  if (userRole === 'DOSEN' && (material.class?.lecturerId !== userId && material.course.teacherId !== userId)) {
     throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
@@ -263,7 +286,7 @@ const deleteMaterial = async (materialId, userId, userRole) => {
 
   // Invalidate caches
   await cache.invalidate(`material:detail:${materialId}`);
-  await cache.invalidate(`materials:list:${material.course.id}`);
+  await cache.invalidate(`materials:list:${material.classId}`);
 
   // Jika ada file terkait, hapus file fisik secara asinkron (jangan blokir response)
   if (material.fileUrl) {

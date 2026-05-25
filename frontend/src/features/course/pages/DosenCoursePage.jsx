@@ -16,14 +16,14 @@ import {
 import { getMyCourses, getCourseStudents } from '../courseService';
 import { getMaterials } from '../../material/materialService';
 import { getAssignments } from '../../assignment/assignmentService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
  * TeacherCourseHome - Halaman Detail Kelas Dosen
  * Menampilkan overview kelas yang diampu dengan akses cepat ke fitur management
  */
 export default function CourseHome() {
-  const { courseId } = useParams();
+  const { classId } = useParams();
 
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
@@ -33,21 +33,21 @@ export default function CourseHome() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!courseId || courseId === 'undefined') return;
+    if (!classId || classId === 'undefined') return;
     const startTimer = setTimeout(() => {
       setLoading(true);
     }, 0);
 
     Promise.all([
       getMyCourses(),
-      getMaterials(courseId),
-      getAssignments(courseId),
-      getCourseStudents(courseId),
+      getMaterials(classId),
+      getAssignments(classId),
+      getCourseStudents(classId),
     ])
       .then(([coursesRes, materialsRes, assignmentsRes, studentsRes]) => {
         // Find this course from teacher's courses
         const foundCourse = coursesRes.data.find(
-          c => c.id === courseId || c.id === parseInt(courseId)
+          c => c.id === classId || c.id === parseInt(classId)
         );
         setCourse(foundCourse);
         setMaterials(materialsRes.data || []);
@@ -58,9 +58,9 @@ export default function CourseHome() {
       .finally(() => setLoading(false));
 
     return () => clearTimeout(startTimer);
-  }, [courseId]);
+  }, [classId]);
 
-  if (!courseId || courseId === 'undefined') {
+  if (!classId || classId === 'undefined') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -122,10 +122,10 @@ export default function CourseHome() {
       description: `${materials.length} materi tersedia`,
       icon: BookOpen,
       color: 'blue',
-      to: `/dosen/courses/${courseId}/materials`,
+      to: `/dosen/classes/${classId}/materials`,
       action: {
         label: 'Tambah Materi',
-        to: `/dosen/courses/${courseId}/materials/new`,
+        to: `/dosen/classes/${classId}/materials/new`,
       },
     },
     {
@@ -133,10 +133,10 @@ export default function CourseHome() {
       description: `${assignments.length} tugas dibuat`,
       icon: ClipboardList,
       color: 'emerald',
-      to: `/dosen/courses/${courseId}/assignments`,
+      to: `/dosen/classes/${classId}/assignments`,
       action: {
         label: 'Buat Tugas',
-        to: `/dosen/courses/${courseId}/assignments/new`,
+        to: `/dosen/classes/${classId}/assignments/new`,
       },
     },
     {
@@ -144,7 +144,7 @@ export default function CourseHome() {
       description: `${students.length} mahasiswa terdaftar`,
       icon: Users,
       color: 'violet',
-      to: `/dosen/courses/${courseId}/students`,
+      to: `/dosen/classes/${classId}/students`,
     },
 
     {
@@ -152,7 +152,7 @@ export default function CourseHome() {
       description: 'Diskusi dengan mahasiswa',
       icon: MessageSquare,
       color: 'amber',
-      to: `/dosen/courses/${courseId}/forum`,
+      to: `/dosen/classes/${classId}/forum`,
     },
   ];
 
@@ -309,7 +309,7 @@ export default function CourseHome() {
               <p className="text-sm text-slate-500">Preview materi yang sudah ditambahkan</p>
             </div>
             <Link
-              to={`/dosen/courses/${courseId}/materials/new`}
+              to={`/dosen/classes/${classId}/materials/new`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-100 transition"
             >
               <Plus size={16} />
@@ -341,7 +341,7 @@ export default function CourseHome() {
           {materials.length > 3 && (
             <div className="p-4 bg-slate-50 border-t border-slate-100">
               <Link
-                to={`/dosen/courses/${courseId}/materials`}
+                to={`/dosen/classes/${classId}/materials`}
                 className="flex items-center justify-center gap-2 text-blue-600 font-medium hover:underline"
               >
                 Lihat Semua Materi ({materials.length})
@@ -366,14 +366,14 @@ export default function CourseHome() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link
-              to={`/dosen/courses/${courseId}/materials/new`}
+              to={`/dosen/classes/${classId}/materials/new`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
               <Plus size={18} />
               Tambah Materi
             </Link>
             <Link
-              to={`/dosen/courses/${courseId}/assignments/new`}
+              to={`/dosen/classes/${classId}/assignments/new`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition"
             >
               <Plus size={18} />

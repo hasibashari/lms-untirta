@@ -1,17 +1,17 @@
-import api from '../../services/apiService';
+import api from '@/shared/api/apiService';
 
 // ========== Material CRUD ==========
 
-export const getMaterials = async (courseId) => {
-  return api.get(`/courses/${courseId}/materials`);
+export const getMaterials = async (classId) => {
+  return api.get(`/materials/class/${classId}`);
 };
 
 export const getMaterialDetail = async (materialId) => {
   return api.get(`/materials/${materialId}`);
 };
 
-export const createMaterial = async (courseId, payload) => {
-  return api.post(`/courses/${courseId}/materials`, payload);
+export const createMaterial = async (classId, payload) => {
+  return api.post(`/materials/class/${classId}`, payload);
 };
 
 export const updateMaterial = async (materialId, payload) => {

@@ -2,10 +2,11 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-
-import { AuthProvider } from '../contexts/AuthContext.jsx';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { AuthProvider } from './providers/AuthContext.jsx';
 import App from './App.jsx';
+import '@/app/styles/globals.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,7 +18,6 @@ const queryClient = new QueryClient({
   },
 });
 
-import '../styles/globals.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

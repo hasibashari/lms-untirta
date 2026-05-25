@@ -1,14 +1,14 @@
 import { memo } from 'react';
 import { Printer, Loader2, User, BookOpen, Calculator, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Breadcrumb from '@/components/navigation/Breadcrumb';
+import { Button } from '@/shared/components/ui/button';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/shared/components/ui/select';
 
 const KrsHeader = memo(({
   currentSemester,

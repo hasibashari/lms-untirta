@@ -3,14 +3,14 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { Plus, MessageSquare, Search, Loader2 } from 'lucide-react';
 import { getThreads } from '../forumService';
 import ThreadCard from '../components/ThreadCard';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
- * ForumThreadListPage — Halaman daftar thread diskusi per course.
+ * ForumThreadListPage — Halaman daftar thread diskusi per kelas.
  * Shared antara Dosen dan Mahasiswa, dengan path-aware navigation.
  */
 export default function ForumThreadListPage() {
-  const { courseId } = useParams();
+  const { classId } = useParams();
   const location = useLocation();
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,18 +21,18 @@ export default function ForumThreadListPage() {
   const rolePrefix = isDosen ? '/dosen' : '/mahasiswa';
 
   useEffect(() => {
-    if (!courseId) return;
+    if (!classId) return;
     const startTimer = setTimeout(() => {
       setLoading(true);
     }, 0);
 
-    getThreads(courseId)
+    getThreads(classId)
       .then((res) => setThreads(res.data || []))
       .catch((err) => setError(err.message || 'Gagal memuat diskusi'))
       .finally(() => setLoading(false));
 
     return () => clearTimeout(startTimer);
-  }, [courseId]);
+  }, [classId]);
 
   // Filter threads by search
   const filteredThreads = threads.filter(
@@ -48,7 +48,7 @@ export default function ForumThreadListPage() {
       <Breadcrumb
         items={[
           { label: isDosen ? 'Dashboard' : 'Kelas Saya', to: isDosen ? '/dosen/dashboard' : '/mahasiswa/classes' },
-          { label: 'Kelas', to: `${rolePrefix}/courses/${courseId}` },
+          { label: 'Kelas', to: `${rolePrefix}/classes/${classId}` },
           { label: 'Forum Diskusi' },
         ]}
       />
@@ -62,7 +62,7 @@ export default function ForumThreadListPage() {
           </p>
         </div>
         <Link
-          to={`${rolePrefix}/courses/${courseId}/forum/new`}
+          to={`${rolePrefix}/classes/${classId}/forum/new`}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-medium rounded-xl hover:bg-primary/90 shadow-sm transition self-start"
         >
           <Plus size={18} />
@@ -115,7 +115,7 @@ export default function ForumThreadListPage() {
             </p>
             {!search && (
               <Link
-                to={`${rolePrefix}/courses/${courseId}/forum/new`}
+                to={`${rolePrefix}/classes/${classId}/forum/new`}
                 className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition"
               >
                 <Plus size={16} />
@@ -126,7 +126,7 @@ export default function ForumThreadListPage() {
         ) : (
           <div className="divide-y divide-border">
             {filteredThreads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} courseId={courseId} />
+              <ThreadCard key={thread.id} thread={thread} classId={classId} />
             ))}
           </div>
         )}

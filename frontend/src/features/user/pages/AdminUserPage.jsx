@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
+import { Badge } from '@/shared/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Pencil, Trash2, Users as UsersIcon } from 'lucide-react';
-import PaginationComponent from '../../../components/shared/PaginationComponent';
-import PageLoader from '../../../components/shared/PageLoader';
+import PaginationComponent from '@/shared/components/data-display/Pagination';
+import PageLoader from '@/shared/components/feedback/PageLoader';
 import { useUsers, useDeleteUser } from '../hooks/useUsers';
-import ConfirmDialog from '../../../components/shared/ConfirmDialog';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 export default function Users() {
   const [currentPage, setCurrentPage] = useState(1);

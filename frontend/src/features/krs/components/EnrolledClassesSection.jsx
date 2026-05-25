@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Trash2, RefreshCw, Loader2, Info, BookOpen, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 import {
   Table,
   TableBody,
@@ -8,8 +8,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import CourseBadge from '@/components/ui/CourseBadge';
+} from '@/shared/components/ui/table';
+import CourseBadge from '@/features/course/components/CourseBadge';
 import KrsStatusBadge from './KrsStatusBadge';
 
 const EnrolledClassRow = memo(({ enrollment, index, isDropping, isRevising, handleDrop, handleRevise, canDrop, canRevise, isReadOnly }) => {

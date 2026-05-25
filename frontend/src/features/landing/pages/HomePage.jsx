@@ -7,7 +7,7 @@ import TestimonialSection from '../components/TestimonialSection';
 import PoweredBySection from '../components/PoweredBySection';
 
 // Import Data from constants
-import { COURSES_DATA, TESTIMONIALS, PARTNERS } from '../../../utils/constants';
+import { COURSES_DATA, TESTIMONIALS, PARTNERS } from '@/shared/utils/constants';
 
 /**
  * Home Page

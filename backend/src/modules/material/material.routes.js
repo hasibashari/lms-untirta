@@ -3,10 +3,25 @@ import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
 import validate from '../../middlewares/validate.middleware.js';
 import { upload } from '../../middlewares/upload.middleware.js';
-import { getMaterialById, updateMaterial, deleteMaterial } from './material.controller.js';
-import { updateMaterialSchema } from './material.validation.js';
+import { createMaterial, getMaterials, getMaterialById, updateMaterial, deleteMaterial } from './material.controller.js';
+import { createMaterialSchema, updateMaterialSchema } from './material.validation.js';
 
 const router = express.Router();
+
+router.post(
+  '/class/:classId',
+  authenticateToken,
+  authorizeRole('DOSEN'),
+  upload.single('file'),
+  validate(createMaterialSchema),
+  createMaterial
+);
+
+router.get(
+  '/class/:classId',
+  authenticateToken,
+  getMaterials
+);
 
 /**
  * @swagger
@@ -106,7 +121,7 @@ router.get('/:materialId', authenticateToken, getMaterialById);
 router.put(
   '/:materialId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   upload.single('file'),
   validate(updateMaterialSchema),
   updateMaterial
@@ -146,7 +161,7 @@ router.put(
 router.delete(
   '/:materialId',
   authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
+  authorizeRole('DOSEN'),
   deleteMaterial
 );
 

@@ -1,10 +1,10 @@
 import React from 'react';
 
 // Import Child Components
-import SectionHeader from '@/components/shared/SectionHeader';
-import PartnerLogo from '@/components/ui/PartnerLogo';
-import MarqueeContainer from '@/components/ui/MarqueeContainer';
-import MarqueeTrack from '@/components/ui/MarqueeTrack';
+import SectionHeader from '@/shared/components/layout/SectionHeader';
+import PartnerLogo from '@/shared/components/branding/PartnerLogo';
+import MarqueeContainer from '@/shared/components/layout/MarqueeContainer';
+import MarqueeTrack from '@/shared/components/layout/MarqueeTrack';
 
 /**
  * PoweredBySection Component

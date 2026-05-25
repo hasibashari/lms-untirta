@@ -3,8 +3,8 @@ import toast from 'react-hot-toast';
 import { useParams, Link } from 'react-router-dom';
 import { getAssignments } from '../assignmentService';
 import { getMyKRS } from '../../krs/krsService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import BackButton from '../../../components/navigation/BackButton';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import BackButton from '@/shared/components/navigation/BackButton';
 import {
   Search,
   ClipboardList,
@@ -17,27 +17,27 @@ import {
 } from 'lucide-react';
 
 export default function Assignments() {
-  const { courseId } = useParams();
+  const { classId } = useParams();
   const [assignments, setAssignments] = useState([]);
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    Promise.all([getAssignments(courseId), getMyKRS()])
+    Promise.all([getAssignments(classId), getMyKRS()])
       .then(([assignmentsRes, krsRes]) => {
         setAssignments(assignmentsRes.data);
         const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
           (item) => item.status === 'APPROVED'
         );
         const foundEnrollment = approvedEnrollments.find(
-          (item) => item.class?.course?.id === courseId
+          (item) => item.class?.id === classId
         );
         setCourse(foundEnrollment?.class?.course || null);
       })
       .catch(err => toast.error(err?.message || 'Gagal memuat data tugas'))
       .finally(() => setLoading(false));
-  }, [courseId]);
+  }, [classId]);
 
   // Filter tugas berdasarkan pencarian
   const filteredAssignments = assignments.filter(assignment =>
@@ -94,12 +94,12 @@ export default function Assignments() {
       <Breadcrumb
         items={[
           { label: 'Kelas Saya', to: '/mahasiswa/classes' },
-          { label: course?.title || 'Kelas', to: `/mahasiswa/courses/${courseId}` },
+          { label: course?.title || 'Kelas', to: `/mahasiswa/classes/${classId}` },
           { label: 'Tugas' },
         ]}
       />
 
-      <BackButton fallback={`/mahasiswa/courses/${courseId}`} />
+      <BackButton fallback={`/mahasiswa/classes/${classId}`} />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -183,7 +183,7 @@ export default function Assignments() {
             return (
               <Link
                 key={assignment.id}
-                to={`/mahasiswa/courses/${courseId}/assignments/${assignment.id}`}
+                to={`/mahasiswa/classes/${classId}/assignments/${assignment.id}`}
                 className={`block bg-white rounded-xl p-5 shadow-sm border transition-all hover:shadow-md hover:-translate-y-0.5 ${isLate
                   ? 'border-red-200 hover:border-red-300'
                   : isSubmitted

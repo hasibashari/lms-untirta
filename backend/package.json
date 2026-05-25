@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "fuser -k 50051/tcp 2>/dev/null; sleep 0.5; exit 0",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "npx prisma migrate deploy && node src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +16,9 @@
     "@google/generative-ai": "^0.24.1",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
-    "@prisma/client": "^6.19.0",
+    "@prisma/adapter-pg": "6.19.3",
+    "@prisma/client": "6.19.3",
+    "audit": "^0.0.6",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -41,7 +43,7 @@
     "@types/node": "^25.0.2",
     "@types/pg": "^8.16.0",
     "nodemon": "^3.1.11",
-    "prisma": "^6.19.2",
+    "prisma": "6.19.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },

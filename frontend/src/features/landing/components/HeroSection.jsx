@@ -3,10 +3,10 @@ import toast from 'react-hot-toast';
 import { Sparkles, CheckCircle, Users } from 'lucide-react';
 
 // Import Child Components
-import { Badge } from '@/components/ui/badge';
-import SearchBar from '@/components/ui/SearchBar';
-import StatsGrid from '@/components/shared/StatsGrid';
-import UserAvatars from '@/components/shared/UserAvatars';
+import { Badge } from '@/shared/components/ui/badge';
+import SearchBar from '@/shared/components/forms/SearchBar';
+import StatsGrid from '@/shared/components/data-display/StatsGrid';
+import UserAvatars from '@/shared/components/data-display/UserAvatars';
 import HeroVisual from './HeroVisual';
 
 // --- HeroSection Component (Parent) ---

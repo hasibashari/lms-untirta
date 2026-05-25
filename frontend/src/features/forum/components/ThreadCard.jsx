@@ -26,13 +26,13 @@ const formatRelativeTime = (dateStr) => {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-export default function ThreadCard({ thread, courseId }) {
+export default function ThreadCard({ thread, classId }) {
   const location = useLocation();
 
   // Determine base path based on current URL (dosen or mahasiswa)
   const basePath = location.pathname.startsWith('/dosen')
-    ? `/dosen/courses/${courseId}/forum/${thread.id}`
-    : `/mahasiswa/courses/${courseId}/forum/${thread.id}`;
+    ? `/dosen/classes/${classId}/forum/${thread.id}`
+    : `/mahasiswa/classes/${classId}/forum/${thread.id}`;
 
   const badge = roleBadge[thread.author?.role] || roleBadge.MAHASISWA;
   const BadgeIcon = badge.icon;

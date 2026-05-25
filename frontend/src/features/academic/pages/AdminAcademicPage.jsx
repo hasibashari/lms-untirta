@@ -11,9 +11,9 @@ import {
   useUpdateSemesterStatus,
   useDeleteSemester
 } from '../hooks/useAcademic';
-import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
-import { Button } from '@/components/ui/button';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
+import { Button } from '@/shared/components/ui/button';
+import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
 // ============================================================
 // Admin Academic Semester Management Page

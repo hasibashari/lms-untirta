@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import api from '../../../services/apiService';
+import api from '@/shared/api/apiService';
 
 export const useChat = () => {
   return useMutation({

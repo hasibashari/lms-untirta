@@ -12,7 +12,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { getAllMyGrades } from '../submissionService';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 /**
  * MyGrades - Halaman Nilai Terpusat
@@ -24,7 +24,7 @@ const MyGrades = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filterCourse, setFilterCourse] = useState('all');
+  const [filterClass, setFilterClass] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -34,19 +34,19 @@ const MyGrades = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Get unique courses for filter
-  const uniqueCourses = [...new Map(grades.map(g => [g.courseId, { id: g.courseId, name: g.courseName }])).values()];
+  // Get unique classes for filter
+  const uniqueClasses = [...new Map(grades.map(g => [g.classId || g.courseId, { id: g.classId || g.courseId, name: g.className || g.courseName }])).values()];
 
   // Filter and search
   const filteredGrades = grades.filter(grade => {
     const matchSearch =
       grade.assignmentTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      grade.courseName.toLowerCase().includes(searchQuery.toLowerCase());
+      (grade.className || grade.courseName).toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchStatus = filterStatus === 'all' || grade.status === filterStatus;
-    const matchCourse = filterCourse === 'all' || grade.courseId === filterCourse;
+    const matchClass = filterClass === 'all' || (grade.classId || grade.courseId) === filterClass;
 
-    return matchSearch && matchStatus && matchCourse;
+    return matchSearch && matchStatus && matchClass;
   });
 
   // Calculate summary stats
@@ -238,17 +238,17 @@ const MyGrades = () => {
               </select>
             </div>
 
-            {/* Course Filter */}
+            {/* Class Filter */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Kelas</label>
               <select
-                value={filterCourse}
-                onChange={(e) => setFilterCourse(e.target.value === 'all' ? 'all' : e.target.value)}
+                value={filterClass}
+                onChange={(e) => setFilterClass(e.target.value === 'all' ? 'all' : e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">Semua Kelas</option>
-                {uniqueCourses.map(course => (
-                  <option key={course.id} value={course.id}>{course.name}</option>
+                {uniqueClasses.map(cls => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
                 ))}
               </select>
             </div>
@@ -291,7 +291,7 @@ const MyGrades = () => {
             onClick={() => {
               setSearchQuery('');
               setFilterStatus('all');
-              setFilterCourse('all');
+              setFilterClass('all');
             }}
             className="mt-4 text-blue-600 font-medium"
           >
@@ -323,7 +323,7 @@ const MyGrades = () => {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
                     <span className="flex items-center gap-1">
                       <BookOpen size={14} />
-                      {grade.courseName}
+                      {grade.className || grade.courseName}
                     </span>
                     <span>•</span>
                     <span>{grade.teacherName}</span>
@@ -354,7 +354,7 @@ const MyGrades = () => {
                 {/* Action */}
                 <div className="shrink-0">
                   <Link
-                    to={`/mahasiswa/courses/${grade.courseId}/assignments/${grade.assignmentId}`}
+                    to={`/mahasiswa/classes/${grade.classId || grade.courseId}/assignments/${grade.assignmentId}`}
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
                   >
                     Lihat Detail

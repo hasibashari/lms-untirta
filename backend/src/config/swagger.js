@@ -13,6 +13,10 @@ const options = {
     },
     servers: [
       {
+        url: '/',
+        description: 'Current Host (Dynamic HTTP/HTTPS)',
+      },
+      {
         url: 'http://localhost:3000',
         description: 'Development server',
       },

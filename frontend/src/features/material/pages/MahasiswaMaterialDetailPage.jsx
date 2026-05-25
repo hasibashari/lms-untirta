@@ -13,12 +13,12 @@ import {
 import { getMaterialDetail, getMaterials } from '../materialService';
 import { getMyKRS } from '../../krs/krsService';
 import LearningSidebar from '../components/LearningSidebar';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 
 // shadcn/ui components
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
+import { Separator } from '@/shared/components/ui/separator';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,10 +26,10 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+} from '@/shared/components/ui/breadcrumb';
 
 const MaterialDetail = () => {
-  const { courseId, materialId } = useParams();
+  const { classId, materialId } = useParams();
   const navigate = useNavigate();
   const [material, setMaterial] = useState(null);
   const [materials, setMaterials] = useState([]);
@@ -38,12 +38,12 @@ const MaterialDetail = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Effect 1: Fetch course-level data (materials list + KRS) — hanya re-fetch saat courseId berubah
+  // Effect 1: Fetch course-level data (materials list + KRS) — hanya re-fetch saat classId berubah
   useEffect(() => {
-    if (!courseId) return;
+    if (!classId) return;
 
     Promise.all([
-      getMaterials(courseId),
+      getMaterials(classId),
       getMyKRS(),
     ])
       .then(([materialsRes, krsRes]) => {
@@ -53,12 +53,12 @@ const MaterialDetail = () => {
           (item) => item.status === 'APPROVED'
         );
         const foundEnrollment = approvedEnrollments.find(
-          (item) => item.class?.course?.id === courseId
+          (item) => item.class?.id === classId
         );
         setCourse(foundEnrollment?.class?.course || null);
       })
       .catch(err => toast.error(err?.message || 'Gagal memuat data kelas'));
-  }, [courseId]);
+  }, [classId]);
 
   // Effect 2: Fetch material detail — re-fetch setiap materialId berubah (navigasi antar materi)
   useEffect(() => {
@@ -89,9 +89,9 @@ const MaterialDetail = () => {
   const handleCompleteAndNext = () => {
     toast.success('Materi ditandai selesai!');
     if (nextMaterial) {
-      navigate(`/mahasiswa/courses/${courseId}/materials/${nextMaterial.id}`);
+      navigate(`/mahasiswa/classes/${classId}/materials/${nextMaterial.id}`);
     } else {
-      navigate(`/mahasiswa/courses/${courseId}`);
+      navigate(`/mahasiswa/classes/${classId}`);
     }
   };
 
@@ -101,11 +101,11 @@ const MaterialDetail = () => {
         <LearningSidebar
           materials={materials}
           currentMaterialId={materialId}
-          courseId={courseId}
+          classId={classId}
           course={course}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          onBackClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
+          onBackClick={() => navigate(`/mahasiswa/classes/${classId}`)}
           basePath="/mahasiswa"
           collapsed={sidebarCollapsed}
         />
@@ -132,11 +132,11 @@ const MaterialDetail = () => {
         <LearningSidebar
           materials={materials}
           currentMaterialId={materialId}
-          courseId={courseId}
+          classId={classId}
           course={course}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          onBackClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
+          onBackClick={() => navigate(`/mahasiswa/classes/${classId}`)}
           basePath="/mahasiswa"
           collapsed={sidebarCollapsed}
         />
@@ -153,7 +153,7 @@ const MaterialDetail = () => {
                 Materi yang Anda cari tidak tersedia.
               </p>
               <Button asChild variant="outline">
-                <Link to={`/mahasiswa/courses/${courseId}/materials`}>
+                <Link to={`/mahasiswa/classes/${classId}/materials`}>
                   Kembali ke Daftar Materi
                 </Link>
               </Button>
@@ -169,11 +169,11 @@ const MaterialDetail = () => {
       <LearningSidebar
         materials={materials}
         currentMaterialId={materialId}
-        courseId={courseId}
+        classId={classId}
         course={course}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onBackClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
+        onBackClick={() => navigate(`/mahasiswa/classes/${classId}`)}
         basePath="/mahasiswa"
         collapsed={sidebarCollapsed}
       />
@@ -233,7 +233,7 @@ const MaterialDetail = () => {
               <Breadcrumb className="mb-6 hidden sm:flex">
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbLink href={`/mahasiswa/courses/${courseId}`}>
+                    <BreadcrumbLink href={`/mahasiswa/classes/${classId}`}>
                       {course?.title || 'Course'}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
@@ -281,7 +281,7 @@ const MaterialDetail = () => {
               <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-8">
                 {prevMaterial ? (
                   <Link
-                    to={`/mahasiswa/courses/${courseId}/materials/${prevMaterial.id}`}
+                    to={`/mahasiswa/classes/${classId}/materials/${prevMaterial.id}`}
                     className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
                     <ChevronLeft size={16} />

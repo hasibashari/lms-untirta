@@ -35,18 +35,18 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
+} from '@/shared/components/ui/pagination';
 import { getAllCourses } from '../../course/courseService';
 import { getAllSemesters } from '../../academic/academicService';
 import { getDosen } from '../../user/userService';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/shared/components/ui/select';
 import {
   Table,
   TableBody,
@@ -54,7 +54,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/shared/components/ui/table';
 
 /**
  * Admin Class Offerings Management
@@ -279,12 +279,12 @@ const AdminClassesPage = () => {
       if (editingClass) {
         const res = await updateClass(editingClass.id, payload);
         setClasses(prev => prev.map(c => c.id === editingClass.id ? (res?.data || c) : c));
-        setSubmitSuccess('Kelas offering berhasil diperbarui!');
+        setSubmitSuccess('Kelas berhasil diperbarui!');
       } else {
         await createClass(payload);
         // Re-fetch to get full data with relations
         await fetchData();
-        setSubmitSuccess('Kelas offering berhasil dibuat!');
+        setSubmitSuccess('Kelas berhasil dibuat!');
       }
 
       setTimeout(() => {
@@ -363,7 +363,7 @@ const AdminClassesPage = () => {
       await deleteClass(deleteConfirm.id);
       setClasses(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
-      showToast('Kelas offering berhasil dihapus');
+      showToast('Kelas berhasil dihapus');
     } catch (err) {
       showToast(err?.response?.data?.message || 'Gagal menghapus kelas', 'error');
     } finally {
@@ -379,12 +379,12 @@ const AdminClassesPage = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kelola Kelas Offering</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Kelola Kelas</h1>
           <p className="text-gray-600 mt-1">
             Buat dan kelola kelas per semester untuk pendaftaran KRS mahasiswa
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Mata kuliah dibuat di menu Mata Kuliah, sedangkan jadwal dan ruangan ditentukan di Kelas Offering.
+            Mata kuliah dibuat di menu Mata Kuliah, sedangkan jadwal dan ruangan ditentukan di Kelas.
           </p>
         </div>
         <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={courses.length === 0 || semesters.length === 0}>
@@ -454,7 +454,7 @@ const AdminClassesPage = () => {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
           <div className="text-sm text-amber-800 min-w-0 flex-1">
-            <strong>Semester aktif belum memiliki kelas offering.</strong>{' '}
+            <strong>Semester aktif belum memiliki kelas.</strong>{' '}
             Semester <strong>{getSemesterLabel(activeSemester)}</strong> (status: {activeSemester.status}) tidak memiliki kelas.
             Tambahkan kelas offering agar mahasiswa dapat melakukan pendaftaran KRS.
           </div>
@@ -524,7 +524,7 @@ const AdminClassesPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-gray-500">
           <div className="flex items-center gap-2 min-w-0">
             <BookOpen size={16} className="shrink-0" />
-            <span className="truncate">Menampilkan {(page - 1) * limit + 1} - {Math.min(page * limit, totalItems)} dari {totalItems} kelas offering</span>
+            <span className="truncate">Menampilkan {(page - 1) * limit + 1} - {Math.min(page * limit, totalItems)} dari {totalItems} kelas</span>
           </div>
           {activeSemester && stats.activeSemClasses > 0 && (
             <div className="flex flex-wrap items-center gap-2">
@@ -557,7 +557,7 @@ const AdminClassesPage = () => {
       {loading && (
         <div className="p-12 text-center">
           <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-3" />
-          <p className="text-slate-500">Memuat data kelas offering...</p>
+          <p className="text-slate-500">Memuat data kelas...</p>
         </div>
       )}
 
@@ -578,9 +578,9 @@ const AdminClassesPage = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
             <BookOpen size={32} className="text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum Ada Kelas Offering</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum Ada Kelas</h3>
           <p className="text-gray-500 max-w-md mx-auto mb-2">
-            Kelas offering menghubungkan mata kuliah dengan semester tertentu. Buat kelas offering agar mahasiswa dapat mendaftar melalui KRS.
+            Kelas menghubungkan mata kuliah dengan semester tertentu. Buat kelas agar mahasiswa dapat mendaftar melalui KRS.
           </p>
           {courses.length === 0 ? (
             <p className="text-amber-600 text-sm mb-4">
@@ -590,7 +590,7 @@ const AdminClassesPage = () => {
           ) : (
             <Button onClick={handleOpenCreate} className="mt-4 inline-flex items-center gap-2">
               <Plus size={18} />
-              Tambah Kelas Offering
+              Tambah Kelas
             </Button>
           )}
         </div>

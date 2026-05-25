@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@/app/providers/AuthContext';
 import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import DashboardJumbotron from '@/components/shared/DashboardJumbotron';
-import PageLoader from '../../../components/shared/PageLoader';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
+import PageLoader from '@/shared/components/feedback/PageLoader';
 import { useAdminStats } from '../../user/hooks/useAdminStats';
 
 const AdminDashboard = () => {
@@ -44,7 +44,7 @@ const AdminDashboard = () => {
       <DashboardJumbotron
         icon={LayoutDashboard}
         title={`Selamat Datang, ${user?.name || 'Admin'}!`}
-        subtitle="Kelola user, kelas, dan penugasan dosen dari satu tempat."
+        subtitle="Kelola user, kelas, dan penugasan dosen pembimbing dari satu tempat."
       >
         <button
           onClick={() => navigate('/admin/users')}
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
         </button>
         <button
           onClick={() => navigate('/admin/courses')}
-          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-white/25 rounded-lg transition"
         >
           Kelola Kelas
         </button>
@@ -104,14 +104,14 @@ const AdminDashboard = () => {
               Lihat Semua Users
             </Button>
             <Button variant='secondary' onClick={() => navigate('/admin/users/new')}>
-              Buat User (Admin/Dosen)
+              Buat User Baru
             </Button>
             <Button variant='secondary' onClick={() => navigate('/admin/courses')}>
               Kelola Kelas
             </Button>
           </div>
           <p className='text-sm text-muted-foreground mt-4'>
-            Fokus utama admin: manajemen user, pembuatan kelas, dan penugasan dosen ke kelas.
+            Fokus utama admin: manajemen user, pembuatan kelas, dan penugasan dosen pembimbing.
           </p>
         </CardContent>
       </Card>

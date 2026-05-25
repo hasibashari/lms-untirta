@@ -17,13 +17,8 @@ import {
   adminAssignTeacher,
 } from './course.controller.js';
 
-import { createMaterial, getMaterials } from '../material/material.controller.js';
-import { createMaterialSchema } from '../material/material.validation.js';
-import {
-  getThreads,
-  createThread,
-} from '../forum/forum.controller.js';
-import { createThreadSchema } from '../forum/forum.validation.js';
+// import { createMaterial, getMaterials } from '../material/material.controller.js';
+// import { createMaterialSchema } from '../material/material.validation.js';
 
 // --- Router Setup ---
 const router = express.Router();
@@ -346,117 +341,6 @@ router.get(
   authenticateToken,
   authorizeRole('DOSEN', 'ADMIN'),
   getAvailableStudents
-);
-
-/**
- * @swagger
- * /api/courses/{courseId}/materials:
- *   post:
- *     summary: Create a material for a course
- *     tags: [Materials]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: courseId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [title]
- *             properties:
- *               title:
- *                 type: string
- *               content:
- *                 type: string
- *               videoUrl:
- *                 type: string
- *                 format: uri
- *               order:
- *                 type: integer
- *               isPublished:
- *                 type: boolean
- *               file:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: Material created
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       $ref: '#/components/schemas/Material'
- *       400:
- *         $ref: '#/components/responses/ValidationFailed'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *   get:
- *     summary: List materials for a course
- *     tags: [Materials]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: courseId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Course materials
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/Material'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- */
-router.post(
-  '/:courseId/materials',
-  authenticateToken,
-  authorizeRole('DOSEN', 'ADMIN'),
-  upload.single('file'),
-  validate(createMaterialSchema),
-  createMaterial
-);
-
-router.get(
-  '/:courseId/materials',
-  authenticateToken,
-  getMaterials
-);
-
-// --- Forum Routes (course-scoped) ---
-router.get(
-  '/:courseId/forum',
-  authenticateToken,
-  getThreads
-);
-
-router.post(
-  '/:courseId/forum',
-  authenticateToken,
-  validate(createThreadSchema),
-  createThread
 );
 
 export default router;

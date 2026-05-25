@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { getMyCourses } from '../../course/courseService';
 import { getTeacherDashboardStats, getRecentSubmissions } from '../../submission/submissionService';
-import DashboardJumbotron from '../../../components/shared/DashboardJumbotron';
+import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 
 /**
  * TeacherDashboard
@@ -111,7 +111,7 @@ export default function Dashboard() {
       >
         <Link
           to="/dosen/classes"
-          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-primary/10 rounded-lg transition"
+          className="px-4 py-2 text-sm font-medium bg-background text-primary hover:bg-white/25 rounded-lg transition"
         >
           Lihat Kelas
         </Link>
@@ -238,7 +238,7 @@ export default function Dashboard() {
             {recentSubmissions.map((submission) => (
               <Link
                 key={submission.id}
-                to={`/dosen/courses/${submission.courseId}/assignments/${submission.assignmentId}/submissions`}
+                to={`/dosen/classes/${submission.classId || submission.courseId}/assignments/${submission.assignmentId}/submissions`}
                 className="flex items-center gap-4 p-4 hover:bg-muted/50 transition"
               >
                 {/* Avatar placeholder */}

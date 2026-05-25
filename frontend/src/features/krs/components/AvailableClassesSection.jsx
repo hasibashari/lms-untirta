@@ -1,13 +1,13 @@
 import { memo } from 'react';
 import { Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/shared/components/ui/select';
 import {
   Table,
   TableBody,
@@ -15,9 +15,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import CourseBadge from '@/components/ui/CourseBadge';
-import SectionHeader from '@/components/ui/SectionHeader';
+} from '@/shared/components/ui/table';
+import CourseBadge from '@/features/course/components/CourseBadge';
+import SectionHeader from '@/shared/components/layout/ContentHeader';
 
 const AvailableClassRow = memo(({ cls, index, isEnrolling, handleEnroll, currentPage, itemsPerPage }) => {
   const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;

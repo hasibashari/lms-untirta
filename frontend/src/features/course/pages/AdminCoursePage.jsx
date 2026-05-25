@@ -14,8 +14,8 @@ import {
 import CourseCard from '../components/CourseCard';
 import { getAllCourses, createCourse, updateCourse, deleteCourse } from '../courseService';
 import { getDosen } from '../../user/userService';
-import { Button } from '@/components/ui/button';
-import PaginationComponent from '../../../components/shared/PaginationComponent';
+import { Button } from '@/shared/components/ui/button';
+import PaginationComponent from '@/shared/components/data-display/Pagination';
 
 /**
  * Courses - Kelola Mata Kuliah (Admin)
@@ -204,7 +204,7 @@ const Courses = () => {
             Buat dan kelola katalog mata kuliah untuk sistem KRS
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Jadwal dan ruangan diatur saat membuat Kelas Offering agar sesuai per semester dan section.
+            Jadwal dan ruangan diatur saat membuat Kelas agar sesuai per semester dan section.
           </p>
         </div>
 

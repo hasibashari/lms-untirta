@@ -22,7 +22,7 @@ export default function AllSubmissions() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filterCourse, setFilterCourse] = useState('all');
+  const [filterClass, setFilterClass] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -36,24 +36,24 @@ export default function AllSubmissions() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Get unique courses for filter
-  const uniqueCourses = [...new Map(submissions.map(s => [s.courseId, { id: s.courseId, name: s.courseName }])).values()];
+  // Get unique classes for filter
+  const uniqueClasses = [...new Map(submissions.map(s => [s.classId || s.courseId, { id: s.classId || s.courseId, name: s.className || s.courseName }])).values()];
 
   // Filter and search
   const filteredSubmissions = submissions.filter(submission => {
     const matchSearch =
       submission.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       submission.assignmentTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      submission.courseName?.toLowerCase().includes(searchQuery.toLowerCase());
+      (submission.className || submission.courseName)?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchStatus =
       filterStatus === 'all' ||
       (filterStatus === 'graded' && submission.isGraded) ||
       (filterStatus === 'ungraded' && !submission.isGraded);
 
-    const matchCourse = filterCourse === 'all' || submission.courseId === filterCourse;
+    const matchClass = filterClass === 'all' || (submission.classId || submission.courseId) === filterClass;
 
-    return matchSearch && matchStatus && matchCourse;
+    return matchSearch && matchStatus && matchClass;
   });
 
   // Calculate summary stats
@@ -208,17 +208,17 @@ export default function AllSubmissions() {
               </select>
             </div>
 
-            {/* Course Filter */}
+            {/* Class Filter */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Kelas</label>
               <select
-                value={filterCourse}
-                onChange={(e) => setFilterCourse(e.target.value === 'all' ? 'all' : e.target.value)}
+                value={filterClass}
+                onChange={(e) => setFilterClass(e.target.value === 'all' ? 'all' : e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">Semua Kelas</option>
-                {uniqueCourses.map(course => (
-                  <option key={course.id} value={course.id}>{course.name}</option>
+                {uniqueClasses.map(cls => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
                 ))}
               </select>
             </div>
@@ -260,7 +260,7 @@ export default function AllSubmissions() {
             onClick={() => {
               setSearchQuery('');
               setFilterStatus('all');
-              setFilterCourse('all');
+              setFilterClass('all');
             }}
             className="mt-4 text-blue-600 hover:underline font-medium"
           >
@@ -273,7 +273,7 @@ export default function AllSubmissions() {
             {filteredSubmissions.map((submission) => (
               <Link
                 key={submission.id}
-                to={`/dosen/courses/${submission.courseId}/assignments/${submission.assignmentId}/submissions`}
+                to={`/dosen/classes/${submission.classId || submission.courseId}/assignments/${submission.assignmentId}/submissions`}
                 className="flex items-center gap-4 p-4 hover:bg-slate-50 transition"
               >
                 {/* Avatar */}
@@ -302,7 +302,7 @@ export default function AllSubmissions() {
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <BookOpen size={12} />
-                      {submission.courseName}
+                      {submission.className || submission.courseName}
                     </span>
                   </div>
                 </div>

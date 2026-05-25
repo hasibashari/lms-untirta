@@ -11,15 +11,15 @@ import {
 } from 'lucide-react';
 import { getMaterials } from '../materialService';
 import { getMyKRS } from '../../krs/krsService';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import { Button } from '@/components/ui/button';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import { Button } from '@/shared/components/ui/button';
 
 /**
  * CourseMaterials - Halaman Daftar Materi / Silabus
  * Terinspirasi dari Dicoding: menampilkan silabus dengan progress visual
  */
 const CourseMaterials = () => {
-  const { courseId } = useParams();
+  const { classId } = useParams();
   const navigate = useNavigate();
   const [materials, setMaterials] = useState([]);
   const [course, setCourse] = useState(null);
@@ -27,11 +27,11 @@ const CourseMaterials = () => {
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(() => {
-    if (!courseId) return;
+    if (!classId) return;
     setLoading(true);
     setError(null);
 
-    Promise.all([getMaterials(courseId), getMyKRS()])
+    Promise.all([getMaterials(classId), getMyKRS()])
       .then(([materialsRes, krsRes]) => {
         setMaterials(materialsRes.data);
 
@@ -39,7 +39,7 @@ const CourseMaterials = () => {
           (item) => item.status === 'APPROVED'
         );
         const foundEnrollment = approvedEnrollments.find(
-          (item) => item.class?.course?.id === courseId
+          (item) => item.class?.id === classId
         );
         setCourse(foundEnrollment?.class?.course || null);
       })
@@ -48,7 +48,7 @@ const CourseMaterials = () => {
         setError(err.message || 'Gagal memuat data materi');
       })
       .finally(() => setLoading(false));
-  }, [courseId]);
+  }, [classId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -58,7 +58,7 @@ const CourseMaterials = () => {
     return () => clearTimeout(timer);
   }, [fetchData]);
 
-  if (!courseId) {
+  if (!classId) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-slate-500">Memuat data kelas...</p>
@@ -111,7 +111,7 @@ const CourseMaterials = () => {
       <Breadcrumb
         items={[
           { label: 'Kelas Saya', to: '/mahasiswa/classes' },
-          { label: course?.title || 'Kelas', to: `/mahasiswa/courses/${courseId}` },
+          { label: course?.title || 'Kelas', to: `/mahasiswa/classes/${classId}` },
           { label: 'Materi' },
         ]}
       />
@@ -119,7 +119,7 @@ const CourseMaterials = () => {
       {/* Back Button */}
       <Button
         variant="ghost"
-        onClick={() => navigate(`/mahasiswa/courses/${courseId}`)}
+        onClick={() => navigate(`/mahasiswa/classes/${classId}`)}
         className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 font-medium -ml-2"
       >
         <ChevronLeft size={20} />
@@ -170,7 +170,7 @@ const CourseMaterials = () => {
           {materials.map((material, index) => (
             <Link
               key={material.id}
-              to={`/mahasiswa/courses/${courseId}/materials/${material.id}`}
+              to={`/mahasiswa/classes/${classId}/materials/${material.id}`}
               className="group block"
             >
               <div className="flex items-center gap-4 p-5 bg-card rounded-xl border border-border shadow-sm hover:border-primary/50 hover:shadow-lg transition-all">
@@ -213,7 +213,7 @@ const CourseMaterials = () => {
               </p>
             </div>
             <Link
-              to={`/mahasiswa/courses/${courseId}/materials/${materials[0]?.id}`}
+              to={`/mahasiswa/classes/${classId}/materials/${materials[0]?.id}`}
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200"
             >
               Mulai Belajar

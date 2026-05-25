@@ -1,17 +1,17 @@
-import api from '../../services/apiService';
+import api from '@/shared/api/apiService';
 
 // ========== Thread CRUD ==========
 
-export const getThreads = async (courseId) => {
-  return api.get(`/courses/${courseId}/forum`);
+export const getThreads = async (classId) => {
+  return api.get(`/forum/class/${classId}`);
 };
 
 export const getThread = async (threadId) => {
   return api.get(`/forum/threads/${threadId}`);
 };
 
-export const createThread = async (courseId, data) => {
-  return api.post(`/courses/${courseId}/forum`, data);
+export const createThread = async (classId, data) => {
+  return api.post(`/forum/class/${classId}`, data);
 };
 
 export const updateThread = async (threadId, data) => {

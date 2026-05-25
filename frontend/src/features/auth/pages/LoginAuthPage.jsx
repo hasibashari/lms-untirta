@@ -1,22 +1,33 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Mail, Lock, BookOpen, Eye, EyeOff } from 'lucide-react';
 
-import { useAuth } from '@/contexts/AuthContext';
-
 // UI components
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import SocialLoginButtons from '@/components/ui/SocialLoginButtons';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import NavLink from '@/components/ui/NavLink';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
+import SocialLoginButtons from '@/shared/components/branding/SocialLoginButtons';
+import { Separator } from '@/shared/components/ui/separator';
+import { Button } from '@/shared/components/ui/button';
+import { Checkbox } from '@/shared/components/ui/checkbox';
+import NavLink from '@/shared/components/ui/NavLink';
+
+import { useLoginForm } from '../hooks/useLoginForm';
 
 export default function Login() {
   const { setAuthLayoutBranding } = useOutletContext();
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const {
+    formData,
+    rememberMe,
+    isLoading,
+    error,
+    showPassword,
+    setRememberMe,
+    setShowPassword,
+    handleChange,
+    handleSubmit,
+    handleGoogleLogin,
+    handleFacebookLogin,
+  } = useLoginForm();
 
   useEffect(() => {
     setAuthLayoutBranding({
@@ -28,50 +39,6 @@ export default function Login() {
       },
     });
   }, [setAuthLayoutBranding]);
-
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleChange = (e, field) => {
-    setFormData({ ...formData, [field]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const user = await login(formData.email, formData.password);
-
-      if (rememberMe) {
-        // token sudah tersimpan di localStorage oleh AuthContext
-      }
-
-      if (user?.role === 'ADMIN') navigate('/admin/dashboard');
-      else if (user?.role === 'DOSEN') navigate('/dosen/dashboard');
-      else if (user?.role === 'MAHASISWA') navigate('/mahasiswa/classes');
-      else navigate('/');
-    } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Login gagal.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = () => {
-
-  };
-
-  const handleFacebookLogin = () => {
-
-  };
 
   return (
     <>

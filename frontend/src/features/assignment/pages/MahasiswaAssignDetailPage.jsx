@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getAssignmentDetail } from '../assignmentService';
 import { getMyAssignmentStatus, submitAssignment } from '../../submission/submissionService';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import BackButton from '../../../components/navigation/BackButton';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import BackButton from '@/shared/components/navigation/BackButton';
 import toast from 'react-hot-toast';
 import {
   FileText,
@@ -22,10 +22,10 @@ import {
   ExternalLink,
   Eye,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 export default function AssignmentDetail() {
-  const { courseId, assignmentId } = useParams();
+  const { classId, assignmentId } = useParams();
 
   const [assignment, setAssignment] = useState(null); // State baru untuk detail assignment
   const [status, setStatus] = useState(null); // Status submission
@@ -268,13 +268,13 @@ export default function AssignmentDetail() {
       <Breadcrumb
         items={[
           { label: 'Kelas Saya', to: '/mahasiswa/classes' },
-          { label: 'Kelas', to: `/mahasiswa/courses/${courseId}` },
-          { label: 'Tugas', to: `/mahasiswa/courses/${courseId}/assignments` },
+          { label: 'Kelas', to: `/mahasiswa/classes/${classId}` },
+          { label: 'Tugas', to: `/mahasiswa/classes/${classId}/assignments` },
           { label: assignment.title }, // Gunakan assignment.title
         ]}
       />
 
-      <BackButton fallback={`/mahasiswa/courses/${courseId}/assignments`} />
+      <BackButton fallback={`/mahasiswa/classes/${classId}/assignments`} />
 
       {/* Header */}
       <div className="flex items-start gap-4">

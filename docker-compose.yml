@@ -35,7 +35,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - USER_GRPC_URL=backend:50051
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000" # Secure: Only accessible locally or through Nginx
       - "50051:50051"
     volumes:
       # Persistensi file upload (submission mahasiswa & materi dosen)
@@ -49,6 +49,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
     container_name: lms_frontend
     restart: always
     ports:

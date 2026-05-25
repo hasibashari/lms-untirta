@@ -1,4 +1,4 @@
-import api from '../../services/apiService';
+import api from '@/shared/api/apiService';
 
 // ========== Class Module Endpoints (/api/classes) ==========
 // Full CRUD for class offerings (kelas yang dibuka per semester)
@@ -23,7 +23,7 @@ export const getAllClasses = async (params = {}) => {
   if (params.limit) query.append('limit', params.limit);
   if (params.search) query.append('search', params.search);
   if (params.isEnrollmentOpen) query.append('isEnrollmentOpen', params.isEnrollmentOpen);
-  
+
   const qs = query.toString();
   return api.get(`/classes${qs ? `?${qs}` : ''}`);
 };

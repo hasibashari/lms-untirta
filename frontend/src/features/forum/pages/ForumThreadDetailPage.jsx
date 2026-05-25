@@ -13,8 +13,8 @@ import {
 import { getThread, togglePin, deleteThread, createReply, updateReply, deleteReply } from '../forumService';
 import ReplyCard from '../components/ReplyCard';
 import ReplyComposer from '../components/ReplyComposer';
-import Breadcrumb from '../../../components/navigation/Breadcrumb';
-import MarkdownPreview from '../../../components/ui/MarkdownPreview';
+import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 import toast from 'react-hot-toast';
 
 const roleBadge = {
@@ -36,7 +36,7 @@ const formatDateTime = (dateStr) => {
 };
 
 export default function ForumThreadDetailPage() {
-  const { courseId, threadId } = useParams();
+  const { classId, threadId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -92,7 +92,7 @@ export default function ForumThreadDetailPage() {
     try {
       await deleteThread(threadId);
       toast.success('Diskusi berhasil dihapus');
-      navigate(`${rolePrefix}/courses/${courseId}/forum`, { replace: true });
+      navigate(`${rolePrefix}/classes/${classId}/forum`, { replace: true });
     } catch { /* error handled by apiService */ }
   };
 
@@ -180,14 +180,14 @@ export default function ForumThreadDetailPage() {
       <Breadcrumb
         items={[
           { label: isDosen ? 'Dashboard' : 'Kelas Saya', to: isDosen ? '/dosen/dashboard' : '/mahasiswa/classes' },
-          { label: 'Forum', to: `${rolePrefix}/courses/${courseId}/forum` },
+          { label: 'Forum', to: `${rolePrefix}/classes/${classId}/forum` },
           { label: thread.title },
         ]}
       />
 
       {/* Back link */}
       <button
-        onClick={() => navigate(`${rolePrefix}/courses/${courseId}/forum`)}
+        onClick={() => navigate(`${rolePrefix}/classes/${classId}/forum`)}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition"
       >
         <ArrowLeft size={16} />
@@ -246,7 +246,7 @@ export default function ForumThreadDetailPage() {
               )}
               {isOwner && (
                 <button
-                  onClick={() => navigate(`${rolePrefix}/courses/${courseId}/forum/${threadId}/edit`)}
+                  onClick={() => navigate(`${rolePrefix}/classes/${classId}/forum/${threadId}/edit`)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition"
                 >
                   <Pencil size={14} />

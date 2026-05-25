@@ -22,7 +22,7 @@ import {
 const LearningSidebar = ({
   materials = [],
   currentMaterialId,
-  courseId,
+  classId,
   course,
   isOpen = false,
   onClose = () => { },
@@ -116,7 +116,7 @@ const LearningSidebar = ({
               return (
                 <li key={material.id}>
                   <Link
-                    to={`${basePath}/courses/${courseId}/materials/${material.id}`}
+                    to={`${basePath}/classes/${classId}/materials/${material.id}`}
                     onClick={onClose}
                     className={`
                       flex items-center gap-3 ${collapsed ? 'px-2 justify-center' : 'px-3'} py-3 rounded-xl transition-all
@@ -150,7 +150,7 @@ const LearningSidebar = ({
         {/* Back to Course Home */}
         <div className={`p-4 border-t border-sidebar-border ${collapsed ? 'px-2' : ''}`}>
           <Link
-            to={`${basePath}/courses/${courseId}`}
+            to={`${basePath}/classes/${classId}`}
             onClick={onClose}
             className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-muted text-foreground font-medium rounded-xl hover:bg-muted/80 transition ${collapsed ? 'px-2' : ''
               }`}

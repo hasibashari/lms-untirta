@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/app/providers/AuthContext';
 import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
-import CourseBadge from '@/components/ui/CourseBadge';
+import CourseBadge from '@/features/course/components/CourseBadge';
 
 /**
  * MahasiswaTranscriptPage
