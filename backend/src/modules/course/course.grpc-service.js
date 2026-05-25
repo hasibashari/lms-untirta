@@ -112,15 +112,15 @@ const AddStudentToCourseById = async (call, callback) => {
       include: { student: { select: { id: true, name: true, email: true } } },
     });
 
-      callback(null, {
-        enrollmentId: enrollment.id,
-        enrolledAt: enrollment.createdAt.toISOString(),
-        student: enrollment.student,
-      });
-    } catch (error) {
-      callback({ code: grpc.status.INTERNAL, details: error.message });
-    }
-  },
+    callback(null, {
+      enrollmentId: enrollment.id,
+      enrolledAt: enrollment.createdAt.toISOString(),
+      student: enrollment.student,
+    });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+},
 
   // Mendapatkan semua course yang diikuti oleh mahasiswa
   GetEnrolledCourses: async (call, callback) => {
@@ -167,7 +167,7 @@ const AddStudentToCourseById = async (call, callback) => {
       const courses = enrollments.map(e => {
         const course = e.class.course;
         const studentsCount = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
-        
+
         return {
           enrollmentId: e.id,
           joinedAt: e.createdAt.toISOString(),
@@ -187,58 +187,58 @@ const AddStudentToCourseById = async (call, callback) => {
         };
       });
 
-    callback(null, { courses });
-  } catch (error) {
-    callback({ code: grpc.status.INTERNAL, details: error.message });
-  }
-};
+      callback(null, { courses });
+    } catch (error) {
+      callback({ code: grpc.status.INTERNAL, details: error.message });
+    }
+  };
 
-  // Mendapatkan semua course yang diajar
-  GetTeachingCourses: async (call, callback) => {
-    try {
-      const { teacherId } = call.request;
-      const courses = await prisma.course.findMany({
-        where: { teacherId },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          code: true,
-          semester: true,
-          sks: true,
-          createdAt: true,
-          _count: {
-            select: {
-              materials: true,
-            },
+// Mendapatkan semua course yang diajar
+GetTeachingCourses: async (call, callback) => {
+  try {
+    const { teacherId } = call.request;
+    const courses = await prisma.course.findMany({
+      where: { teacherId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        code: true,
+        semester: true,
+        sks: true,
+        createdAt: true,
+        _count: {
+          select: {
+            materials: true,
           },
-          classes: {
-            select: {
-              _count: {
-                select: {
-                  krsEnrollments: { where: { status: 'APPROVED' } },
-                },
+        },
+        classes: {
+          select: {
+            _count: {
+              select: {
+                krsEnrollments: { where: { status: 'APPROVED' } },
               },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
-      });
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-      const formatted = courses.map(c => {
-        const studentsCount = c.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
-        return {
-          id: c.id,
-          title: c.title,
-          code: c.code,
-          semester: c.semester,
-          sks: c.sks,
-          createdAt: c.createdAt.toISOString(),
-          materialsCount: c._count.materials || 0,
-          studentsCount: studentsCount,
-          description: c.description,
-        };
-      });
+    const formatted = courses.map(c => {
+      const studentsCount = c.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+      return {
+        id: c.id,
+        title: c.title,
+        code: c.code,
+        semester: c.semester,
+        sks: c.sks,
+        createdAt: c.createdAt.toISOString(),
+        materialsCount: c._count.materials || 0,
+        studentsCount: studentsCount,
+        description: c.description,
+      };
+    });
 
     callback(null, { courses });
   } catch (error) {
@@ -268,59 +268,59 @@ const AdminGetAllCourses = async (call, callback) => {
       ]
     };
 
-      const [courses, total] = await Promise.all([
-        prisma.course.findMany({
-          where,
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            code: true,
-            semester: true,
-            sks: true,
-            createdAt: true,
-            teacherId: true,
-            teacher: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
+    const [courses, total] = await Promise.all([
+      prisma.course.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          code: true,
+          semester: true,
+          sks: true,
+          createdAt: true,
+          teacherId: true,
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
-            _count: {
-              select: {
-                materials: true,
-                assignments: true,
-              },
+          },
+          _count: {
+            select: {
+              materials: true,
+              assignments: true,
             },
-            classes: {
-              select: {
-                _count: {
-                  select: {
-                    krsEnrollments: { where: { status: 'APPROVED' } },
-                  },
+          },
+          classes: {
+            select: {
+              _count: {
+                select: {
+                  krsEnrollments: { where: { status: 'APPROVED' } },
                 },
               },
             },
           },
-          orderBy: [{ semester: 'asc' }, { createdAt: 'desc' }],
-          skip,
-          take,
-        }),
-        prisma.course.count({ where }),
-      ]);
+        },
+        orderBy: [{ semester: 'asc' }, { createdAt: 'desc' }],
+        skip,
+        take,
+      }),
+      prisma.course.count({ where }),
+    ]);
 
-      const data = courses.map(c => {
-        const studentsCount = c.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
-        return {
-          ...c,
-          createdAt: c.createdAt.toISOString(),
-          studentsCount: studentsCount,
-          materialsCount: c._count.materials,
-          assignmentsCount: c._count.assignments,
-          teacher: c.teacher || null,
-        };
-      });
+    const data = courses.map(c => {
+      const studentsCount = c.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+      return {
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+        studentsCount: studentsCount,
+        materialsCount: c._count.materials,
+        assignmentsCount: c._count.assignments,
+        teacher: c.teacher || null,
+      };
+    });
 
     callback(null, { data, pagination: meta(total) });
   } catch (error) {
@@ -400,42 +400,42 @@ const AdminUpdateCourse = async (call, callback) => {
   }
 };
 
-  AdminDeleteCourse: async (call, callback) => {
-    try {
-      const { courseId } = call.request;
-      const course = await prisma.course.findUnique({
-        where: { id: courseId },
-        select: {
-          id: true,
-          _count: {
-            select: {
-              materials: true,
-            },
+AdminDeleteCourse: async (call, callback) => {
+  try {
+    const { courseId } = call.request;
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            materials: true,
           },
-          classes: {
-            select: {
-              _count: {
-                select: {
-                  krsEnrollments: { where: { status: 'APPROVED' } },
-                },
+        },
+        classes: {
+          select: {
+            _count: {
+              select: {
+                krsEnrollments: { where: { status: 'APPROVED' } },
               },
             },
           },
         },
-      });
-      if (!course)
-        return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
+      },
+    });
+    if (!course)
+      return callback({ code: grpc.status.NOT_FOUND, details: 'Kelas tidak ditemukan' });
 
-      await prisma.course.delete({ where: { id: courseId } });
-      const totalStudents = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
-      callback(null, {
-        message: 'Kelas berhasil dihapus',
-        deletedStudents: totalStudents,
-      });
-    } catch (error) {
-      callback({ code: grpc.status.INTERNAL, details: error.message });
-    }
-  },
+    await prisma.course.delete({ where: { id: courseId } });
+    const totalStudents = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+    callback(null, {
+      message: 'Kelas berhasil dihapus',
+      deletedStudents: totalStudents,
+    });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+},
 
 const AdminAssignTeacher = async (call, callback) => {
   try {
