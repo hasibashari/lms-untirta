@@ -32,22 +32,46 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Beritahu Express bahwa aplikasi berada di belakang reverse proxy (mis. Nginx / Cloudflare)
+// agar req.protocol, req.secure, dan redirect otomatis menggunakan skema asli (HTTPS jika relevan)
+app.set('trust proxy', true);
+
 // -- MIDDLEWARE --
 // Header keamanan dasar (mis. HSTS, XSS Protection)
 // HSTS dinonaktifkan: jika aktif, browser akan cache redirect ke HTTPS
 // sehingga semua request HTTP otomatis di-redirect ke HTTPS oleh browser.
 // Aktifkan HSTS hanya jika aplikasi sudah berjalan di belakang HTTPS/SSL.
-app.use(helmet({
-  hsts: false,
-}));
+// Catatan: Lewati global helmet untuk rute Swagger (/docs) agar header CSP tidak bertabrakan.
+// Catatan Tambahan: Nonaktifkan 'upgrade-insecure-requests' agar browser tidak memaksa HTTP ke HTTPS secara otomatis.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/docs')) {
+    return next();
+  }
+  helmet({
+    hsts: false,
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'upgrade-insecure-requests': null,
+      },
+    },
+  })(req, res, next);
+});
 
 // Logging terstruktur untuk setiap request (abaikan root '/')
 app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/' } }));
 
-// CORS — baca daftar origin yang diizinkan dari env, fallback untuk dev lokal
+// CORS — baca daftar origin yang diizinkan dari env, fallback untuk dev lokal dan produksi
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'];
+  : [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+      'https://lms-untirta.my.id',
+      'http://lms-untirta.my.id'
+    ];
 
 app.use(cors({
   origin: allowedOrigins,
@@ -63,8 +87,17 @@ app.use(express.json());
 app.use('/uploads', authenticateToken, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Swagger: JSON spec dan UI untuk dokumentasi API
+// Catatan: Nonaktifkan CSP secara spesifik pada rute Swagger agar browser mengizinkan inline scripts/styles bawaan Swagger UI.
 app.get('/docs.json', (_req, res) => res.json(swaggerSpec))
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.use(
+  '/docs',
+  helmet({
+    contentSecurityPolicy: false,
+    hsts: false,
+  }),
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec)
+)
 
 import chatRoutes from './modules/chatbot/chat.routes.js';
 import { forumRouter } from './modules/forum/forum.routes.js';
