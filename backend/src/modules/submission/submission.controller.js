@@ -27,7 +27,7 @@ export const submit = async (req, res) => {
 
     // Persist metadata and generate the URL
     await persistUploadMeta({ userId: req.user.id, file: req.file });
-    const fileUrl = buildFileUrl(req, req.file.filename, 'submission');
+    const fileUrl = buildFileUrl(req, req.file, 'submission');
     const meta = createGrpcMetadata(req);
 
     const result = await grpcSubmitAssignment({

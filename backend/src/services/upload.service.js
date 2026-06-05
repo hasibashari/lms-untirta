@@ -25,14 +25,15 @@ export const persistUploadMeta = async ({
   ttl = DEFAULT_TTL_SECONDS,
 }) => {
   // UUID diasumsikan ada di nama file yang disimpan (tanpa ekstensi)
-  const uuid = path.parse(file.filename).name;
+  const fileNameOrKey = file.filename || file.key || "";
+  const uuid = path.parse(fileNameOrKey).name;
 
   const metadata = {
     originalName: file.originalname,
-    storedName: file.filename,
+    storedName: fileNameOrKey,
     size: String(file.size),
     mimetype: file.mimetype,
-    path: file.path,
+    path: file.path || file.location || "",
     userId: String(userId),
     timestamp: new Date().toISOString(),
   };
@@ -65,7 +66,7 @@ export const deleteUpload = async (userId, uuid) => {
   const key = buildKey(userId, uuid);
   const meta = await redisClient.hGetAll(key);
 
-  if (meta && meta.path) {
+  if (meta && meta.path && !meta.path.startsWith('http')) {
     try {
       await fs.unlink(meta.path);
     } catch (err) {
@@ -92,7 +93,7 @@ export const listUserUploads = async (userId) => {
 
 // Hapus file fisik jika ada — digunakan untuk cleanup manual. Log jika gagal kecuali file sudah tidak ada.
 export const cleanupFile = async (filePath) => {
-  if (!filePath) return;
+  if (!filePath || filePath.startsWith('http')) return;
   try {
     await fs.unlink(filePath);
   } catch (err) {

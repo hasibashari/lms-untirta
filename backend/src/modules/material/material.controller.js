@@ -17,7 +17,7 @@ export const createMaterial = async (req, res) => {
     let fileUrl;
     if (req.file) {
       await persistUploadMeta({ userId: req.user.id, file: req.file });
-      fileUrl = buildFileUrl(req, req.file.filename);
+      fileUrl = buildFileUrl(req, req.file);
     }
 
     // Panggil service untuk membuat materi. `req.user` diasumsikan berasal
@@ -67,7 +67,7 @@ export const updateMaterial = async (req, res) => {
 
     if (req.file) {
       await persistUploadMeta({ userId: req.user.id, file: req.file });
-      updateData.fileUrl = buildFileUrl(req, req.file.filename);
+      updateData.fileUrl = buildFileUrl(req, req.file);
     }
 
     const result = await materialService.updateMaterial(

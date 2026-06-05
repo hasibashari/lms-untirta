@@ -30,6 +30,8 @@
     "pg": "^8.16.3",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
+    "@aws-sdk/client-s3": "^3.1059.0",
+    "multer-s3": "^3.0.1",
     "rate-limit-redis": "^4.3.1",
     "redis": "^5.11.0",
     "swagger-jsdoc": "^6.2.8",
