@@ -28,6 +28,7 @@ message CreateUserRequest {
   string name = 2;
   string password = 3;
   string role = 4;
+  optional string nim = 5;
 }
 
 message UserResponse {
@@ -37,6 +38,7 @@ message UserResponse {
   string role = 4;
   optional bool isDospem = 5;
   optional string createdAt = 6;
+  optional string nim = 7;
 }
 
 message GetAllUsersRequest {
@@ -63,6 +65,7 @@ message UserDetailResponse {
   optional string advisorId = 6;
   AdvisorBasic advisor = 7;
   int32 advisedStudentCount = 8;
+  optional string nim = 9;
 }
 
 message PaginationMeta {
@@ -90,6 +93,7 @@ message UpdateUserRequest {
   optional string name = 3;
   optional string password = 4;
   optional string role = 5;
+  optional string nim = 6;
 }
 
 message UpdateDospemStatusRequest {

@@ -3,6 +3,7 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 import grpc from '@grpc/grpc-js';
 import util from 'util';
 import { createGrpcMetadata } from '../../grpc/helpers/metadata.helper.js';
+import cache from '../../utils/cache.js';
 
 // Controller untuk user yang bertindak sebagai layer HTTP -> gRPC client.
 // Tugas utama: memanggil client gRPC, memetakan error gRPC ke HTTP,
@@ -95,6 +96,7 @@ export const updateUser = async (req, res) => {
     const { id } = req.params;
     const meta = createGrpcMetadata(req);
     const updatedUser = await grpcUpdateUser({ id, ...req.body }, meta);
+    await cache.invalidate(`user:profile:${id}`);
     sendSuccess(res, { statusCode: 200, message: 'Berhasil mengubah user', data: updatedUser });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
@@ -107,6 +109,19 @@ export const deleteUser = async (req, res) => {
     const meta = createGrpcMetadata(req);
     const deletedUser = await grpcDeleteUser({ id }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Berhasil menghapus user', data: deletedUser });
+  } catch (error) {
+    return mapGrpcErrorToHttp(res, error);
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const id = req.user.id;
+    const { name, email, password, nim } = req.body;
+    const meta = createGrpcMetadata(req);
+    const updatedUser = await grpcUpdateUser({ id, name, email, password, nim }, meta);
+    await cache.invalidate(`user:profile:${id}`);
+    sendSuccess(res, { statusCode: 200, message: 'Profil berhasil diperbarui', data: updatedUser });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
   }

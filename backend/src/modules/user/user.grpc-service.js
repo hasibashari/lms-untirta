@@ -55,9 +55,10 @@ const CreateUserByAdmin = async (call, callback) => {
         name: data.name,
         password: hashedPassword,
         role: data.role,
+        nim: data.nim || undefined,
         advisorId: assignedAdvisorId,
       },
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, createdAt: true, nim: true },
     });
 
     callback(null, { ...user, createdAt: user.createdAt.toISOString() });
@@ -79,7 +80,7 @@ const GetAllUsers = async (call, callback) => {
       prisma.user.findMany({
         where,
         select: {
-          id: true, name: true, email: true, role: true, isDospem: true, advisorId: true,
+          id: true, name: true, email: true, role: true, isDospem: true, advisorId: true, nim: true,
           advisor: { select: { id: true, name: true, email: true } },
           _count: { select: { advisedStudents: true } },
         },
@@ -106,7 +107,7 @@ const GetUserById = async (call, callback) => {
     const user = await prisma.user.findUnique({
       where: { id: call.request.id },
       select: {
-        id: true, name: true, email: true, role: true, isDospem: true, advisorId: true,
+        id: true, name: true, email: true, role: true, isDospem: true, advisorId: true, nim: true,
         advisor: { select: { id: true, name: true, email: true } },
         _count: { select: { advisedStudents: true } }
       },
@@ -141,9 +142,10 @@ const UpdateUser = async (call, callback) => {
         email: data.email || undefined,
         name: data.name || undefined,
         role: data.role || undefined,
+        nim: data.nim || undefined,
         password: data.password ? await hashPassword(data.password) : undefined,
       },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, nim: true },
     });
 
     callback(null, updated);

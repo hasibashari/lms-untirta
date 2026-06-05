@@ -107,6 +107,10 @@ export const AuthProvider = ({ children }) => {
   // ===== MEMOIZED CONTEXT VALUE =====
   // Mencegah re-render semua consumers ketika AuthProvider re-render
   // Value hanya berubah ketika user, token, atau loading berubah
+  const updateUserContext = useCallback((newData) => {
+    setUser((prev) => ({ ...prev, ...newData }));
+  }, []);
+
   const value = useMemo(() => ({
     user,
     token,
@@ -114,7 +118,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     login,
     logout,
-  }), [user, token, loading, login, logout]);
+    updateUserContext,
+  }), [user, token, loading, login, logout, updateUserContext]);
 
   return (
     <AuthContext.Provider value={value}>

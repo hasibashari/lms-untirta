@@ -34,6 +34,7 @@ const MahasiswaDashboard = lazy(() => import('../../features/dashboard/pages/Mah
 const AdminUsers = lazy(() => import('../../features/user/pages/AdminUserPage'));
 const AdminCreateUser = lazy(() => import('../../features/user/pages/AdminUserCreatePage'));
 const AdminEditUser = lazy(() => import('../../features/user/pages/AdminUserEditPage'));
+const ProfilePage = lazy(() => import('../../features/user/pages/ProfilePage'));
 
 // Course module
 const AdminCourses = lazy(() => import('../../features/course/pages/AdminCoursePage'));
@@ -114,6 +115,13 @@ function AppRoutes() {
 
       {/* ── Error pages ── */}
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+      {/* ── Profile (All Authenticated Users) ── */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/profile" element={<Lazy component={ProfilePage} />} />
+        </Route>
+      </Route>
 
       {/* ── Admin (DashboardLayout) ── */}
       <Route element={<ProtectedRoute />}>

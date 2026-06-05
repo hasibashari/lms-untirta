@@ -49,3 +49,15 @@ export const bulkAssignAdvisorSchema = z.object({
     advisorId: z.string().uuid('Advisor ID tidak valid').nullable().optional(),
   }),
 });
+
+/**
+ * Zod validation schema for updating user profile.
+ */
+export const updateProfileSchema = z.object({
+  body: z.object({
+    name: z.string().min(3, { message: 'Nama terlalu pendek' }).optional(),
+    email: z.string().email({ message: 'Email tidak valid' }).optional(),
+    password: z.string().min(8, { message: 'Password minimal 8 karakter' }).optional(),
+    nim: z.string().optional(),
+  }),
+});

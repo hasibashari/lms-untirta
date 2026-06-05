@@ -14,14 +14,50 @@ import {
   getAdminStats,
   updateUser,
   deleteUser,
+  updateProfile,
 } from './user.controller.js';
-import { createUserSchema, updateDospemSchema, assignAdvisorSchema, bulkAssignAdvisorSchema } from './user.validation.js';
+import { createUserSchema, updateDospemSchema, assignAdvisorSchema, bulkAssignAdvisorSchema, updateProfileSchema } from './user.validation.js';
 
 const router = express.Router();
 
-// Logic: Hanya Admin yang boleh akses route di file ini
-// Kita pasang middleware di level router agar berlaku untuk SEMUA endpoint di bawahnya
+// Logic: Endpoint profil hanya butuh autentikasi
 router.use(authenticateToken);
+
+/**
+ * @swagger
+ * /api/users/profile:
+ *   put:
+ *     summary: Update current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *               nim:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       409:
+ *         description: Email already registered
+ */
+router.put('/profile', validate(updateProfileSchema), updateProfile);
+
+// Logic: Sisa endpoint di bawah ini hanya untuk Admin
 router.use(authorizeRole('ADMIN'));
 
 /**

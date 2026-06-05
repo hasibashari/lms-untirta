@@ -38,14 +38,20 @@ const ProfileDropdown = () => {
     {
       label: 'Profile',
       icon: User,
-      disabled: true,
-      onClick: () => { },
+      disabled: false,
+      onClick: () => {
+        navigate('/profile');
+        setIsOpen(false);
+      },
     },
     {
       label: 'Settings',
       icon: Settings,
-      disabled: true,
-      onClick: () => { },
+      disabled: false,
+      onClick: () => {
+        navigate('/profile?tab=settings');
+        setIsOpen(false);
+      },
     },
   ];
 

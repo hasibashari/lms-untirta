@@ -64,6 +64,7 @@ const loginUser = async ({ email, password }) => {
       password: true,
       role: true,
       isDospem: true,
+      nim: true,
     },
   });
 
@@ -91,6 +92,7 @@ const loginUser = async ({ email, password }) => {
       email: user.email,
       role: user.role,
       isDospem: user.isDospem,
+      nim: user.nim,
     },
   };
 };

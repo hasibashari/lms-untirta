@@ -14,6 +14,10 @@ export const updateUser = (userId, payload) => {
   return api.put(`/users/${userId}`, payload);
 };
 
+export const updateProfile = (payload) => {
+  return api.put('/users/profile', payload);
+};
+
 export const deleteUser = (userId) => {
   return api.delete(`/users/${userId}`);
 };
