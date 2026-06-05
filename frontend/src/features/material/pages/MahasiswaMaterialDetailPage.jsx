@@ -296,10 +296,10 @@ const MaterialDetail = () => {
                         <p className="text-xs text-slate-500">Klik unduh untuk membuka file</p>
                       </div>
                     </div>
-                    <a 
-                      href={material.fileUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={material.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       download
                       className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition shadow-sm whitespace-nowrap"
                     >

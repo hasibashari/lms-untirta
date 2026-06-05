@@ -12,8 +12,6 @@ import {
   Eye,
   X,
   Edit,
-  Paperclip,
-  DownloadCloud,
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials, deleteMaterial } from '../materialService';
 import MaterialPreviewCard from '../components/MaterialPreviewCard';
