@@ -430,3 +430,67 @@ export const GetOpenClasses = async (call, callback) => {
     callback({ code: grpc.status.INTERNAL, details: error.message });
   }
 };
+
+export const GetStudentsByClass = async (call, callback) => {
+  try {
+    const { classId, userId, userRole } = call.request;
+
+    const classOffering = await prisma.class.findUnique({
+      where: { id: classId },
+      include: { course: true }
+    });
+
+    if (!classOffering) return callback({ code: grpc.status.NOT_FOUND, details: 'Data tidak ditemukan' });
+
+    if (userRole === 'DOSEN' && classOffering.lecturerId !== userId && classOffering.course.teacherId !== userId) {
+      return callback({ code: grpc.status.PERMISSION_DENIED, details: 'Akses ditolak' });
+    }
+
+    const enrollments = await prisma.krsEnrollment.findMany({
+      where: { classId: classOffering.id, status: 'APPROVED' },
+      include: { student: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    callback(null, {
+      enrollments: enrollments.map(e => ({
+        enrollmentId: e.id,
+        enrolledAt: e.createdAt.toISOString(),
+        student: e.student,
+      }))
+    });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+};
+
+export const GetAvailableStudentsForClass = async (call, callback) => {
+  try {
+    const { classId, userId, userRole } = call.request;
+
+    const classOffering = await prisma.class.findUnique({
+      where: { id: classId },
+      include: { course: true }
+    });
+
+    if (!classOffering) return callback({ code: grpc.status.NOT_FOUND, details: 'Data tidak ditemukan' });
+
+    if (userRole === 'DOSEN' && classOffering.lecturerId !== userId && classOffering.course.teacherId !== userId) {
+      return callback({ code: grpc.status.PERMISSION_DENIED, details: 'Akses ditolak' });
+    }
+
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'MAHASISWA',
+        krsEnrollments: { none: { classId: classOffering.id, status: 'APPROVED' } },
+      },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: 'asc' },
+    });
+
+    callback(null, { students });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+};
+

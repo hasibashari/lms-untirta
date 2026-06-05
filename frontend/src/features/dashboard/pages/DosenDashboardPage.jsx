@@ -47,7 +47,7 @@ export default function Dashboard() {
   const statsCards = [
     {
       label: 'Total Kelas',
-      value: stats?.totalCourses || 0,
+      value: stats?.totalClasses || 0,
       icon: BookOpen,
       color: 'blue',
       to: '/dosen/classes',

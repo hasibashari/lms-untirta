@@ -75,3 +75,17 @@ export const toggleClassEnrollment = async (classId, isEnrollmentOpen) => {
 export const deleteClass = async (classId) => {
   return api.delete(`/classes/${classId}`);
 };
+
+/**
+ * [DOSEN, ADMIN] Get students enrolled in a class
+ */
+export const getClassStudents = async (classId) => {
+  return api.get(`/classes/${classId}/students`);
+};
+
+/**
+ * [DOSEN, ADMIN] Get students available to enroll in a class
+ */
+export const getAvailableStudentsForClass = async (classId) => {
+  return api.get(`/classes/${classId}/available-students`);
+};

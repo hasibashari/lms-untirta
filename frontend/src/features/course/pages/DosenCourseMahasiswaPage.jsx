@@ -6,7 +6,7 @@ import {
   Mail,
   Info,
 } from 'lucide-react';
-import { getCourseStudents } from '../courseService';
+import { getClassStudents } from '../../class/classService';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 
 /**
@@ -29,7 +29,7 @@ export default function Students() {
     setLoading(true);
     setError(null);
 
-    getCourseStudents(classId)
+    getClassStudents(classId)
       .then(res => {
         // API returns: [{ enrollmentId, enrolledAt, student: { id, name, email } }]
         // Transform to flat structure: [{ id, name, email, enrollmentId, enrolledAt }]

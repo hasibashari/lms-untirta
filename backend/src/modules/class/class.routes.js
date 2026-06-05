@@ -18,6 +18,8 @@ import {
   toggleEnrollment,
   remove,
   getStats,
+  getStudentsByClass,
+  getAvailableStudentsForClass,
 } from './class.controller.js';
 
 const router = express.Router();
@@ -410,6 +412,20 @@ router.delete(
   authenticateToken,
   authorizeRole('ADMIN'),
   remove
+);
+
+router.get(
+  '/:id/students',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  getStudentsByClass
+);
+
+router.get(
+  '/:id/available-students',
+  authenticateToken,
+  authorizeRole('DOSEN', 'ADMIN'),
+  getAvailableStudentsForClass
 );
 
 export default router;

@@ -16,25 +16,18 @@ export const createMaterial = async (classId, teacherId, data) => {
     where: { id: classId },
   });
 
-  const course = await prisma.course.findUnique({
-    where: { id: classId },
-  });
-
-  if (!classOffering && !course) {
-    throw new AppError(404, 'Kelas/Mata Kuliah tidak ditemukan');
+  if (!classOffering) {
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 2. Validasi kepemilikan: hanya dosen pengampu
-  if (classOffering && classOffering.lecturerId !== teacherId) {
+  if (classOffering.lecturerId !== teacherId) {
     throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu kelas ini');
-  }
-  if (!classOffering && course && course.teacherId !== teacherId) {
-    throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu mata kuliah ini');
   }
 
   // 3. AUTO-ORDERING: tentukan urutan materi berikutnya
   const lastMaterial = await prisma.material.findFirst({
-    where: classOffering ? { classId: classOffering.id } : { courseId: course.id, classId: null },
+    where: { classId: classOffering.id },
     orderBy: { order: 'desc' }, // ambil materi dengan order terbesar
   });
 
@@ -48,8 +41,8 @@ export const createMaterial = async (classId, teacherId, data) => {
       fileUrl: data.fileUrl,
       videoUrl: data.videoUrl,
       order: newOrder,
-      classId: classOffering ? classOffering.id : null,
-      courseId: classOffering ? classOffering.courseId : course.id,
+      classId: classOffering.id,
+      courseId: classOffering.courseId,
     },
     select: {
       id: true,
@@ -72,7 +65,7 @@ export const createMaterial = async (classId, teacherId, data) => {
 };
 
 export const getMaterials = async (classId, userId, userRole) => {
-  // Jika mahasiswa, pastikan sudah terdaftar di kelas atau course
+  // Jika mahasiswa, pastikan sudah terdaftar di kelas
   if (userRole === 'MAHASISWA') {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
@@ -82,28 +75,14 @@ export const getMaterials = async (classId, userId, userRole) => {
       },
     });
     if (!enrollment) {
-      const courseEnrollment = await prisma.krsEnrollment.findFirst({
-        where: {
-          studentId: userId,
-          class: { courseId: classId },
-          status: 'APPROVED',
-        }
-      });
-      if (!courseEnrollment) {
-        throw new AppError(403, 'Anda belum terdaftar di kelas/mata kuliah ini');
-      }
+      throw new AppError(403, 'Anda belum terdaftar di kelas ini');
     }
   }
 
   // Ambil daftar materi, terurut berdasarkan 'order' (naik)
   return await cache.getOrSet(`materials:list:${classId}`, async () => {
     return await prisma.material.findMany({
-      where: {
-        OR: [
-          { classId },
-          { courseId: classId, classId: null }
-        ]
-      },
+      where: { classId },
       select: {
         id: true,
         title: true,
@@ -147,7 +126,7 @@ export const getMaterialById = async (materialId, userId, userRole) => {
   }
 
   // Otorisasi: dosen pengampu atau admin boleh, mahasiswa harus terdaftar
-  if (userRole === 'DOSEN' && (material.class?.lecturerId !== userId && material.course.teacherId !== userId)) {
+  if (userRole === 'DOSEN' && material.class?.lecturerId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
@@ -155,7 +134,7 @@ export const getMaterialById = async (materialId, userId, userRole) => {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        ...(material.classId ? { classId: material.classId } : { class: { courseId: material.courseId } }),
+        classId: material.classId,
         status: 'APPROVED',
       },
     });
@@ -226,7 +205,7 @@ export const updateMaterial = async (materialId, userId, userRole, data) => {
   }
 
   // Hanya dosen pengampu atau admin yang boleh mengedit
-  if (userRole === 'DOSEN' && (material.class?.lecturerId !== userId && material.course.teacherId !== userId)) {
+  if (userRole === 'DOSEN' && material.class?.lecturerId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 
@@ -293,7 +272,7 @@ export const deleteMaterial = async (materialId, userId, userRole) => {
   }
 
   // Otorisasi penghapusan
-  if (userRole === 'DOSEN' && (material.class?.lecturerId !== userId && material.course.teacherId !== userId)) {
+  if (userRole === 'DOSEN' && material.class?.lecturerId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan materi dari kelas Anda');
   }
 

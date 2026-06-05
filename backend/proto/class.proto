@@ -14,6 +14,8 @@ service ClassService {
   rpc UpdateClass (UpdateClassRequest) returns (ClassResponse);
   rpc ToggleEnrollment (ToggleEnrollmentRequest) returns (ClassResponse);
   rpc DeleteClass (DeleteClassRequest) returns (DeleteClassResponse);
+  rpc GetStudentsByClass (ClassAccessRequest) returns (ClassStudentsResponse);
+  rpc GetAvailableStudentsForClass (ClassAccessRequest) returns (AvailableStudentsResponse);
 }
 
 // Common types
@@ -150,4 +152,30 @@ message DeleteClassRequest {
 message DeleteClassResponse {
   string message = 1;
   string deletedId = 2;
+}
+
+message ClassAccessRequest {
+  string classId = 1;
+  string userId = 2;
+  string userRole = 3;
+}
+
+message BasicUser {
+  string id = 1;
+  string name = 2;
+  optional string email = 3;
+}
+
+message EnrollmentResponse {
+  string enrollmentId = 1;
+  string enrolledAt = 2;
+  BasicUser student = 3;
+}
+
+message ClassStudentsResponse {
+  repeated EnrollmentResponse enrollments = 1;
+}
+
+message AvailableStudentsResponse {
+  repeated BasicUser students = 1;
 }

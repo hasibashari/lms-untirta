@@ -5,28 +5,12 @@ import cache from '../../utils/cache.js';
 // ======= GET ASSIGNMENTS BY CLASS (WITH SUBMISSION STATUS) =======
 export const getAssignmentsByClass = async (id, userId, userRole) => {
   // 1. Cari berdasarkan Class ID
-  let classOffering = await prisma.class.findUnique({
+  const classOffering = await prisma.class.findUnique({
     where: { id: id },
   });
 
-  let whereClause;
-  let targetCourseId;
-
-  if (classOffering) {
-    whereClause = { classId: id };
-    targetCourseId = classOffering.courseId;
-  } else {
-    // 2. Fallback: Cari berdasarkan Course ID jika Class ID tidak ditemukan
-    const course = await prisma.course.findUnique({
-      where: { id: id },
-    });
-
-    if (!course) {
-      throw new AppError(404, 'Kelas atau Mata Kuliah tidak ditemukan');
-    }
-
-    whereClause = { courseId: id };
-    targetCourseId = id;
+  if (!classOffering) {
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
   // 3. Validasi akses (Enrollment check)
@@ -34,7 +18,7 @@ export const getAssignmentsByClass = async (id, userId, userRole) => {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        class: { courseId: targetCourseId },
+        classId: id,
         status: 'APPROVED',
       },
     });
@@ -45,7 +29,7 @@ export const getAssignmentsByClass = async (id, userId, userRole) => {
   }
 
   const assignments = await prisma.assignment.findMany({
-    where: whereClause,
+    where: { classId: id },
     select: {
       id: true,
       title: true,
@@ -89,17 +73,13 @@ export const getAssignmentsByClass = async (id, userId, userRole) => {
 // ======= CREATE ASSIGNMENT =======
 export const createAssignment = async (classId, teacherId, data) => {
   const classOffering = await prisma.class.findUnique({ where: { id: classId } });
-  const course = await prisma.course.findUnique({ where: { id: classId } });
 
-  if (!classOffering && !course) {
-    throw new AppError(404, 'Kelas/Mata Kuliah tidak ditemukan');
+  if (!classOffering) {
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
-  if (classOffering && classOffering.lecturerId !== teacherId) {
+  if (classOffering.lecturerId !== teacherId) {
     throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu kelas ini');
-  }
-  if (!classOffering && course && course.teacherId !== teacherId) {
-    throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu mata kuliah ini');
   }
 
   const newAssignment = await prisma.assignment.create({
@@ -107,8 +87,8 @@ export const createAssignment = async (classId, teacherId, data) => {
       title: data.title,
       description: data.description,
       dueDate: new Date(data.dueDate),
-      classId: classOffering ? classOffering.id : null,
-      courseId: classOffering ? classOffering.courseId : course.id,
+      classId: classOffering.id,
+      courseId: classOffering.courseId,
     },
     select: {
       id: true,
@@ -164,7 +144,7 @@ export const updateAssignment = async (assignmentId, userId, userRole, data) => 
     throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
-  if (userRole === 'DOSEN' && (assignment.class?.lecturerId !== userId && assignment.course.teacherId !== userId)) {
+  if (userRole === 'DOSEN' && assignment.class?.lecturerId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan tugas dari kelas Anda');
   }
 
@@ -225,7 +205,7 @@ export const deleteAssignment = async (assignmentId, userId, userRole) => {
     throw new AppError(404, 'Tugas tidak ditemukan');
   }
 
-  if (userRole === 'DOSEN' && (assignment.class?.lecturerId !== userId && assignment.course.teacherId !== userId)) {
+  if (userRole === 'DOSEN' && assignment.class?.lecturerId !== userId) {
     throw new AppError(403, 'Akses ditolak: Ini bukan tugas dari kelas Anda');
   }
 

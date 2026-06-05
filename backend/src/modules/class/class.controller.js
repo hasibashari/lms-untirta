@@ -15,7 +15,8 @@ const grpcGetClassStats = util.promisify(classClient.GetClassStats).bind(classCl
 const grpcUpdateClass = util.promisify(classClient.UpdateClass).bind(classClient);
 const grpcToggleEnrollment = util.promisify(classClient.ToggleEnrollment).bind(classClient);
 const grpcDeleteClass = util.promisify(classClient.DeleteClass).bind(classClient);
-
+const grpcGetStudentsByClass = util.promisify(classClient.GetStudentsByClass).bind(classClient);
+const grpcGetAvailableStudentsForClass = util.promisify(classClient.GetAvailableStudentsForClass).bind(classClient);
 // ======================== CREATE ========================
 
 export const create = async (req, res) => {
@@ -220,3 +221,46 @@ export const remove = async (req, res) => {
     return handleError(res, error);
   }
 };
+
+export const getStudentsByClass = async (req, res) => {
+  try {
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetStudentsByClass({
+      classId: req.params.id,
+      userId: req.user.id,
+      userRole: req.user.role,
+    }, meta);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Daftar mahasiswa berhasil diambil',
+      data: result.enrollments || [],
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+
+export const getAvailableStudentsForClass = async (req, res) => {
+  try {
+    const meta = createGrpcMetadata(req);
+    const result = await grpcGetAvailableStudentsForClass({
+      classId: req.params.id,
+      userId: req.user.id,
+      userRole: req.user.role,
+    }, meta);
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Daftar mahasiswa yang tersedia berhasil diambil',
+      data: result.students || [],
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+

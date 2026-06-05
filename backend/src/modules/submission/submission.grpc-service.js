@@ -319,23 +319,15 @@ export const GetTeacherDashboardStats = async (call, callback) => {
   try {
     const { teacherId } = call.request;
 
-    const courses = await prisma.course.findMany({
-      where: { teacherId },
+    const classes = await prisma.class.findMany({
+      where: { lecturerId: teacherId },
       select: {
         id: true,
         _count: {
           select: {
             materials: true,
             assignments: true,
-          },
-        },
-        classes: {
-          select: {
-            _count: {
-              select: {
-                krsEnrollments: { where: { status: 'APPROVED' } },
-              },
-            },
+            krsEnrollments: { where: { status: 'APPROVED' } },
           },
         },
       },
@@ -345,11 +337,10 @@ export const GetTeacherDashboardStats = async (call, callback) => {
     let totalMaterials = 0;
     let totalAssignments = 0;
 
-    for (const course of courses) {
-      const studentsInCourse = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
-      totalStudents += studentsInCourse;
-      totalMaterials += course._count.materials;
-      totalAssignments += course._count.assignments;
+    for (const cls of classes) {
+      totalStudents += cls._count?.krsEnrollments || 0;
+      totalMaterials += cls._count?.materials || 0;
+      totalAssignments += cls._count?.assignments || 0;
     }
 
     // 3. Statistik submission
@@ -359,13 +350,13 @@ export const GetTeacherDashboardStats = async (call, callback) => {
     const [pendingGrading, recentSubmissionsCount] = await Promise.all([
       prisma.submission.count({
         where: {
-          assignment: { OR: [{ class: { lecturerId: teacherId } }, { course: { teacherId } }] },
+          assignment: { class: { lecturerId: teacherId } },
           grade: null,
         },
       }),
       prisma.submission.count({
         where: {
-          assignment: { OR: [{ class: { lecturerId: teacherId } }, { course: { teacherId } }] },
+          assignment: { class: { lecturerId: teacherId } },
           submittedAt: { gte: sevenDaysAgo },
         },
       }),
@@ -374,7 +365,7 @@ export const GetTeacherDashboardStats = async (call, callback) => {
     callback(null, {
       message: 'Dashboard stats berhasil diambil',
       data: {
-        totalCourses: courses.length,
+        totalClasses: classes.length,
         totalStudents,
         totalMaterials,
         totalAssignments,
@@ -394,7 +385,7 @@ export const GetRecentSubmissionsForTeacher = async (call, callback) => {
     const submissions = await prisma.submission.findMany({
       where: {
         assignment: {
-          OR: [{ class: { lecturerId: teacherId } }, { course: { teacherId } }],
+          class: { lecturerId: teacherId },
         },
       },
       include: {

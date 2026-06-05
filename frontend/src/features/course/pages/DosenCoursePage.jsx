@@ -13,7 +13,7 @@ import {
   Award,
   MessageSquare,
 } from 'lucide-react';
-import { getCourseStudents } from '../courseService';
+import { getClassStudents } from '../../class/classService';
 import { getClassById } from '../../class/classService';
 import { getMaterials } from '../../material/materialService';
 import { getAssignments } from '../../assignment/assignmentService';
@@ -42,7 +42,7 @@ export default function CourseHome() {
       getClassById(classId),
       getMaterials(classId),
       getAssignments(classId),
-      getCourseStudents(classId),
+      getClassStudents(classId),
     ])
       .then(([classRes, materialsRes, assignmentsRes, studentsRes]) => {
         setClassData(classRes.data);
