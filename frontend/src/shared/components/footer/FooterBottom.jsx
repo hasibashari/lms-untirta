@@ -13,7 +13,7 @@ const FooterBottom = ({ socials = [] }) => (
 
       {/* Copyright */}
       <div className="text-sm text-slate-500 text-center md:text-left">
-        &copy; {new Date().getFullYear()} Spada Indonesia. Hak Cipta Dilindungi.
+        &copy; {new Date().getFullYear()} Universitas Sultan Ageng Tirtayasa. Hak Cipta Dilindungi.
         <span className="hidden sm:inline mx-2">|</span>
         <span className="flex sm:inline items-center justify-center gap-1 mt-1 sm:mt-0">
           Dibuat dengan <Heart size={12} className="text-red-500 fill-red-500" /> untuk Pendidikan Indonesia.

@@ -33,7 +33,7 @@ export const FOOTER_LINKS = {
   tentang: {
     title: "Tentang Kami",
     items: [
-      { label: "Profil SPADA", href: "#" },
+      { label: "Profil SPADA UNTIRTA", href: "#" },
       { label: "Panduan Pengguna", href: "#" },
       { label: "Berita & Artikel", href: "#" },
       { label: "FAQ / Bantuan", href: "#" },
@@ -59,12 +59,12 @@ export const SOCIAL_LINKS = [
  */
 export const CONTACT_INFO = {
   address: {
-    line1: "Gedung D, Kemendikbud Ristek,",
-    line2: "Jl. Jenderal Sudirman, Senayan,",
-    line3: "Jakarta Pusat 10270"
+    line1: "Kampus Sindangsari,",
+    line2: "Jl. Raya Pabuaran,",
+    line3: "Kab. Serang, Banten 42163"
   },
-  phone: "+62 21 5794 6104",
-  email: "sekretariat@spada.id"
+  phone: "+62 254 280330",
+  email: "helpdesk@untirta.ac.id"
 };
 
 /**
@@ -87,7 +87,7 @@ export const TESTIMONIALS = [
     id: 1,
     name: "Sarah Amalia",
     role: "Mahasiswa Informatika, ITB",
-    content: "SPADA sangat membantu saya mengakses materi lintas kampus. Modul React-nya sangat terstruktur dan mudah dipahami bahkan untuk pemula. Sertifikatnya juga valid untuk portofolio!",
+    content: "SPADA UNTIRTA sangat membantu saya mengakses materi. Modul React-nya sangat terstruktur dan mudah dipahami bahkan untuk pemula. Sertifikatnya juga valid untuk portofolio!",
     rating: 5,
     avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d"
   },
@@ -103,7 +103,7 @@ export const TESTIMONIALS = [
     id: 3,
     name: "Rudi Hartono",
     role: "Alumni / Web Developer",
-    content: "Dulu saya kesulitan mencari kursus berkualitas yang gratis. Berkat SPADA, saya bisa belajar skill baru yang relevan dengan industri saat ini. Sekarang saya sudah bekerja di Startup Unicorn.",
+    content: "Dulu saya kesulitan mencari kursus berkualitas yang gratis. Berkat SPADA UNTIRTA, saya bisa belajar skill baru yang relevan dengan industri saat ini. Sekarang saya sudah bekerja di Startup Unicorn.",
     rating: 4,
     avatar: "https://i.pravatar.cc/150?u=a04258114e29026302d"
   },

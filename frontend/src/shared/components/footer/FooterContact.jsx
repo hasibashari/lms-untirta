@@ -9,12 +9,12 @@ import { MapPin, Phone, Mail } from 'lucide-react';
 const FooterContact = ({
   contactInfo = {
     address: {
-      line1: "Gedung D, Kemendikbud Ristek,",
-      line2: "Jl. Jenderal Sudirman, Senayan,",
-      line3: "Jakarta Pusat 10270"
+      line1: "Kampus Sindangsari,",
+      line2: "Jl. Raya Pabuaran,",
+      line3: "Kab. Serang, Banten 42163"
     },
-    phone: "+62 21 5794 6104",
-    email: "sekretariat@spada.id"
+    phone: "+62 254 280330",
+    email: "helpdesk@untirta.ac.id"
   }
 }) => (
   <ul className="space-y-4">

@@ -97,7 +97,7 @@ const AuthBranding = ({
 
       {/* Footer Copyright */}
       <div className="relative z-10 text-sm text-blue-200/60">
-        &copy; {new Date().getFullYear()} Spada Indonesia.{isRegister && ' All rights reserved.'}
+        &copy; {new Date().getFullYear()} Universitas Sultan Ageng Tirtayasa.{isRegister && ' All rights reserved.'}
       </div>
     </div>
   );

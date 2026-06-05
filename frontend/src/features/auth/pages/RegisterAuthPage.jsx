@@ -74,7 +74,7 @@ export default function Register() {
       <div className="mb-8 text-center md:text-left">
         <h2 className="text-2xl font-bold text-gray-900">Buat Akun Baru</h2>
         <p className="text-gray-500 mt-2 text-sm">
-          Lengkapi data diri Anda untuk mengakses layanan SPADA.
+          Lengkapi data diri Anda untuk mengakses layanan SPADA UNTIRTA.
         </p>
       </div>
 

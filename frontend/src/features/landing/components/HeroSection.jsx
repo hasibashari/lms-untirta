@@ -90,7 +90,7 @@ const HeroSection = () => {
 
             {/* Subheadline */}
             <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-lg">
-              Bergabunglah dengan ekosistem SPADA Indonesia. Temukan ribuan mata kuliah dari perguruan tinggi terbaik, tingkatkan kompetensi, dan raih masa depan gemilang.
+              Bergabunglah dengan ekosistem SPADA UNTIRTA. Temukan ribuan mata kuliah dari perguruan tinggi terbaik, tingkatkan kompetensi, dan raih masa depan gemilang.
             </p>
 
             {/* Search Bar Action */}

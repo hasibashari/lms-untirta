@@ -18,6 +18,7 @@ import UnauthorizedPage from '../../features/error/pages/UnauthorizedPage';
 
 // Public pages
 import Home from '../../features/landing/pages/HomePage';
+import About from '../../features/landing/pages/AboutPage';
 
 // Auth module
 import Login from '../../features/auth/pages/LoginAuthPage';
@@ -107,6 +108,7 @@ function AppRoutes() {
       {/* ── Public ── */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
       </Route>
 
       {/* ── Auth ── */}
