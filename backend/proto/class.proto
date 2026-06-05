@@ -56,6 +56,8 @@ message Class {
   Course course = 11;
   Lecturer lecturer = 12;
   int32 krsEnrollmentsCount = 13;
+  int32 materialsCount = 14;
+  int32 assignmentsCount = 15;
 }
 
 message PaginationMeta {

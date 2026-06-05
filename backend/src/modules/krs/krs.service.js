@@ -502,6 +502,11 @@ export const getMyKRS = async (studentId, filters = {}) => {
               description: true,
               semester: true,
               sks: true,
+              _count: {
+                select: {
+                  materials: true,
+                },
+              },
             },
           },
           lecturer: {

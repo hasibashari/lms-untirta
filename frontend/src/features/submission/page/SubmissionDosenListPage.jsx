@@ -156,7 +156,7 @@ function FilePreviewCard({ url }) {
     }
 
     // Internal file dari backend — konversi ke path relatif + tambah token
-    const internalHosts = ['localhost', '127.0.0.1', 'backend'];
+    const internalHosts = ['localhost', '127.0.0.1', 'backend', window.location.hostname];
     try {
       const parsed = new URL(url);
       const isInternalHost = internalHosts.some(h => parsed.hostname === h || parsed.hostname.startsWith(h));
@@ -551,10 +551,11 @@ export default function Submissions() {
 function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
   const hasSubmitted = !!submission.submittedAt;
   const late = isLate(submission.submittedAt, dueDate);
-  const hasGrade = submission.grade !== null && submission.grade !== undefined;
+  const hasGrade = submission.grade !== null && submission.grade !== undefined && submission.grade !== -1;
 
   // Local state for inline grading
-  const [grade, setGrade] = useState(submission.grade ?? '');
+  const initialGrade = submission.grade !== -1 ? submission.grade : '';
+  const [grade, setGrade] = useState(initialGrade);
   const [feedback, setFeedback] = useState(submission.feedback ?? '');
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
@@ -562,7 +563,7 @@ function SubmissionCard({ submission, dueDate, formatDate, isLate, onGrade }) {
 
   // Track if values changed
   const hasChanges =
-    String(grade) !== String(submission.grade ?? '') ||
+    String(grade) !== String(initialGrade) ||
     feedback !== (submission.feedback ?? '');
 
   // Generate avatar color based on name

@@ -121,9 +121,9 @@ export default function AssignmentDetail() {
 
     const token = localStorage.getItem('token');
 
-    // 1. Cek apakah URL dari backend internal (http://localhost atau http://backend)
+    // 1. Cek apakah URL dari backend internal (http://localhost, hostname saat ini, atau http://backend)
     //    Konversi ke path relatif agar diakses via nginx proxy + sertakan token
-    const internalHosts = ['localhost', '127.0.0.1', 'backend'];
+    const internalHosts = ['localhost', '127.0.0.1', 'backend', window.location.hostname];
     try {
       const parsed = new URL(url);
       const isInternalHost = internalHosts.some(host => parsed.hostname === host || parsed.hostname.startsWith(host));
@@ -341,7 +341,7 @@ export default function AssignmentDetail() {
                 <div>
                   <p className="text-sm text-blue-600">Nilai</p>
                   <p className="text-2xl font-bold text-blue-700">
-                    {status.grade !== null ? status.grade : '-'}
+                    {status.grade !== null && status.grade !== -1 ? status.grade : '-'}
                   </p>
                 </div>
               </div>

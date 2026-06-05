@@ -91,7 +91,7 @@ const MyGrades = () => {
 
   // Grade display component
   const GradeDisplay = ({ grade }) => {
-    if (grade === null) return <span className="text-slate-400">-</span>;
+    if (grade === null || grade === -1 || grade === undefined) return <span className="text-slate-400">-</span>;
 
     let colorClass = 'text-slate-900';
     if (grade >= 80) colorClass = 'text-green-600';

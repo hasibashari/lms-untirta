@@ -117,7 +117,7 @@ export const GetAssignmentWithMySubmission = async (call, callback) => {
         submittedAt: mySubmission?.submittedAt?.toISOString() || '',
         fileUrl: mySubmission?.fileUrl || '',
         note: mySubmission?.note || '',
-        grade: mySubmission?.grade || 0,
+        grade: mySubmission?.grade ?? -1,
         feedback: mySubmission?.feedback || '',
       },
     });
@@ -170,7 +170,7 @@ export const GetAllMyGrades = async (call, callback) => {
           assignmentTitle: assignment.title,
           dueDate: assignment.dueDate.toISOString(),
           status: calculateSubmissionStatus(assignment.dueDate, submission),
-          grade: submission?.grade || 0,
+          grade: submission?.grade ?? -1,
           feedback: submission?.feedback || '',
           submittedAt: submission?.submittedAt?.toISOString() || '',
         });
@@ -300,7 +300,7 @@ export const GradeSubmission = async (call, callback) => {
       message: 'Berhasil memberikan nilai',
       data: {
         ...updated,
-        grade: updated.grade || 0,
+        grade: updated.grade ?? -1,
         feedback: updated.feedback || '',
       },
     });
@@ -345,7 +345,7 @@ export const GetRecentSubmissionsForTeacher = async (call, callback) => {
       courseCode: sub.assignment.course.code,
       submittedAt: sub.submittedAt.toISOString(),
       isGraded: sub.grade !== null,
-      grade: sub.grade || 0,
+      grade: sub.grade ?? -1,
     }));
 
     callback(null, { message: 'Daftar submission terbaru berhasil diambil', data });
