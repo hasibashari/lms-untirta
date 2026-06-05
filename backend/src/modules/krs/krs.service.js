@@ -249,7 +249,7 @@ const getAvailableClasses = async (studentId, filters = {}) => {
 
 // ======================== ENROLL ========================
 
-const enrollClass = async (studentId, classId) => {
+export const enrollClass = async (studentId, classId) => {
   return prisma.$transaction(async (tx) => {
     // 1. Validasi kelas ada dan terbuka
     const classData = await tx.class.findUnique({
@@ -424,7 +424,7 @@ const enrollClass = async (studentId, classId) => {
 
 // ======================== DROP (UNENROLL) ========================
 
-const dropClass = async (studentId, classId) => {
+export const dropClass = async (studentId, classId) => {
   return prisma.$transaction(async (tx) => {
     const enrollment = await tx.krsEnrollment.findUnique({
       where: {
@@ -475,7 +475,7 @@ const dropClass = async (studentId, classId) => {
 
 // ======================== MY KRS ========================
 
-const getMyKRS = async (studentId, filters = {}) => {
+export const getMyKRS = async (studentId, filters = {}) => {
   const where = { studentId };
 
   if (filters.academicSemesterId) {
@@ -584,7 +584,7 @@ const getMyKRS = async (studentId, filters = {}) => {
 
 // ======================== UPDATE STATUS (DOSEN / ADMIN) ========================
 
-const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, currentUser = null) => {
+export const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, currentUser = null) => {
   const enrollment = await prisma.krsEnrollment.findUnique({
     where: { id: enrollmentId },
     select: {
@@ -745,7 +745,7 @@ const updateEnrollmentStatus = async (enrollmentId, newStatus, note = null, curr
 
 // ======================== BULK UPDATE STATUS (ADMIN) ========================
 
-const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null, currentUser = null) => {
+export const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null, currentUser = null) => {
   if (!enrollmentIds || enrollmentIds.length === 0) {
     throw new AppError(400, 'Tidak ada enrollment yang dipilih');
   }
@@ -912,7 +912,7 @@ const bulkUpdateEnrollmentStatus = async (enrollmentIds, newStatus, note = null,
 
 // ======================== PENDING KRS (DOSEN/ADMIN VIEW) ========================
 
-const getPendingKRS = async (filters = {}, currentUser = null) => {
+export const getPendingKRS = async (filters = {}, currentUser = null) => {
   const where = { status: KRS_STATUS.PENDING };
 
   // Dospem hanya melihat mahasiswa bimbingannya
@@ -1064,7 +1064,7 @@ const reviseRejectedEnrollment = async (studentId, enrollmentId) => {
 
 // ======================== APPROVAL HISTORY ========================
 
-const getApprovalHistory = async (enrollmentId, currentUser) => {
+export const getApprovalHistory = async (enrollmentId, currentUser) => {
   const enrollment = await prisma.krsEnrollment.findUnique({
     where: { id: enrollmentId },
     select: {
@@ -1181,7 +1181,7 @@ const getAdvisoryStudents = async (dosenId, filters = {}) => {
 
 // ======================== KRS MONITORING (ADMIN) ========================
 
-const getKrsMonitoring = async (filters = {}) => {
+export const getKrsMonitoring = async (filters = {}) => {
   const classWhere = {};
   if (filters.academicSemesterId) classWhere.academicSemesterId = filters.academicSemesterId;
 
@@ -1251,21 +1251,4 @@ const getKrsMonitoring = async (filters = {}) => {
   return { enrollments, summary };
 };
 
-export {
-  // New KRS (Class-based)
-  getAvailableClasses,
-  enrollClass,
-  dropClass,
-  getMyKRS,
-  updateEnrollmentStatus,
-  bulkUpdateEnrollmentStatus,
-  getPendingKRS,
-  // Revise & History
-  reviseRejectedEnrollment,
-  getApprovalHistory,
-  // Advisory (Dospem)
-  getAdvisoryStudents,
-  getKrsMonitoring,
-  // SKS Eligibility
-  getSksEligibility,
-};
+

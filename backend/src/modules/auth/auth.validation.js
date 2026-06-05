@@ -8,7 +8,9 @@ import z from 'zod';
 export const registerSchema = z.object({
   body: z.object({
     email: z.string().email({ message: 'Email tidak valid' }),
-    password: z.string().min(8, { message: 'Password minimal 8 karakter' }),
+    password: z.string()
+      .min(8, { message: 'Password minimal 8 karakter' })
+      .regex(/^(?=.*[A-Z])(?=.*\d)/, { message: 'Password harus mengandung huruf besar dan angka' }),
     name: z.string().min(3, { message: 'Nama terlalu pendek' }),
   }),
 });
@@ -18,5 +20,22 @@ export const loginSchema = z.object({
   body: z.object({
     email: z.string().email({ message: 'Email tidak valid' }),
     password: z.string().min(1, { message: 'Password wajib diisi' }),
+  }),
+});
+
+// Schema untuk forgot password
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email({ message: 'Email tidak valid' }),
+  }),
+});
+
+// Schema untuk reset password
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email({ message: 'Email tidak valid' }),
+    newPassword: z.string()
+      .min(8, { message: 'Password minimal 8 karakter' })
+      .regex(/^(?=.*[A-Z])(?=.*\d)/, { message: 'Password harus mengandung huruf besar dan angka' }),
   }),
 });

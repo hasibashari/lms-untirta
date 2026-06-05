@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { Mail, Lock, BookOpen, Eye, EyeOff } from 'lucide-react';
 
 // UI components
@@ -128,12 +128,12 @@ export default function Login() {
             </div>
 
             <div className="text-sm">
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
               >
                 Lupa password?
-              </a>
+              </Link>
             </div>
           </div>
         </div>

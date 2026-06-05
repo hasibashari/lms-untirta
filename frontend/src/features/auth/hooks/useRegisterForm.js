@@ -25,9 +25,8 @@ export const useRegisterForm = () => {
   const getPasswordStrength = (pwd) => {
     let s = 0;
     if (pwd.length >= 8) s++;
-    if (/[0-9]/.test(pwd)) s++;
     if (/[A-Z]/.test(pwd)) s++;
-    if (/[^A-Za-z0-9]/.test(pwd)) s++;
+    if (/[0-9]/.test(pwd)) s++;
     return s;
   };
 
@@ -42,6 +41,11 @@ export const useRegisterForm = () => {
 
     if (formData.password !== formData.confirmPassword) {
       setError('Konfirmasi password tidak sama.');
+      return;
+    }
+
+    if (getPasswordStrength(formData.password) < 3) {
+      setError('Password terlalu lemah. Harus minimal 8 karakter, mengandung huruf besar, dan angka.');
       return;
     }
 

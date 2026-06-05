@@ -32,3 +32,25 @@ export const getMe = async (req, res) => {
     return handleError(res, error);
   }
 };
+
+// ======= FORGOT PASSWORD =======
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.forgotPassword({ email });
+    sendSuccess(res, { statusCode: 200, message: result.message });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+// ======= RESET PASSWORD =======
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const result = await authService.resetPassword({ email, newPassword });
+    sendSuccess(res, { statusCode: 200, message: result.message });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};

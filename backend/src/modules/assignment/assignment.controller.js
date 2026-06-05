@@ -3,7 +3,7 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 
 // ======= CREATE ASSIGNMENT =======
-const create = async (req, res) => {
+export const create = async (req, res) => {
   try {
     const { classId } = req.params;
     const result = await assignmentService.createAssignment(classId, req.user.id, req.body);
@@ -14,7 +14,7 @@ const create = async (req, res) => {
 };
 
 // ======= GET ASSIGNMENTS BY CLASS =======
-const getAssignments = async (req, res) => {
+export const getAssignments = async (req, res) => {
   try {
     const { classId } = req.params;
     const result = await assignmentService.getAssignmentsByClass(classId, req.user.id, req.user.role);
@@ -25,7 +25,7 @@ const getAssignments = async (req, res) => {
 };
 
 // ======= GET ASSIGNMENT DETAIL =======
-const getAssignmentDetail = async (req, res) => {
+export const getAssignmentDetail = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const result = await assignmentService.getAssignmentDetail(assignmentId);
@@ -41,7 +41,7 @@ const getAssignmentDetail = async (req, res) => {
 };
 
 // ======= UPDATE ASSIGNMENT =======
-const updateAssignment = async (req, res) => {
+export const updateAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const { title, description, dueDate } = req.body;
@@ -60,7 +60,7 @@ const updateAssignment = async (req, res) => {
 };
 
 // ======= DELETE ASSIGNMENT =======
-const deleteAssignment = async (req, res) => {
+export const deleteAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
 
@@ -76,10 +76,4 @@ const deleteAssignment = async (req, res) => {
   }
 };
 
-export {
-  create,
-  getAssignments,
-  getAssignmentDetail,
-  updateAssignment,
-  deleteAssignment,
-};
+

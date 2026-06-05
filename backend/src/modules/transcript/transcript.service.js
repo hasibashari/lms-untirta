@@ -3,7 +3,7 @@ import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../..
 import { AppError } from '../../config/errors.js';
 import { paginate } from '../../utils/pagination.js';
 
-const getStudyResults = async (studentId, filters = {}) => {
+export const getStudyResults = async (studentId, filters = {}) => {
   // Validasi mahasiswa ada
   const student = await prisma.user.findUnique({
     where: { id: studentId },
@@ -116,7 +116,7 @@ const getStudyResults = async (studentId, filters = {}) => {
 };
 
 
-const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
+export const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     select: { id: true, name: true, email: true, nim: true },
@@ -315,7 +315,7 @@ const getTranscriptByClass = async (studentId, filters = {}, options = {}) => {
 };
 
 
-const getAcademicSummary = async (studentId) => {
+export const getAcademicSummary = async (studentId) => {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     select: { id: true, name: true, email: true, nim: true },
@@ -335,7 +335,7 @@ const getAcademicSummary = async (studentId) => {
 };
 
 
-const getStudentList = async (filters = {}, query = {}) => {
+export const getStudentList = async (filters = {}, query = {}) => {
   const { skip, take, meta } = paginate(query);
   const where = { role: 'MAHASISWA' };
 
@@ -382,7 +382,7 @@ const getStudentList = async (filters = {}, query = {}) => {
 };
 
 
-const getFullStudentTranscript = async (studentId, options = {}) => {
+export const getFullStudentTranscript = async (studentId, options = {}) => {
   const isStudentView = options.isStudentView === true;
 
   // Use getTranscriptByClass to get the core data (student, courses, summary)
@@ -412,10 +412,4 @@ const getFullStudentTranscript = async (studentId, options = {}) => {
   };
 };
 
-export {
-  getStudyResults,
-  getTranscriptByClass,
-  getAcademicSummary,
-  getStudentList,
-  getFullStudentTranscript,
-};
+

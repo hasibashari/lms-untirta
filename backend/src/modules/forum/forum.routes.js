@@ -22,7 +22,7 @@ import {
 
 // Router untuk thread-level endpoints
 // Dipasang di: /api/forum
-const forumRouter = express.Router();
+export const forumRouter = express.Router();
 
 /**
  * @swagger
@@ -410,4 +410,4 @@ forumRouter.post('/threads/:threadId/replies', authenticateToken, authorizeRole(
 forumRouter.put('/replies/:replyId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), validate(updateReplySchema), updateReply);
 forumRouter.delete('/replies/:replyId', authenticateToken, authorizeRole('DOSEN', 'MAHASISWA'), deleteReply);
 
-export { forumRouter };
+

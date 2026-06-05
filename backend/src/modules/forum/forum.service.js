@@ -68,7 +68,7 @@ const validateCourseAccess = async (courseId, userId, userRole) => {
  * Pinned threads muncul pertama, lalu diurutkan berdasarkan aktivitas terbaru.
  * Setiap thread menyertakan jumlah reply dan info author.
  */
-const getThreads = async (id, userId, userRole) => {
+export const getThreads = async (id, userId, userRole) => {
   // 1. Cari berdasarkan Class ID
   let classOffering = await prisma.class.findUnique({
     where: { id: id },
@@ -118,7 +118,7 @@ const getThreads = async (id, userId, userRole) => {
  * Ambil detail thread beserta semua reply.
  * Reply diurutkan dari yang terlama (chronological).
  */
-const getThreadById = async (threadId, userId, userRole) => {
+export const getThreadById = async (threadId, userId, userRole) => {
   const thread = await prisma.forumThread.findUnique({
     where: { id: threadId },
     select: {
@@ -177,7 +177,7 @@ const getThreadById = async (threadId, userId, userRole) => {
  * Buat thread baru di forum course.
  * Semua user yang punya akses ke course bisa membuat thread.
  */
-const createThread = async (classId, userId, userRole, data) => {
+export const createThread = async (classId, userId, userRole, data) => {
   const cls = await prisma.class.findUnique({
     where: { id: classId },
     select: { courseId: true },
@@ -219,7 +219,7 @@ const createThread = async (classId, userId, userRole, data) => {
 /**
  * Update thread. Hanya pemilik thread yang boleh mengedit.
  */
-const updateThread = async (threadId, userId, userRole, data) => {
+export const updateThread = async (threadId, userId, userRole, data) => {
   const thread = await prisma.forumThread.findUnique({
     where: { id: threadId },
     select: { id: true, authorId: true },
@@ -261,7 +261,7 @@ const updateThread = async (threadId, userId, userRole, data) => {
  * Hapus thread. Pemilik bisa hapus thread sendiri.
  * Dosen/Admin bisa hapus thread manapun (moderasi).
  */
-const deleteThread = async (threadId, userId, userRole) => {
+export const deleteThread = async (threadId, userId, userRole) => {
   const thread = await prisma.forumThread.findUnique({
     where: { id: threadId },
     select: {
@@ -303,7 +303,7 @@ const deleteThread = async (threadId, userId, userRole) => {
 /**
  * Toggle pin/unpin thread. Hanya dosen pengampu atau admin yang boleh.
  */
-const togglePinThread = async (threadId, userId, userRole) => {
+export const togglePinThread = async (threadId, userId, userRole) => {
   const thread = await prisma.forumThread.findUnique({
     where: { id: threadId },
     select: {
@@ -355,7 +355,7 @@ const togglePinThread = async (threadId, userId, userRole) => {
  * Semua user yang punya akses ke course bisa membalas.
  * Update timestamp thread agar sorting "terbaru" tetap akurat.
  */
-const createReply = async (threadId, userId, data) => {
+export const createReply = async (threadId, userId, data) => {
   const thread = await prisma.forumThread.findUnique({
     where: { id: threadId },
     select: { id: true, courseId: true },
@@ -401,7 +401,7 @@ const createReply = async (threadId, userId, data) => {
 /**
  * Update reply. Hanya pemilik reply yang boleh mengedit.
  */
-const updateReply = async (replyId, userId, userRole, data) => {
+export const updateReply = async (replyId, userId, userRole, data) => {
   const reply = await prisma.forumReply.findUnique({
     where: { id: replyId },
     select: { id: true, authorId: true },
@@ -437,7 +437,7 @@ const updateReply = async (replyId, userId, userRole, data) => {
  * Hapus reply. Pemilik bisa hapus reply sendiri.
  * Dosen pengampu atau admin bisa hapus reply manapun (moderasi).
  */
-const deleteReply = async (replyId, userId, userRole) => {
+export const deleteReply = async (replyId, userId, userRole) => {
   const reply = await prisma.forumReply.findUnique({
     where: { id: replyId },
     select: {
@@ -479,14 +479,4 @@ const deleteReply = async (replyId, userId, userRole) => {
   return { message: 'Balasan berhasil dihapus' };
 };
 
-export {
-  getThreads,
-  getThreadById,
-  createThread,
-  updateThread,
-  deleteThread,
-  togglePinThread,
-  createReply,
-  updateReply,
-  deleteReply,
-};
+

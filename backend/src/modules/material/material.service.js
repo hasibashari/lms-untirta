@@ -10,7 +10,7 @@ import path from 'path';
 // - Operasi database melalui Prisma
 // - Cleanup file yang terkait saat materi dihapus
 
-const createMaterial = async (classId, teacherId, data) => {
+export const createMaterial = async (classId, teacherId, data) => {
   // 1. Cek apakah kelas ada
   const classOffering = await prisma.class.findUnique({
     where: { id: classId },
@@ -64,7 +64,7 @@ const createMaterial = async (classId, teacherId, data) => {
   return result;
 };
 
-const getMaterials = async (classId, userId, userRole) => {
+export const getMaterials = async (classId, userId, userRole) => {
   // Jika mahasiswa, pastikan sudah terdaftar di kelas
   if (userRole === 'MAHASISWA') {
     const enrollment = await prisma.krsEnrollment.findFirst({
@@ -96,7 +96,7 @@ const getMaterials = async (classId, userId, userRole) => {
   }, 1800); // 30 minutes
 };
 
-const getMaterialById = async (materialId, userId, userRole) => {
+export const getMaterialById = async (materialId, userId, userRole) => {
   // Ambil materi beserta info course untuk keperluan otorisasi
   const material = await prisma.material.findUnique({
     where: { id: materialId },
@@ -179,7 +179,7 @@ const getMaterialByIdWithCache = async (materialId, userId, userRole) => {
   return await getMaterialById(materialId, userId, userRole);
 };
 
-const updateMaterial = async (materialId, userId, userRole, data) => {
+export const updateMaterial = async (materialId, userId, userRole, data) => {
   // Ambil material untuk validasi eksistensi dan otorisasi
   const material = await prisma.material.findUnique({
     where: { id: materialId },
@@ -245,7 +245,7 @@ const updateMaterial = async (materialId, userId, userRole, data) => {
   return updated;
 };
 
-const deleteMaterial = async (materialId, userId, userRole) => {
+export const deleteMaterial = async (materialId, userId, userRole) => {
   // Ambil metadata materi untuk validasi dan cleanup file
   const material = await prisma.material.findUnique({
     where: { id: materialId },
@@ -298,4 +298,4 @@ const deleteMaterial = async (materialId, userId, userRole) => {
   return { message: 'Materi berhasil dihapus' };
 };
 
-export { createMaterial, getMaterials, getMaterialById, updateMaterial, deleteMaterial };
+

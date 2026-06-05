@@ -3,7 +3,7 @@ import { AppError } from '../../config/errors.js';
 import cache from '../../utils/cache.js';
 
 // ======= GET ASSIGNMENTS BY CLASS (WITH SUBMISSION STATUS) =======
-const getAssignmentsByClass = async (id, userId, userRole) => {
+export const getAssignmentsByClass = async (id, userId, userRole) => {
   // 1. Cari berdasarkan Class ID
   let classOffering = await prisma.class.findUnique({
     where: { id: id },
@@ -87,7 +87,7 @@ const getAssignmentsByClass = async (id, userId, userRole) => {
 };
 
 // ======= CREATE ASSIGNMENT =======
-const createAssignment = async (classId, teacherId, data) => {
+export const createAssignment = async (classId, teacherId, data) => {
   const classOffering = await prisma.class.findUnique({ where: { id: classId } });
 
   if (!classOffering) {
@@ -119,7 +119,7 @@ const createAssignment = async (classId, teacherId, data) => {
 };
 
 // ======= GET ASSIGNMENT DETAIL =======
-const getAssignmentDetail = async assignmentId => {
+export const getAssignmentDetail = async assignmentId => {
   return await cache.getOrSet(`assignment:detail:${assignmentId}`, async () => {
     return await prisma.assignment.findUnique({
       where: { id: assignmentId },
@@ -134,7 +134,7 @@ const getAssignmentDetail = async assignmentId => {
 };
 
 // ======= UPDATE ASSIGNMENT =======
-const updateAssignment = async (assignmentId, userId, userRole, data) => {
+export const updateAssignment = async (assignmentId, userId, userRole, data) => {
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     select: {
@@ -192,7 +192,7 @@ const updateAssignment = async (assignmentId, userId, userRole, data) => {
 };
 
 // ======= DELETE ASSIGNMENT =======
-const deleteAssignment = async (assignmentId, userId, userRole) => {
+export const deleteAssignment = async (assignmentId, userId, userRole) => {
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     select: {
@@ -242,10 +242,4 @@ const deleteAssignment = async (assignmentId, userId, userRole) => {
   };
 };
 
-export {
-  getAssignmentsByClass,
-  createAssignment,
-  getAssignmentDetail,
-  updateAssignment,
-  deleteAssignment,
-};
+

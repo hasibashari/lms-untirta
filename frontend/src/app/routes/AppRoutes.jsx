@@ -22,6 +22,8 @@ import Home from '../../features/landing/pages/HomePage';
 // Auth module
 import Login from '../../features/auth/pages/LoginAuthPage';
 import Register from '../../features/auth/pages/RegisterAuthPage';
+import ForgotPassword from '../../features/auth/pages/ForgotPasswordPage';
+import ResetPassword from '../../features/auth/pages/ResetPasswordPage';
 
 // ----- Lazy-loaded pages (feature-based modules) -----
 
@@ -111,6 +113,8 @@ function AppRoutes() {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
 
       {/* ── Error pages ── */}

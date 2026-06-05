@@ -17,7 +17,7 @@ const grpcGetTeacherDashboardStats = util.promisify(submissionClient.GetTeacherD
 const grpcGetRecentSubmissionsForTeacher = util.promisify(submissionClient.GetRecentSubmissionsForTeacher).bind(submissionClient);
 
 // ======= SUBMIT ASSIGNMENT =======
-const submit = async (req, res) => {
+export const submit = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const studentId = req.user.id;
@@ -55,7 +55,7 @@ const submit = async (req, res) => {
 };
 
 // ======= GET ASSIGNMENT WITH STUDENT SUBMISSION =======
-const getMyAssignment = async (req, res) => {
+export const getMyAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const studentId = req.user.id;
@@ -80,7 +80,7 @@ const getMyAssignment = async (req, res) => {
 };
 
 // ======= GET SUBMISSIONS BY ASSIGNMENT =======
-const getSubmissions = async (req, res) => {
+export const getSubmissions = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const teacherId = req.user.id;
@@ -105,7 +105,7 @@ const getSubmissions = async (req, res) => {
 };
 
 // ======= GET ALL STUDENT GRADES =======
-const getAllMyGrades = async (req, res) => {
+export const getAllMyGrades = async (req, res) => {
   try {
     const studentId = req.user.id;
     const meta = createGrpcMetadata(req);
@@ -128,7 +128,7 @@ const getAllMyGrades = async (req, res) => {
 };
 
 // ======= GET STUDENT DASHBOARD STATS =======
-const getMyDashboardStats = async (req, res) => {
+export const getMyDashboardStats = async (req, res) => {
   try {
     const studentId = req.user.id;
     const meta = createGrpcMetadata(req);
@@ -151,7 +151,7 @@ const getMyDashboardStats = async (req, res) => {
 };
 
 // ======= GRADE STUDENT SUBMISSION =======
-const grade = async (req, res) => {
+export const grade = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const teacherId = req.user.id;
@@ -177,7 +177,7 @@ const grade = async (req, res) => {
 };
 
 // ======= GET TEACHER DASHBOARD STATS =======
-const getTeacherDashboardStats = async (req, res) => {
+export const getTeacherDashboardStats = async (req, res) => {
   try {
     const teacherId = req.user.id;
     const meta = createGrpcMetadata(req);
@@ -200,7 +200,7 @@ const getTeacherDashboardStats = async (req, res) => {
 };
 
 // ======= GET RECENT SUBMISSIONS FOR TEACHER =======
-const getRecentSubmissions = async (req, res) => {
+export const getRecentSubmissions = async (req, res) => {
   try {
     const teacherId = req.user.id;
     const limit = parseInt(req.query.limit) || 10;
@@ -224,13 +224,4 @@ const getRecentSubmissions = async (req, res) => {
   }
 };
 
-export {
-  submit,
-  getMyAssignment,
-  getSubmissions,
-  getAllMyGrades,
-  getMyDashboardStats,
-  grade,
-  getTeacherDashboardStats,
-  getRecentSubmissions,
-};
+

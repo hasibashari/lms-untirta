@@ -7,7 +7,7 @@ import { buildFileUrl } from '../../middlewares/upload.middleware.js';
 // Controller untuk endpoint materi. Bertugas menerima request, memanggil
 // service layer, dan mengelola side-effect (mis. penyimpanan metadata upload).
 
-const createMaterial = async (req, res) => {
+export const createMaterial = async (req, res) => {
   try {
     const { classId } = req.params;
     const { title, content, videoUrl } = req.body;
@@ -36,7 +36,7 @@ const createMaterial = async (req, res) => {
   }
 };
 
-const getMaterials = async (req, res) => {
+export const getMaterials = async (req, res) => {
   try {
     const { classId } = req.params;
     // Ambil daftar materi; service akan menangani hak akses berdasar role/userId
@@ -47,7 +47,7 @@ const getMaterials = async (req, res) => {
   }
 };
 
-const getMaterialById = async (req, res) => {
+export const getMaterialById = async (req, res) => {
   try {
     const { materialId } = req.params;
     const result = await materialService.getMaterialById(materialId, req.user.id, req.user.role);
@@ -57,7 +57,7 @@ const getMaterialById = async (req, res) => {
   }
 };
 
-const updateMaterial = async (req, res) => {
+export const updateMaterial = async (req, res) => {
   try {
     const { materialId } = req.params;
     const { title, content, videoUrl, order } = req.body;
@@ -85,7 +85,7 @@ const updateMaterial = async (req, res) => {
   }
 };
 
-const deleteMaterial = async (req, res) => {
+export const deleteMaterial = async (req, res) => {
   try {
     const { materialId } = req.params;
 
@@ -102,4 +102,4 @@ const deleteMaterial = async (req, res) => {
   }
 };
 
-export { createMaterial, getMaterials, getMaterialById, updateMaterial, deleteMaterial };
+

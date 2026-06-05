@@ -1,12 +1,13 @@
 import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { signToken } from '../../config/jwt.js';
 import { ROLES } from '../../config/roles.js';
 import { AppError } from '../../config/errors.js';
 import cache from '../../utils/cache.js';
 
 // ======= REGISTER USER =======
-const registerUser = async ({ email, name, password }) => {
+export const registerUser = async ({ email, name, password }) => {
   // 1. Cek duplikasi email
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -53,7 +54,7 @@ const registerUser = async ({ email, name, password }) => {
 };
 
 // ======= LOGIN USER =======
-const loginUser = async ({ email, password }) => {
+export const loginUser = async ({ email, password }) => {
   // 1. Cari user berdasarkan email
   const user = await prisma.user.findUnique({
     where: { email },
@@ -98,7 +99,7 @@ const loginUser = async ({ email, password }) => {
 };
 
 // ======= GET USER BY ID =======
-const getUserById = async (userId) => {
+export const getUserById = async (userId) => {
   const cacheKey = `user:profile:${userId}`;
 
   return await cache.getOrSet(
@@ -134,4 +135,38 @@ const getUserById = async (userId) => {
   );
 };
 
-export { registerUser, loginUser, getUserById };
+// ======= FORGOT PASSWORD =======
+export const forgotPassword = async ({ email }) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new AppError(404, 'Email tidak ditemukan di sistem.');
+  }
+
+  return { message: 'Email ditemukan, silakan masukkan password baru.' };
+};
+
+// ======= RESET PASSWORD =======
+export const resetPassword = async ({ email, newPassword }) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new AppError(404, 'User tidak ditemukan.');
+  }
+
+  // Hash password baru
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update password
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: hashedPassword },
+  });
+
+  return { message: 'Password berhasil direset. Silakan login dengan password baru.' };
+};
+

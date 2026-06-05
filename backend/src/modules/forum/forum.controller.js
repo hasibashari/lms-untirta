@@ -2,7 +2,7 @@ import * as forumService from './forum.service.js';
 import { sendSuccess } from '../../utils/response.js';
 import { handleError } from '../../utils/errorHandler.js';
 
-const getThreads = async (req, res) => {
+export const getThreads = async (req, res) => {
   try {
     const { classId } = req.params;
     const result = await forumService.getThreads(classId, req.user.id, req.user.role);
@@ -12,7 +12,7 @@ const getThreads = async (req, res) => {
   }
 };
 
-const getThreadById = async (req, res) => {
+export const getThreadById = async (req, res) => {
   try {
     const { threadId } = req.params;
     const result = await forumService.getThreadById(threadId, req.user.id, req.user.role);
@@ -22,7 +22,7 @@ const getThreadById = async (req, res) => {
   }
 };
 
-const createThread = async (req, res) => {
+export const createThread = async (req, res) => {
   try {
     const { classId } = req.params;
     const { title, content } = req.body;
@@ -33,7 +33,7 @@ const createThread = async (req, res) => {
   }
 };
 
-const updateThread = async (req, res) => {
+export const updateThread = async (req, res) => {
   try {
     const { threadId } = req.params;
     const { title, content } = req.body;
@@ -44,7 +44,7 @@ const updateThread = async (req, res) => {
   }
 };
 
-const deleteThread = async (req, res) => {
+export const deleteThread = async (req, res) => {
   try {
     const { threadId } = req.params;
     const result = await forumService.deleteThread(threadId, req.user.id, req.user.role);
@@ -54,7 +54,7 @@ const deleteThread = async (req, res) => {
   }
 };
 
-const togglePinThread = async (req, res) => {
+export const togglePinThread = async (req, res) => {
   try {
     const { threadId } = req.params;
     const result = await forumService.togglePinThread(threadId, req.user.id, req.user.role);
@@ -65,7 +65,7 @@ const togglePinThread = async (req, res) => {
   }
 };
 
-const createReply = async (req, res) => {
+export const createReply = async (req, res) => {
   try {
     const { threadId } = req.params;
     const { content, parentId } = req.body;
@@ -76,7 +76,7 @@ const createReply = async (req, res) => {
   }
 };
 
-const updateReply = async (req, res) => {
+export const updateReply = async (req, res) => {
   try {
     const { replyId } = req.params;
     const { content } = req.body;
@@ -87,7 +87,7 @@ const updateReply = async (req, res) => {
   }
 };
 
-const deleteReply = async (req, res) => {
+export const deleteReply = async (req, res) => {
   try {
     const { replyId } = req.params;
     const result = await forumService.deleteReply(replyId, req.user.id, req.user.role);
@@ -97,14 +97,4 @@ const deleteReply = async (req, res) => {
   }
 };
 
-export {
-  getThreads,
-  getThreadById,
-  createThread,
-  updateThread,
-  deleteThread,
-  togglePinThread,
-  createReply,
-  updateReply,
-  deleteReply,
-};
+

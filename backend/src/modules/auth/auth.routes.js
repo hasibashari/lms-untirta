@@ -1,7 +1,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { login, register, getMe } from './auth.controller.js';
-import { registerSchema, loginSchema } from './auth.validation.js';
+import { login, register, getMe, forgotPassword, resetPassword } from './auth.controller.js';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.validation.js';
 import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 
@@ -141,5 +141,67 @@ router.post('/login', authLimiter, validate(loginSchema), login);
  *         $ref: '#/components/responses/Unauthorized'
  */
 router.get('/me', authenticateToken, getMe);
+
+// Rate limiter for password reset to prevent abuse
+const resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  max: 5, // start blocking after 5 requests
+  message: { success: false, message: 'Terlalu banyak permintaan reset password, coba lagi dalam 1 jam.' }
+});
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset link
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Reset instructions sent (or if email not found, generic success message)
+ */
+router.post('/forgot-password', resetLimiter, validate(forgotPasswordSchema), forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password using token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, token, newPassword]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password successfully reset
+ *       400:
+ *         description: Invalid or expired token
+ */
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 
 export default router;

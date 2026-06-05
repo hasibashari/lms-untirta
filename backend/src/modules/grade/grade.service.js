@@ -19,7 +19,7 @@ const getGradePoint = (letterGrade) => GRADE_POINTS[letterGrade] ?? 0;
 
 // ======================== GET CLASS STUDENTS FOR GRADING ========================
 
-const getClassStudentsForGrading = async (classId, lecturerId) => {
+export const getClassStudentsForGrading = async (classId, lecturerId) => {
   // Verify lecturer owns this class
   const classData = await prisma.class.findUnique({
     where: { id: classId },
@@ -88,7 +88,7 @@ const getClassStudentsForGrading = async (classId, lecturerId) => {
 
 // ======================== INPUT SINGLE GRADE ========================
 
-const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numericScore, note }) => {
+export const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numericScore, note }) => {
   // Verify lecturer owns this class
   const classData = await prisma.class.findUnique({
     where: { id: classId },
@@ -170,7 +170,7 @@ const inputGrade = async (classId, lecturerId, { studentId, letterGrade, numeric
 
 // ======================== BULK INPUT GRADES ========================
 
-const bulkInputGrades = async (classId, lecturerId, grades) => {
+export const bulkInputGrades = async (classId, lecturerId, grades) => {
   const classData = await prisma.class.findUnique({
     where: { id: classId },
     select: {
@@ -259,7 +259,7 @@ const bulkInputGrades = async (classId, lecturerId, grades) => {
 
 // ======================== FINALIZE GRADES ========================
 
-const finalizeGrades = async (classId, lecturerId) => {
+export const finalizeGrades = async (classId, lecturerId) => {
   const classData = await prisma.class.findUnique({
     where: { id: classId },
     select: {
@@ -310,7 +310,7 @@ const finalizeGrades = async (classId, lecturerId) => {
 
 // ======================== GET MY GRADES (STUDENT) ========================
 
-const getMyGrades = async (studentId, filters = {}) => {
+export const getMyGrades = async (studentId, filters = {}) => {
   const where = {
     studentId,
     status: 'FINALIZED', // Students can ONLY see finalized grades
@@ -405,10 +405,4 @@ const getMyGrades = async (studentId, filters = {}) => {
   };
 };
 
-export {
-  getClassStudentsForGrading,
-  inputGrade,
-  bulkInputGrades,
-  finalizeGrades,
-  getMyGrades,
-};
+
