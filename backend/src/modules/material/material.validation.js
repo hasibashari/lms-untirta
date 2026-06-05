@@ -43,6 +43,11 @@ export const updateMaterialSchema = z.object({
       z.url('Format link file tidak valid').optional()
     ),
 
+    removeFile: z.preprocess(
+      v => (v === 'true' || v === true ? true : undefined),
+      z.boolean().optional()
+    ),
+
     order: z.preprocess(
       v => (v === '' || v === null ? undefined : v),
       z.number().int().positive('Urutan harus bilangan positif').optional()

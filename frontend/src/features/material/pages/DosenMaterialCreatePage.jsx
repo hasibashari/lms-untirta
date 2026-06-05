@@ -9,12 +9,15 @@ import {
   Edit3,
   Calendar,
   Hash,
+  Paperclip,
+  UploadCloud,
+  Trash2,
 } from 'lucide-react';
 import { createMaterial, getMaterialDetail, updateMaterial } from '../materialService';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import MarkdownEditor from '@/shared/components/markdown/MarkdownEditor';
-import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
+import MaterialPreviewCard from '../components/MaterialPreviewCard';
 
 /**
  * CreateMaterial - Form Pembuatan & Edit Materi
@@ -41,6 +44,9 @@ export default function CreateMaterial() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [order, setOrder] = useState('');
+  const [file, setFile] = useState(null);
+  const [existingFileUrl, setExistingFileUrl] = useState('');
+  const [removeFile, setRemoveFile] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -59,6 +65,7 @@ export default function CreateMaterial() {
           setTitle(data.title || '');
           setContent(data.content || '');
           setOrder(data.order?.toString() || '');
+          setExistingFileUrl(data.fileUrl || '');
 
         })
         .catch(err => {
@@ -85,6 +92,8 @@ export default function CreateMaterial() {
         title: title.trim(),
         content: content,
         order: order ? parseInt(order) : undefined,
+        file: file,
+        removeFile: removeFile,
       };
 
       if (isEditMode) {
@@ -273,6 +282,81 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
             />
           </div>
 
+          {/* Attachment Upload */}
+          <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div className="flex items-center gap-2">
+                <Paperclip size={16} />
+                Lampiran File Utama (Opsional)
+              </div>
+            </label>
+            <p className="text-xs text-slate-500 mb-4">
+              Maksimal 10 MB. Unggah presentasi PPT, modul PDF, atau dokumen terkait materi ini.
+            </p>
+            <div className="flex flex-col items-start gap-4">
+              {existingFileUrl && !removeFile && !file && (
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2">
+                    <Paperclip size={16} />
+                    <span>File tersimpan</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveFile(true)}
+                    className="p-1 text-blue-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                    title="Hapus file ini"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              )}
+              {removeFile && existingFileUrl && !file && (
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+                  <div className="flex items-center gap-2">
+                    <Trash2 size={16} />
+                    <span className="line-through opacity-70">File lama akan dihapus</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveFile(false)}
+                    className="text-xs font-medium hover:underline"
+                  >
+                    Batal hapus
+                  </button>
+                </div>
+              )}
+              {file && (
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4 text-sm text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+                  <div className="flex items-center gap-2">
+                    <Paperclip size={16} />
+                    <span>File baru: {file.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    className="p-1 text-emerald-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                    title="Batal upload"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+              <label className="relative cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 transition px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 text-sm font-medium text-slate-700">
+                <UploadCloud size={18} className="text-slate-400" />
+                Pilih File Baru
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
             <p className="text-sm text-slate-500">
@@ -300,11 +384,27 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
         </form>
       ) : (
         /* ========== PREVIEW MODE ========== */
-        <MaterialPreview
-          title={title}
-          content={content}
-          order={order}
-        />
+        <div className="bg-white/50 backdrop-blur-sm rounded-2xl border border-slate-200 p-6 lg:p-8 shadow-sm">
+          <MaterialPreviewCard
+            title={title}
+            content={content}
+            order={order}
+            file={file}
+            fileUrl={removeFile ? '' : existingFileUrl}
+            showInfoBanner={true}
+          />
+          
+          {/* Action Buttons di Preview Mode */}
+          <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="px-5 py-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl font-medium transition"
+            >
+              Kembali ke Edit
+            </button>
+          </div>
+        </div>
       )}
 
       <ConfirmDialog
@@ -319,84 +419,4 @@ Paragraf biasa dengan **teks tebal** dan *teks miring*.
   );
 }
 
-/**
- * MaterialPreview - Komponen Preview Materi
- * Tampilan yang konsisten dengan halaman mahasiswa (seperti platform edukasi)
- */
-function MaterialPreview({ title, content, order }) {
-  const currentDate = new Date().toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
 
-  return (
-    <div className="max-w-4xl mx-auto">
-      {/* Preview Header Info */}
-      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2">
-        <Eye size={18} className="text-amber-600" />
-        <p className="text-sm text-amber-700">
-          <strong>Mode Preview:</strong> Tampilan ini sama persis dengan yang akan dilihat mahasiswa
-        </p>
-      </div>
-
-      {/* Material Card - Seperti tampilan edukasi */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-        {/* Header Section */}
-        <div className="bg-linear-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {order && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 rounded-full text-xs font-medium mb-3">
-                  <Hash size={12} />
-                  Materi {order}
-                </span>
-              )}
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                {title || 'Judul Materi'}
-              </h1>
-              <div className="flex items-center gap-4 text-blue-100 text-sm">
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={14} />
-                  {currentDate}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <FileText size={14} />
-                  {content ? `${content.split(' ').length} kata` : '0 kata'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Section */}
-        <div className="p-8">
-          {/* Konten Markdown */}
-          <div className="mb-8">
-            {content ? (
-              <MarkdownPreview content={content} />
-            ) : (
-              <div className="text-center py-12 text-slate-400">
-                <FileText size={48} className="mx-auto mb-3 opacity-50" />
-                <p className="text-lg">Belum ada konten</p>
-                <p className="text-sm">Tulis konten materi di tab Edit</p>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
-
-      {/* Action Buttons di Preview Mode */}
-      <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
-        <button
-          type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="px-5 py-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl font-medium transition"
-        >
-          Kembali ke Edit
-        </button>
-      </div>
-    </div>
-  );
-}

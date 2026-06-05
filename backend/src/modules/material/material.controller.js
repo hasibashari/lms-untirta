@@ -60,10 +60,14 @@ export const getMaterialById = async (req, res) => {
 export const updateMaterial = async (req, res) => {
   try {
     const { materialId } = req.params;
-    const { title, content, videoUrl, order } = req.body;
+    const { title, content, videoUrl, order, removeFile } = req.body;
 
     // Susun payload update; hanya ganti `fileUrl` jika ada file baru
     const updateData = { title, content, videoUrl, order };
+
+    if (removeFile === true) {
+      updateData.fileUrl = null;
+    }
 
     if (req.file) {
       await persistUploadMeta({ userId: req.user.id, file: req.file });

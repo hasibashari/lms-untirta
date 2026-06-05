@@ -164,6 +164,8 @@ export const getMaterialById = async (materialId, userId, userRole) => {
     id: cachedMaterial.id,
     title: cachedMaterial.title,
     content: cachedMaterial.content,
+    fileUrl: cachedMaterial.fileUrl,
+    videoUrl: cachedMaterial.videoUrl,
     attachments,
   };
 

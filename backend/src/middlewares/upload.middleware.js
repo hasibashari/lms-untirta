@@ -32,7 +32,7 @@ const ALLOWED_TYPES = {
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
 };
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 const localStorageEngine = multer.diskStorage({
   destination(req, _file, cb) {

@@ -8,7 +8,9 @@ import {
   FileText,
   CheckCircle,
   Clock,
-  MonitorPlay
+  MonitorPlay,
+  Paperclip,
+  DownloadCloud
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials } from '../materialService';
 import { getMyKRS } from '../../krs/krsService';
@@ -274,6 +276,41 @@ const MaterialDetail = () => {
               <article className="prose prose-slate max-w-none text-slate-800 dark:prose-invert">
                 <MarkdownPreview content={material.content} />
               </article>
+
+              {/* Attachment Download Section */}
+              {material.fileUrl && (
+                <div className="mt-12 mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Paperclip size={20} className="text-slate-400" />
+                    Lampiran Utama Materi
+                  </h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                        <FileText size={24} />
+                      </div>
+                      <div className="overflow-hidden">
+                        <p className="text-sm font-medium text-slate-900 truncate max-w-[200px] sm:max-w-xs" title={decodeURIComponent(material.fileUrl.split('/').pop()).replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/, '')}>
+                          {decodeURIComponent(material.fileUrl.split('/').pop()).replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/, '')}
+                        </p>
+                        <p className="text-xs text-slate-500">Klik unduh untuk membuka file</p>
+                      </div>
+                    </div>
+                    <a 
+                      href={material.fileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      download
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition shadow-sm whitespace-nowrap"
+                    >
+                      <DownloadCloud size={16} />
+                      Download File
+                    </a>
+                  </div>
+                </div>
+              )}
+
+
 
               <Separator className="my-12" />
 

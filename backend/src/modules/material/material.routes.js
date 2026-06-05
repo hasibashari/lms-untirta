@@ -78,6 +78,10 @@ router.post(
   '/class/:classId',
   authenticateToken,
   authorizeRole('DOSEN'),
+  (req, res, next) => {
+    req.uploadSubfolder = 'material';
+    next();
+  },
   upload.single('file'),
   validate(createMaterialSchema),
   createMaterial
@@ -188,6 +192,10 @@ router.put(
   '/:materialId',
   authenticateToken,
   authorizeRole('DOSEN'),
+  (req, res, next) => {
+    req.uploadSubfolder = 'material';
+    next();
+  },
   upload.single('file'),
   validate(updateMaterialSchema),
   updateMaterial

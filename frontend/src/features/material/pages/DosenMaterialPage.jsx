@@ -12,9 +12,11 @@ import {
   Eye,
   X,
   Edit,
+  Paperclip,
+  DownloadCloud,
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials, deleteMaterial } from '../materialService';
-import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
+import MaterialPreviewCard from '../components/MaterialPreviewCard';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 
@@ -263,27 +265,24 @@ export default function Materials() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+            <div className="max-h-[75vh] overflow-y-auto">
               {previewLoading && (
-                <div className="text-slate-500">Memuat preview...</div>
+                <div className="p-6 text-slate-500">Memuat preview...</div>
               )}
 
               {previewError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="m-6 bg-red-50 border border-red-200 rounded-xl p-4">
                   <p className="text-red-600 font-medium">{previewError}</p>
                 </div>
               )}
 
-              {/* Content - Markdown Preview */}
-              {previewMaterial?.content ? (
-                <div className="prose prose-slate max-w-none">
-                  <MarkdownPreview content={previewMaterial.content} />
-                </div>
-              ) : (
-                <div className="text-center py-8 text-slate-500">
-                  <FileText size={40} className="mx-auto mb-3 text-slate-300" />
-                  <p>Tidak ada konten teks untuk materi ini.</p>
-                </div>
+              {!previewLoading && !previewError && previewMaterial && (
+                <MaterialPreviewCard
+                  title={previewMaterial.title}
+                  content={previewMaterial.content}
+                  order={previewMaterial.order}
+                  fileUrl={previewMaterial.fileUrl}
+                />
               )}
             </div>
 
