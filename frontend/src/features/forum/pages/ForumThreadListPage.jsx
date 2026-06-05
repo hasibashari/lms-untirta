@@ -20,18 +20,19 @@ export default function ForumThreadListPage() {
   const isDosen = location.pathname.startsWith('/dosen');
   const rolePrefix = isDosen ? '/dosen' : '/mahasiswa';
 
-  useEffect(() => {
+  const fetchThreads = () => {
     if (!classId) return;
-    const startTimer = setTimeout(() => {
-      setLoading(true);
-    }, 0);
+    setLoading(true);
+    setError(null);
 
     getThreads(classId)
       .then((res) => setThreads(res.data || []))
       .catch((err) => setError(err.message || 'Gagal memuat diskusi'))
       .finally(() => setLoading(false));
+  };
 
-    return () => clearTimeout(startTimer);
+  useEffect(() => {
+    fetchThreads();
   }, [classId]);
 
   // Filter threads by search
@@ -93,7 +94,7 @@ export default function ForumThreadListPage() {
           <div className="p-12 text-center">
             <p className="text-destructive font-medium">{error}</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => fetchThreads()}
               className="mt-3 text-sm text-primary hover:underline"
             >
               Coba lagi

@@ -65,34 +65,34 @@ const Courses = () => {
     getDosen().then(res => setDosenList(res.data || [])).catch(console.error);
   }, []);
 
+  const fetchCourses = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await getAllCourses({
+        page: currentPage,
+        limit,
+        search: searchQuery,
+        semester: filterSemester
+      });
+
+      setCourses(res.data || []);
+      if (res.pagination) {
+        setTotalPages(res.pagination.totalPages);
+        setTotalItems(res.pagination.total);
+      }
+    } catch (err) {
+      setError(err?.message || 'Gagal memuat data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch courses with debounce for search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const fetchData = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-          const res = await getAllCourses({
-            page: currentPage,
-            limit,
-            search: searchQuery,
-            semester: filterSemester
-          });
-
-          setCourses(res.data || []);
-          if (res.pagination) {
-            setTotalPages(res.pagination.totalPages);
-            setTotalItems(res.pagination.total);
-          }
-        } catch (err) {
-          setError(err?.message || 'Gagal memuat data');
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
+      fetchCourses();
     }, searchQuery ? 500 : 0);
 
     return () => clearTimeout(timeoutId);
@@ -271,7 +271,7 @@ const Courses = () => {
           <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
           <p className="text-red-600 font-medium">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchCourses()}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
             Coba lagi

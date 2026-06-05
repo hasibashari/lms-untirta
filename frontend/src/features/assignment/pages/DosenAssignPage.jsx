@@ -7,7 +7,6 @@ import {
   Calendar,
   Clock,
   Users,
-  ChevronRight,
   FileText,
   AlertCircle,
   Edit,
@@ -32,7 +31,7 @@ export default function Assignments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  useEffect(() => {
+  const fetchAssignments = () => {
     if (!classId || classId === 'undefined') return;
 
     setLoading(true);
@@ -40,6 +39,10 @@ export default function Assignments() {
       .then(res => setAssignments(res.data || []))
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchAssignments();
   }, [classId]);
 
   // Handler untuk menghapus tugas
@@ -186,7 +189,7 @@ export default function Assignments() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchAssignments()}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
             Coba lagi

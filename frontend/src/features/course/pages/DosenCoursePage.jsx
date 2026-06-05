@@ -32,11 +32,10 @@ export default function CourseHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchData = () => {
     if (!classId || classId === 'undefined') return;
-    const startTimer = setTimeout(() => {
-      setLoading(true);
-    }, 0);
+    setLoading(true);
+    setError(null);
 
     Promise.all([
       getMyCourses(),
@@ -56,8 +55,10 @@ export default function CourseHome() {
       })
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+  };
 
-    return () => clearTimeout(startTimer);
+  useEffect(() => {
+    fetchData();
   }, [classId]);
 
   if (!classId || classId === 'undefined') {
@@ -88,7 +89,7 @@ export default function CourseHome() {
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{error}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => fetchData()}
           className="mt-3 text-sm text-red-600 hover:underline"
         >
           Coba lagi

@@ -25,15 +25,19 @@ export default function AllSubmissions() {
   const [filterClass, setFilterClass] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    Promise.all([
-      getRecentSubmissions(100), // Get more submissions
-    ])
-      .then(([submissionsRes]) => {
-        setSubmissions(submissionsRes.data);
+  const fetchSubmissions = () => {
+    setLoading(true);
+    setError(null);
+    getRecentSubmissions(100)
+      .then((res) => {
+        setSubmissions(res.data);
       })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchSubmissions();
   }, []);
 
   // Get unique classes for filter
@@ -102,7 +106,7 @@ export default function AllSubmissions() {
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{error}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => fetchSubmissions()}
           className="mt-3 text-sm text-red-600 hover:underline"
         >
           Coba lagi

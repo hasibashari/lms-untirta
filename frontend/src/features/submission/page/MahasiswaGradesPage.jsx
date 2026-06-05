@@ -27,11 +27,17 @@ const MyGrades = () => {
   const [filterClass, setFilterClass] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
+  const fetchGrades = () => {
+    setLoading(true);
+    setError(null);
     getAllMyGrades()
       .then(res => setGrades(res.data))
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchGrades();
   }, []);
 
   // Get unique classes for filter
@@ -119,7 +125,7 @@ const MyGrades = () => {
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{error}</p>
         <Button
-          onClick={() => window.location.reload()}
+          onClick={() => fetchGrades()}
           variant="link"
           className="mt-3 text-sm text-red-600"
         >

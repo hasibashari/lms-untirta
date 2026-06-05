@@ -16,7 +16,7 @@ import { useMyClasses } from '../../krs/hooks/useMyClasses';
  */
 const MyClasses = () => {
   const navigate = useNavigate();
-  const { data: approvedEnrollments = [], isLoading: loading, error: fetchError } = useMyClasses();
+  const { data: approvedEnrollments = [], isLoading: loading, error: fetchError, refetch } = useMyClasses();
   const [searchQuery, setSearchQuery] = useState('');
   const error = fetchError?.message || null;
 
@@ -85,7 +85,7 @@ const MyClasses = () => {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={() => refetch()}
             variant="link"
             className="mt-3 text-sm text-red-600"
           >
@@ -104,13 +104,13 @@ const MyClasses = () => {
           <p className="text-slate-500 max-w-sm mx-auto mb-4">
             Anda belum memiliki kelas yang disetujui. Silakan isi KRS melalui menu KRS.
           </p>
-          <a
-            href="/mahasiswa/krs"
+          <button
+            onClick={() => navigate('/mahasiswa/krs')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             <BookOpen size={18} />
             Buka KRS
-          </a>
+          </button>
         </div>
       )}
 

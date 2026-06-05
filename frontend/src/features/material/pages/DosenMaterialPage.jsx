@@ -34,7 +34,7 @@ export default function Materials() {
   const [previewError, setPreviewError] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  useEffect(() => {
+  const fetchMaterials = () => {
     if (!classId || classId === 'undefined') return;
 
     setLoading(true);
@@ -42,6 +42,10 @@ export default function Materials() {
       .then(res => setMaterials(res.data || []))
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchMaterials();
   }, [classId]);
 
   const openPreview = async (materialId) => {
@@ -159,7 +163,7 @@ export default function Materials() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchMaterials()}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
             Coba lagi

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext, Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
 // UI components
@@ -254,7 +254,7 @@ export default function Register() {
             htmlFor="terms"
             className="text-sm font-medium leading-none cursor-pointer text-gray-700 hover:text-gray-900"
           >
-            Saya menyetujui <a href="/terms" className="text-primary-600 hover:text-primary-700 font-medium">Syarat & Ketentuan</a> yang berlaku
+            Saya menyetujui <Link to="/terms" className="text-primary-600 hover:text-primary-700 font-medium">Syarat & Ketentuan</Link> yang berlaku
           </label>
         </div>
 

@@ -24,11 +24,10 @@ export default function Students() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch students
-  useEffect(() => {
+  const fetchStudents = () => {
     if (!classId || classId === 'undefined') return;
-    const startTimer = setTimeout(() => {
-      setLoading(true);
-    }, 0);
+    setLoading(true);
+    setError(null);
 
     getCourseStudents(classId)
       .then(res => {
@@ -46,8 +45,10 @@ export default function Students() {
       })
       .catch(err => setError(err?.message || 'Gagal memuat data'))
       .finally(() => setLoading(false));
+  };
 
-    return () => clearTimeout(startTimer);
+  useEffect(() => {
+    fetchStudents();
   }, [classId]);
 
   // Filter students by search
@@ -152,7 +153,7 @@ export default function Students() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchStudents()}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
             Coba lagi
