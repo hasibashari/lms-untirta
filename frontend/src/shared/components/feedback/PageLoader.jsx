@@ -7,8 +7,8 @@ import { motion } from 'motion/react';
 const MotionDiv = motion.div;
 const MotionP = motion.p;
 
-const PageLoader = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+const PageLoader = ({ fullScreen = false }) => (
+  <div className={`flex flex-col items-center justify-center w-full ${fullScreen ? 'fixed inset-0 z-[9999] bg-background/80 backdrop-blur-sm min-h-screen' : 'min-h-[60vh]'}`}>
     <div className="relative">
       <MotionDiv
         animate={{

@@ -15,19 +15,9 @@ export const setOnUnauthorized = (fn) => {
   _onUnauthorized = fn;
 };
 
-// Global Request Tracking for Loading Bar
-let activeRequests = 0;
-const notifyLoading = (isLoading) => {
-  if (isLoading) activeRequests++;
-  else activeRequests = Math.max(0, activeRequests - 1);
-  
-  // Dispatch custom event for GlobalLoadingBar
-  window.dispatchEvent(new CustomEvent('api-loading', { detail: activeRequests > 0 }));
-};
 
 api.interceptors.request.use(
   config => {
-    notifyLoading(true);
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -38,18 +28,15 @@ api.interceptors.request.use(
     return config;
   },
   error => {
-    notifyLoading(false);
     return Promise.reject(error);
   }
 );
 
 api.interceptors.response.use(
   response => {
-    notifyLoading(false);
     return response.data;
   },
   error => {
-    notifyLoading(false);
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message || 'Terjadi kesalahan jaringan';
 

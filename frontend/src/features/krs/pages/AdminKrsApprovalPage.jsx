@@ -11,6 +11,13 @@ import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/shared/components/ui/table';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+} from '@/shared/components/ui/pagination';
 
 // ============================================================
 // Admin KRS Monitoring Page (Read-Only)
@@ -21,6 +28,8 @@ const AdminKrsMonitoringPage = () => {
   // Filter state
   const [academicSemesterId, setAcademicSemesterId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const limit = 50; // Use larger limit for grouping since we paginate enrollments
 
   // Semester data for filter
   const [semesters, setSemesters] = useState([]);
@@ -40,7 +49,7 @@ const AdminKrsMonitoringPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const params = {};
+      const params = { page, limit };
       if (academicSemesterId) params.academicSemesterId = academicSemesterId;
       const res = await getKrsMonitoring(params);
       setMonitoringData(res.data || null);
@@ -49,7 +58,7 @@ const AdminKrsMonitoringPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [academicSemesterId]);
+  }, [academicSemesterId, page]);
 
   useEffect(() => {
     fetchData();
@@ -75,6 +84,7 @@ const AdminKrsMonitoringPage = () => {
 
   const enrollments = useMemo(() => monitoringData?.enrollments || [], [monitoringData]);
   const summary = monitoringData?.summary || {};
+  const meta = monitoringData?._meta?.pagination;
 
   // Group enrollments by student
   const groupedByStudent = useMemo(() => {
@@ -187,7 +197,10 @@ const AdminKrsMonitoringPage = () => {
           <SemesterFilter
             semesters={semesters}
             academicSemesterId={academicSemesterId}
-            onAcademicSemesterChange={(val) => setAcademicSemesterId(val === 'all' ? null : val)}
+            onAcademicSemesterChange={(val) => {
+              setAcademicSemesterId(val === 'all' ? null : val);
+              setPage(1);
+            }}
             className="w-full"
           />
           <div className="w-full">
@@ -355,6 +368,32 @@ const AdminKrsMonitoringPage = () => {
               </div>
             );
           })}
+
+          {meta && meta.totalPages > 1 && (
+            <Pagination className="mt-6">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setPage(p => Math.max(1, p - 1))} 
+                    aria-disabled={page === 1}
+                    className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-sm text-slate-500 mx-4">
+                    Halaman {meta.currentPage} dari {meta.totalPages}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))} 
+                    aria-disabled={page === meta.totalPages}
+                    className={page === meta.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       )}
     </div>

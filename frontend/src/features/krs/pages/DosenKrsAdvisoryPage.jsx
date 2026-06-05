@@ -16,6 +16,13 @@ import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/shared/components/ui/table';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+} from '@/shared/components/ui/pagination';
 
 // ============================================================
 // Dosen Pembimbing (Dospem) Advisory Page
@@ -25,6 +32,8 @@ import {
 const DosenAdvisoryPage = () => {
   // Filter state
   const [academicSemesterId, setAcademicSemesterId] = useState(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Semester data for filter
   const [semesters, setSemesters] = useState([]);
@@ -47,7 +56,7 @@ const DosenAdvisoryPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const params = {};
+      const params = { page, limit };
       if (academicSemesterId) params.academicSemesterId = academicSemesterId;
       const res = await getAdvisoryStudents(params);
       setAdvisoryData(res.data || null);
@@ -56,7 +65,7 @@ const DosenAdvisoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [academicSemesterId]);
+  }, [academicSemesterId, page]);
 
   useEffect(() => {
     fetchStudents();
@@ -179,7 +188,10 @@ const DosenAdvisoryPage = () => {
             <SemesterFilter
               semesters={semesters}
               selectedId={academicSemesterId}
-              onSelect={setAcademicSemesterId}
+              onSelect={(val) => {
+                setAcademicSemesterId(val);
+                setPage(1);
+              }}
               hideAllOption={true}
             />
           </div>
@@ -410,6 +422,32 @@ const DosenAdvisoryPage = () => {
                 );
               })}
             </div>
+
+            {advisoryData._meta?.pagination && advisoryData._meta.pagination.totalPages > 1 && (
+              <Pagination className="mt-6">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setPage(p => Math.max(1, p - 1))} 
+                      aria-disabled={page === 1}
+                      className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span className="text-sm text-slate-500 mx-4">
+                      Halaman {advisoryData._meta.pagination.currentPage} dari {advisoryData._meta.pagination.totalPages}
+                    </span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setPage(p => Math.min(advisoryData._meta.pagination.totalPages, p + 1))} 
+                      aria-disabled={page === advisoryData._meta.pagination.totalPages}
+                      className={page === advisoryData._meta.pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </div>
         )
       )}

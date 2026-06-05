@@ -31,7 +31,7 @@ const RoleRoute = ({ roles }) => {
     }
   }, [isUnauthorized]);
 
-  if (loading) return <PageLoader />;
+  if (loading) return <PageLoader fullScreen />;
 
   // Belum login → ke halaman login
   if (!user) return <Navigate to="/login" replace />;

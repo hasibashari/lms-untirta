@@ -5,7 +5,7 @@ import PageLoader from '@/shared/components/feedback/PageLoader';
 const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) return <PageLoader />;
+  if (loading) return <PageLoader fullScreen />;
 
   if (!isAuthenticated) {
     return <Navigate to='/login' replace />;

@@ -518,11 +518,6 @@ export const getMyKRS = async (studentId, filters = {}) => {
               description: true,
               semester: true,
               sks: true,
-              _count: {
-                select: {
-                  materials: true,
-                },
-              },
             },
           },
           lecturer: {
@@ -1099,65 +1094,77 @@ export const getApprovalHistory = async (enrollmentId, currentUser) => {
 export const getAdvisoryStudents = async (dosenId, filters = {}) => {
   const where = { advisorId: dosenId, role: 'MAHASISWA' };
 
-  const students = await prisma.user.findMany({
-    where,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      krsEnrollments: {
-        where: filters.academicSemesterId ? {
-          class: { academicSemesterId: filters.academicSemesterId },
-        } : undefined,
-        select: {
-          id: true,
-          status: true,
-          note: true,
-          submittedAt: true,
-          class: {
-            select: {
-              id: true,
-              section: true,
-              academicSemesterId: true,
-              academicSemester: {
-                select: {
-                  academicYear: true,
-                  semesterType: true,
-                  status: true,
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const [totalStudents, students, statsQuery] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        krsEnrollments: {
+          where: filters.academicSemesterId ? {
+            class: { academicSemesterId: filters.academicSemesterId },
+          } : undefined,
+          select: {
+            id: true,
+            status: true,
+            note: true,
+            submittedAt: true,
+            class: {
+              select: {
+                id: true,
+                section: true,
+                academicSemesterId: true,
+                academicSemester: {
+                  select: {
+                    academicYear: true,
+                    semesterType: true,
+                    status: true,
+                  },
                 },
-              },
-              course: {
-                select: {
-                  id: true,
-                  title: true,
-                  code: true,
-                  semester: true,
-                  sks: true,
+                course: {
+                  select: {
+                    id: true,
+                    title: true,
+                    code: true,
+                    semester: true,
+                    sks: true,
+                  },
                 },
               },
             },
           },
+          orderBy: { createdAt: 'asc' },
         },
-        orderBy: { createdAt: 'asc' },
       },
-    },
-    orderBy: { name: 'asc' },
-  });
+      orderBy: { name: 'asc' },
+    }),
+    prisma.krsEnrollment.groupBy({
+      by: ['status'],
+      where: {
+        student: { advisorId: dosenId },
+        ...(filters.academicSemesterId ? { class: { academicSemesterId: filters.academicSemesterId } } : {})
+      },
+      _count: true,
+    })
+  ]);
 
-  // Hitung statistik
-  let totalPending = 0;
-  let totalApproved = 0;
-  let totalRejected = 0;
+  let totalPending = statsQuery.find(s => s.status === 'PENDING')?._count || 0;
+  let totalApproved = statsQuery.find(s => s.status === 'APPROVED')?._count || 0;
+  let totalRejected = statsQuery.find(s => s.status === 'REJECTED')?._count || 0;
 
   const result = students.map(s => {
     const pending = s.krsEnrollments.filter(e => e.status === 'PENDING').length;
     const approved = s.krsEnrollments.filter(e => e.status === 'APPROVED').length;
     const rejected = s.krsEnrollments.filter(e => e.status === 'REJECTED').length;
     const totalSks = s.krsEnrollments.reduce((sum, e) => sum + (e.class.course.sks || 3), 0);
-    
-    totalPending += pending;
-    totalApproved += approved;
-    totalRejected += rejected;
 
     return {
       id: s.id,
@@ -1171,10 +1178,18 @@ export const getAdvisoryStudents = async (dosenId, filters = {}) => {
   return {
     students: result,
     summary: {
-      totalStudents: students.length,
+      totalStudents,
       totalPending,
       totalApproved,
       totalRejected,
+    },
+    _meta: {
+      pagination: {
+        totalItems: totalStudents,
+        totalPages: Math.ceil(totalStudents / limit),
+        currentPage: page,
+        limit,
+      },
     },
   };
 };
@@ -1185,70 +1200,99 @@ export const getKrsMonitoring = async (filters = {}) => {
   const classWhere = {};
   if (filters.academicSemesterId) classWhere.academicSemesterId = filters.academicSemesterId;
 
-  const enrollments = await prisma.krsEnrollment.findMany({
-    where: {
-      ...(Object.keys(classWhere).length > 0 ? { class: classWhere } : {}),
-    },
-    select: {
-      id: true,
-      status: true,
-      submittedAt: true,
-      approvedAt: true,
-      student: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          advisorId: true,
-          advisor: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const whereClause = {
+    ...(Object.keys(classWhere).length > 0 ? { class: classWhere } : {}),
+  };
+
+  const [totalItems, enrollments, stats] = await Promise.all([
+    prisma.krsEnrollment.count({ where: whereClause }),
+    prisma.krsEnrollment.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        status: true,
+        submittedAt: true,
+        approvedAt: true,
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            advisorId: true,
+            advisor: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
           },
         },
-      },
-      class: {
-        select: {
-          id: true,
-          section: true,
-          academicSemesterId: true,
-          academicSemester: {
-            select: {
-              academicYear: true,
-              semesterType: true,
+        class: {
+          select: {
+            id: true,
+            section: true,
+            academicSemesterId: true,
+            academicSemester: {
+              select: {
+                academicYear: true,
+                semesterType: true,
+              },
             },
-          },
-          course: {
-            select: {
-              id: true,
-              title: true,
-              code: true,
-              sks: true,
-              teacher: {
-                select: {
-                  id: true,
-                  name: true,
+            course: {
+              select: {
+                id: true,
+                title: true,
+                code: true,
+                sks: true,
+                teacher: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
+      orderBy: [
+        { student: { name: 'asc' } },
+        { createdAt: 'asc' }
+      ],
+    }),
+    prisma.krsEnrollment.groupBy({
+      by: ['status'],
+      where: whereClause,
+      _count: true,
+    })
+  ]);
 
-  // Group by status for summary
   const summary = {
-    total: enrollments.length,
-    pending: enrollments.filter(e => e.status === 'PENDING').length,
-    approved: enrollments.filter(e => e.status === 'APPROVED').length,
-    rejected: enrollments.filter(e => e.status === 'REJECTED').length,
+    total: totalItems,
+    pending: stats.find(s => s.status === 'PENDING')?._count || 0,
+    approved: stats.find(s => s.status === 'APPROVED')?._count || 0,
+    rejected: stats.find(s => s.status === 'REJECTED')?._count || 0,
   };
 
-  return { enrollments, summary };
+  return {
+    enrollments,
+    summary,
+    _meta: {
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        limit,
+      },
+    },
+  };
 };
 
 

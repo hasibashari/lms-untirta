@@ -121,6 +121,8 @@ export const getAdvisoryStudents = async (req, res) => {
   try {
     const filters = {
       academicSemesterId: req.query.academicSemesterId,
+      page: req.query.page,
+      limit: req.query.limit,
     };
     const result = await krsService.getAdvisoryStudents(req.user.id, filters);
     sendSuccess(res, {
@@ -137,6 +139,8 @@ export const getKrsMonitoring = async (req, res) => {
   try {
     const filters = {
       academicSemesterId: req.query.academicSemesterId,
+      page: req.query.page,
+      limit: req.query.limit,
     };
     const result = await krsService.getKrsMonitoring(filters);
     sendSuccess(res, {
