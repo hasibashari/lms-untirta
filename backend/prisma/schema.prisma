@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(uuid())
+  id              String          @id @default(uuid()) @db.Uuid
   email           String          @unique
   password        String
   name            String
   role            Role            @default(MAHASISWA)
   createdAt       DateTime        @default(now())
-  advisorId       String?
+  advisorId       String?         @db.Uuid
   isDospem        Boolean         @default(false)
   nim             String?         @unique
   classesTeaching Class[]         @relation("LecturerClasses")
@@ -33,11 +33,11 @@ model User {
 }
 
 model Course {
-  id           String        @id @default(uuid())
+  id           String        @id @default(uuid()) @db.Uuid
   title        String
   description  String?
   code         String        @unique
-  teacherId    String
+  teacherId    String        @db.Uuid
   createdAt    DateTime      @default(now())
   semester     Int?
   sks          Int           @default(3)
@@ -49,11 +49,11 @@ model Course {
 }
 
 model Material {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   title       String
   content     String?
-  courseId    String
-  classId     String?
+  courseId    String   @db.Uuid
+  classId     String?  @db.Uuid
   createdAt   DateTime @default(now())
   fileUrl     String?
   isPublished Boolean  @default(true)
@@ -68,11 +68,11 @@ model Material {
 }
 
 model Assignment {
-  id          String       @id @default(uuid())
+  id          String       @id @default(uuid()) @db.Uuid
   title       String
   dueDate     DateTime
-  courseId    String
-  classId     String?
+  courseId    String       @db.Uuid
+  classId     String?      @db.Uuid
   createdAt   DateTime     @default(now())
   description String?
   updatedAt   DateTime     @updatedAt
@@ -85,14 +85,14 @@ model Assignment {
 }
 
 model Submission {
-  id           String     @id @default(uuid())
+  id           String     @id @default(uuid()) @db.Uuid
   fileUrl      String?
   note         String?
   grade        Float?
   feedback     String?
   submittedAt  DateTime   @default(now())
-  assignmentId String
-  studentId    String
+  assignmentId String     @db.Uuid
+  studentId    String     @db.Uuid
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   student      User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -102,9 +102,9 @@ model Submission {
 }
 
 model Class {
-  id                 String           @id @default(uuid())
-  courseId           String
-  lecturerId         String
+  id                 String           @id @default(uuid()) @db.Uuid
+  courseId           String           @db.Uuid
+  lecturerId         String           @db.Uuid
   section            String
   schedule           String?
   room               String?
@@ -112,7 +112,7 @@ model Class {
   isEnrollmentOpen   Boolean          @default(false)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
-  academicSemesterId String
+  academicSemesterId String           @db.Uuid
   academicSemester   AcademicSemester @relation(fields: [academicSemesterId], references: [id])
   course             Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lecturer           User             @relation("LecturerClasses", fields: [lecturerId], references: [id])
@@ -128,15 +128,15 @@ model Class {
 }
 
 model KrsEnrollment {
-  id            String           @id @default(uuid())
-  studentId     String
-  classId       String
+  id            String           @id @default(uuid()) @db.Uuid
+  studentId     String           @db.Uuid
+  classId       String           @db.Uuid
   status        KrsStatus        @default(PENDING)
   note          String?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   approvedAt    DateTime?
-  approvedBy    String?
+  approvedBy    String?          @db.Uuid
   submittedAt   DateTime?
   revisionCount Int              @default(0)
   approvalLogs  KrsApprovalLog[]
@@ -150,7 +150,7 @@ model KrsEnrollment {
 }
 
 model AcademicSemester {
-  id           String         @id @default(uuid())
+  id           String         @id @default(uuid()) @db.Uuid
   academicYear String
   semesterType SemesterType
   status       SemesterStatus @default(DRAFT)
@@ -168,11 +168,11 @@ model AcademicSemester {
 }
 
 model FinalGrade {
-  id                 String           @id @default(uuid())
-  studentId          String
-  classId            String
-  academicSemesterId String
-  lecturerId         String
+  id                 String           @id @default(uuid()) @db.Uuid
+  studentId          String           @db.Uuid
+  classId            String           @db.Uuid
+  academicSemesterId String           @db.Uuid
+  lecturerId         String           @db.Uuid
   letterGrade        String
   gradePoint         Float
   numericScore       Float?
@@ -193,11 +193,11 @@ model FinalGrade {
 }
 
 model KrsApprovalLog {
-  id           String        @id @default(uuid())
-  enrollmentId String
+  id           String        @id @default(uuid()) @db.Uuid
+  enrollmentId String        @db.Uuid
   fromStatus   KrsStatus
   toStatus     KrsStatus
-  actorId      String?
+  actorId      String?       @db.Uuid
   actorType    String
   note         String?
   createdAt    DateTime      @default(now())
@@ -205,12 +205,12 @@ model KrsApprovalLog {
 }
 
 model ForumThread {
-  id        String       @id @default(uuid())
+  id        String       @id @default(uuid()) @db.Uuid
   title     String
   content   String
   isPinned  Boolean      @default(false)
-  courseId  String
-  authorId  String
+  courseId  String       @db.Uuid
+  authorId  String       @db.Uuid
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   replies   ForumReply[]
@@ -222,11 +222,11 @@ model ForumThread {
 }
 
 model ForumReply {
-  id        String       @id @default(uuid())
+  id        String       @id @default(uuid()) @db.Uuid
   content   String
-  threadId  String
-  authorId  String
-  parentId  String? // Menambahkan parentId untuk nested replies
+  threadId  String       @db.Uuid
+  authorId  String       @db.Uuid
+  parentId  String?      @db.Uuid
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   author    User         @relation("ReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
