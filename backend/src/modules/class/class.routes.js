@@ -104,6 +104,22 @@ router.get(
   getOpen
 );
 
+/**
+ * @swagger
+ * /api/classes/stats:
+ *   get:
+ *     summary: Get overall class statistics (Admin Only)
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Class statistics
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get(
   '/stats',
   authenticateToken,
@@ -111,7 +127,40 @@ router.get(
   getStats
 );
 
+/**
+ * @swagger
+ * /api/classes/my-stats:
+ *   get:
+ *     summary: Get dashboard statistics for the logged-in student
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Student dashboard statistics
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
+
+/**
+ * @swagger
+ * /api/classes/teacher-stats:
+ *   get:
+ *     summary: Get dashboard statistics for the logged-in lecturer
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lecturer dashboard statistics
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
 
 /**
@@ -419,6 +468,26 @@ router.delete(
   remove
 );
 
+/**
+ * @swagger
+ * /api/classes/{id}/students:
+ *   get:
+ *     summary: Get list of students enrolled in a class
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: List of enrolled students
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.get(
   '/:id/students',
   authenticateToken,
@@ -426,6 +495,26 @@ router.get(
   getStudentsByClass
 );
 
+/**
+ * @swagger
+ * /api/classes/{id}/available-students:
+ *   get:
+ *     summary: Get list of students not yet enrolled in a class
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: List of available students
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.get(
   '/:id/available-students',
   authenticateToken,

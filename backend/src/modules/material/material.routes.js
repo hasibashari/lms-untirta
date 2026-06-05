@@ -8,6 +8,72 @@ import { createMaterialSchema, updateMaterialSchema } from './material.validatio
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/materials/class/{classId}:
+ *   post:
+ *     summary: Create a new material for a class
+ *     tags: [Materials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [title]
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 minLength: 3
+ *               content:
+ *                 type: string
+ *               videoUrl:
+ *                 type: string
+ *                 format: uri
+ *               order:
+ *                 type: integer
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Material created successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *
+ *   get:
+ *     summary: Get all materials for a class
+ *     tags: [Materials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: List of materials
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.post(
   '/class/:classId',
   authenticateToken,

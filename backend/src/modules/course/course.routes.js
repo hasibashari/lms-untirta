@@ -321,6 +321,39 @@ router.patch(
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+/**
+ * @swagger
+ * /api/courses/{id}/enroll:
+ *   post:
+ *     summary: Enroll a student into a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [studentId]
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Student successfully enrolled
+ *       400:
+ *         $ref: '#/components/responses/ValidationFailed'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.post(
   '/:id/enroll',
   authenticateToken,
@@ -329,6 +362,26 @@ router.post(
   enrollStudent
 );
 
+/**
+ * @swagger
+ * /api/courses/{id}/students:
+ *   get:
+ *     summary: Get list of students enrolled in a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: List of enrolled students
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.get(
   '/:id/students',
   authenticateToken,
@@ -336,6 +389,26 @@ router.get(
   getStudentsByCourse
 );
 
+/**
+ * @swagger
+ * /api/courses/{id}/available-students:
+ *   get:
+ *     summary: Get list of students not yet enrolled in a course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/UuidIdParam'
+ *     responses:
+ *       200:
+ *         description: List of available students
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.get(
   '/:id/available-students',
   authenticateToken,

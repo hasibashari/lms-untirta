@@ -10,7 +10,6 @@ import {
   assignAdvisor,
   bulkAssignAdvisor,
   getAdvisorSummary,
-  getAdvisorStudents,
   getAdminStats,
   updateUser,
   deleteUser,
@@ -214,43 +213,6 @@ router.get('/', getAllUsers);
  */
 router.get('/advisor-summary', getAdvisorSummary);
 
-/**
- * @swagger
- * /api/users/advisors/{dosenId}/students:
- *   get:
- *     summary: List students of a specific advisor
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: dosenId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Advisor (Dosen) UUID
- *     responses:
- *       200:
- *         description: List of students under the advisor
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/User'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- */
-router.get('/advisors/:dosenId/students', getAdvisorStudents);
 
 /**
  * @swagger

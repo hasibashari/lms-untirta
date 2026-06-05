@@ -19,7 +19,6 @@ const grpcUpdateDospemStatus = util.promisify(userClient.UpdateDospemStatus).bin
 const grpcAssignAdvisor = util.promisify(userClient.AssignAdvisor).bind(userClient);
 const grpcBulkAssignAdvisor = util.promisify(userClient.BulkAssignAdvisor).bind(userClient);
 const grpcGetAdvisorSummary = util.promisify(userClient.GetAdvisorSummary).bind(userClient);
-const grpcGetAdvisorStudents = util.promisify(userClient.GetAdvisorStudents).bind(userClient);
 const grpcGetAdminStats = util.promisify(userClient.GetAdminStats).bind(userClient);
 
 // Pemetaan error gRPC ke status HTTP agar client REST mendapatkan kode yang sesuai
@@ -197,16 +196,6 @@ export const getAdvisorSummary = async (req, res) => {
   }
 };
 
-export const getAdvisorStudents = async (req, res) => {
-  try {
-    const { dosenId } = req.params;
-    const meta = createGrpcMetadata(req);
-    const result = await grpcGetAdvisorStudents({ advisorId: dosenId }, meta);
-    sendSuccess(res, { statusCode: 200, message: 'Daftar mahasiswa bimbingan berhasil diambil', data: result });
-  } catch (error) {
-    return mapGrpcErrorToHttp(res, error);
-  }
-};
 
 export const getAdminStats = async (req, res) => {
   try {
