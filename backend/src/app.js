@@ -65,13 +65,13 @@ app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/' } }))
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
   : [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:5174',
-      'https://lms-untirta.my.id',
-      'http://lms-untirta.my.id'
-    ];
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'https://lms-untirta.my.id',
+    'http://lms-untirta.my.id'
+  ];
 
 app.use(cors({
   origin: allowedOrigins,

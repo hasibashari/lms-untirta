@@ -33,10 +33,17 @@ const start = async () => {
   // Fungsi shutdown untuk menutup server dan menutup koneksi Redis
   const shutdown = async (signal) => {
     logger.info(`${signal} received — shutting down gracefully`);
-    server.close(async () => {
-      // Tutup koneksi Redis sebelum keluar
-      await closeRedis();
-      process.exit(0);
+
+    server.close(() => {
+      logger.info('HTTP server closed');
+
+      grpcServer.tryShutdown(async () => {
+        logger.info('gRPC server closed');
+
+        // Tutup koneksi Redis sebelum keluar
+        await closeRedis();
+        process.exit(0);
+      });
     });
 
     // Jika shutdown lambat, paksa keluar setelah timeout

@@ -32,7 +32,7 @@ const findActiveClass = async (courseId) => {
 // HANDLERS — STUDENT MANAGEMENT
 // =============================================================================
 
-const AddStudentToCourse = async (call, callback) => {
+export const AddStudentToCourse = async (call, callback) => {
   try {
     const { courseId, studentEmail, teacherId, teacherRole } = call.request;
 
@@ -77,7 +77,7 @@ const AddStudentToCourse = async (call, callback) => {
   }
 };
 
-const AddStudentToCourseById = async (call, callback) => {
+export const AddStudentToCourseById = async (call, callback) => {
   try {
     const { courseId, studentId, teacherId, teacherRole } = call.request;
 
@@ -123,7 +123,7 @@ const AddStudentToCourseById = async (call, callback) => {
 };
 
 // Mendapatkan semua course yang diikuti oleh mahasiswa
-const GetEnrolledCourses = async (call, callback) => {
+export const GetEnrolledCourses = async (call, callback) => {
   try {
     const { studentId } = call.request;
     const enrollments = await prisma.krsEnrollment.findMany({
@@ -194,7 +194,7 @@ const GetEnrolledCourses = async (call, callback) => {
 };
 
 // Mendapatkan semua course yang diajar
-const GetTeachingCourses = async (call, callback) => {
+export const GetTeachingCourses = async (call, callback) => {
   try {
     const { teacherId } = call.request;
     const courses = await prisma.course.findMany({
@@ -246,7 +246,7 @@ const GetTeachingCourses = async (call, callback) => {
   }
 };
 
-const GetStudentsByCourse = async (call, callback) => {
+export const GetStudentsByCourse = async (call, callback) => {
   try {
     const { courseId, userId, userRole } = call.request;
 
@@ -289,7 +289,7 @@ const GetStudentsByCourse = async (call, callback) => {
   }
 };
 
-const GetAvailableStudentsForCourse = async (call, callback) => {
+export const GetAvailableStudentsForCourse = async (call, callback) => {
   try {
     const { courseId, userId, userRole } = call.request;
 
@@ -332,7 +332,7 @@ const GetAvailableStudentsForCourse = async (call, callback) => {
 // HANDLERS — ADMIN OPERATIONS
 // =============================================================================
 
-const AdminGetAllCourses = async (call, callback) => {
+export const AdminGetAllCourses = async (call, callback) => {
   try {
     const { page, limit, search, semester } = call.request;
     const { skip, take, meta } = paginate({ page, limit });
@@ -410,7 +410,7 @@ const AdminGetAllCourses = async (call, callback) => {
   }
 };
 
-const AdminCreateCourse = async (call, callback) => {
+export const AdminCreateCourse = async (call, callback) => {
   try {
     const data = call.request;
 
@@ -446,7 +446,7 @@ const AdminCreateCourse = async (call, callback) => {
   }
 };
 
-const AdminUpdateCourse = async (call, callback) => {
+export const AdminUpdateCourse = async (call, callback) => {
   try {
     const data = call.request;
     const { courseId } = data;
@@ -482,7 +482,7 @@ const AdminUpdateCourse = async (call, callback) => {
   }
 };
 
-const AdminDeleteCourse = async (call, callback) => {
+export const AdminDeleteCourse = async (call, callback) => {
   try {
     const { courseId } = call.request;
     const course = await prisma.course.findUnique({
@@ -519,7 +519,7 @@ const AdminDeleteCourse = async (call, callback) => {
   }
 };
 
-const AdminAssignTeacher = async (call, callback) => {
+export const AdminAssignTeacher = async (call, callback) => {
   try {
     const { courseId, teacherId } = call.request;
 
@@ -545,22 +545,3 @@ const AdminAssignTeacher = async (call, callback) => {
   }
 };
 
-// =============================================================================
-// EXPORT SERVICE
-// =============================================================================
-
-export const courseService = {
-  AddStudentToCourse,
-  AddStudentToCourseById,
-  GetEnrolledCourses,
-  GetTeachingCourses,
-  GetStudentsByCourse,
-  GetAvailableStudentsForCourse,
-  AdminGetAllCourses,
-  AdminCreateCourse,
-  AdminUpdateCourse,
-  AdminDeleteCourse,
-  AdminAssignTeacher,
-};
-
-export default courseService;

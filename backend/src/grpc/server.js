@@ -5,11 +5,11 @@ import { fileURLToPath } from 'url';
 import logger from '../config/logger.js';
 import { grpcAuthInterceptor } from './interceptors/auth.interceptor.js';
 
-import { userService } from '../modules/user/user.grpc-service.js';
-import { courseService } from '../modules/course/course.grpc-service.js';
-import { academicService } from '../modules/academic/academic.grpc-service.js';
-import classServiceImpl from '../modules/class/class.grpc-service.js';
-import submissionServiceImpl from '../modules/submission/submission.grpc-service.js';
+import * as userService from '../modules/user/user.grpc-service.js';
+import * as courseService from '../modules/course/course.grpc-service.js';
+import * as academicService from '../modules/academic/academic.grpc-service.js';
+import * as classServiceImpl from '../modules/class/class.grpc-service.js';
+import * as submissionServiceImpl from '../modules/submission/submission.grpc-service.js';
 
 // File ini bertanggung jawab untuk memuat file .proto, mendaftarkan implementasi
 // service gRPC, dan melakukan binding pada port internal. Digunakan untuk

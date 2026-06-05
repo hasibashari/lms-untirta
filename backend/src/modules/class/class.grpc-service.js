@@ -88,7 +88,7 @@ const validateSemester = async (semesterId) => {
 // HANDLERS — ADMIN OPERATIONS
 // =============================================================================
 
-const CreateClass = async (call, callback) => {
+export const CreateClass = async (call, callback) => {
   try {
     const data = call.request;
 
@@ -146,7 +146,7 @@ const CreateClass = async (call, callback) => {
   }
 };
 
-const UpdateClass = async (call, callback) => {
+export const UpdateClass = async (call, callback) => {
   try {
     const classId = call.request.id;
     const data = call.request;
@@ -209,7 +209,7 @@ const UpdateClass = async (call, callback) => {
   }
 };
 
-const DeleteClass = async (call, callback) => {
+export const DeleteClass = async (call, callback) => {
   try {
     const classId = call.request.id;
     const existing = await prisma.class.findUnique({
@@ -232,7 +232,7 @@ const DeleteClass = async (call, callback) => {
   }
 };
 
-const ToggleEnrollment = async (call, callback) => {
+export const ToggleEnrollment = async (call, callback) => {
   try {
     const { id: classId, isEnrollmentOpen } = call.request;
 
@@ -265,7 +265,7 @@ const ToggleEnrollment = async (call, callback) => {
 // HANDLERS — QUERY OPERATIONS
 // =============================================================================
 
-const GetAllClasses = async (call, callback) => {
+export const GetAllClasses = async (call, callback) => {
   try {
     const { page, limit, academicSemesterId, courseId, search, isEnrollmentOpen } = call.request;
 
@@ -318,7 +318,7 @@ const GetAllClasses = async (call, callback) => {
   }
 };
 
-const GetClassById = async (call, callback) => {
+export const GetClassById = async (call, callback) => {
   try {
     const data = await prisma.class.findUnique({
       where: { id: call.request.id },
@@ -336,7 +336,7 @@ const GetClassById = async (call, callback) => {
   }
 };
 
-const GetClassStats = async (call, callback) => {
+export const GetClassStats = async (call, callback) => {
   try {
     const { academicSemesterId } = call.request;
 
@@ -358,7 +358,7 @@ const GetClassStats = async (call, callback) => {
   }
 };
 
-const GetClassesByLecturer = async (call, callback) => {
+export const GetClassesByLecturer = async (call, callback) => {
   try {
     const { lecturerId, academicSemesterId } = call.request;
     const where = { lecturerId };
@@ -382,7 +382,7 @@ const GetClassesByLecturer = async (call, callback) => {
   }
 };
 
-const GetClassesByCourse = async (call, callback) => {
+export const GetClassesByCourse = async (call, callback) => {
   try {
     const { courseId, academicSemesterId } = call.request;
     const where = { courseId };
@@ -403,7 +403,7 @@ const GetClassesByCourse = async (call, callback) => {
   }
 };
 
-const GetOpenClasses = async (call, callback) => {
+export const GetOpenClasses = async (call, callback) => {
   try {
     const { courseId, academicSemesterId } = call.request;
     const where = { isEnrollmentOpen: true };
@@ -424,22 +424,3 @@ const GetOpenClasses = async (call, callback) => {
     callback({ code: grpc.status.INTERNAL, details: error.message });
   }
 };
-
-// =============================================================================
-// EXPORT SERVICE
-// =============================================================================
-
-export const classService = {
-  CreateClass,
-  GetAllClasses,
-  GetClassStats,
-  GetClassById,
-  GetClassesByLecturer,
-  GetClassesByCourse,
-  GetOpenClasses,
-  UpdateClass,
-  ToggleEnrollment,
-  DeleteClass,
-};
-
-export default classService;

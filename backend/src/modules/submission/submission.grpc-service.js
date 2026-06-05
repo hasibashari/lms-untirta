@@ -30,7 +30,7 @@ const hasTeacherAccess = (assignment, teacherId) => {
 // HANDLERS — STUDENT SIDE
 // =============================================================================
 
-const SubmitAssignment = async (call, callback) => {
+export const SubmitAssignment = async (call, callback) => {
   try {
     const { assignmentId, studentId, fileUrl, note } = call.request;
 
@@ -78,7 +78,7 @@ const SubmitAssignment = async (call, callback) => {
   }
 };
 
-const GetAssignmentWithMySubmission = async (call, callback) => {
+export const GetAssignmentWithMySubmission = async (call, callback) => {
   try {
     const { assignmentId, studentId } = call.request;
 
@@ -126,7 +126,7 @@ const GetAssignmentWithMySubmission = async (call, callback) => {
   }
 };
 
-const GetAllMyGrades = async (call, callback) => {
+export const GetAllMyGrades = async (call, callback) => {
   try {
     const { studentId } = call.request;
 
@@ -183,7 +183,7 @@ const GetAllMyGrades = async (call, callback) => {
   }
 };
 
-const GetMyDashboardStats = async (call, callback) => {
+export const GetMyDashboardStats = async (call, callback) => {
   try {
     const { studentId } = call.request;
 
@@ -231,7 +231,7 @@ const GetMyDashboardStats = async (call, callback) => {
 // HANDLERS — TEACHER SIDE
 // =============================================================================
 
-const GetSubmissionsByAssignment = async (call, callback) => {
+export const GetSubmissionsByAssignment = async (call, callback) => {
   try {
     const { assignmentId, teacherId } = call.request;
 
@@ -272,7 +272,7 @@ const GetSubmissionsByAssignment = async (call, callback) => {
   }
 };
 
-const GradeSubmission = async (call, callback) => {
+export const GradeSubmission = async (call, callback) => {
   try {
     const { submissionId, teacherId, grade, feedback } = call.request;
 
@@ -315,7 +315,7 @@ const GradeSubmission = async (call, callback) => {
   }
 };
 
-const GetTeacherDashboardStats = async (call, callback) => {
+export const GetTeacherDashboardStats = async (call, callback) => {
   try {
     const { teacherId } = call.request;
 
@@ -389,7 +389,7 @@ const GetTeacherDashboardStats = async (call, callback) => {
   }
 };
 
-const GetRecentSubmissionsForTeacher = async (call, callback) => {
+export const GetRecentSubmissionsForTeacher = async (call, callback) => {
   try {
     const { teacherId, limit } = call.request;
 
@@ -429,20 +429,3 @@ const GetRecentSubmissionsForTeacher = async (call, callback) => {
     callback({ code: grpc.status.INTERNAL, details: error.message });
   }
 };
-
-// =============================================================================
-// EXPORT SERVICE
-// =============================================================================
-
-export const submissionService = {
-  SubmitAssignment,
-  GetAssignmentWithMySubmission,
-  GetSubmissionsByAssignment,
-  GetAllMyGrades,
-  GetMyDashboardStats,
-  GradeSubmission,
-  GetTeacherDashboardStats,
-  GetRecentSubmissionsForTeacher,
-};
-
-export default submissionService;

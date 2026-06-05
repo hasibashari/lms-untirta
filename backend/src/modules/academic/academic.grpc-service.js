@@ -118,7 +118,7 @@ const checkClosePreconditions = async (semesterId) => {
 // HANDLERS — QUERY OPERATIONS
 // =============================================================================
 
-const GetAllSemesters = async (call, callback) => {
+export const GetAllSemesters = async (call, callback) => {
   try {
     const semesters = await prisma.academicSemester.findMany({
       orderBy: [{ academicYear: 'desc' }, { semesterType: 'asc' }],
@@ -131,7 +131,7 @@ const GetAllSemesters = async (call, callback) => {
   }
 };
 
-const GetActiveSemester = async (call, callback) => {
+export const GetActiveSemester = async (call, callback) => {
   try {
     const semester = await prisma.academicSemester.findFirst({
       where: { isActive: true },
@@ -144,7 +144,7 @@ const GetActiveSemester = async (call, callback) => {
   }
 };
 
-const GetSemesterById = async (call, callback) => {
+export const GetSemesterById = async (call, callback) => {
   try {
     const semester = await prisma.academicSemester.findUnique({
       where: { id: call.request.id },
@@ -159,7 +159,7 @@ const GetSemesterById = async (call, callback) => {
   }
 };
 
-const GetStudentSemesters = async (call, callback) => {
+export const GetStudentSemesters = async (call, callback) => {
   try {
     const { studentId } = call.request;
 
@@ -202,7 +202,7 @@ const GetStudentSemesters = async (call, callback) => {
 // HANDLERS — ADMIN OPERATIONS
 // =============================================================================
 
-const CreateSemester = async (call, callback) => {
+export const CreateSemester = async (call, callback) => {
   try {
     const data = call.request;
     
@@ -238,7 +238,7 @@ const CreateSemester = async (call, callback) => {
   }
 };
 
-const UpdateSemester = async (call, callback) => {
+export const UpdateSemester = async (call, callback) => {
   try {
     const data = call.request;
     const semester = await prisma.academicSemester.findUnique({ where: { id: data.id } });
@@ -264,7 +264,7 @@ const UpdateSemester = async (call, callback) => {
   }
 };
 
-const UpdateStatus = async (call, callback) => {
+export const UpdateStatus = async (call, callback) => {
   try {
     const { id, newStatus } = call.request;
     const semester = await prisma.academicSemester.findUnique({ where: { id } });
@@ -313,7 +313,7 @@ const UpdateStatus = async (call, callback) => {
   }
 };
 
-const DeleteSemester = async (call, callback) => {
+export const DeleteSemester = async (call, callback) => {
   try {
     const { id } = call.request;
     const semester = await prisma.academicSemester.findUnique({
@@ -336,7 +336,7 @@ const DeleteSemester = async (call, callback) => {
   }
 };
 
-const GetClosingReadiness = async (call, callback) => {
+export const GetClosingReadiness = async (call, callback) => {
   try {
     const { id } = call.request;
     const semester = await prisma.academicSemester.findUnique({ where: { id } });
@@ -404,20 +404,4 @@ const GetClosingReadiness = async (call, callback) => {
   }
 };
 
-// =============================================================================
-// EXPORT SERVICE
-// =============================================================================
 
-export const academicService = {
-  GetAllSemesters,
-  GetActiveSemester,
-  GetSemesterById,
-  CreateSemester,
-  UpdateSemester,
-  UpdateStatus,
-  DeleteSemester,
-  GetClosingReadiness,
-  GetStudentSemesters,
-};
-
-export default academicService;

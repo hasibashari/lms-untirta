@@ -102,10 +102,4 @@ export const cleanupFile = async (filePath) => {
   }
 };
 
-export default {
-  persistUploadMeta,
-  getUploadMeta,
-  deleteUpload,
-  listUserUploads,
-  cleanupFile,
-};
+

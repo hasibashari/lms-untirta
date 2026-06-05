@@ -34,7 +34,7 @@ const findLeastBusyAdvisor = async () => {
 // HANDLERS — CORE USER OPERATIONS
 // =============================================================================
 
-const CreateUserByAdmin = async (call, callback) => {
+export const CreateUserByAdmin = async (call, callback) => {
   try {
     const data = call.request;
 
@@ -67,7 +67,7 @@ const CreateUserByAdmin = async (call, callback) => {
   }
 };
 
-const GetAllUsers = async (call, callback) => {
+export const GetAllUsers = async (call, callback) => {
   try {
     const { role, isDospem, page, limit } = call.request;
     const { skip, take, meta } = paginate({ page, limit });
@@ -102,7 +102,7 @@ const GetAllUsers = async (call, callback) => {
   }
 };
 
-const GetUserById = async (call, callback) => {
+export const GetUserById = async (call, callback) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: call.request.id },
@@ -125,7 +125,7 @@ const GetUserById = async (call, callback) => {
   }
 };
 
-const UpdateUser = async (call, callback) => {
+export const UpdateUser = async (call, callback) => {
   try {
     const data = call.request;
     const user = await prisma.user.findUnique({ where: { id: data.id } });
@@ -154,7 +154,7 @@ const UpdateUser = async (call, callback) => {
   }
 };
 
-const DeleteUser = async (call, callback) => {
+export const DeleteUser = async (call, callback) => {
   try {
     const { id } = call.request;
     const user = await prisma.user.findUnique({ where: { id } });
@@ -174,11 +174,11 @@ const DeleteUser = async (call, callback) => {
 // HANDLERS — DOSEN PEMBIMBING (ADVISOR) OPERATIONS
 // =============================================================================
 
-const UpdateDospemStatus = async (call, callback) => {
+export const UpdateDospemStatus = async (call, callback) => {
   try {
     const { id, isDospem } = call.request;
     const user = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
-    
+
     if (!user) return callback({ code: grpc.status.NOT_FOUND, details: 'User tidak ditemukan' });
     if (user.role !== 'DOSEN') return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Hanya dosen yang bisa menjadi Dospem' });
 
@@ -193,10 +193,10 @@ const UpdateDospemStatus = async (call, callback) => {
   }
 };
 
-const AssignAdvisor = async (call, callback) => {
+export const AssignAdvisor = async (call, callback) => {
   try {
     const { studentId, advisorId } = call.request;
-    
+
     const student = await prisma.user.findUnique({ where: { id: studentId }, select: { id: true, role: true } });
     if (!student || student.role !== 'MAHASISWA') {
       return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'User bukan mahasiswa' });
@@ -228,7 +228,7 @@ const AssignAdvisor = async (call, callback) => {
   }
 };
 
-const BulkAssignAdvisor = async (call, callback) => {
+export const BulkAssignAdvisor = async (call, callback) => {
   try {
     const { studentIds, advisorId } = call.request;
     if (!studentIds?.length) return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Tidak ada mahasiswa dipilih' });
@@ -249,7 +249,7 @@ const BulkAssignAdvisor = async (call, callback) => {
   }
 };
 
-const GetAdvisorSummary = async (call, callback) => {
+export const GetAdvisorSummary = async (call, callback) => {
   try {
     const advisors = await prisma.user.findMany({
       where: { role: 'DOSEN', isDospem: true },
@@ -272,11 +272,11 @@ const GetAdvisorSummary = async (call, callback) => {
   }
 };
 
-const GetAdvisorStudents = async (call, callback) => {
+export const GetAdvisorStudents = async (call, callback) => {
   try {
     const { advisorId } = call.request;
     const advisor = await prisma.user.findUnique({ where: { id: advisorId }, select: { id: true, name: true, email: true, isDospem: true } });
-    
+
     if (!advisor?.isDospem) return callback({ code: grpc.status.INVALID_ARGUMENT, details: 'Dosen bukan dospem' });
 
     const students = await prisma.user.findMany({
@@ -298,7 +298,7 @@ const GetAdvisorStudents = async (call, callback) => {
 // HANDLERS — DASHBOARD & STATS
 // =============================================================================
 
-const GetAdminStats = async (call, callback) => {
+export const GetAdminStats = async (call, callback) => {
   try {
     const [totalUsers, totalCourses, totalDosen, totalMahasiswa] = await Promise.all([
       prisma.user.count(),
@@ -312,22 +312,3 @@ const GetAdminStats = async (call, callback) => {
   }
 };
 
-// =============================================================================
-// EXPORT SERVICE
-// =============================================================================
-
-export const userService = {
-  CreateUserByAdmin,
-  GetAllUsers,
-  GetUserById,
-  UpdateUser,
-  DeleteUser,
-  UpdateDospemStatus,
-  AssignAdvisor,
-  BulkAssignAdvisor,
-  GetAdvisorSummary,
-  GetAdvisorStudents,
-  GetAdminStats,
-};
-
-export default userService;
