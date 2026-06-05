@@ -240,7 +240,7 @@ export const GetTeachingCourses = async (call, callback) => {
       };
     });
 
-    callback(null, { courses });
+    callback(null, { courses: formatted });
   } catch (error) {
     callback({ code: grpc.status.INTERNAL, details: error.message });
   }

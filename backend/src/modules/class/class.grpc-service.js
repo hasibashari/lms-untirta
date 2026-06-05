@@ -40,7 +40,11 @@ const classSelect = {
     },
   },
   _count: {
-    select: { krsEnrollments: true },
+    select: {
+      krsEnrollments: true,
+      materials: true,
+      assignments: true,
+    },
   },
 };
 
@@ -49,6 +53,8 @@ const mapClassItemMessage = (item) => ({
   createdAt: item.createdAt?.toISOString(),
   updatedAt: item.updatedAt?.toISOString(),
   krsEnrollmentsCount: item._count?.krsEnrollments || 0,
+  materialsCount: item._count?.materials || 0,
+  assignmentsCount: item._count?.assignments || 0,
   academicSemester: item.academicSemester || null,
   course: item.course || null,
   lecturer: item.lecturer || null,

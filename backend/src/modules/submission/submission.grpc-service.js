@@ -319,40 +319,38 @@ export const GetTeacherDashboardStats = async (call, callback) => {
   try {
     const { teacherId } = call.request;
 
-      const courses = await prisma.course.findMany({
-        where: { teacherId },
-        select: {
-          id: true,
-          _count: {
-            select: {
-              materials: true,
-              assignments: true,
-            },
+    const courses = await prisma.course.findMany({
+      where: { teacherId },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            materials: true,
+            assignments: true,
           },
-          classes: {
-            select: {
-              _count: {
-                select: {
-                  krsEnrollments: { where: { status: 'APPROVED' } },
-                },
+        },
+        classes: {
+          select: {
+            _count: {
+              select: {
+                krsEnrollments: { where: { status: 'APPROVED' } },
               },
             },
           },
         },
-      });
-
-      const courseIds = courses.map(c => c.id);
+      },
+    });
 
     let totalStudents = 0;
     let totalMaterials = 0;
     let totalAssignments = 0;
 
-      for (const course of courses) {
-        const studentsInCourse = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
-        totalStudents += studentsInCourse;
-        totalMaterials += course._count.materials;
-        totalAssignments += course._count.assignments;
-      }
+    for (const course of courses) {
+      const studentsInCourse = course.classes.reduce((acc, cls) => acc + (cls._count?.krsEnrollments || 0), 0);
+      totalStudents += studentsInCourse;
+      totalMaterials += course._count.materials;
+      totalAssignments += course._count.assignments;
+    }
 
     // 3. Statistik submission
     const sevenDaysAgo = new Date();
@@ -361,13 +359,13 @@ export const GetTeacherDashboardStats = async (call, callback) => {
     const [pendingGrading, recentSubmissionsCount] = await Promise.all([
       prisma.submission.count({
         where: {
-          assignment: { OR: [{ classId: { in: classIds } }, { courseId: { in: courseIds } }] },
+          assignment: { OR: [{ class: { lecturerId: teacherId } }, { course: { teacherId } }] },
           grade: null,
         },
       }),
       prisma.submission.count({
         where: {
-          assignment: { OR: [{ classId: { in: classIds } }, { courseId: { in: courseIds } }] },
+          assignment: { OR: [{ class: { lecturerId: teacherId } }, { course: { teacherId } }] },
           submittedAt: { gte: sevenDaysAgo },
         },
       }),

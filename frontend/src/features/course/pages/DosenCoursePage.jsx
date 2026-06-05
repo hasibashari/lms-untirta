@@ -13,7 +13,8 @@ import {
   Award,
   MessageSquare,
 } from 'lucide-react';
-import { getMyCourses, getCourseStudents } from '../courseService';
+import { getCourseStudents } from '../courseService';
+import { getClassById } from '../../class/classService';
 import { getMaterials } from '../../material/materialService';
 import { getAssignments } from '../../assignment/assignmentService';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
@@ -25,7 +26,7 @@ import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 export default function CourseHome() {
   const { classId } = useParams();
 
-  const [course, setCourse] = useState(null);
+  const [classData, setClassData] = useState(null);
   const [materials, setMaterials] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [students, setStudents] = useState([]);
@@ -38,17 +39,13 @@ export default function CourseHome() {
     setError(null);
 
     Promise.all([
-      getMyCourses(),
+      getClassById(classId),
       getMaterials(classId),
       getAssignments(classId),
       getCourseStudents(classId),
     ])
-      .then(([coursesRes, materialsRes, assignmentsRes, studentsRes]) => {
-        // Find this course from teacher's courses
-        const foundCourse = coursesRes.data.find(
-          c => c.id === classId || c.id === parseInt(classId)
-        );
-        setCourse(foundCourse);
+      .then(([classRes, materialsRes, assignmentsRes, studentsRes]) => {
+        setClassData(classRes.data);
         setMaterials(materialsRes.data || []);
         setAssignments(assignmentsRes.data || []);
         setStudents(studentsRes.data || []);
@@ -107,7 +104,7 @@ export default function CourseHome() {
     'from-pink-500 to-pink-600',
     'from-cyan-500 to-cyan-600',
   ];
-  const gradientClass = course?.id ? gradients[course.id % gradients.length] : gradients[0];
+  const gradientClass = classData?.course?.id ? gradients[classData.course.id.charCodeAt(0) % gradients.length] : gradients[0];
 
   // Stats for header
   const stats = [
@@ -197,7 +194,7 @@ export default function CourseHome() {
         items={[
           { label: 'Dashboard', to: '/dosen/dashboard' },
           { label: 'Kelas Saya', to: '/dosen/classes' },
-          { label: course?.title || 'Kelas' },
+          { label: classData?.course?.title || 'Kelas' },
         ]}
       />
 
@@ -209,18 +206,18 @@ export default function CourseHome() {
             {/* Course Code Badge */}
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium px-3 py-1 rounded-full mb-4">
               <Hash size={14} />
-              {course?.code || 'KELAS'}
+              {classData?.course?.code || 'KELAS'}
             </span>
 
             {/* Title */}
             <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3">
-              {course?.title || 'Nama Kelas'}
+              {classData?.course?.title ? `${classData.course.title} - Kelas ${classData.section}` : 'Nama Kelas'}
             </h1>
 
             {/* Description (if available) */}
-            {course?.description && (
+            {classData?.course?.description && (
               <p className="text-white/80 text-sm max-w-2xl leading-relaxed mt-2 mb-4 line-clamp-3 md:line-clamp-none">
-                {course.description}
+                {classData.course.description}
               </p>
             )}
 

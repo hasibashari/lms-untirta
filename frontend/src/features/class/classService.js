@@ -10,7 +10,12 @@ export const getMyClasses = async () => {
   return api.get('/classes/me');
 };
 
-
+/**
+ * [ALL] Get class by ID
+ */
+export const getClassById = async (classId) => {
+  return api.get(`/classes/${classId}`);
+};
 /**
  * [ADMIN, DOSEN] Get all class offerings with optional filters
  * @param {Object} params - { academicSemesterId, courseId, page, limit, search, isEnrollmentOpen }

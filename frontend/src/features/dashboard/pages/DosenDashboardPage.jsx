@@ -12,7 +12,7 @@ import {
   FileText,
   LayoutDashboard,
 } from 'lucide-react';
-import { getMyCourses } from '../../course/courseService';
+import { getMyClasses } from '../../class/classService';
 import { getTeacherDashboardStats, getRecentSubmissions } from '../../submission/submissionService';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 
@@ -22,7 +22,7 @@ import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
  * Fokus: Overview/ringkasan kelas, stats actionable, dan notifikasi submissions
  */
 export default function Dashboard() {
-  const [courses, setCourses] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [stats, setStats] = useState(null);
   const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +30,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      getMyCourses(),
+      getMyClasses(),
       getTeacherDashboardStats(),
       getRecentSubmissions(5),
     ])
-      .then(([coursesRes, statsRes, submissionsRes]) => {
-        setCourses(coursesRes.data);
+      .then(([classesRes, statsRes, submissionsRes]) => {
+        setClasses(classesRes.data);
         setStats(statsRes.data);
         setRecentSubmissions(submissionsRes.data);
       })
@@ -159,7 +159,7 @@ export default function Dashboard() {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-card-foreground">Kelas Saya</h3>
-            <p className="text-sm text-muted-foreground">{courses.length} kelas diampu</p>
+            <p className="text-sm text-muted-foreground">{classes.length} kelas diampu</p>
           </div>
           <ArrowRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </Link>

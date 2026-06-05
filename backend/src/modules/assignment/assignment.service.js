@@ -89,13 +89,17 @@ export const getAssignmentsByClass = async (id, userId, userRole) => {
 // ======= CREATE ASSIGNMENT =======
 export const createAssignment = async (classId, teacherId, data) => {
   const classOffering = await prisma.class.findUnique({ where: { id: classId } });
+  const course = await prisma.course.findUnique({ where: { id: classId } });
 
-  if (!classOffering) {
-    throw new AppError(404, 'Kelas tidak ditemukan');
+  if (!classOffering && !course) {
+    throw new AppError(404, 'Kelas/Mata Kuliah tidak ditemukan');
   }
 
-  if (classOffering.lecturerId !== teacherId) {
+  if (classOffering && classOffering.lecturerId !== teacherId) {
     throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu kelas ini');
+  }
+  if (!classOffering && course && course.teacherId !== teacherId) {
+    throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu mata kuliah ini');
   }
 
   const newAssignment = await prisma.assignment.create({
@@ -103,8 +107,8 @@ export const createAssignment = async (classId, teacherId, data) => {
       title: data.title,
       description: data.description,
       dueDate: new Date(data.dueDate),
-      classId,
-      courseId: classOffering.courseId,
+      classId: classOffering ? classOffering.id : null,
+      courseId: classOffering ? classOffering.courseId : course.id,
     },
     select: {
       id: true,

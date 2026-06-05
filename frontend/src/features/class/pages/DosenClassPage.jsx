@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Search, Users, FileText, Info } from 'lucide-react';
+import { BookOpen, Search, Info } from 'lucide-react';
 import CourseCard from '../../course/components/CourseCard';
-import { getMyCoursesWithStats } from '../../course/courseService';
+import { getMyClasses } from '../../class/classService';
 
 /**
  * MyClasses / Kelas Saya (Dosen)
@@ -15,7 +15,7 @@ import { getMyCoursesWithStats } from '../../course/courseService';
  * - useRef untuk abort controller (cancel outdated requests)
  */
 const MyClasses = () => {
-  const [courses, setCourses] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,17 +26,17 @@ const MyClasses = () => {
   const isMounted = useRef(true);
 
   // Optimized fetch - single API call dengan stats
-  const fetchCourses = useCallback(async () => {
+  const fetchClasses = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       // Single API call yang sudah include stats (students & materials count)
-      const res = await getMyCoursesWithStats();
+      const res = await getMyClasses();
 
       // Pastikan component masih mounted sebelum setState
       if (isMounted.current) {
-        setCourses(res.data || []);
+        setClasses(res.data || []);
       }
     } catch (err) {
       if (isMounted.current) {
@@ -51,18 +51,19 @@ const MyClasses = () => {
 
   useEffect(() => {
     isMounted.current = true;
-    fetchCourses();
+    fetchClasses();
 
     // Cleanup: mark as unmounted
     return () => {
       isMounted.current = false;
     };
-  }, [fetchCourses]);
+  }, [fetchClasses]);
 
-  // Filter courses based on search query
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.code.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter classes based on search query
+  const filteredClasses = classes.filter(classObj =>
+    classObj.course?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    classObj.course?.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    classObj.section?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -108,7 +109,7 @@ const MyClasses = () => {
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <BookOpen size={16} />
           <span>
-            {filteredCourses.length} dari {courses.length} kelas
+            {filteredClasses.length} dari {classes.length} kelas
           </span>
         </div>
       )}
@@ -134,7 +135,7 @@ const MyClasses = () => {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
           <button
-            onClick={fetchCourses}
+            onClick={fetchClasses}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
             Coba lagi
@@ -143,7 +144,7 @@ const MyClasses = () => {
       )}
 
       {/* Empty State */}
-      {!loading && !error && courses.length === 0 && (
+      {!loading && !error && classes.length === 0 && (
         <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <BookOpen size={32} className="text-slate-400" />
@@ -159,7 +160,7 @@ const MyClasses = () => {
       )}
 
       {/* No Search Results */}
-      {!loading && !error && courses.length > 0 && filteredCourses.length === 0 && (
+      {!loading && !error && classes.length > 0 && filteredClasses.length === 0 && (
         <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Search size={32} className="text-slate-400" />
@@ -180,21 +181,21 @@ const MyClasses = () => {
       )}
 
       {/* Course Grid */}
-      {!loading && !error && filteredCourses.length > 0 && (
+      {!loading && !error && filteredClasses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => (
+          {filteredClasses.map((classObj) => (
             <CourseCard
-              key={course.id}
-              title={course.title}
-              code={course.code}
-              teacher={{ name: course.teacher?.name || 'Anda' }}
-              semester={course.semester}
-              sks={course.sks}
-              studentsCount={course._count?.students ?? course.studentsCount ?? 0}
-              materialsCount={course._count?.materials ?? course.materialsCount ?? 0}
-              schedule={course.schedule}
-              description={course.description}
-              onClick={() => navigate(`/dosen/classes/${course.id}`)}
+              key={classObj.id}
+              title={`${classObj.course?.title} - Kelas ${classObj.section}`}
+              code={classObj.course?.code}
+              teacher={{ name: classObj.lecturer?.name || 'Anda' }}
+              semester={classObj.course?.semester}
+              sks={classObj.course?.sks}
+              studentsCount={classObj.krsEnrollmentsCount || 0}
+              materialsCount={classObj.materialsCount || 0}
+              schedule={classObj.schedule}
+              description={classObj.room ? `Ruang: ${classObj.room}` : ''}
+              onClick={() => navigate(`/dosen/classes/${classObj.id}`)}
             />
           ))}
         </div>

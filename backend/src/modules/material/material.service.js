@@ -11,23 +11,30 @@ import path from 'path';
 // - Cleanup file yang terkait saat materi dihapus
 
 export const createMaterial = async (classId, teacherId, data) => {
-  // 1. Cek apakah kelas ada
+  // 1. Cek apakah id adalah kelas atau course
   const classOffering = await prisma.class.findUnique({
     where: { id: classId },
   });
 
-  if (!classOffering) {
-    throw new AppError(404, 'Kelas tidak ditemukan');
+  const course = await prisma.course.findUnique({
+    where: { id: classId },
+  });
+
+  if (!classOffering && !course) {
+    throw new AppError(404, 'Kelas/Mata Kuliah tidak ditemukan');
   }
 
   // 2. Validasi kepemilikan: hanya dosen pengampu
-  if (classOffering.lecturerId !== teacherId) {
+  if (classOffering && classOffering.lecturerId !== teacherId) {
     throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu kelas ini');
   }
+  if (!classOffering && course && course.teacherId !== teacherId) {
+    throw new AppError(403, 'Akses ditolak: Anda bukan dosen pengampu mata kuliah ini');
+  }
 
-  // 3. AUTO-ORDERING: tentukan urutan materi berikutnya di kelas ini
+  // 3. AUTO-ORDERING: tentukan urutan materi berikutnya
   const lastMaterial = await prisma.material.findFirst({
-    where: { classId: classId },
+    where: classOffering ? { classId: classOffering.id } : { courseId: course.id, classId: null },
     orderBy: { order: 'desc' }, // ambil materi dengan order terbesar
   });
 
@@ -41,8 +48,8 @@ export const createMaterial = async (classId, teacherId, data) => {
       fileUrl: data.fileUrl,
       videoUrl: data.videoUrl,
       order: newOrder,
-      classId: classId,
-      courseId: classOffering.courseId,
+      classId: classOffering ? classOffering.id : null,
+      courseId: classOffering ? classOffering.courseId : course.id,
     },
     select: {
       id: true,
@@ -65,7 +72,7 @@ export const createMaterial = async (classId, teacherId, data) => {
 };
 
 export const getMaterials = async (classId, userId, userRole) => {
-  // Jika mahasiswa, pastikan sudah terdaftar di kelas
+  // Jika mahasiswa, pastikan sudah terdaftar di kelas atau course
   if (userRole === 'MAHASISWA') {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
@@ -75,15 +82,28 @@ export const getMaterials = async (classId, userId, userRole) => {
       },
     });
     if (!enrollment) {
-      throw new AppError(403, 'Anda belum terdaftar di kelas ini');
+      const courseEnrollment = await prisma.krsEnrollment.findFirst({
+        where: {
+          studentId: userId,
+          class: { courseId: classId },
+          status: 'APPROVED',
+        }
+      });
+      if (!courseEnrollment) {
+        throw new AppError(403, 'Anda belum terdaftar di kelas/mata kuliah ini');
+      }
     }
   }
 
   // Ambil daftar materi, terurut berdasarkan 'order' (naik)
-  // Cache key include classId
   return await cache.getOrSet(`materials:list:${classId}`, async () => {
     return await prisma.material.findMany({
-      where: { classId },
+      where: {
+        OR: [
+          { classId },
+          { courseId: classId, classId: null }
+        ]
+      },
       select: {
         id: true,
         title: true,
@@ -135,7 +155,7 @@ export const getMaterialById = async (materialId, userId, userRole) => {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        classId: material.classId || undefined,
+        ...(material.classId ? { classId: material.classId } : { class: { courseId: material.courseId } }),
         status: 'APPROVED',
       },
     });
@@ -240,7 +260,7 @@ export const updateMaterial = async (materialId, userId, userRole, data) => {
 
   // Invalidate caches
   await cache.invalidate(`material:detail:${materialId}`);
-  await cache.invalidate(`materials:list:${updated.classId}`);
+  await cache.invalidate(`materials:list:${updated.classId || updated.courseId}`);
 
   return updated;
 };
@@ -286,7 +306,7 @@ export const deleteMaterial = async (materialId, userId, userRole) => {
 
   // Invalidate caches
   await cache.invalidate(`material:detail:${materialId}`);
-  await cache.invalidate(`materials:list:${material.classId}`);
+  await cache.invalidate(`materials:list:${material.classId || material.course.id}`);
 
   // Jika ada file terkait, hapus file fisik secara asinkron (jangan blokir response)
   if (material.fileUrl) {
