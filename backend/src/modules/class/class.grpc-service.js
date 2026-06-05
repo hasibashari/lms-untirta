@@ -1,5 +1,6 @@
 import grpc from '@grpc/grpc-js';
 import prisma from '../../config/prisma.js';
+import { validateSemesterOpen, validateLecturer } from '../../utils/validation.util.js';
 
 // =============================================================================
 // SELECTORS & MAPPERS
@@ -64,31 +65,7 @@ const mapClassItemMessage = (item) => ({
 // HELPERS
 // =============================================================================
 
-/**
- * Validasi apakah dosen valid dan memiliki peran yang benar
- */
-const validateLecturer = async (lecturerId) => {
-  const lecturer = await prisma.user.findUnique({
-    where: { id: lecturerId },
-    select: { id: true, role: true },
-  });
-  if (!lecturer) return { error: 'Dosen tidak ditemukan' };
-  if (lecturer.role !== 'DOSEN') return { error: 'User yang dipilih bukan dosen' };
-  return { lecturer };
-};
-
-/**
- * Validasi apakah semester valid dan tidak tertutup
- */
-const validateSemester = async (semesterId) => {
-  const semester = await prisma.academicSemester.findUnique({
-    where: { id: semesterId },
-    select: { id: true, academicYear: true, semesterType: true, status: true },
-  });
-  if (!semester) return { error: 'Semester akademik tidak ditemukan' };
-  if (semester.status === 'CLOSED') return { error: 'Tidak dapat mengubah data pada semester yang sudah CLOSED' };
-  return { semester };
-};
+// Removed duplicated validateLecturer and validateSemester functions
 
 // =============================================================================
 // HANDLERS — ADMIN OPERATIONS
@@ -113,7 +90,7 @@ export const CreateClass = async (call, callback) => {
     if (lectErr) return callback({ code: grpc.status.INVALID_ARGUMENT, details: lectErr });
 
     // 3. Validasi Semester
-    const { semester, error: semErr } = await validateSemester(data.academicSemesterId);
+    const { semester, error: semErr } = await validateSemesterOpen(data.academicSemesterId);
     if (semErr) return callback({ code: grpc.status.INVALID_ARGUMENT, details: semErr });
 
     // 4. Cek Duplikasi Section
@@ -489,6 +466,130 @@ export const GetAvailableStudentsForClass = async (call, callback) => {
     });
 
     callback(null, { students });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+};
+
+export const GetMyDashboardStats = async (call, callback) => {
+  try {
+    const { studentId } = call.request;
+
+    const enrollments = await prisma.krsEnrollment.findMany({
+      where: { studentId, status: 'APPROVED' },
+      select: { classId: true, class: { select: { courseId: true } } },
+    });
+
+    const totalCourses = enrollments.length;
+    const classIds = enrollments.map((e) => e.classId);
+    const courseIds = [...new Set(enrollments.map((e) => e.class.courseId))];
+
+    const totalAssignments = await prisma.assignment.count({
+      where: {
+        OR: [
+          { classId: { in: classIds } },
+          { courseId: { in: courseIds }, classId: null },
+        ]
+      }
+    });
+
+    const gradedAssignments = await prisma.submission.count({
+      where: {
+        studentId,
+        grade: { not: null }
+      }
+    });
+
+    const submittedAssignments = await prisma.submission.count({
+      where: { studentId }
+    });
+    
+    const pendingAssignments = totalAssignments - submittedAssignments > 0 ? totalAssignments - submittedAssignments : 0;
+
+    callback(null, {
+      message: 'Dashboard stats berhasil diambil',
+      data: {
+        totalCourses,
+        totalAssignments,
+        pendingAssignments,
+        gradedAssignments,
+      }
+    });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+};
+
+export const GetTeacherDashboardStats = async (call, callback) => {
+  try {
+    const { teacherId } = call.request;
+
+    const classes = await prisma.class.findMany({
+      where: { lecturerId: teacherId },
+      select: { id: true, courseId: true },
+    });
+
+    const totalClasses = classes.length;
+    const classIds = classes.map(c => c.id);
+    const courseIds = [...new Set(classes.map(c => c.courseId))];
+
+    const totalStudents = await prisma.krsEnrollment.count({
+      where: { classId: { in: classIds }, status: 'APPROVED' }
+    });
+
+    const totalMaterials = await prisma.material.count({
+      where: {
+        OR: [
+          { classId: { in: classIds } },
+          { courseId: { in: courseIds }, classId: null },
+        ]
+      }
+    });
+
+    const totalAssignments = await prisma.assignment.count({
+      where: {
+        OR: [
+          { classId: { in: classIds } },
+          { courseId: { in: courseIds }, classId: null },
+        ]
+      }
+    });
+
+    const assignments = await prisma.assignment.findMany({
+      where: {
+        OR: [
+          { classId: { in: classIds } },
+          { courseId: { in: courseIds }, classId: null },
+        ]
+      },
+      select: { id: true }
+    });
+    const assignmentIds = assignments.map(a => a.id);
+
+    const pendingGrading = await prisma.submission.count({
+      where: { assignmentId: { in: assignmentIds }, grade: null }
+    });
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentSubmissions = await prisma.submission.count({
+      where: { 
+        assignmentId: { in: assignmentIds },
+        submittedAt: { gte: sevenDaysAgo }
+      }
+    });
+
+    callback(null, {
+      message: 'Dashboard stats berhasil diambil',
+      data: {
+        totalClasses,
+        totalStudents,
+        totalMaterials,
+        totalAssignments,
+        pendingGrading,
+        recentSubmissions,
+      }
+    });
   } catch (error) {
     callback({ code: grpc.status.INTERNAL, details: error.message });
   }

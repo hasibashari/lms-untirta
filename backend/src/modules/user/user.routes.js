@@ -15,6 +15,7 @@ import {
   updateUser,
   deleteUser,
   updateProfile,
+  getProfile,
 } from './user.controller.js';
 import { createUserSchema, updateDospemSchema, assignAdvisorSchema, bulkAssignAdvisorSchema, updateProfileSchema } from './user.validation.js';
 
@@ -56,6 +57,22 @@ router.use(authenticateToken);
  *         description: Email already registered
  */
 router.put('/profile', validate(updateProfileSchema), updateProfile);
+
+/**
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.get('/profile', getProfile);
 
 // Logic: Sisa endpoint di bawah ini hanya untuk Admin
 router.use(authorizeRole('ADMIN'));

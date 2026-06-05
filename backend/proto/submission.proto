@@ -147,4 +147,6 @@ message RecentSubmission {
   string submittedAt = 9;
   bool isGraded = 10;
   int32 grade = 11;
+  string classId = 12;
+  string classSection = 13;
 }

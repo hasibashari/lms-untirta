@@ -284,7 +284,10 @@ export const GetRecentSubmissionsForTeacher = async (call, callback) => {
       include: {
         student: { select: { id: true, name: true, email: true } },
         assignment: {
-          include: { course: { select: { id: true, title: true, code: true } } },
+          include: { 
+            course: { select: { id: true, title: true, code: true } },
+            class: { select: { id: true, section: true } }
+          },
         },
       },
       orderBy: { submittedAt: 'desc' },
@@ -297,7 +300,8 @@ export const GetRecentSubmissionsForTeacher = async (call, callback) => {
       studentEmail: sub.student.email,
       assignmentId: sub.assignment.id,
       assignmentTitle: sub.assignment.title,
-      classId: sub.assignment.classId,
+      classId: sub.assignment.class?.id || '',
+      classSection: sub.assignment.class?.section || '',
       courseId: sub.assignment.course.id,
       courseName: sub.assignment.course.title,
       courseCode: sub.assignment.course.code,

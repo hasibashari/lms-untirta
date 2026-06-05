@@ -8,38 +8,36 @@ import { AppError } from '../../config/errors.js';
 // - Moderasi: dosen/admin bisa hapus thread/reply manapun
 
 // =====================
-// HELPER: Validasi Akses Course
+// HELPER: Validasi Akses Kelas
 // =====================
 
 /**
- * Validasi bahwa user memiliki akses ke forum course.
+ * Validasi bahwa user memiliki akses ke forum kelas.
  * - ADMIN: selalu boleh
- * - DOSEN: harus mengajar course tersebut
- * - MAHASISWA: harus terdaftar (enrolled) di course tersebut
+ * - DOSEN: harus mengajar kelas tersebut
+ * - MAHASISWA: harus terdaftar (enrolled) di kelas tersebut
  */
-const validateCourseAccess = async (courseId, userId, userRole) => {
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
+const validateClassAccess = async (classId, userId, userRole) => {
+  const classOffering = await prisma.class.findUnique({
+    where: { id: classId },
     select: {
       id: true,
-      teacherId: true,
-      classes: {
-        select: { lecturerId: true }
-      }
+      lecturerId: true,
+      course: { select: { teacherId: true } }
     },
   });
 
-  if (!course) {
-    throw new AppError(404, 'Mata kuliah tidak ditemukan');
+  if (!classOffering) {
+    throw new AppError(404, 'Kelas tidak ditemukan');
   }
 
-  if (userRole === 'ADMIN') return course;
+  if (userRole === 'ADMIN') return classOffering;
 
   if (userRole === 'DOSEN') {
-    const isOwner = course.teacherId === userId;
-    const isLecturer = course.classes.some(c => c.lecturerId === userId);
+    const isOwner = classOffering.course.teacherId === userId;
+    const isLecturer = classOffering.lecturerId === userId;
     if (!isOwner && !isLecturer) {
-      throw new AppError(403, 'Akses ditolak: Anda bukan pengampu mata kuliah ini');
+      throw new AppError(403, 'Akses ditolak: Anda bukan pengampu kelas ini');
     }
   }
 
@@ -47,16 +45,16 @@ const validateCourseAccess = async (courseId, userId, userRole) => {
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: {
         studentId: userId,
-        class: { courseId: courseId },
+        classId: classId,
         status: 'APPROVED',
       },
     });
     if (!enrollment) {
-      throw new AppError(403, 'Anda belum terdaftar di mata kuliah ini (KRS belum disetujui)');
+      throw new AppError(403, 'Anda belum terdaftar di kelas ini (KRS belum disetujui)');
     }
   }
 
-  return course;
+  return classOffering;
 };
 
 // =====================
@@ -64,37 +62,15 @@ const validateCourseAccess = async (courseId, userId, userRole) => {
 // =====================
 
 /**
- * Ambil daftar thread di suatu course.
+ * Ambil daftar thread di suatu kelas.
  * Pinned threads muncul pertama, lalu diurutkan berdasarkan aktivitas terbaru.
  * Setiap thread menyertakan jumlah reply dan info author.
  */
-export const getThreads = async (id, userId, userRole) => {
-  // 1. Cari berdasarkan Class ID
-  let classOffering = await prisma.class.findUnique({
-    where: { id: id },
-    select: { courseId: true },
-  });
-
-  let targetCourseId;
-  if (classOffering) {
-    targetCourseId = classOffering.courseId;
-  } else {
-    // 2. Fallback: Cari berdasarkan Course ID
-    const course = await prisma.course.findUnique({
-      where: { id: id },
-      select: { id: true },
-    });
-
-    if (!course) {
-      throw new AppError(404, 'Kelas atau Mata Kuliah tidak ditemukan');
-    }
-    targetCourseId = id;
-  }
-
-  await validateCourseAccess(targetCourseId, userId, userRole);
+export const getThreads = async (classId, userId, userRole) => {
+  await validateClassAccess(classId, userId, userRole);
 
   return await prisma.forumThread.findMany({
-    where: { courseId: targetCourseId },
+    where: { classId: classId },
     include: {
       author: {
         select: {
@@ -126,7 +102,7 @@ export const getThreadById = async (threadId, userId, userRole) => {
       title: true,
       content: true,
       isPinned: true,
-      courseId: true,
+      classId: true,
       createdAt: true,
       updatedAt: true,
       author: {
@@ -136,11 +112,14 @@ export const getThreadById = async (threadId, userId, userRole) => {
           role: true,
         },
       },
-      course: {
+      class: {
         select: {
           id: true,
-          title: true,
-          teacherId: true,
+          section: true,
+          lecturerId: true,
+          course: {
+            select: { title: true, teacherId: true }
+          }
         },
       },
       replies: {
@@ -167,35 +146,25 @@ export const getThreadById = async (threadId, userId, userRole) => {
     throw new AppError(404, 'Thread diskusi tidak ditemukan');
   }
 
-  // Validasi akses ke course
-  await validateCourseAccess(thread.courseId, userId, userRole);
+  // Validasi akses ke kelas
+  await validateClassAccess(thread.classId, userId, userRole);
 
   return thread;
 };
 
 /**
- * Buat thread baru di forum course.
- * Semua user yang punya akses ke course bisa membuat thread.
+ * Buat thread baru di forum kelas.
+ * Semua user yang punya akses ke kelas bisa membuat thread.
  */
 export const createThread = async (classId, userId, userRole, data) => {
-  const cls = await prisma.class.findUnique({
-    where: { id: classId },
-    select: { courseId: true },
-  });
-
-  if (!cls) {
-    throw new AppError(404, 'Kelas tidak ditemukan');
-  }
-
-  const courseId = cls.courseId;
-  await validateCourseAccess(courseId, userId, userRole);
+  await validateClassAccess(classId, userId, userRole);
 
   // Buat thread baru
   return await prisma.forumThread.create({
     data: {
       title: data.title,
       content: data.content,
-      courseId: courseId,
+      classId: classId,
       authorId: userId,
     },
     select: {
@@ -203,7 +172,7 @@ export const createThread = async (classId, userId, userRole, data) => {
       title: true,
       content: true,
       isPinned: true,
-      courseId: true,
+      classId: true,
       createdAt: true,
       author: {
         select: {
@@ -244,7 +213,7 @@ export const updateThread = async (threadId, userId, userRole, data) => {
       title: true,
       content: true,
       isPinned: true,
-      courseId: true,
+      classId: true,
       updatedAt: true,
       author: {
         select: {
@@ -267,8 +236,11 @@ export const deleteThread = async (threadId, userId, userRole) => {
     select: {
       id: true,
       authorId: true,
-      course: {
-        select: { teacherId: true },
+      class: {
+        select: {
+          lecturerId: true,
+          course: { select: { teacherId: true } }
+        },
       },
     },
   });
@@ -279,16 +251,8 @@ export const deleteThread = async (threadId, userId, userRole) => {
 
   // Cek otorisasi: owner, dosen pengampu course/kelas, atau admin
   const isOwner = thread.authorId === userId;
-  const isCourseTeacher = userRole === 'DOSEN' && thread.course.teacherId === userId;
-  
-  let isClassLecturer = false;
-  if (userRole === 'DOSEN' && !isCourseTeacher) {
-    const lecturerCheck = await prisma.class.findFirst({
-      where: { courseId: thread.courseId, lecturerId: userId }
-    });
-    isClassLecturer = !!lecturerCheck;
-  }
-
+  const isClassLecturer = userRole === 'DOSEN' && thread.class.lecturerId === userId;
+  const isCourseTeacher = userRole === 'DOSEN' && thread.class.course.teacherId === userId;
   const isAdmin = userRole === 'ADMIN';
 
   if (!isOwner && !isCourseTeacher && !isClassLecturer && !isAdmin) {
@@ -309,8 +273,11 @@ export const togglePinThread = async (threadId, userId, userRole) => {
     select: {
       id: true,
       isPinned: true,
-      course: {
-        select: { teacherId: true },
+      class: {
+        select: {
+          lecturerId: true,
+          course: { select: { teacherId: true } }
+        },
       },
     },
   });
@@ -320,16 +287,8 @@ export const togglePinThread = async (threadId, userId, userRole) => {
   }
 
   // Hanya dosen pengampu atau admin yang bisa pin/unpin
-  const isCourseTeacher = userRole === 'DOSEN' && thread.course.teacherId === userId;
-  
-  let isClassLecturer = false;
-  if (userRole === 'DOSEN' && !isCourseTeacher) {
-    const lecturerCheck = await prisma.class.findFirst({
-      where: { courseId: thread.courseId, lecturerId: userId }
-    });
-    isClassLecturer = !!lecturerCheck;
-  }
-
+  const isClassLecturer = userRole === 'DOSEN' && thread.class.lecturerId === userId;
+  const isCourseTeacher = userRole === 'DOSEN' && thread.class.course.teacherId === userId;
   const isAdmin = userRole === 'ADMIN';
 
   if (!isCourseTeacher && !isClassLecturer && !isAdmin) {
@@ -352,13 +311,13 @@ export const togglePinThread = async (threadId, userId, userRole) => {
 
 /**
  * Buat reply baru di thread.
- * Semua user yang punya akses ke course bisa membalas.
+ * Semua user yang punya akses ke kelas bisa membalas.
  * Update timestamp thread agar sorting "terbaru" tetap akurat.
  */
 export const createReply = async (threadId, userId, data) => {
   const thread = await prisma.forumThread.findUnique({
     where: { id: threadId },
-    select: { id: true, courseId: true },
+    select: { id: true, classId: true },
   });
 
   if (!thread) {
@@ -445,8 +404,11 @@ export const deleteReply = async (replyId, userId, userRole) => {
       authorId: true,
       thread: {
         select: {
-          course: {
-            select: { teacherId: true },
+          class: {
+            select: {
+              lecturerId: true,
+              course: { select: { teacherId: true } }
+            },
           },
         },
       },
@@ -458,16 +420,8 @@ export const deleteReply = async (replyId, userId, userRole) => {
   }
 
   const isOwner = reply.authorId === userId;
-  const isCourseTeacher = userRole === 'DOSEN' && reply.thread.course.teacherId === userId;
-  
-  let isClassLecturer = false;
-  if (userRole === 'DOSEN' && !isCourseTeacher) {
-    const lecturerCheck = await prisma.class.findFirst({
-      where: { courseId: reply.thread.courseId, lecturerId: userId }
-    });
-    isClassLecturer = !!lecturerCheck;
-  }
-
+  const isClassLecturer = userRole === 'DOSEN' && reply.thread.class.lecturerId === userId;
+  const isCourseTeacher = userRole === 'DOSEN' && reply.thread.class.course.teacherId === userId;
   const isAdmin = userRole === 'ADMIN';
 
   if (!isOwner && !isCourseTeacher && !isClassLecturer && !isAdmin) {
@@ -478,5 +432,3 @@ export const deleteReply = async (replyId, userId, userRole) => {
 
   return { message: 'Balasan berhasil dihapus' };
 };
-
-

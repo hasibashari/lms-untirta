@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma.js';
 import { KRS_STATUS, isValidStatusTransition } from '../../utils/academic.util.js';
+import { validateSemesterOpen } from '../../utils/validation.util.js';
 import { AppError } from '../../config/errors.js';
 
 // ========================================================================
@@ -52,24 +53,7 @@ export const getSksEligibility = async (studentId, academicSemesterId) => {
 // ======================== ENROLLMENT PERIOD GUARD ========================
 
 const assertEnrollmentPeriodOpen = async (academicSemesterId, client = prisma) => {
-  const semester = await client.academicSemester.findUnique({
-    where: { id: academicSemesterId },
-    select: {
-      status: true,
-      academicYear: true,
-      semesterType: true,
-    },
-  });
-
-  if (!semester) {
-    throw new AppError(404, 'Semester akademik tidak ditemukan');
-  }
-
-  if (semester.status !== 'OPEN') {
-    throw new AppError(400,
-      `Masa pengisian KRS untuk semester ${semester.academicYear} ${semester.semesterType} belum dibuka atau sudah ditutup (status: ${semester.status})`
-    );
-  }
+  await validateSemesterOpen(academicSemesterId, true, client);
 };
 
 // ======================== AVAILABLE CLASSES ========================

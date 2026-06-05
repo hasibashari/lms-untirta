@@ -83,6 +83,10 @@ export const getAllUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return sendError(res, { statusCode: 400, message: 'Format ID tidak valid' });
+    }
     const meta = createGrpcMetadata(req);
     const user = await grpcGetUserById({ id }, meta);
     sendSuccess(res, { statusCode: 200, message: 'Berhasil mengambil detail user', data: user });
@@ -122,6 +126,17 @@ export const updateProfile = async (req, res) => {
     const updatedUser = await grpcUpdateUser({ id, name, email, password, nim }, meta);
     await cache.invalidate(`user:profile:${id}`);
     sendSuccess(res, { statusCode: 200, message: 'Profil berhasil diperbarui', data: updatedUser });
+  } catch (error) {
+    return mapGrpcErrorToHttp(res, error);
+  }
+};
+
+export const getProfile = async (req, res) => {
+  try {
+    const id = req.user.id;
+    const meta = createGrpcMetadata(req);
+    const user = await grpcGetUserById({ id }, meta);
+    sendSuccess(res, { statusCode: 200, message: 'Berhasil mengambil profil user', data: user });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);
   }

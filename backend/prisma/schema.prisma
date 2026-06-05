@@ -44,7 +44,6 @@ model Course {
   assignments  Assignment[]
   classes      Class[]
   teacher      User          @relation("TeacherCourses", fields: [teacherId], references: [id])
-  forumThreads ForumThread[]
   materials    Material[]
 }
 
@@ -120,6 +119,7 @@ model Class {
   krsEnrollments     KrsEnrollment[]
   assignments        Assignment[]
   materials          Material[]
+  forumThreads       ForumThread[]
 
   @@unique([courseId, academicSemesterId, section])
   @@index([lecturerId])
@@ -209,15 +209,15 @@ model ForumThread {
   title     String
   content   String
   isPinned  Boolean      @default(false)
-  courseId  String
+  classId   String
   authorId  String
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   replies   ForumReply[]
   author    User         @relation("ThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  class     Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
 
-  @@index([courseId])
+  @@index([classId])
   @@index([authorId])
 }
 

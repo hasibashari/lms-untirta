@@ -12,6 +12,7 @@ const grpcGetAssignmentWithMySubmission = util.promisify(submissionClient.GetAss
 const grpcGetSubmissionsByAssignment = util.promisify(submissionClient.GetSubmissionsByAssignment).bind(submissionClient);
 const grpcGetAllMyGrades = util.promisify(submissionClient.GetAllMyGrades).bind(submissionClient);
 const grpcGradeSubmission = util.promisify(submissionClient.GradeSubmission).bind(submissionClient);
+const grpcGetRecentSubmissionsForTeacher = util.promisify(submissionClient.GetRecentSubmissionsForTeacher).bind(submissionClient);
 
 // ======= SUBMIT ASSIGNMENT =======
 export const submit = async (req, res) => {

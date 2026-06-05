@@ -111,6 +111,9 @@ router.get(
   getStats
 );
 
+router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
+router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
+
 /**
  * @swagger
  * /api/classes/course/{courseId}:
@@ -429,8 +432,5 @@ router.get(
   authorizeRole('DOSEN', 'ADMIN'),
   getAvailableStudentsForClass
 );
-
-router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
-router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
 
 export default router;
