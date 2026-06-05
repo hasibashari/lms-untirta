@@ -143,58 +143,64 @@ function FilePreviewCard({ url }) {
   };
 
   // Download handler with token for internal files, or open for external links
-  const handleDownload = async (e, mode = 'download') => {
+  const handleDownload = (e, mode = 'download') => {
     if (e) e.preventDefault();
 
-    // Check if external link
-    const isExternal = fileInfo.type === 'google' || fileInfo.type === 'github' || fileInfo.type === 'link';
+    const token = localStorage.getItem('token');
 
+    // External links (Google Drive, GitHub, generic link) — buka langsung
+    const isExternal = fileInfo.type === 'google' || fileInfo.type === 'github' || fileInfo.type === 'link';
     if (isExternal) {
       window.open(url, '_blank', 'noopener,noreferrer');
       return;
     }
 
+    // Internal file dari backend — konversi ke path relatif + tambah token
+    const internalHosts = ['localhost', '127.0.0.1', 'backend'];
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Token tidak ditemukan');
-
-      // Ensure URL is absolute for internal files
-      let downloadUrl = url;
-      if (url && !url.startsWith('http')) {
-        const baseUrl = import.meta.env.VITE_API_URL || '';
-        const host = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
-        downloadUrl = `${host}${url.startsWith('/') ? '' : '/'}${url}`;
-      }
-
-      const res = await fetch(downloadUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        window.open(downloadUrl, '_blank');
+      const parsed = new URL(url);
+      const isInternalHost = internalHosts.some(h => parsed.hostname === h || parsed.hostname.startsWith(h));
+      if (isInternalHost && parsed.pathname.startsWith('/uploads/')) {
+        if (mode === 'download') {
+          // Untuk download: buat anchor element dengan download attribute
+          const link = document.createElement('a');
+          link.href = `${parsed.pathname}?token=${encodeURIComponent(token)}`;
+          link.download = fileInfo.name || 'file';
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        } else {
+          // Preview: buka di tab baru
+          window.open(`${parsed.pathname}?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
+        }
         return;
       }
+    } catch {
+      // Bukan URL absolut
+    }
 
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      if (mode === 'preview') {
-        window.open(blobUrl, '_blank');
-        // We don't revoke immediately for preview because the tab needs it
-      } else {
-        const fileName = fileInfo.name || 'file';
+    // Path relatif /uploads/
+    if (url.startsWith('/uploads/')) {
+      const separator = url.includes('?') ? '&' : '?';
+      const targetUrl = `${url}${separator}token=${encodeURIComponent(token)}`;
+      if (mode === 'download') {
         const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = fileName;
+        link.href = targetUrl;
+        link.download = fileInfo.name || 'file';
         document.body.appendChild(link);
         link.click();
         link.remove();
-        window.URL.revokeObjectURL(blobUrl);
+      } else {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
       }
-    } catch {
-      window.open(url, '_blank');
+      return;
     }
+
+    // Fallback
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
+
 
   return (
     <div className={`rounded-lg border ${colorClasses[fileInfo.color]} overflow-hidden`}>
@@ -267,7 +273,14 @@ export default function Submissions() {
       getAssignments(classId),
     ])
       .then(([subRes, assignRes]) => {
-        setSubmissions(subRes.data || []);
+        // Normalisasi grade: -1 dari backend berarti belum dinilai (null)
+        const normalizedSubs = (subRes.data || []).map(sub => ({
+          ...sub,
+          grade: sub.grade === -1 ? null : sub.grade,
+          // Normalisasi submittedAt: string kosong berarti belum submit
+          submittedAt: sub.submittedAt || null,
+        }));
+        setSubmissions(normalizedSubs);
         // Find current assignment info
         const current = (assignRes.data || []).find(a => a.id === assignmentId || a.id === parseInt(assignmentId));
         setCurrentAssignment(current);

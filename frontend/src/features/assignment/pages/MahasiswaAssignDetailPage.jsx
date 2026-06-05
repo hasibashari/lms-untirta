@@ -115,44 +115,40 @@ export default function AssignmentDetail() {
     return { type: 'safe', text: `${days} hari lagi`, color: 'green' };
   };
 
-  // Logic handle download/preview (sama dengan dosen)
-  const handleDownload = async (url) => {
+  // Logic handle download/preview
+  const handleDownload = (url) => {
     if (!url) return;
 
-    // Jika eksternal link (Drive, GitHub, dll), buka langsung
-    if (url.startsWith('http') && !url.includes(window.location.hostname) && !url.includes('localhost')) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+    const token = localStorage.getItem('token');
+
+    // 1. Cek apakah URL dari backend internal (http://localhost atau http://backend)
+    //    Konversi ke path relatif agar diakses via nginx proxy + sertakan token
+    const internalHosts = ['localhost', '127.0.0.1', 'backend'];
+    try {
+      const parsed = new URL(url);
+      const isInternalHost = internalHosts.some(host => parsed.hostname === host || parsed.hostname.startsWith(host));
+      
+      if (isInternalHost && parsed.pathname.startsWith('/uploads/')) {
+        // File internal: buka via nginx proxy dengan token di query param
+        const fileUrl = `${parsed.pathname}?token=${encodeURIComponent(token)}`;
+        window.open(fileUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+    } catch {
+      // Bukan URL absolut, lanjut ke cek berikut
+    }
+
+    // 2. Path relatif /uploads/ — tambahkan token
+    if (url.startsWith('/uploads/')) {
+      const separator = url.includes('?') ? '&' : '?';
+      window.open(`${url}${separator}token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
       return;
     }
 
-    // Jika internal file, gunakan fetch dengan token
-    const toastId = toast.loading('Menyiapkan file...');
-    try {
-      const fullUrl = getFullUrl(url);
-      const token = localStorage.getItem('token');
-
-      const response = await fetch(fullUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) throw new Error('Gagal mengakses file');
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      // Buka di tab baru (Preview)
-      window.open(blobUrl, '_blank');
-
-      // Cleanup URL setelah beberapa saat
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-      toast.success('File siap dibuka', { id: toastId });
-    } catch (err) {
-      console.error('Download error:', err);
-      toast.error('Gagal memuat file. Pastikan Anda masih login.', { id: toastId });
-    }
+    // 3. URL eksternal (Google Drive, GitHub, dll) → buka langsung tanpa token
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
+
 
   // Handle file selection - Fix: Tambah validasi lebih ketat dan feedback
   const handleFileSelect = (e) => {

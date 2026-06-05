@@ -74,11 +74,13 @@ message TeacherSubmission {
   string note = 4;
   int32 grade = 5;
   StudentInfo student = 6;
+  string feedback = 7;
 }
 
 message StudentInfo {
   string id = 1;
   string name = 2;
+  string email = 3;
 }
 
 message GetAllMyGradesRequest {

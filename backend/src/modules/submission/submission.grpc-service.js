@@ -207,20 +207,58 @@ export const GetSubmissionsByAssignment = async (call, callback) => {
       return callback({ code: grpc.status.PERMISSION_DENIED, details: 'Akses ditolak' });
     }
 
-    const submissions = await prisma.submission.findMany({
-      where: { assignmentId },
-      include: { student: { select: { id: true, name: true } } },
-      orderBy: { submittedAt: 'desc' },
+    // Ambil semua mahasiswa yang terdaftar di kelas ini
+    const enrollments = await prisma.krsEnrollment.findMany({
+      where: { classId: assignment.classId, status: 'APPROVED' },
+      include: { student: { select: { id: true, name: true, email: true } } },
     });
 
-    const data = submissions.map(sub => ({
-      id: sub.id,
-      submittedAt: sub.submittedAt.toISOString(),
-      fileUrl: sub.fileUrl || '',
-      note: sub.note || '',
-      grade: sub.grade || 0,
-      student: sub.student,
-    }));
+    // Ambil semua submission untuk tugas ini
+    const submissions = await prisma.submission.findMany({
+      where: { assignmentId },
+      include: { student: { select: { id: true, name: true, email: true } } },
+    });
+
+    // Buat map submission berdasarkan studentId untuk lookup cepat
+    const submissionMap = new Map(submissions.map(sub => [sub.studentId, sub]));
+
+    // Gabungkan semua mahasiswa terdaftar dengan data submission mereka
+    const data = enrollments.map(enrollment => {
+      const student = enrollment.student;
+      const sub = submissionMap.get(student.id);
+
+      if (sub) {
+        return {
+          id: sub.id,
+          submittedAt: sub.submittedAt.toISOString(),
+          fileUrl: sub.fileUrl || '',
+          note: sub.note || '',
+          // Gunakan -1 sebagai sentinel 'belum dinilai' karena proto3 int32 tidak bisa null
+          grade: sub.grade !== null ? sub.grade : -1,
+          feedback: sub.feedback || '',
+          student: { id: student.id, name: student.name, email: student.email },
+        };
+      } else {
+        // Mahasiswa belum submit
+        return {
+          id: `not-submitted-${student.id}`,
+          submittedAt: '',
+          fileUrl: '',
+          note: '',
+          grade: -1,
+          feedback: '',
+          student: { id: student.id, name: student.name, email: student.email },
+        };
+      }
+    });
+
+    // Urutkan: yang sudah submit duluan, kemudian yang belum
+    data.sort((a, b) => {
+      if (a.submittedAt && !b.submittedAt) return -1;
+      if (!a.submittedAt && b.submittedAt) return 1;
+      if (a.submittedAt && b.submittedAt) return new Date(b.submittedAt) - new Date(a.submittedAt);
+      return 0;
+    });
 
     callback(null, { message: 'Daftar submission berhasil diambil', data });
   } catch (error) {

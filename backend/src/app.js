@@ -84,7 +84,18 @@ app.use(cors({
 app.use(express.json());
 
 // Akses file statis di /uploads dilindungi oleh JWT
-app.use('/uploads', authenticateToken, express.static(path.join(__dirname, '..', 'public', 'uploads')));
+// Support token via query param (?token=xxx) karena browser tidak bisa kirim header saat buka tab baru
+app.use('/uploads', (req, _res, next) => {
+  // Nginx bisa mengirim Authorization header kosong jika $http_authorization tidak ada
+  // Cek apakah token ada di query param dan Authorization header tidak valid
+  const authHeader = req.headers.authorization || '';
+  const hasValidAuthHeader = authHeader.startsWith('Bearer ') && authHeader.length > 7;
+  
+  if (!hasValidAuthHeader && req.query.token) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  next();
+}, authenticateToken, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Swagger: JSON spec dan UI untuk dokumentasi API
 // Catatan: Nonaktifkan CSP secara spesifik pada rute Swagger agar browser mengizinkan inline scripts/styles bawaan Swagger UI.
