@@ -11,7 +11,7 @@ import { AppError } from '../../config/errors.js';
 
 // ======================== SKS ELIGIBILITY ========================
 
-const getSksEligibility = async (studentId, academicSemesterId) => {
+export const getSksEligibility = async (studentId, academicSemesterId) => {
   // Get semester's maxSks
   const semester = await prisma.academicSemester.findUnique({
     where: { id: academicSemesterId },
@@ -74,7 +74,7 @@ const assertEnrollmentPeriodOpen = async (academicSemesterId, client = prisma) =
 
 // ======================== AVAILABLE CLASSES ========================
 
-const getAvailableClasses = async (studentId, filters = {}) => {
+export const getAvailableClasses = async (studentId, filters = {}) => {
   // 1. Resolve the target academic semester
   let targetSemesterId = filters.academicSemesterId;
 
@@ -982,7 +982,7 @@ export const getPendingKRS = async (filters = {}, currentUser = null) => {
 
 // ======================== REVISE REJECTED KRS ========================
 
-const reviseRejectedEnrollment = async (studentId, enrollmentId) => {
+export const reviseRejectedEnrollment = async (studentId, enrollmentId) => {
   const enrollment = await prisma.krsEnrollment.findFirst({
     where: { id: enrollmentId, studentId },
     select: {
@@ -1096,7 +1096,7 @@ export const getApprovalHistory = async (enrollmentId, currentUser) => {
 
 // ======================== ADVISORY (DOSPEM) ========================
 
-const getAdvisoryStudents = async (dosenId, filters = {}) => {
+export const getAdvisoryStudents = async (dosenId, filters = {}) => {
   const where = { advisorId: dosenId, role: 'MAHASISWA' };
 
   const students = await prisma.user.findMany({
