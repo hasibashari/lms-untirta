@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getMyKRS } from '../../krs/krsService';
-import { getMyDashboardStats } from '../../submission/submissionService';
+import { getMyDashboardStats } from '../../class/classService';
 
 export const useMahasiswaDashboardData = () => {
   return useQuery({

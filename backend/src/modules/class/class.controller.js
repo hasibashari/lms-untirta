@@ -17,6 +17,8 @@ const grpcToggleEnrollment = util.promisify(classClient.ToggleEnrollment).bind(c
 const grpcDeleteClass = util.promisify(classClient.DeleteClass).bind(classClient);
 const grpcGetStudentsByClass = util.promisify(classClient.GetStudentsByClass).bind(classClient);
 const grpcGetAvailableStudentsForClass = util.promisify(classClient.GetAvailableStudentsForClass).bind(classClient);
+const grpcGetMyDashboardStats = util.promisify(classClient.GetMyDashboardStats).bind(classClient);
+const grpcGetTeacherDashboardStats = util.promisify(classClient.GetTeacherDashboardStats).bind(classClient);
 // ======================== CREATE ========================
 
 export const create = async (req, res) => {
@@ -255,6 +257,50 @@ export const getAvailableStudentsForClass = async (req, res) => {
       statusCode: 200,
       message: 'Daftar mahasiswa yang tersedia berhasil diambil',
       data: result.students || [],
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+
+export const getMyDashboardStats = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const meta = createGrpcMetadata(req);
+
+    const result = await grpcGetMyDashboardStats({
+      studentId,
+    }, meta);
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+
+export const getTeacherDashboardStats = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    const meta = createGrpcMetadata(req);
+
+    const result = await grpcGetTeacherDashboardStats({
+      teacherId,
+    }, meta);
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
     });
   } catch (error) {
     if (error.code) {

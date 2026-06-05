@@ -183,50 +183,6 @@ export const GetAllMyGrades = async (call, callback) => {
   }
 };
 
-export const GetMyDashboardStats = async (call, callback) => {
-  try {
-    const { studentId } = call.request;
-
-    const enrollments = await prisma.krsEnrollment.findMany({
-      where: { studentId, status: 'APPROVED' },
-      select: { classId: true },
-    });
-
-    const classIds = enrollments.map(e => e.classId);
-    const now = new Date();
-
-    const [totalAssignments, pendingAssignments, gradedAssignments] = await Promise.all([
-      prisma.assignment.count({ where: { classId: { in: classIds } } }),
-      prisma.assignment.count({
-        where: {
-          classId: { in: classIds },
-          dueDate: { gte: now },
-          submissions: { none: { studentId } },
-        },
-      }),
-      prisma.submission.count({
-        where: {
-          studentId,
-          assignment: { classId: { in: classIds } },
-          grade: { not: null },
-        },
-      }),
-    ]);
-
-    callback(null, {
-      message: 'Dashboard stats berhasil diambil',
-      data: {
-        totalCourses: enrollments.length,
-        totalAssignments,
-        pendingAssignments,
-        gradedAssignments,
-      },
-    });
-  } catch (error) {
-    callback({ code: grpc.status.INTERNAL, details: error.message });
-  }
-};
-
 // =============================================================================
 // HANDLERS — TEACHER SIDE
 // =============================================================================
@@ -308,69 +264,6 @@ export const GradeSubmission = async (call, callback) => {
         ...updated,
         grade: updated.grade || 0,
         feedback: updated.feedback || '',
-      },
-    });
-  } catch (error) {
-    callback({ code: grpc.status.INTERNAL, details: error.message });
-  }
-};
-
-export const GetTeacherDashboardStats = async (call, callback) => {
-  try {
-    const { teacherId } = call.request;
-
-    const classes = await prisma.class.findMany({
-      where: { lecturerId: teacherId },
-      select: {
-        id: true,
-        _count: {
-          select: {
-            materials: true,
-            assignments: true,
-            krsEnrollments: { where: { status: 'APPROVED' } },
-          },
-        },
-      },
-    });
-
-    let totalStudents = 0;
-    let totalMaterials = 0;
-    let totalAssignments = 0;
-
-    for (const cls of classes) {
-      totalStudents += cls._count?.krsEnrollments || 0;
-      totalMaterials += cls._count?.materials || 0;
-      totalAssignments += cls._count?.assignments || 0;
-    }
-
-    // 3. Statistik submission
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const [pendingGrading, recentSubmissionsCount] = await Promise.all([
-      prisma.submission.count({
-        where: {
-          assignment: { class: { lecturerId: teacherId } },
-          grade: null,
-        },
-      }),
-      prisma.submission.count({
-        where: {
-          assignment: { class: { lecturerId: teacherId } },
-          submittedAt: { gte: sevenDaysAgo },
-        },
-      }),
-    ]);
-
-    callback(null, {
-      message: 'Dashboard stats berhasil diambil',
-      data: {
-        totalClasses: classes.length,
-        totalStudents,
-        totalMaterials,
-        totalAssignments,
-        pendingGrading,
-        recentSubmissions: recentSubmissionsCount,
       },
     });
   } catch (error) {

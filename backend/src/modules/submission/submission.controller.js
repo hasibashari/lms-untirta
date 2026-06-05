@@ -11,10 +11,7 @@ const grpcSubmitAssignment = util.promisify(submissionClient.SubmitAssignment).b
 const grpcGetAssignmentWithMySubmission = util.promisify(submissionClient.GetAssignmentWithMySubmission).bind(submissionClient);
 const grpcGetSubmissionsByAssignment = util.promisify(submissionClient.GetSubmissionsByAssignment).bind(submissionClient);
 const grpcGetAllMyGrades = util.promisify(submissionClient.GetAllMyGrades).bind(submissionClient);
-const grpcGetMyDashboardStats = util.promisify(submissionClient.GetMyDashboardStats).bind(submissionClient);
 const grpcGradeSubmission = util.promisify(submissionClient.GradeSubmission).bind(submissionClient);
-const grpcGetTeacherDashboardStats = util.promisify(submissionClient.GetTeacherDashboardStats).bind(submissionClient);
-const grpcGetRecentSubmissionsForTeacher = util.promisify(submissionClient.GetRecentSubmissionsForTeacher).bind(submissionClient);
 
 // ======= SUBMIT ASSIGNMENT =======
 export const submit = async (req, res) => {
@@ -127,28 +124,6 @@ export const getAllMyGrades = async (req, res) => {
   }
 };
 
-// ======= GET STUDENT DASHBOARD STATS =======
-export const getMyDashboardStats = async (req, res) => {
-  try {
-    const studentId = req.user.id;
-    const meta = createGrpcMetadata(req);
-
-    const result = await grpcGetMyDashboardStats({
-      studentId,
-    }, meta);
-
-    sendSuccess(res, {
-      statusCode: 200,
-      message: result.message,
-      data: result.data,
-    });
-  } catch (error) {
-    if (error.code) {
-      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
-    }
-    return handleError(res, error);
-  }
-};
 
 // ======= GRADE STUDENT SUBMISSION =======
 export const grade = async (req, res) => {
@@ -176,28 +151,6 @@ export const grade = async (req, res) => {
   }
 };
 
-// ======= GET TEACHER DASHBOARD STATS =======
-export const getTeacherDashboardStats = async (req, res) => {
-  try {
-    const teacherId = req.user.id;
-    const meta = createGrpcMetadata(req);
-
-    const result = await grpcGetTeacherDashboardStats({
-      teacherId,
-    }, meta);
-
-    sendSuccess(res, {
-      statusCode: 200,
-      message: result.message,
-      data: result.data,
-    });
-  } catch (error) {
-    if (error.code) {
-      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
-    }
-    return handleError(res, error);
-  }
-};
 
 // ======= GET RECENT SUBMISSIONS FOR TEACHER =======
 export const getRecentSubmissions = async (req, res) => {

@@ -89,3 +89,13 @@ export const getClassStudents = async (classId) => {
 export const getAvailableStudentsForClass = async (classId) => {
   return api.get(`/classes/${classId}/available-students`);
 };
+
+// ========== Dashboard Stats ==========
+
+export const getTeacherDashboardStats = () => {
+  return api.get('/classes/teacher-stats');
+};
+
+export const getMyDashboardStats = () => {
+  return api.get('/classes/my-stats');
+};

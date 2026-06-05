@@ -13,8 +13,6 @@ import {
   grade,
   getMyAssignment,
   getAllMyGrades,
-  getMyDashboardStats,
-  getTeacherDashboardStats,
   getRecentSubmissions,
 } from './submission.controller.js';
 
@@ -48,80 +46,7 @@ const router = express.Router();
  */
 router.get('/my-grades', authenticateToken, authorizeRole('MAHASISWA'), getAllMyGrades);
 
-/**
- * @swagger
- * /api/submissions/my-stats:
- *   get:
- *     summary: Mendapatkan statistik dasbor mahasiswa (Mahasiswa Only)
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Statistik dasbor mahasiswa berhasil diambil
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         totalAssignments:
- *                           type: integer
- *                           example: 5
- *                         submittedAssignments:
- *                           type: integer
- *                           example: 3
- *                         pendingGrades:
- *                           type: integer
- *                           example: 1
- *                         averageGrade:
- *                           type: number
- *                           example: 87.5
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
-router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
 
-/**
- * @swagger
- * /api/submissions/teacher-stats:
- *   get:
- *     summary: Mendapatkan statistik dasbor dosen (Dosen Only)
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Statistik dasbor dosen berhasil diambil
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         totalStudents:
- *                           type: integer
- *                           example: 40
- *                         totalAssignmentsCreated:
- *                           type: integer
- *                           example: 3
- *                         totalPendingSubmissions:
- *                           type: integer
- *                           example: 12
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
-router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
 
 /**
  * @swagger

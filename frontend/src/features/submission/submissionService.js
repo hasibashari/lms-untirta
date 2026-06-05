@@ -30,12 +30,3 @@ export const getAllMyGrades = () => {
   return api.get('/submissions/my-grades');
 };
 
-// ========== Dashboard Stats ==========
-
-export const getTeacherDashboardStats = () => {
-  return api.get('/submissions/teacher-stats');
-};
-
-export const getMyDashboardStats = () => {
-  return api.get('/submissions/my-stats');
-};

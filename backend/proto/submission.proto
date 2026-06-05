@@ -7,9 +7,7 @@ service SubmissionService {
   rpc GetAssignmentWithMySubmission (GetAssignmentWithMySubmissionRequest) returns (AssignmentWithSubmissionResponse);
   rpc GetSubmissionsByAssignment (GetSubmissionsByAssignmentRequest) returns (ListSubmissionsResponse);
   rpc GetAllMyGrades (GetAllMyGradesRequest) returns (ListGradesResponse);
-  rpc GetMyDashboardStats (GetMyDashboardStatsRequest) returns (StudentDashboardStatsResponse);
   rpc GradeSubmission (GradeSubmissionRequest) returns (GradeResponse);
-  rpc GetTeacherDashboardStats (GetTeacherDashboardStatsRequest) returns (TeacherDashboardStatsResponse);
   rpc GetRecentSubmissionsForTeacher (GetRecentSubmissionsForTeacherRequest) returns (ListRecentSubmissionsResponse);
 }
 
@@ -106,21 +104,6 @@ message GradeData {
   string submittedAt = 11;
 }
 
-message GetMyDashboardStatsRequest {
-  string studentId = 1;
-}
-
-message StudentDashboardStatsResponse {
-  string message = 1;
-  StudentStats data = 2;
-}
-
-message StudentStats {
-  int32 totalCourses = 1;
-  int32 totalAssignments = 2;
-  int32 pendingAssignments = 3;
-  int32 gradedAssignments = 4;
-}
 
 message GradeSubmissionRequest {
   string submissionId = 1;
@@ -141,23 +124,6 @@ message GradeDataResult {
   string studentId = 4;
 }
 
-message GetTeacherDashboardStatsRequest {
-  string teacherId = 1;
-}
-
-message TeacherDashboardStatsResponse {
-  string message = 1;
-  TeacherStats data = 2;
-}
-
-message TeacherStats {
-  int32 totalCourses = 1;
-  int32 totalStudents = 2;
-  int32 totalMaterials = 3;
-  int32 totalAssignments = 4;
-  int32 pendingGrading = 5;
-  int32 recentSubmissions = 6;
-}
 
 message GetRecentSubmissionsForTeacherRequest {
   string teacherId = 1;

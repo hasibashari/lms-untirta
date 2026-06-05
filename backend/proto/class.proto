@@ -16,6 +16,8 @@ service ClassService {
   rpc DeleteClass (DeleteClassRequest) returns (DeleteClassResponse);
   rpc GetStudentsByClass (ClassAccessRequest) returns (ClassStudentsResponse);
   rpc GetAvailableStudentsForClass (ClassAccessRequest) returns (AvailableStudentsResponse);
+  rpc GetMyDashboardStats (GetMyDashboardStatsRequest) returns (StudentDashboardStatsResponse);
+  rpc GetTeacherDashboardStats (GetTeacherDashboardStatsRequest) returns (TeacherDashboardStatsResponse);
 }
 
 // Common types
@@ -178,4 +180,38 @@ message ClassStudentsResponse {
 
 message AvailableStudentsResponse {
   repeated BasicUser students = 1;
+}
+
+message GetMyDashboardStatsRequest {
+  string studentId = 1;
+}
+
+message StudentDashboardStatsResponse {
+  string message = 1;
+  StudentStats data = 2;
+}
+
+message StudentStats {
+  int32 totalCourses = 1;
+  int32 totalAssignments = 2;
+  int32 pendingAssignments = 3;
+  int32 gradedAssignments = 4;
+}
+
+message GetTeacherDashboardStatsRequest {
+  string teacherId = 1;
+}
+
+message TeacherDashboardStatsResponse {
+  string message = 1;
+  TeacherStats data = 2;
+}
+
+message TeacherStats {
+  int32 totalClasses = 1;
+  int32 totalStudents = 2;
+  int32 totalMaterials = 3;
+  int32 totalAssignments = 4;
+  int32 pendingGrading = 5;
+  int32 recentSubmissions = 6;
 }

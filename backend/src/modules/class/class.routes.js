@@ -20,6 +20,8 @@ import {
   getStats,
   getStudentsByClass,
   getAvailableStudentsForClass,
+  getMyDashboardStats,
+  getTeacherDashboardStats,
 } from './class.controller.js';
 
 const router = express.Router();
@@ -427,5 +429,8 @@ router.get(
   authorizeRole('DOSEN', 'ADMIN'),
   getAvailableStudentsForClass
 );
+
+router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
+router.get('/teacher-stats', authenticateToken, authorizeRole('DOSEN'), getTeacherDashboardStats);
 
 export default router;

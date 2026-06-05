@@ -12,8 +12,8 @@ import {
   FileText,
   LayoutDashboard,
 } from 'lucide-react';
-import { getMyClasses } from '../../class/classService';
-import { getTeacherDashboardStats, getRecentSubmissions } from '../../submission/submissionService';
+import { getMyClasses, getTeacherDashboardStats } from '../../class/classService';
+import { getRecentSubmissions } from '../../submission/submissionService';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 
 /**
