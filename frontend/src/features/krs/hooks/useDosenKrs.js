@@ -146,6 +146,7 @@ export const useDosenKrs = () => {
     handleToggleAutoKrs,
     handleRevoke,
     refetch: fetchStudents,
+    bulkUpdate: bulkUpdateEnrollmentStatus,
     showToast,
   };
 };

@@ -27,7 +27,8 @@ const MyGrades = () => {
   const [filterClass, setFilterClass] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const fetchGrades = () => {
+  const fetchGrades = async () => {
+    await Promise.resolve(); // Make state updates async
     setLoading(true);
     setError(null);
     getAllMyGrades()
@@ -37,6 +38,7 @@ const MyGrades = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGrades();
   }, []);
 

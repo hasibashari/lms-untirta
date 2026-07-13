@@ -81,16 +81,6 @@ export default function AssignmentDetail() {
     }
   };
 
-  // Helper: Get full absolute URL for internal files
-  const getFullUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-
-    // Internal path case
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    const host = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
-    return `${host}${url.startsWith('/') ? '' : '/'}${url}`;
-  };
 
   // Helper: Cek status deadline - Fix: Ganti 'orange' ke 'amber' untuk Tailwind valid
   const getDeadlineStatus = () => {

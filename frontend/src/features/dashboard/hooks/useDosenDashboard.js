@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMyClasses, getTeacherDashboardStats } from '../../class/classService';
+import { getMyClasses, getTeacherDashboardStats } from '../../class/api/class.api';
 import { getRecentSubmissions } from '../../submission/submissionService';
 
 export const useDosenDashboardData = () => {

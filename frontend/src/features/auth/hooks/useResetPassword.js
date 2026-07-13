@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { resetPassword as resetPasswordAPI } from '../api/auth.api';
 import { toast } from 'react-hot-toast';
 import { getPasswordStrength } from '@/shared/utils/password.util';
 
 export const useResetPassword = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const email = searchParams.get('email');
 
   const [formData, setFormData] = useState({

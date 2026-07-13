@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Save,
@@ -13,7 +13,7 @@ import {
   UploadCloud,
   Trash2,
 } from 'lucide-react';
-import { createMaterial, getMaterialDetail, updateMaterial } from '../materialService';
+import { useDosenMaterialForm } from '../hooks/useDosenMaterialForm';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import MarkdownEditor from '@/shared/components/markdown/MarkdownEditor';
 import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
@@ -37,88 +37,30 @@ import MaterialPreviewCard from '../components/MaterialPreviewCard';
 export default function CreateMaterial() {
   const { classId, materialId } = useParams();
   const navigate = useNavigate();
-
-  // Mode edit jika ada materialId
-  const isEditMode = Boolean(materialId);
-
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [order, setOrder] = useState('');
-  const [file, setFile] = useState(null);
-  const [existingFileUrl, setExistingFileUrl] = useState('');
-  const [removeFile, setRemoveFile] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-
-  // Tab untuk switch antara Edit dan Preview
-  const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'preview'
-
-  // Fetch data materi jika mode edit
-  useEffect(() => {
-    if (isEditMode && materialId) {
-      setLoading(true);
-      getMaterialDetail(materialId)
-        .then(res => {
-          const data = res.data;
-          setTitle(data.title || '');
-          setContent(data.content || '');
-          setOrder(data.order?.toString() || '');
-          setExistingFileUrl(data.fileUrl || '');
-
-        })
-        .catch(err => {
-          setError(err?.response?.data?.message || err?.message || 'Gagal memuat data materi');
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [isEditMode, materialId]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!classId || classId === 'undefined') return;
-    if (!title.trim()) {
-      setError('Judul materi harus diisi');
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      const payload = {
-        title: title.trim(),
-        content: content,
-        order: order ? parseInt(order) : undefined,
-        file: file,
-        removeFile: removeFile,
-      };
-
-      if (isEditMode) {
-        // Mode Edit: Update materi yang sudah ada
-        await updateMaterial(materialId, payload);
-      } else {
-        // Mode Create: Buat materi baru
-        await createMaterial(classId, payload);
-      }
-
-      navigate(`/dosen/classes/${classId}/materials`);
-    } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Gagal menyimpan materi');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (content) {
-      setShowLeaveConfirm(true);
-      return;
-    }
-    navigate(`/dosen/classes/${classId}/materials`);
-  };
+  
+  const {
+    isEditMode,
+    title,
+    setTitle,
+    content,
+    setContent,
+    order,
+    setOrder,
+    file,
+    setFile,
+    existingFileUrl,
+    removeFile,
+    setRemoveFile,
+    saving,
+    error,
+    loading,
+    showLeaveConfirm,
+    setShowLeaveConfirm,
+    activeTab,
+    setActiveTab,
+    handleSubmit,
+    handleCancel,
+  } = useDosenMaterialForm(classId, materialId);
 
   if (!classId || classId === 'undefined') {
     return (

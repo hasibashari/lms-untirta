@@ -117,38 +117,6 @@ export default function CourseHome() {
     },
   ];
 
-  const colorClasses = {
-    blue: {
-      bg: 'bg-blue-50',
-      bgHover: 'group-hover:bg-blue-100',
-      text: 'text-blue-600',
-      border: 'hover:border-primary/50',
-    },
-    emerald: {
-      bg: 'bg-emerald-50',
-      bgHover: 'group-hover:bg-emerald-100',
-      text: 'text-emerald-600',
-      border: 'hover:border-emerald-300',
-    },
-    violet: {
-      bg: 'bg-violet-50',
-      bgHover: 'group-hover:bg-violet-100',
-      text: 'text-violet-600',
-      border: 'hover:border-violet-300',
-    },
-    orange: {
-      bg: 'bg-orange-50',
-      bgHover: 'group-hover:bg-orange-100',
-      text: 'text-orange-600',
-      border: 'hover:border-orange-300',
-    },
-    amber: {
-      bg: 'bg-amber-50',
-      bgHover: 'group-hover:bg-amber-100',
-      text: 'text-amber-600',
-      border: 'hover:border-amber-300',
-    },
-  };
 
   return (
     <div className="space-y-8">

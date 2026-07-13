@@ -1,8 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Info } from 'lucide-react';
 import CourseCard from '../../course/components/CourseCard';
-import { getMyClasses } from '../../class/classService';
+import { useDosenClasses } from '../hooks/useDosenClasses';
 
 /**
  * MyClasses / Kelas Saya (Dosen)
@@ -15,56 +14,16 @@ import { getMyClasses } from '../../class/classService';
  * - useRef untuk abort controller (cancel outdated requests)
  */
 const MyClasses = () => {
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
   const navigate = useNavigate();
-
-  // Ref untuk tracking apakah component masih mounted
-  const isMounted = useRef(true);
-
-  // Optimized fetch - single API call dengan stats
-  const fetchClasses = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Single API call yang sudah include stats (students & materials count)
-      const res = await getMyClasses();
-
-      // Pastikan component masih mounted sebelum setState
-      if (isMounted.current) {
-        setClasses(res.data || []);
-      }
-    } catch (err) {
-      if (isMounted.current) {
-        setError(err?.message || err || 'Gagal memuat data');
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    isMounted.current = true;
-    fetchClasses();
-
-    // Cleanup: mark as unmounted
-    return () => {
-      isMounted.current = false;
-    };
-  }, [fetchClasses]);
-
-  // Filter classes based on search query
-  const filteredClasses = classes.filter(classObj =>
-    classObj.course?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    classObj.course?.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    classObj.section?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const {
+    filteredClasses,
+    classes,
+    loading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    fetchClasses,
+  } = useDosenClasses();
 
   return (
     <div className="space-y-6">

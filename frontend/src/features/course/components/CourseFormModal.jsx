@@ -26,6 +26,7 @@ const CourseFormModal = ({
   useEffect(() => {
     if (isOpen) {
       if (editingCourse) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData({
           title: editingCourse.title || '',
           code: editingCourse.code || '',

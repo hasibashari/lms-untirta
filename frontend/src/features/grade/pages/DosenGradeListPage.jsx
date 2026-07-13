@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Award, Search, BookOpen, Users, ChevronRight } from 'lucide-react';
-import { getMyClasses } from '@/features/class/classService';
+import { getMyClasses } from '@/features/class/api/class.api';
 
 const DosenGradeListPage = () => {
   const [classes, setClasses] = useState([]);

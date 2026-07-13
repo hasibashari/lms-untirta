@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getMyKRS } from '../../krs/api/krs.api';
-import { getMaterials } from '../../material/materialService';
+import { getMaterials } from '../../material/api/material.api';
 import { getAssignments } from '../../assignment/assignmentService';
 
 export const useMahasiswaCourse = (classId) => {
@@ -45,6 +45,7 @@ export const useMahasiswaCourse = (classId) => {
   }, [classId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   BookOpen,
@@ -13,7 +12,7 @@ import {
   X,
   Edit,
 } from 'lucide-react';
-import { getMaterialDetail, getMaterials, deleteMaterial } from '../materialService';
+import { useDosenMaterials } from '../hooks/useDosenMaterials';
 import MaterialPreviewCard from '../components/MaterialPreviewCard';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
@@ -25,61 +24,26 @@ import ConfirmDialog from '@/shared/components/feedback/ConfirmDialog';
 export default function Materials() {
   const { classId } = useParams();
   const navigate = useNavigate();
-  const [materials, setMaterials] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [previewMaterial, setPreviewMaterial] = useState(null); // material detail for modal
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-  const fetchMaterials = () => {
-    if (!classId || classId === 'undefined') return;
-
-    setLoading(true);
-    getMaterials(classId)
-      .then(res => setMaterials(res.data || []))
-      .catch(err => setError(err?.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchMaterials();
-  }, [classId]);
-
-  const openPreview = async (materialId) => {
-    setPreviewLoading(true);
-    setPreviewError(null);
-    setPreviewMaterial(null);
-
-    try {
-      const res = await getMaterialDetail(materialId);
-      setPreviewMaterial(res.data);
-    } catch (err) {
-      setPreviewError(err?.message || err || 'Gagal memuat preview materi');
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteConfirm) return;
-    try {
-      await deleteMaterial(deleteConfirm.id);
-      setMaterials((prev) => prev.filter((m) => m.id !== deleteConfirm.id));
-      toast.success('Materi berhasil dihapus');
-    } catch (err) {
-      toast.error(err?.message || err || 'Gagal menghapus materi');
-    } finally {
-      setDeleteConfirm(null);
-    }
-  };
-
-  // Filter materials by search
-  const filteredMaterials = materials.filter(mat =>
-    mat.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  
+  const {
+    materials,
+    filteredMaterials,
+    loading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    previewMaterial,
+    setPreviewMaterial,
+    previewLoading,
+    previewError,
+    deleteConfirm,
+    setDeleteConfirm,
+    openPreview,
+    handleDelete,
+    fetchMaterials,
+    setPreviewError,
+    setPreviewLoading,
+  } = useDosenMaterials(classId);
 
   if (!classId || classId === 'undefined') {
     return (

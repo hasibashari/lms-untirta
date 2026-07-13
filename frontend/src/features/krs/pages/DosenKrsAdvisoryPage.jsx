@@ -28,7 +28,6 @@ const DosenAdvisoryPage = () => {
     setAcademicSemesterId,
     page,
     setPage,
-    limit,
     semesters,
     advisoryData,
     loading,
@@ -44,6 +43,9 @@ const DosenAdvisoryPage = () => {
     isToggling,
     handleToggleAutoKrs,
     handleRevoke,
+    refetch,
+    bulkUpdate,
+    showToast,
   } = useDosenKrs();
 
   return (
@@ -108,7 +110,7 @@ const DosenAdvisoryPage = () => {
         <div className="flex flex-col items-center justify-center py-20 text-red-500 gap-2">
           <AlertCircle size={32} />
           <p className="text-sm">{error}</p>
-          <button onClick={fetchStudents} className="text-blue-600 text-sm underline">
+          <button onClick={refetch} className="text-blue-600 text-sm underline">
             Coba lagi
           </button>
         </div>
@@ -198,17 +200,17 @@ const DosenAdvisoryPage = () => {
                               const pendingIds = student.enrollments
                                 .filter(en => en.status === 'PENDING')
                                 .map(en => en.id);
-                              if (pendingIds.length > 0) {
-                                bulkUpdateEnrollmentStatus({
-                                  enrollmentIds: pendingIds,
-                                  status: 'APPROVED'
-                                }).then(() => {
-                                  toast.success(`Berhasil menyetujui ${pendingIds.length} mata kuliah ${student.name}`);
-                                  fetchStudents();
-                                }).catch(err => {
-                                  toast.error(err?.message || 'Gagal menyetujui KRS');
-                                });
-                              }
+                                if (pendingIds.length > 0) {
+                                  bulkUpdate({
+                                    enrollmentIds: pendingIds,
+                                    status: 'APPROVED'
+                                  }).then(() => {
+                                    showToast(`Berhasil menyetujui ${pendingIds.length} mata kuliah ${student.name}`);
+                                    refetch();
+                                  }).catch(err => {
+                                    showToast(err?.message || 'Gagal menyetujui KRS', 'error');
+                                  });
+                                }
                             }}
                             className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-shadow shadow-sm"
                           >

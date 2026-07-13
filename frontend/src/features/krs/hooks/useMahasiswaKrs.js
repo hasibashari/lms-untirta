@@ -221,6 +221,7 @@ export const useMahasiswaKrs = () => {
     setSelectedSemesterId,
     semestersLoading,
     availableClasses,
+    availableMeta,
     krsData,
     enrollments,
     summary,
@@ -243,9 +244,12 @@ export const useMahasiswaKrs = () => {
     revising,
     isPrinting,
     actionSuccess,
+    setActionSuccess,
     actionError,
+    setActionError,
     
     // Pagination derived
+    itemsPerPage,
     totalItems,
     totalPages,
     
@@ -258,5 +262,6 @@ export const useMahasiswaKrs = () => {
     handleDrop,
     handleRevise,
     handlePrintKrs,
+    fetchData,
   };
 };

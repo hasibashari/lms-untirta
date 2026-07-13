@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
 import { motion as Motion } from 'motion/react';
-import toast from 'react-hot-toast';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -12,8 +10,7 @@ import {
   Paperclip,
   DownloadCloud
 } from 'lucide-react';
-import { getMaterialDetail, getMaterials } from '../materialService';
-import { getMyKRS } from '../../krs/api/krs.api';
+import { useMahasiswaMaterialDetail } from '../hooks/useMahasiswaMaterialDetail';
 import LearningSidebar from '../components/LearningSidebar';
 import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 
@@ -33,69 +30,21 @@ import {
 const MaterialDetail = () => {
   const { classId, materialId } = useParams();
   const navigate = useNavigate();
-  const [material, setMaterial] = useState(null);
-  const [materials, setMaterials] = useState([]);
-  const [course, setCourse] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  // Effect 1: Fetch course-level data (materials list + KRS) — hanya re-fetch saat classId berubah
-  useEffect(() => {
-    if (!classId) return;
-
-    Promise.all([
-      getMaterials(classId),
-      getMyKRS(),
-    ])
-      .then(([materialsRes, krsRes]) => {
-        setMaterials(materialsRes.data);
-
-        const approvedEnrollments = (krsRes?.data?.enrollments || []).filter(
-          (item) => item.status === 'APPROVED'
-        );
-        const foundEnrollment = approvedEnrollments.find(
-          (item) => item.class?.id === classId
-        );
-        setCourse(foundEnrollment?.class?.course || null);
-      })
-      .catch(err => toast.error(err?.message || 'Gagal memuat data kelas'));
-  }, [classId]);
-
-  // Effect 2: Fetch material detail — re-fetch setiap materialId berubah (navigasi antar materi)
-  useEffect(() => {
-    if (!materialId) return;
-    const startTimer = setTimeout(() => {
-      setLoading(true);
-      setMaterial(null);
-    }, 0);
-
-    getMaterialDetail(materialId)
-      .then(res => setMaterial(res.data))
-      .catch(err => toast.error(err?.message || 'Gagal memuat detail materi'))
-      .finally(() => setLoading(false));
-    return () => clearTimeout(startTimer);
-  }, [materialId]);
-
-  const currentIndex = materials.findIndex(
-    m => m.id === parseInt(materialId) || m.id === materialId
-  );
-  // Guard currentIndex >= 0 agar saat material belum ditemukan (currentIndex = -1),
-  // nextMaterial tidak salah menunjuk ke materials[0]
-  const prevMaterial = currentIndex > 0 ? materials[currentIndex - 1] : null;
-  const nextMaterial = currentIndex >= 0 && currentIndex < materials.length - 1
-    ? materials[currentIndex + 1]
-    : null;
-
-  // Handle Mark as Complete Flow
-  const handleCompleteAndNext = () => {
-    toast.success('Materi ditandai selesai!');
-    if (nextMaterial) {
-      navigate(`/mahasiswa/classes/${classId}/materials/${nextMaterial.id}`);
-    } else {
-      navigate(`/mahasiswa/classes/${classId}`);
-    }
-  };
+  
+  const {
+    material,
+    materials,
+    course,
+    loading,
+    sidebarOpen,
+    setSidebarOpen,
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    currentIndex,
+    prevMaterial,
+    nextMaterial,
+    handleCompleteAndNext,
+  } = useMahasiswaMaterialDetail(classId, materialId);
 
   if (loading) {
     return (

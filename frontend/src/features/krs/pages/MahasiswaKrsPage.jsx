@@ -37,6 +37,7 @@ const KartuRencanaStudi = () => {
     setSelectedSemesterId,
     semestersLoading,
     availableClasses,
+    availableMeta,
     krsData,
     enrollments,
     summary,
@@ -57,7 +58,10 @@ const KartuRencanaStudi = () => {
     revising,
     isPrinting,
     actionSuccess,
+    setActionSuccess,
     actionError,
+    setActionError,
+    itemsPerPage,
     totalItems,
     totalPages,
     totalSKS,
@@ -66,6 +70,7 @@ const KartuRencanaStudi = () => {
     handleDrop,
     handleRevise,
     handlePrintKrs,
+    fetchData,
   } = useMahasiswaKrs();
 
   const handleSemesterChange = (newId) => {

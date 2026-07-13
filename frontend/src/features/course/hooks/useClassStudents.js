@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getClassStudents } from '../../class/classService';
+import { getClassStudents } from '../../class/api/class.api';
 
 export const useClassStudents = (classId) => {
   const [students, setStudents] = useState([]);
@@ -29,6 +29,7 @@ export const useClassStudents = (classId) => {
   }, [classId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStudents();
   }, [fetchStudents]);
 

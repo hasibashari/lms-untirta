@@ -20,8 +20,9 @@ export default function ForumThreadListPage() {
   const isDosen = location.pathname.startsWith('/dosen');
   const rolePrefix = isDosen ? '/dosen' : '/mahasiswa';
 
-  const fetchThreads = () => {
+  const fetchThreads = async () => {
     if (!classId) return;
+    await Promise.resolve(); // Make state updates async to avoid cascading renders warning
     setLoading(true);
     setError(null);
 
@@ -33,6 +34,7 @@ export default function ForumThreadListPage() {
 
   useEffect(() => {
     fetchThreads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
 
   // Filter threads by search

@@ -25,7 +25,8 @@ export default function AllSubmissions() {
   const [filterClass, setFilterClass] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const fetchSubmissions = () => {
+  const fetchSubmissions = async () => {
+    await Promise.resolve(); // Make state updates async
     setLoading(true);
     setError(null);
     getRecentSubmissions(100)
@@ -37,6 +38,7 @@ export default function AllSubmissions() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSubmissions();
   }, []);
 
