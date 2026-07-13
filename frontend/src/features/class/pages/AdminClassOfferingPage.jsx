@@ -36,7 +36,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/shared/components/ui/pagination';
-import { getAllCourses } from '../../course/courseService';
+import { getAllCourses } from '../../course/api/course.api';
 import { getAllSemesters } from '../../academic/academicService';
 import { getDosen } from '../../user/userService';
 import { Button } from '@/shared/components/ui/button';

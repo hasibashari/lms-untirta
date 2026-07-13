@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMyKRS } from '../krsService';
+import { getMyKRS } from '../api/krs.api';
 
 export const useMyClasses = () => {
   return useQuery({

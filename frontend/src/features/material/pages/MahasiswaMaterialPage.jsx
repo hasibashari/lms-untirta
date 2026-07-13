@@ -10,7 +10,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { getMaterials } from '../materialService';
-import { getMyKRS } from '../../krs/krsService';
+import { getMyKRS } from '../../krs/api/krs.api';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import { Button } from '@/shared/components/ui/button';
 

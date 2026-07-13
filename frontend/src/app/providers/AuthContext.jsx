@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login as loginAPI, getMe } from '@/features/auth/authService';
+import { login as loginAPI, getMe } from '@/features/auth/api/auth.api';
 import { setOnUnauthorized } from '@/shared/api/apiService';
 import { isTokenExpired, getTokenRemainingMs } from '@/shared/utils/token';
 

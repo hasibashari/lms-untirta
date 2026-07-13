@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -8,55 +7,20 @@ import {
   ArrowRight,
   FileText,
   Plus,
-  Inbox,
   User,
-  Award,
   MessageSquare,
 } from 'lucide-react';
-import { getClassStudents } from '../../class/classService';
-import { getClassById } from '../../class/classService';
-import { getMaterials } from '../../material/materialService';
-import { getAssignments } from '../../assignment/assignmentService';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import ActionCard from '@/shared/components/ui/ActionCard';
+import { useDosenCourse } from '../hooks/useDosenCourse';
 
 /**
  * TeacherCourseHome - Halaman Detail Kelas Dosen
- * Menampilkan overview kelas yang diampu dengan akses cepat ke fitur management
+ * Refactored using Feature-Sliced Design approach
  */
 export default function CourseHome() {
   const { classId } = useParams();
-
-  const [classData, setClassData] = useState(null);
-  const [materials, setMaterials] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchData = () => {
-    if (!classId || classId === 'undefined') return;
-    setLoading(true);
-    setError(null);
-
-    Promise.all([
-      getClassById(classId),
-      getMaterials(classId),
-      getAssignments(classId),
-      getClassStudents(classId),
-    ])
-      .then(([classRes, materialsRes, assignmentsRes, studentsRes]) => {
-        setClassData(classRes.data);
-        setMaterials(materialsRes.data || []);
-        setAssignments(assignmentsRes.data || []);
-        setStudents(studentsRes.data || []);
-      })
-      .catch(err => setError(err?.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [classId]);
+  const { classData, materials, assignments, students, loading, error, refetch } = useDosenCourse(classId);
 
   if (!classId || classId === 'undefined') {
     return (
@@ -86,7 +50,7 @@ export default function CourseHome() {
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{error}</p>
         <button
-          onClick={() => fetchData()}
+          onClick={refetch}
           className="mt-3 text-sm text-red-600 hover:underline"
         >
           Coba lagi
@@ -144,7 +108,6 @@ export default function CourseHome() {
       color: 'violet',
       to: `/dosen/classes/${classId}/students`,
     },
-
     {
       title: 'Forum Diskusi',
       description: 'Diskusi dengan mahasiswa',
@@ -257,44 +220,27 @@ export default function CourseHome() {
       <section>
         <h2 className="text-lg font-bold text-slate-900 mb-4">Kelola Kelas</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            const colors = colorClasses[action.color];
-
-            return (
-              <div
-                key={action.title}
-                className={`group bg-card rounded-xl border border-border shadow-sm ${colors.border} hover:shadow-lg transition-all overflow-hidden`}
-              >
+          {quickActions.map((action) => (
+            <ActionCard
+              key={action.title}
+              title={action.title}
+              subtitle={action.description}
+              icon={action.icon}
+              to={action.to}
+              color={action.color}
+            >
+              {action.action && (
                 <Link
-                  to={action.to}
-                  className="flex items-center gap-4 p-5"
+                  to={action.action.to}
+                  className={`inline-flex items-center gap-1.5 text-sm font-medium ${action.color ? `text-${action.color}-600` : 'text-primary'} hover:underline`}
+                  onClick={(e) => e.stopPropagation()} // Prevent triggering parent link if nested inside Link
                 >
-                  <div className={`w-14 h-14 rounded-xl ${colors.bg} ${colors.bgHover} flex items-center justify-center transition`}>
-                    <Icon size={28} className={colors.text} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-900">{action.title}</h3>
-                    <p className="text-sm text-slate-500">{action.description}</p>
-                  </div>
-                  <ArrowRight size={20} className={`text-slate-400 group-hover:${colors.text} group-hover:translate-x-1 transition-all`} />
+                  <Plus size={16} />
+                  {action.action.label}
                 </Link>
-
-                {/* Quick Add Button */}
-                {action.action && (
-                  <div className="px-5 pb-4">
-                    <Link
-                      to={action.action.to}
-                      className={`inline-flex items-center gap-1.5 text-sm font-medium ${colors.text} hover:underline`}
-                    >
-                      <Plus size={16} />
-                      {action.action.label}
-                    </Link>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              )}
+            </ActionCard>
+          ))}
         </div>
       </section>
 

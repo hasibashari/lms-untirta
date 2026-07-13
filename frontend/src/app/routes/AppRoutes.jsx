@@ -14,7 +14,7 @@ import RoleRoute from './RoleRoute';
 
 // Shared components
 import PageLoader from '../../shared/components/feedback/PageLoader';
-import UnauthorizedPage from '../../features/error/pages/UnauthorizedPage';
+import UnauthorizedPage from '../../shared/error/UnauthorizedPage';
 
 // Public pages
 import Home from '../../features/landing/pages/HomePage';

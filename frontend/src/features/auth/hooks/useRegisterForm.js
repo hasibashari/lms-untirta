@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { register as registerAPI } from '../authService';
+import { register as registerAPI } from '../api/auth.api';
+import { getPasswordStrength } from '@/shared/utils/password.util';
 
 export const useRegisterForm = () => {
   const navigate = useNavigate();
@@ -20,14 +21,6 @@ export const useRegisterForm = () => {
 
   const handleChange = (e, field) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const getPasswordStrength = (pwd) => {
-    let s = 0;
-    if (pwd.length >= 8) s++;
-    if (/[A-Z]/.test(pwd)) s++;
-    if (/[0-9]/.test(pwd)) s++;
-    return s;
   };
 
   const handleSubmit = async (e) => {

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMyKRS } from '../../krs/krsService';
+import { getMyKRS } from '../../krs/api/krs.api';
 import { getMyDashboardStats } from '../../class/classService';
 
 export const useMahasiswaDashboardData = () => {

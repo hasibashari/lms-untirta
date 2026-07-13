@@ -13,7 +13,7 @@ import {
   DownloadCloud
 } from 'lucide-react';
 import { getMaterialDetail, getMaterials } from '../materialService';
-import { getMyKRS } from '../../krs/krsService';
+import { getMyKRS } from '../../krs/api/krs.api';
 import LearningSidebar from '../components/LearningSidebar';
 import MarkdownPreview from '@/shared/components/markdown/MarkdownPreview';
 

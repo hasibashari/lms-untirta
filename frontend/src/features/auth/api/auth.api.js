@@ -11,3 +11,11 @@ export const register = async (payload) => {
 export const getMe = async (config = {}) => {
   return api.get('/auth/me', config);
 };
+
+export const forgotPassword = async (payload) => {
+  return api.post('/auth/forgot-password', payload);
+};
+
+export const resetPassword = async (payload) => {
+  return api.post('/auth/reset-password', payload);
+};

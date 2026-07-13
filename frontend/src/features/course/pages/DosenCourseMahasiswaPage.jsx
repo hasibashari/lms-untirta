@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Users,
@@ -6,8 +5,8 @@ import {
   Mail,
   Info,
 } from 'lucide-react';
-import { getClassStudents } from '../../class/classService';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
+import { useClassStudents } from '../hooks/useClassStudents';
 
 /**
  * Students - Daftar Mahasiswa Kelas (Dosen)
@@ -16,56 +15,16 @@ import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
  */
 export default function Students() {
   const { classId } = useParams();
-
-  // State untuk data
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Fetch students
-  const fetchStudents = () => {
-    if (!classId || classId === 'undefined') return;
-    setLoading(true);
-    setError(null);
-
-    getClassStudents(classId)
-      .then(res => {
-        // API returns: [{ enrollmentId, enrolledAt, student: { id, name, email } }]
-        // Transform to flat structure: [{ id, name, email, enrollmentId, enrolledAt }]
-        const enrollments = res.data || [];
-        const studentList = enrollments.map(enrollment => ({
-          id: enrollment.student?.id,
-          name: enrollment.student?.name,
-          email: enrollment.student?.email,
-          enrollmentId: enrollment.enrollmentId,
-          enrolledAt: enrollment.enrolledAt,
-        }));
-        setStudents(studentList);
-      })
-      .catch(err => setError(err?.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchStudents();
-  }, [classId]);
-
-  // Filter students by search
-  const filteredStudents = students.filter(student =>
-    student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+  const { 
+    students, 
+    filteredStudents, 
+    loading, 
+    error, 
+    searchQuery, 
+    setSearchQuery, 
+    formatDate, 
+    refetch 
+  } = useClassStudents(classId);
 
   if (!classId || classId === 'undefined') {
     return (
@@ -153,7 +112,7 @@ export default function Students() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 font-medium">{error}</p>
           <button
-            onClick={() => fetchStudents()}
+            onClick={() => refetch()}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
             Coba lagi
