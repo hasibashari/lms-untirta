@@ -5,7 +5,7 @@ import {
   updateEnrollmentStatus,
   bulkUpdateEnrollmentStatus,
 } from '../api/krs.api';
-import { getAllSemesters, updateSemester } from '@/features/academic/academicService';
+import { getAllSemesters, updateSemester } from '@/features/academic/api/academic.api';
 import { useSemesters } from '@/shared/hooks/useSemesters';
 
 export const useDosenKrs = () => {

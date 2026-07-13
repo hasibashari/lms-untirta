@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getKrsMonitoring } from '../api/krs.api';
-import { getAllSemesters } from '@/features/academic/academicService';
+import { getAllSemesters } from '@/features/academic/api/academic.api';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { useSemesters } from '@/shared/hooks/useSemesters';
 

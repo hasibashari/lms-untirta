@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getStudentSemesters } from '@/features/academic/academicService';
+import { getStudentSemesters } from '@/features/academic/api/academic.api';
 import {
   getAvailableClasses,
   getMyKRS,

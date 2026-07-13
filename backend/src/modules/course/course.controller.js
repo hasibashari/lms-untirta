@@ -64,7 +64,6 @@ export const getMyCourses = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
-    const includeStats = req.query.includeStats === 'true';
     const meta = createGrpcMetadata(req);
 
     let courses;

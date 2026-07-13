@@ -5,7 +5,7 @@ import {
   updateSemesterStatus,
   deleteSemester,
   getClosingReadiness,
-} from '../academicService';
+} from '../api/academic.api';
 import toast from 'react-hot-toast';
 
 export const useSemesters = () => {

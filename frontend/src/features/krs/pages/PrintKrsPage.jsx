@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/AuthContext';
 import { getMyKRS } from '../api/krs.api';
-import { getStudentSemesters } from '@/features/academic/academicService';
+import { getStudentSemesters } from '@/features/academic/api/academic.api';
 import { Printer, Loader2 } from 'lucide-react';
 
 const PrintKrsPage = () => {

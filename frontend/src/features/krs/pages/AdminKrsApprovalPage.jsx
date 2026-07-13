@@ -277,8 +277,8 @@ const AdminKrsMonitoringPage = () => {
             <Pagination className="mt-6">
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setPage(p => Math.max(1, p - 1))} 
+                  <PaginationPrevious
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
                     aria-disabled={page === 1}
                     className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                   />
@@ -289,8 +289,8 @@ const AdminKrsMonitoringPage = () => {
                   </span>
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))} 
+                  <PaginationNext
+                    onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
                     aria-disabled={page === meta.totalPages}
                     className={page === meta.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                   />
