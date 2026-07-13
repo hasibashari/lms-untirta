@@ -10,7 +10,7 @@ import {
   MessageSquare,
   Loader2,
 } from 'lucide-react';
-import { getThread, togglePin, deleteThread, createReply, updateReply, deleteReply } from '../forumService';
+import { getThread, togglePin, deleteThread, createReply, updateReply, deleteReply } from '../api/forum.api';
 import ReplyCard from '../components/ReplyCard';
 import ReplyComposer from '../components/ReplyComposer';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';

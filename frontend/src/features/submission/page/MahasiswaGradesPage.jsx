@@ -11,7 +11,9 @@ import {
   MessageSquare,
   ChevronDown,
 } from 'lucide-react';
-import { getAllMyGrades } from '../submissionService';
+import { getAllMyGrades } from '../api/submission.api';
+import { getStudentSemesters } from '@/features/academic/api/academic.api';
+import { useSemesters } from '@/shared/hooks/useSemesters';
 import { Button } from '@/shared/components/ui/button';
 
 /**
@@ -42,11 +44,19 @@ const MyGrades = () => {
     fetchGrades();
   }, []);
 
-  // Get unique classes for filter
-  const uniqueClasses = [...new Map(grades.map(g => [g.classId || g.courseId, { id: g.classId || g.courseId, name: g.className || g.courseName }])).values()];
+  const { semesters } = useSemesters(getStudentSemesters);
+  const [selectedSemesterId] = useState(() => {
+    return localStorage.getItem('selectedAcademicSemesterId') || null;
+  });
+
+  const activeSemesterId = selectedSemesterId || (semesters.find(s => s.status === 'OPEN') || semesters[0])?.id;
+
+  // Get active grades based on selected semester
+  const activeGrades = grades.filter(g => !activeSemesterId || g.academicSemesterId === activeSemesterId);
+  const uniqueClasses = [...new Map(activeGrades.map(g => [g.classId || g.courseId, { id: g.classId || g.courseId, name: g.className || g.courseName }])).values()];
 
   // Filter and search
-  const filteredGrades = grades.filter(grade => {
+  const filteredGrades = activeGrades.filter(grade => {
     const matchSearch =
       grade.assignmentTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (grade.className || grade.courseName).toLowerCase().includes(searchQuery.toLowerCase());
@@ -59,15 +69,15 @@ const MyGrades = () => {
 
   // Calculate summary stats
   const stats = {
-    total: grades.length,
-    graded: grades.filter(g => g.status === 'graded').length,
-    pending: grades.filter(g => g.status === 'pending').length,
-    submitted: grades.filter(g => g.status === 'submitted').length,
-    overdue: grades.filter(g => g.status === 'overdue').length,
+    total: activeGrades.length,
+    graded: activeGrades.filter(g => g.status === 'graded').length,
+    pending: activeGrades.filter(g => g.status === 'pending').length,
+    submitted: activeGrades.filter(g => g.status === 'submitted').length,
+    overdue: activeGrades.filter(g => g.status === 'overdue').length,
   };
 
   // Calculate average grade (only from graded submissions)
-  const gradedItems = grades.filter(g => g.grade !== null);
+  const gradedItems = activeGrades.filter(g => g.grade !== null && g.grade !== -1 && g.grade !== undefined);
   const averageGrade = gradedItems.length > 0
     ? (gradedItems.reduce((sum, g) => sum + g.grade, 0) / gradedItems.length).toFixed(1)
     : '-';
@@ -267,11 +277,11 @@ const MyGrades = () => {
       {/* Results Count */}
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <Award size={16} />
-        <span>{filteredGrades.length} dari {grades.length} tugas</span>
+        <span>{filteredGrades.length} dari {activeGrades.length} tugas</span>
       </div>
 
       {/* Grades List */}
-      {grades.length === 0 ? (
+      {activeGrades.length === 0 ? (
         <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
             <Award size={32} className="text-slate-400" />
@@ -280,7 +290,7 @@ const MyGrades = () => {
             Belum Ada Tugas
           </h3>
           <p className="text-slate-500 max-w-sm mx-auto">
-            Belum ada tugas yang tersedia di kelas Anda.
+            Belum ada tugas yang tersedia di semester ini.
           </p>
         </div>
       ) : filteredGrades.length === 0 ? (

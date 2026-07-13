@@ -273,6 +273,7 @@ export const getMyDashboardStats = async (req, res) => {
 
     const result = await grpcGetMyDashboardStats({
       studentId,
+      academicSemesterId: req.query.academicSemesterId || '',
     }, meta);
 
     sendSuccess(res, {

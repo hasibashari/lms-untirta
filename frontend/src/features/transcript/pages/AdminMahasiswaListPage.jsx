@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Loader2, AlertCircle, Search, GraduationCap, Users, ChevronRight,
 } from 'lucide-react';
-import { getStudentList } from '../transcriptService';
+import { getStudentList } from '../api/transcript.api';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,

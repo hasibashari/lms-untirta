@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { getKrsMonitoring } from '../api/krs.api';
 import { getAllSemesters } from '@/features/academic/api/academic.api';
 import { useDebounce } from '@/shared/hooks/useDebounce';
@@ -43,6 +43,16 @@ export const useAdminKrs = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const prevSemesterRef = useRef(academicSemesterId);
+
+  // Clear data immediately when semester changes to prevent data bleeding
+  useEffect(() => {
+    if (prevSemesterRef.current && prevSemesterRef.current !== academicSemesterId) {
+      setMonitoringData(null);
+    }
+    prevSemesterRef.current = academicSemesterId;
+  }, [academicSemesterId]);
 
 
 

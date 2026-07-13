@@ -10,7 +10,7 @@ import {
   BookOpen,
   ArrowRight,
 } from 'lucide-react';
-import { getRecentSubmissions } from '../submissionService';
+import { getRecentSubmissions } from '../api/submission.api';
 
 /**
  * AllSubmissions - Halaman Semua Submissions Dosen

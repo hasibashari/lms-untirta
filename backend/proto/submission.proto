@@ -104,6 +104,7 @@ message GradeData {
   int32 grade = 9;
   string feedback = 10;
   string submittedAt = 11;
+  string academicSemesterId = 12;
 }
 
 

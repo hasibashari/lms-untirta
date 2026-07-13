@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, Loader2, Save } from 'lucide-react';
-import { createThread, updateThread, getThread } from '../forumService';
+import { createThread, updateThread, getThread } from '../api/forum.api';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import MarkdownEditor from '@/shared/components/markdown/MarkdownEditor';
 import toast from 'react-hot-toast';

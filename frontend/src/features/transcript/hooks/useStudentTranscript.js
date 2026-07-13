@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getStudentTranscript } from '../transcriptService';
+import { getStudentTranscript } from '../api/transcript.api';
 
 export const useStudentTranscript = (studentId) => {
   return useQuery({

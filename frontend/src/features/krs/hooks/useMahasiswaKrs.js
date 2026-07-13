@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getStudentSemesters } from '@/features/academic/api/academic.api';
 import {
@@ -16,7 +16,17 @@ export const useMahasiswaKrs = () => {
   const queryClient = useQueryClient();
 
   const { semesters, loading: semestersLoading } = useSemesters(getStudentSemesters);
-  const [selectedSemesterId, setSelectedSemesterId] = useState(null);
+
+  const [selectedSemesterId, setSelectedSemesterId] = useState(() => {
+    return localStorage.getItem('selectedAcademicSemesterId') || null;
+  });
+
+  // Sync with localStorage
+  useEffect(() => {
+    if (selectedSemesterId) {
+      localStorage.setItem('selectedAcademicSemesterId', selectedSemesterId);
+    }
+  }, [selectedSemesterId]);
 
   // Data state
   const [availableClasses, setAvailableClasses] = useState([]);
@@ -59,9 +69,23 @@ export const useMahasiswaKrs = () => {
   useEffect(() => {
     if (semesters.length > 0 && !selectedSemesterId) {
       const openSem = semesters.find((s) => s.status === 'OPEN');
-      setSelectedSemesterId(openSem ? openSem.id : semesters[0].id);
+      const defaultSemId = openSem ? openSem.id : semesters[0].id;
+      setSelectedSemesterId(defaultSemId);
+      localStorage.setItem('selectedAcademicSemesterId', defaultSemId);
     }
   }, [semesters, selectedSemesterId]);
+
+  const prevSemesterRef = useRef(selectedSemesterId);
+
+  // Clear data immediately when semester changes to prevent data bleeding
+  useEffect(() => {
+    if (prevSemesterRef.current && prevSemesterRef.current !== selectedSemesterId) {
+      setAvailableClasses([]);
+      setAvailableMeta(null);
+      setKrsData(null);
+    }
+    prevSemesterRef.current = selectedSemesterId;
+  }, [selectedSemesterId]);
 
   // ==================== DATA LOADING ====================
   const fetchData = useCallback(async () => {

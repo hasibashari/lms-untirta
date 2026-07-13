@@ -4,7 +4,7 @@ import {
   Loader2, AlertCircle, ArrowLeft, GraduationCap, BookOpen,
   Award, TrendingUp, Printer, ChevronDown, ChevronUp,
 } from 'lucide-react';
-import { getStudentTranscript } from '../transcriptService';
+import { getStudentTranscript } from '../api/transcript.api';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/shared/components/ui/table';

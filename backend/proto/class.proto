@@ -186,6 +186,7 @@ message AvailableStudentsResponse {
 
 message GetMyDashboardStatsRequest {
   string studentId = 1;
+  string academicSemesterId = 2;
 }
 
 message StudentDashboardStatsResponse {

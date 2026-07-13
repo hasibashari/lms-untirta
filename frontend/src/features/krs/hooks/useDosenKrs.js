@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
   getAdvisoryStudents,
@@ -66,6 +66,16 @@ export const useDosenKrs = () => {
       }
     }
   }, [semesters, academicSemesterId]);
+
+  const prevSemesterRef = useRef(academicSemesterId);
+
+  // Clear data immediately when semester changes to prevent data bleeding
+  useEffect(() => {
+    if (prevSemesterRef.current && prevSemesterRef.current !== academicSemesterId) {
+      setAdvisoryData(null);
+    }
+    prevSemesterRef.current = academicSemesterId;
+  }, [academicSemesterId]);
 
   // Sync isAutoKrs state when semester ID changes
   useEffect(() => {

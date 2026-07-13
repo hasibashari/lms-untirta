@@ -173,6 +173,7 @@ export const GetAllMyGrades = async (call, callback) => {
           grade: submission?.grade ?? -1,
           feedback: submission?.feedback || '',
           submittedAt: submission?.submittedAt?.toISOString() || '',
+          academicSemesterId: classData.academicSemesterId || '',
         });
       }
     }

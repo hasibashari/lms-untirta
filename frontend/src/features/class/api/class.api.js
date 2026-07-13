@@ -96,6 +96,9 @@ export const getTeacherDashboardStats = () => {
   return api.get('/classes/teacher-stats');
 };
 
-export const getMyDashboardStats = () => {
-  return api.get('/classes/my-stats');
+export const getMyDashboardStats = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/classes/my-stats${qs ? `?${qs}` : ''}`);
 };

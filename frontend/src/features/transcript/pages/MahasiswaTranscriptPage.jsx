@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/app/providers/AuthContext';
 import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
 import CourseBadge from '@/features/course/components/CourseBadge';
@@ -11,6 +11,8 @@ import CourseBadge from '@/features/course/components/CourseBadge';
  * dan tampilan IP/IPK di dalam tabel.
  */
 import { useStudentTranscript } from '../hooks/useStudentTranscript';
+import { getStudentSemesters } from '@/features/academic/api/academic.api';
+import { useSemesters } from '@/shared/hooks/useSemesters';
 
 /**
  * MahasiswaTranscriptPage
@@ -117,6 +119,19 @@ const MahasiswaTranscriptPage = () => {
     };
   }, [courses]);
 
+  const { semesters } = useSemesters(getStudentSemesters);
+  const [selectedSemesterId] = useState(() => {
+    return localStorage.getItem('selectedAcademicSemesterId') || null;
+  });
+
+  const activeSemesterId = selectedSemesterId || (semesters.find(s => s.status === 'OPEN') || semesters[0])?.id;
+  
+  // Only show the selected semester in the view (as expected by user for KHS)
+  const activeSemesterDataList = useMemo(() => {
+    if (!activeSemesterId) return semesterDataList;
+    return semesterDataList.filter(s => s.semester === activeSemesterId);
+  }, [semesterDataList, activeSemesterId]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -158,13 +173,15 @@ const MahasiswaTranscriptPage = () => {
           <Printer size={18} /> Cetak Semua KHS
         </button>
       </div>
+      
+      {/* Semester Filter */}
 
-      {semesterDataList.length === 0 ? (
+      {activeSemesterDataList.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center max-w-2xl mx-auto text-slate-500 italic">
-          Belum ada data nilai akademik yang tersedia.
+          Belum ada data nilai akademik yang tersedia di semester ini.
         </div>
       ) : (
-        semesterDataList.map((semData) => (
+        activeSemesterDataList.map((semData) => (
           <div key={semData.semester} className="bg-white p-6 sm:p-8 shadow-sm rounded-xl border border-slate-200 mb-8 print:shadow-none print:border-none print:p-0 print:mb-12">
 
             {/* Header KHS */}

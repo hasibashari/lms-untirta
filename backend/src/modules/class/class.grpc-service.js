@@ -473,10 +473,15 @@ export const GetAvailableStudentsForClass = async (call, callback) => {
 
 export const GetMyDashboardStats = async (call, callback) => {
   try {
-    const { studentId } = call.request;
+    const { studentId, academicSemesterId } = call.request;
+
+    const whereClause = { studentId, status: 'APPROVED' };
+    if (academicSemesterId) {
+      whereClause.class = { academicSemesterId };
+    }
 
     const enrollments = await prisma.krsEnrollment.findMany({
-      where: { studentId, status: 'APPROVED' },
+      where: whereClause,
       select: { classId: true, class: { select: { courseId: true } } },
     });
 
@@ -496,12 +501,26 @@ export const GetMyDashboardStats = async (call, callback) => {
     const gradedAssignments = await prisma.submission.count({
       where: {
         studentId,
-        grade: { not: null }
+        grade: { not: null },
+        assignment: {
+          OR: [
+            { classId: { in: classIds } },
+            { courseId: { in: courseIds }, classId: null },
+          ]
+        }
       }
     });
 
     const submittedAssignments = await prisma.submission.count({
-      where: { studentId }
+      where: { 
+        studentId,
+        assignment: {
+          OR: [
+            { classId: { in: classIds } },
+            { courseId: { in: courseIds }, classId: null },
+          ]
+        }
+      }
     });
     
     const pendingAssignments = totalAssignments - submittedAssignments > 0 ? totalAssignments - submittedAssignments : 0;

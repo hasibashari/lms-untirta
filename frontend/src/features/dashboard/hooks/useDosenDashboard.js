@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getMyClasses, getTeacherDashboardStats } from '../../class/api/class.api';
-import { getRecentSubmissions } from '../../submission/submissionService';
+import { getRecentSubmissions } from '../../submission/api/submission.api';
 
 export const useDosenDashboardData = () => {
   const [classes, setClasses] = useState([]);

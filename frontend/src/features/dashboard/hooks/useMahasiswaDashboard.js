@@ -3,12 +3,16 @@ import { getMyKRS } from '../../krs/api/krs.api';
 import { getMyDashboardStats } from '../../class/api/class.api';
 
 export const useMahasiswaDashboardData = () => {
+  const academicSemesterId = localStorage.getItem('selectedAcademicSemesterId');
+
   return useQuery({
-    queryKey: ['mahasiswa-dashboard'],
+    queryKey: ['mahasiswa-dashboard', academicSemesterId],
     queryFn: async () => {
+      const params = academicSemesterId ? { academicSemesterId } : {};
+
       const [krsRes, statsRes] = await Promise.all([
-        getMyKRS(),
-        getMyDashboardStats()
+        getMyKRS(params),
+        getMyDashboardStats(params)
       ]);
       
       const enrollments = krsRes?.data?.enrollments || [];

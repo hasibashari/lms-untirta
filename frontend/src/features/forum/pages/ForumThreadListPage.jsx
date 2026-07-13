@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { Plus, MessageSquare, Search, Loader2 } from 'lucide-react';
-import { getThreads } from '../forumService';
+import { getThreads } from '../api/forum.api';
 import ThreadCard from '../components/ThreadCard';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 

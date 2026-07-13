@@ -10,7 +10,7 @@ import {
   inputGrade,
   bulkInputGrades,
   finalizeGrades,
-} from '../gradeService';
+} from '../api/grade.api';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/shared/components/ui/table';
