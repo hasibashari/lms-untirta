@@ -1,12 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import RegisterForm from '../components/RegisterForm';
 import RegisterSuccess from '../components/RegisterSuccess';
-import { useRegisterForm } from '../hooks/useRegisterForm';
 
 export default function Register() {
   const { setAuthLayoutBranding } = useOutletContext();
-  const { isSuccess } = useRegisterForm();
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     setAuthLayoutBranding({
@@ -29,7 +28,7 @@ export default function Register() {
         </p>
       </div>
 
-      <RegisterForm />
+      <RegisterForm onSuccess={() => setIsSuccess(true)} />
     </>
   );
 }

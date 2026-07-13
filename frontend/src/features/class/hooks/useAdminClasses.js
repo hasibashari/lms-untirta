@@ -10,7 +10,7 @@ import {
 } from '../api/class.api';
 import { getAllCourses } from '../../course/api/course.api';
 import { getAllSemesters } from '../../academic/academicService';
-import { getDosen } from '../../user/userService';
+import { getDosen } from '../../user/api/user.api';
 
 export const useAdminClasses = () => {
   // Data state

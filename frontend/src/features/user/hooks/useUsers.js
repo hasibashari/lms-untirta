@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, deleteUser, createUser, updateUser } from '../userService';
+import { getUsers, deleteUser, createUser, updateUser } from '../api/user.api';
 import { toast } from 'react-hot-toast';
 
 export const useUsers = (params) => {

@@ -152,7 +152,7 @@ const MahasiswaTranscriptPage = () => {
           </p>
         </div>
         <button
-          onClick={() => window.print()}
+          onClick={() => window.open('/mahasiswa/study-result/print', '_blank')}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm font-medium transition-colors focus:ring-2 focus:ring-blue-400 focus:outline-none"
         >
           <Printer size={18} /> Cetak Semua KHS
@@ -175,7 +175,7 @@ const MahasiswaTranscriptPage = () => {
               </div>
               <div className="flex gap-3 mt-4 sm:mt-0 print:hidden">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => window.open(`/mahasiswa/study-result/print?semesterId=${semData.semester}`, '_blank')}
                   className="flex items-center gap-2 border border-cyan-300 text-cyan-600 hover:bg-cyan-50 px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <Printer size={16} /> KHS

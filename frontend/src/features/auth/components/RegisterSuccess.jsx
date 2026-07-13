@@ -1,9 +1,17 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 
 export default function RegisterSuccess() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate('/login');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center animate-in fade-in zoom-in duration-500">

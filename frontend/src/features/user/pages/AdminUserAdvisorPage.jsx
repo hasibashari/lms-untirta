@@ -1,12 +1,9 @@
-import {
-  Loader2, AlertCircle, UserCheck, Users,
-  Search, ChevronDown, ChevronUp, X, Shield, UserPlus,
-} from 'lucide-react';
+import { Loader2, AlertCircle, UserCheck, Users, Search, Shield } from 'lucide-react';
 import { useAdminUserAdvisor } from '../hooks/useAdminUserAdvisor';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/shared/components/ui/table';
+import { AdvisorStats } from '../components/AdvisorStats';
+import { AdvisorTabContent } from '../components/AdvisorTabContent';
+import { StudentTabContent } from '../components/StudentTabContent';
 
 // ============================================================
 // Admin — Dosen Pembimbing (Advisor) Assignment Page
@@ -51,44 +48,7 @@ const AdvisorAssignmentPage = () => {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-            <Shield size={20} className="text-blue-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{stats.totalDospem}</p>
-            <p className="text-xs text-slate-500">Total Dospem</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-            <Users size={20} className="text-indigo-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{stats.totalStudents}</p>
-            <p className="text-xs text-slate-500">Total Mahasiswa</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-            <UserPlus size={20} className="text-green-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{stats.assigned}</p>
-            <p className="text-xs text-slate-500">Sudah Ditetapkan</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-            <AlertCircle size={20} className="text-amber-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{stats.unassigned}</p>
-            <p className="text-xs text-slate-500">Belum Ditetapkan</p>
-          </div>
-        </div>
-      </div>
+      <AdvisorStats stats={stats} />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
@@ -133,362 +93,30 @@ const AdvisorAssignmentPage = () => {
         </div>
       ) : activeTab === 'advisors' ? (
         /* ============ ADVISORS TAB ============ */
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            {/* Mobile Card View */}
-            <div className="lg:hidden divide-y divide-slate-100">
-              {filteredDosen.length === 0 ? (
-                <div className="text-center text-slate-400 py-10 text-sm">Tidak ada dosen ditemukan</div>
-              ) : filteredDosen.map((dosen) => {
-                const studentCount = dosen.advisedStudentCount || 0;
-                return (
-                  <div key={dosen.id} className="p-4 hover:bg-slate-50">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-                          {dosen.name?.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm text-slate-900 truncate">{dosen.name}</p>
-                          <p className="text-xs text-slate-500 truncate">{dosen.email}</p>
-                          <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {dosen.isDospem ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                <UserCheck size={12} /> Aktif
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full text-xs">Tidak aktif</span>
-                            )}
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                              {studentCount} mahasiswa
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleToggleDospem(dosen.id, dosen.isDospem)}
-                        disabled={processingId === dosen.id}
-                        className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${dosen.isDospem
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                          : 'bg-green-50 text-green-600 hover:bg-green-100'
-                          }`}
-                      >
-                        {processingId === dosen.id ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : dosen.isDospem ? (
-                          <><X size={12} /> Nonaktifkan</>
-                        ) : (
-                          <><UserCheck size={12} /> Aktifkan</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="w-12 text-center">No.</TableHead>
-                    <TableHead>Dosen</TableHead>
-                    <TableHead className="text-center">Status Dospem</TableHead>
-                    <TableHead className="text-center">Jumlah Mahasiswa</TableHead>
-                    <TableHead className="w-28 text-center">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDosen.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-slate-400 py-10">
-                        Tidak ada dosen ditemukan
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredDosen.map((dosen, index) => {
-                    const studentCount = dosen.advisedStudentCount || 0;
-                    return (
-                      <TableRow key={dosen.id} className="hover:bg-slate-50">
-                        <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
-                              {dosen.name?.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{dosen.name}</p>
-                              <p className="text-xs text-slate-500">{dosen.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {dosen.isDospem ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                              <UserCheck size={12} /> Aktif
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-400">Tidak aktif</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {studentCount > 0 ? (
-                            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">{studentCount}</span>
-                          ) : (
-                            <span className="text-slate-400">0</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <button
-                            onClick={() => handleToggleDospem(dosen.id, dosen.isDospem)}
-                            disabled={processingId === dosen.id}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${dosen.isDospem
-                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                              : 'bg-green-50 text-green-600 hover:bg-green-100'
-                              }`}
-                          >
-                            {processingId === dosen.id ? (
-                              <Loader2 size={12} className="animate-spin" />
-                            ) : dosen.isDospem ? (
-                              <>
-                                <X size={12} /> Nonaktifkan
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck size={12} /> Aktifkan
-                              </>
-                            )}
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Advisor Summary Cards */}
-          {advisorSummary.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Ringkasan Dospem Aktif</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {advisorSummary.map(advisor => (
-                  <div
-                    key={advisor.id}
-                    className="bg-white rounded-xl border p-4 hover:shadow-sm transition-shadow cursor-pointer"
-                    onClick={() => setExpandedAdvisor(expandedAdvisor === advisor.id ? null : advisor.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm">
-                          {advisor.name?.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{advisor.name}</p>
-                          <p className="text-xs text-slate-500">{advisor.advisedStudentCount || 0} mahasiswa</p>
-                        </div>
-                      </div>
-                      {expandedAdvisor === advisor.id ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-                    </div>
-                    {expandedAdvisor === advisor.id && advisor.students?.length > 0 && (
-                      <div className="mt-3 pt-3 border-t space-y-1.5">
-                        {advisor.students.map(s => (
-                          <div key={s.id} className="flex items-center gap-2 text-sm text-slate-600">
-                            <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 text-xs font-medium">
-                              {s.name?.charAt(0)}
-                            </div>
-                            <span>{s.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <AdvisorTabContent
+          filteredDosen={filteredDosen}
+          processingId={processingId}
+          handleToggleDospem={handleToggleDospem}
+          advisorSummary={advisorSummary}
+          expandedAdvisor={expandedAdvisor}
+          setExpandedAdvisor={setExpandedAdvisor}
+        />
       ) : (
         /* ============ STUDENTS TAB ============ */
-        <div className="space-y-4">
-          {/* Bulk Assign Bar */}
-          {selectedStudents.size > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <span className="text-sm text-blue-700 font-medium">
-                {selectedStudents.size} mahasiswa dipilih
-              </span>
-              <div className="flex items-center gap-2">
-                <select
-                  value={bulkAdvisorId}
-                  onChange={(e) => setBulkAdvisorId(e.target.value)}
-                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Pilih Dospem...</option>
-                  {activeDospem.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleBulkAssign}
-                  disabled={!bulkAdvisorId || bulkProcessing}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {bulkProcessing ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
-                  Tetapkan
-                </button>
-                <button
-                  onClick={() => setSelectedStudents(new Set())}
-                  className="text-slate-400 hover:text-slate-600 text-sm"
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            {/* Mobile Card View */}
-            <div className="lg:hidden divide-y divide-slate-100">
-              {filteredStudents.length === 0 ? (
-                <div className="text-center text-slate-400 py-10 text-sm">Tidak ada mahasiswa ditemukan</div>
-              ) : filteredStudents.map(student => (
-                <div key={student.id} className="p-4 hover:bg-slate-50">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedStudents.has(student.id)}
-                      onChange={() => toggleStudent(student.id)}
-                      className="rounded mt-1"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-sm shrink-0">
-                          {student.name?.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm text-slate-900 truncate">{student.name}</p>
-                          <p className="text-xs text-slate-500 truncate">{student.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-slate-500">Pembimbing:</span>
-                        {student.advisor ? (
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-[10px] font-bold">
-                              {student.advisor.name?.charAt(0)}
-                            </div>
-                            <span className="text-xs text-slate-700">{student.advisor.name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Belum ditetapkan</span>
-                        )}
-                      </div>
-                      <div className="mt-2">
-                        <select
-                          value={student.advisorId || ''}
-                          onChange={(e) => handleAssignAdvisor(student.id, e.target.value)}
-                          disabled={processingId === student.id}
-                          className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 w-full"
-                        >
-                          <option value="">— Tidak ada —</option>
-                          {activeDospem.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                          ))}
-                        </select>
-                        {processingId === student.id && (
-                          <Loader2 size={14} className="inline ml-2 animate-spin text-blue-600" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="w-10">
-                      <input
-                        type="checkbox"
-                        checked={filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.has(s.id))}
-                        onChange={toggleSelectAllStudents}
-                        className="rounded"
-                      />
-                    </TableHead>
-                    <TableHead className="w-12 text-center">No.</TableHead>
-                    <TableHead>Mahasiswa</TableHead>
-                    <TableHead>Dosen Pembimbing</TableHead>
-                    <TableHead className="w-40 text-center">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStudents.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-slate-400 py-10">
-                        Tidak ada mahasiswa ditemukan
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredStudents.map((student, index) => (
-                    <TableRow key={student.id} className="hover:bg-slate-50">
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={selectedStudents.has(student.id)}
-                          onChange={() => toggleStudent(student.id)}
-                          className="rounded"
-                        />
-                      </TableCell>
-                      <TableCell className="text-center text-slate-500">{index + 1}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-xs">
-                            {student.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{student.name}</p>
-                            <p className="text-xs text-slate-500">{student.email}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {student.advisor ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-xs font-bold">
-                              {student.advisor.name?.charAt(0)}
-                            </div>
-                            <span className="text-sm">{student.advisor.name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Belum ditetapkan</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <select
-                          value={student.advisorId || ''}
-                          onChange={(e) => handleAssignAdvisor(student.id, e.target.value)}
-                          disabled={processingId === student.id}
-                          className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 w-36"
-                        >
-                          <option value="">— Tidak ada —</option>
-                          {activeDospem.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                          ))}
-                        </select>
-                        {processingId === student.id && (
-                          <Loader2 size={14} className="inline ml-2 animate-spin text-blue-600" />
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
+        <StudentTabContent
+          selectedStudents={selectedStudents}
+          bulkAdvisorId={bulkAdvisorId}
+          setBulkAdvisorId={setBulkAdvisorId}
+          activeDospem={activeDospem}
+          handleBulkAssign={handleBulkAssign}
+          bulkProcessing={bulkProcessing}
+          setSelectedStudents={setSelectedStudents}
+          filteredStudents={filteredStudents}
+          toggleStudent={toggleStudent}
+          toggleSelectAllStudents={toggleSelectAllStudents}
+          handleAssignAdvisor={handleAssignAdvisor}
+          processingId={processingId}
+        />
       )}
     </div>
   );

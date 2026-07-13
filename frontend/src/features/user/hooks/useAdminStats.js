@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getAdminStats } from '../userService';
+import { getAdminStats } from '../api/user.api';
 
 export const useAdminStats = () => {
   return useQuery({

@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateUser } from '../hooks/useUsers';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
 import { Card, CardContent } from '@/shared/components/ui/card';
+import { UserForm } from '../components/UserForm';
 
 export default function CreateUser() {
   const navigate = useNavigate();
@@ -34,7 +33,7 @@ export default function CreateUser() {
         state: { flash: 'User berhasil dibuat.' },
       });
     } catch (err) {
-      setError(err);
+      setError(errorMessage(err));
     }
   };
 
@@ -63,76 +62,15 @@ export default function CreateUser() {
 
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className='space-y-4'>
-            {error && (
-              <p className='text-sm text-red-600'>{errorMessage(error)}</p>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nama <span className="text-red-500">*</span></Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Nama lengkap"
-                value={form.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
-              <Input
-                id="email"
-                name="email"
-                placeholder="email@kampus.ac.id"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className='space-y-1'>
-              <label className='text-sm font-medium text-gray-700'>Role</label>
-              <select
-                name='role'
-                className='w-full px-3 py-2 border rounded'
-                value={form.role}
-                onChange={handleChange}
-              >
-                <option value='DOSEN'>Dosen</option>
-                <option value='ADMIN'>Admin</option>
-                <option value='MAHASISWA'>Mahasiswa</option>
-              </select>
-              <p className='text-xs text-gray-500'>Role menentukan akses menu dan fitur.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
-              <Input
-                id="password"
-                name="password"
-                placeholder="Minimal 8 karakter (sesuaikan kebijakan)"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className='flex gap-2'>
-              <Button type='submit' disabled={createUserMutation.isPending}>
-                {createUserMutation.isPending ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-              <Button
-                type='button'
-                variant='secondary'
-                onClick={() => navigate('/admin/users')}
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
+          <UserForm
+            form={form}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            isPending={createUserMutation.isPending}
+            isEditMode={false}
+            error={error}
+            onCancel={() => navigate('/admin/users')}
+          />
         </CardContent>
       </Card>
     </div>

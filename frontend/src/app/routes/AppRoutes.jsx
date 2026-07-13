@@ -53,12 +53,14 @@ const MahasiswaMyClasses = lazy(() => import('../../features/class/pages/Mahasis
 const KartuRencanaStudi = lazy(() => import('../../features/krs/pages/MahasiswaKrsPage'));
 const AdminKrsMonitoring = lazy(() => import('../../features/krs/pages/AdminKrsApprovalPage'));
 const DosenAdvisory = lazy(() => import('../../features/krs/pages/DosenKrsAdvisoryPage'));
+const PrintKrsPage = lazy(() => import('../../features/krs/pages/PrintKrsPage'));
 
 // Advisor Assignment module
 const AdvisorAssignment = lazy(() => import('../../features/user/pages/AdminUserAdvisorPage'));
 
 // Transcript module
 const MahasiswaStudyResult = lazy(() => import('../../features/transcript/pages/MahasiswaTranscriptPage'));
+const PrintKhsPage = lazy(() => import('../../features/transcript/pages/PrintKhsPage'));
 const AdminStudentList = lazy(() => import('../../features/transcript/pages/AdminMahasiswaListPage'));
 const AdminStudentTranscript = lazy(() => import('../../features/transcript/pages/AdminTranscriptMahasiswaPage'));
 
@@ -179,6 +181,8 @@ function AppRoutes() {
       {/* ── Mahasiswa (StudentLayout + LearningLayout) ── */}
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleRoute roles={['MAHASISWA']} />}>
+          <Route path="/mahasiswa/krs/print/:semesterId" element={<Lazy component={PrintKrsPage} />} />
+          <Route path="/mahasiswa/study-result/print" element={<Lazy component={PrintKhsPage} />} />
           <Route element={<StudentLayout />}>
             <Route path="/mahasiswa/dashboard" element={<Lazy component={MahasiswaDashboard} />} />
             <Route path="/mahasiswa/classes" element={<Lazy component={MahasiswaMyClasses} />} />

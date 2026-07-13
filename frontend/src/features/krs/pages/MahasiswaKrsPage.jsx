@@ -57,10 +57,6 @@ const KartuRencanaStudi = () => {
     dropping,
     revising,
     isPrinting,
-    actionSuccess,
-    setActionSuccess,
-    actionError,
-    setActionError,
     itemsPerPage,
     totalItems,
     totalPages,
@@ -158,25 +154,7 @@ const KartuRencanaStudi = () => {
             </div>
           )}
 
-          {/* Action Messages */}
-          {actionSuccess && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
-              <CheckCircle size={20} className="text-green-600 shrink-0" />
-              <p className="text-green-700 flex-1">{actionSuccess}</p>
-              <Button variant="ghost" size="icon-sm" onClick={() => setActionSuccess(null)} className="text-green-600 hover:bg-green-100">
-                <X size={18} />
-              </Button>
-            </div>
-          )}
-          {actionError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
-              <AlertCircle size={20} className="text-red-600 shrink-0" />
-              <p className="text-red-700 flex-1">{actionError}</p>
-              <Button variant="ghost" size="icon-sm" onClick={() => setActionError(null)} className="text-red-600 hover:bg-red-100">
-                <X size={18} />
-              </Button>
-            </div>
-          )}
+          {/* Action Messages removed, now handled by toast */}
 
           {enrollmentStats.rejected > 0 && !isReadOnly && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
@@ -228,32 +206,6 @@ const KartuRencanaStudi = () => {
               </button>
             </div>
 
-            {/* Right: Contextual Actions */}
-            <div className="flex items-center gap-3 w-full lg:w-auto">
-              {activeTab === 'offered' ? (
-                <div className="relative flex-1 lg:w-72 lg:flex-none">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Cari Mata Kuliah atau Kode..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 w-full lg:w-auto">
-                  <Button
-                    onClick={handlePrintKrs}
-                    variant="outline"
-                    className="flex-1 lg:flex-none gap-2 h-10 border-slate-200 hover:bg-slate-50 hover:text-blue-600 text-slate-600 font-bold text-sm rounded-xl shadow-sm"
-                  >
-                    <Printer size={16} />
-                    Cetak KRS
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="mt-4 relative min-h-[400px]">
@@ -270,6 +222,7 @@ const KartuRencanaStudi = () => {
                     <AvailableClassesSection
                       user={user}
                       availableClasses={availableClasses}
+                      enrollments={enrollments}
                       totalItems={totalItems}
                       error={error}
                       searchQuery={searchQuery}

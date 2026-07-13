@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSubmissions, gradeSubmission } from '../api/submission.api';
-import { getAssignments } from '../../assignment/assignmentService';
+import { getAssignments } from '../../assignment/api/assignment.api';
 
 /**
  * Hook untuk mengelola data submissions dari dosen

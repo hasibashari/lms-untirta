@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
+import SemesterFilter from '@/shared/components/forms/SemesterFilter';
 
 export const ClassFilter = ({
   searchQuery,
@@ -15,7 +16,6 @@ export const ClassFilter = ({
   filterEnrollment,
   setFilterEnrollment,
   semesters,
-  getSemesterLabel,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -29,19 +29,15 @@ export const ClassFilter = ({
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         />
       </div>
-      <Select value={filterSemester} onValueChange={setFilterSemester}>
-        <SelectTrigger className="w-full sm:w-56 bg-white">
-          <SelectValue placeholder="Semua Semester" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Semua Semester</SelectItem>
-          {semesters.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              {getSemesterLabel(s)} {s.isActive ? '(Aktif)' : ''}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="w-full sm:w-56 shrink-0">
+        <SemesterFilter
+          semesters={semesters}
+          selectedId={filterSemester}
+          onSelect={setFilterSemester}
+          showLabel={false}
+          className="w-full"
+        />
+      </div>
       <Select value={filterEnrollment} onValueChange={setFilterEnrollment}>
         <SelectTrigger className="w-full sm:w-44 bg-white">
           <SelectValue placeholder="Status Pendaftaran" />

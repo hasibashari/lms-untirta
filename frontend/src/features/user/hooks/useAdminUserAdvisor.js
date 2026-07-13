@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import {
   getUsers, updateDospemStatus, assignAdvisor,
   bulkAssignAdvisor, getAdvisorSummary,
-} from '../userService';
+} from '../api/user.api';
 
 export const useAdminUserAdvisor = () => {
   // Tab state

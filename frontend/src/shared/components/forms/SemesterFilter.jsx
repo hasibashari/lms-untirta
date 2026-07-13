@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
+import { Info } from 'lucide-react';
 
 /**
  * SemesterFilter — Reusable filter bar for selecting an AcademicSemester.
@@ -19,6 +20,8 @@ const SemesterFilter = ({
   onAcademicSemesterChange,
   className = '',
   hideAllOption = false,
+  variant = 'default',
+  showLabel = true,
 }) => {
   // Handle flexible prop names
   const currentId = selectedId || academicSemesterId;
@@ -32,22 +35,37 @@ const SemesterFilter = ({
 
   return (
     <div className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 ${className}`}>
-      <div className="w-full sm:w-64">
-        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
-          Periode Akademik
-        </label>
+      <div className={variant === 'header' ? 'w-full sm:w-72' : 'w-full'}>
+        {variant !== 'header' && showLabel && (
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+            Periode Akademik
+          </label>
+        )}
         <Select 
           value={currentId || (hideAllOption ? '' : 'all')} 
           onValueChange={handleChange}
           disabled={semesters.length === 0}
         >
-          <SelectTrigger className="w-full bg-white border-slate-200">
-            <SelectValue>
-              {selectedSemester 
-                ? `${selectedSemester.academicYear} ${selectedSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
-                : semesters.length === 0 ? 'Memuat data...' : 'Pilih Semester'}
-            </SelectValue>
-          </SelectTrigger>
+          {variant === 'header' ? (
+            <SelectTrigger className="w-full bg-white h-11 px-4 font-bold text-slate-700 rounded-xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all">
+              <div className="flex items-center gap-2">
+                <Info size={16} className="text-blue-500" />
+                <SelectValue placeholder="Pilih Periode">
+                  {selectedSemester 
+                    ? `${selectedSemester.academicYear} ${selectedSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
+                    : semesters.length === 0 ? 'Memuat data...' : 'Pilih Periode'}
+                </SelectValue>
+              </div>
+            </SelectTrigger>
+          ) : (
+            <SelectTrigger className="w-full bg-white border-slate-200">
+              <SelectValue>
+                {selectedSemester 
+                  ? `${selectedSemester.academicYear} ${selectedSemester.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
+                  : semesters.length === 0 ? 'Memuat data...' : 'Pilih Semester'}
+              </SelectValue>
+            </SelectTrigger>
+          )}
           <SelectContent className="max-h-80">
             {!hideAllOption && <SelectItem value="all" className="font-medium">Semua Semester</SelectItem>}
             

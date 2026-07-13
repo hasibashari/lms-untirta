@@ -6,6 +6,7 @@ import {
   bulkUpdateEnrollmentStatus,
 } from '../api/krs.api';
 import { getAllSemesters, updateSemester } from '@/features/academic/academicService';
+import { useSemesters } from '@/shared/hooks/useSemesters';
 
 export const useDosenKrs = () => {
   // Filter state
@@ -14,7 +15,7 @@ export const useDosenKrs = () => {
   const limit = 10;
 
   // Semester data for filter
-  const [semesters, setSemesters] = useState([]);
+  const { semesters } = useSemesters(getAllSemesters);
 
   // Data state
   const [advisoryData, setAdvisoryData] = useState(null);
@@ -54,14 +55,6 @@ export const useDosenKrs = () => {
     fetchStudents();
   }, [fetchStudents]);
 
-  useEffect(() => {
-    getAllSemesters()
-      .then(res => {
-        const list = res.data || [];
-        setSemesters(list);
-      })
-      .catch(() => setSemesters([]));
-  }, []);
 
   // Auto-select active semester if none selected yet
   useEffect(() => {

@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getKrsMonitoring } from '../api/krs.api';
 import { getAllSemesters } from '@/features/academic/academicService';
+import { useDebounce } from '@/shared/hooks/useDebounce';
+import { useSemesters } from '@/shared/hooks/useSemesters';
 
 export const useAdminKrs = () => {
   // Filter state
@@ -10,7 +12,7 @@ export const useAdminKrs = () => {
   const limit = 50; // Use larger limit for grouping since we paginate enrollments
 
   // Semester data for filter
-  const [semesters, setSemesters] = useState([]);
+  const { semesters } = useSemesters(getAllSemesters);
 
   // Data state
   const [monitoringData, setMonitoringData] = useState(null);
@@ -20,7 +22,7 @@ export const useAdminKrs = () => {
   // UI state
   const [expandedStudent, setExpandedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   // Fetch Data
   const fetchData = useCallback(async () => {
@@ -42,23 +44,7 @@ export const useAdminKrs = () => {
     fetchData();
   }, [fetchData]);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
-  useEffect(() => {
-    getAllSemesters()
-      .then(res => {
-        // Handle both { data: [...] } and { data: { data: [...] } } patterns
-        const data = res.data?.data || res.data || [];
-        setSemesters(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setSemesters([]));
-  }, []);
 
   const enrollments = useMemo(() => monitoringData?.enrollments || [], [monitoringData]);
   const summary = monitoringData?.summary || {};

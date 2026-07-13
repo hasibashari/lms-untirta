@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getMyKRS } from '../../krs/api/krs.api';
 import { getMaterials } from '../../material/api/material.api';
-import { getAssignments } from '../../assignment/assignmentService';
+import { getAssignments } from '../../assignment/api/assignment.api';
 
 export const useMahasiswaCourse = (classId) => {
   const [assignments, setAssignments] = useState([]);

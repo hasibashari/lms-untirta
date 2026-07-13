@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getClassById, getClassStudents } from '../../class/api/class.api';
 import { getMaterials } from '../../material/api/material.api';
-import { getAssignments } from '../../assignment/assignmentService';
+import { getAssignments } from '../../assignment/api/assignment.api';
 
 export const useDosenCourse = (classId) => {
   const [classData, setClassData] = useState(null);

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getUserById } from '../userService';
+import { getUserById } from '../api/user.api';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import PageLoader from '@/shared/components/feedback/PageLoader';
 import { useUpdateUser } from '../hooks/useUsers';
+import { UserForm } from '../components/UserForm';
 
 export default function AdminUserEditPage() {
   const navigate = useNavigate();
@@ -24,6 +23,9 @@ export default function AdminUserEditPage() {
   const [initLoading, setInitLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const errorMessage = err =>
+    err?.response?.data?.message || err?.message || 'Gagal mengubah user.';
+
   useEffect(() => {
     getUserById(id)
       .then(res => {
@@ -35,7 +37,7 @@ export default function AdminUserEditPage() {
           password: '',
         });
       })
-      .catch(err => setError(err))
+      .catch(err => setError(errorMessage(err)))
       .finally(() => setInitLoading(false));
   }, [id]);
 
@@ -55,12 +57,9 @@ export default function AdminUserEditPage() {
       await updateUserMutation.mutateAsync({ id, payload });
       navigate('/admin/users', { state: { flash: 'User sukses di-update.' } });
     } catch (err) {
-      setError(err);
+      setError(errorMessage(err));
     }
   };
-
-  const errorMessage = err =>
-    err?.response?.data?.message || err?.message || 'Gagal mengubah user.';
 
   if (initLoading) {
     return <PageLoader />;
@@ -88,76 +87,15 @@ export default function AdminUserEditPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className='space-y-4'>
-            {error && (
-              <p className='text-sm text-red-600'>{errorMessage(error)}</p>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nama <span className="text-red-500">*</span></Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Nama lengkap"
-                value={form.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
-              <Input
-                id="email"
-                name="email"
-                placeholder="email@kampus.ac.id"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className='space-y-1.5'>
-              <Label htmlFor="role">Role</Label>
-              <select
-                id="role"
-                name='role'
-                className='w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm'
-                value={form.role}
-                onChange={handleChange}
-              >
-                <option value='DOSEN'>Dosen</option>
-                <option value='ADMIN'>Admin</option>
-                <option value='MAHASISWA'>Mahasiswa</option>
-              </select>
-              <p className='text-xs text-gray-500'>Role menentukan akses menu dan fitur.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password Baru</Label>
-              <Input
-                id="password"
-                name="password"
-                placeholder="*** (Kosongkan bila tidak ingin diubah)"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className='flex gap-2 pt-2'>
-              <Button type='submit' disabled={updateUserMutation.isPending}>
-                {updateUserMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </Button>
-              <Button
-                type='button'
-                variant='secondary'
-                onClick={() => navigate('/admin/users')}
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
+          <UserForm
+            form={form}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            isPending={updateUserMutation.isPending}
+            isEditMode={true}
+            error={error}
+            onCancel={() => navigate('/admin/users')}
+          />
         </CardContent>
       </Card>
     </div>

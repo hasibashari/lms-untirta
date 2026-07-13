@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, BookOpen, Search, CheckCircle } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import {
   Select,
@@ -19,8 +19,9 @@ import {
 import CourseBadge from '@/features/course/components/CourseBadge';
 import SectionHeader from '@/shared/components/layout/ContentHeader';
 
-const AvailableClassRow = memo(({ cls, index, isEnrolling, handleEnroll, currentPage, itemsPerPage }) => {
+const AvailableClassRow = memo(({ cls, index, isEnrolling, handleEnroll, currentPage, itemsPerPage, enrollments }) => {
   const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+  const isEnrolled = enrollments?.some(e => (e.class?.id || e.classId) === cls.id);
   return (
     <TableRow className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
       <td className="px-4 py-4 text-center text-slate-500 text-sm">{rowNumber}</td>
@@ -51,23 +52,36 @@ const AvailableClassRow = memo(({ cls, index, isEnrolling, handleEnroll, current
         <span>{cls.capacity || '∞'}</span>
       </td>
       <td className="px-4 py-4 text-right pr-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleEnroll(cls.id)}
-          disabled={isEnrolling}
-          className="h-8 px-3 border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm gap-1"
-        >
-          {isEnrolling ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-          <span className="text-xs">Ambil</span>
-        </Button>
+        {isEnrolled ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="h-8 px-3 border-slate-200 text-slate-500 bg-slate-50 gap-1 opacity-80"
+          >
+            <CheckCircle size={14} />
+            <span className="text-xs">Diambil</span>
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleEnroll(cls.id)}
+            disabled={isEnrolling}
+            className="h-8 px-3 border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm gap-1"
+          >
+            {isEnrolling ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            <span className="text-xs">Ambil</span>
+          </Button>
+        )}
       </td>
     </TableRow>
   );
 });
 
-const AvailableClassCard = memo(({ cls, index, isEnrolling, handleEnroll, currentPage, itemsPerPage }) => {
+const AvailableClassCard = memo(({ cls, index, isEnrolling, handleEnroll, currentPage, itemsPerPage, enrollments }) => {
   const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+  const isEnrolled = enrollments?.some(e => (e.class?.id || e.classId) === cls.id);
   return (
     <div className="p-4 hover:bg-slate-50 transition-colors border-b border-slate-100">
       <div className="flex items-start justify-between gap-3">
@@ -91,15 +105,28 @@ const AvailableClassCard = memo(({ cls, index, isEnrolling, handleEnroll, curren
             <span className="text-[10px] text-slate-400">Kuota: {cls.krsEnrollmentsCount || 0}/{cls.capacity || '∞'}</span>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleEnroll(cls.id)}
-          disabled={isEnrolling}
-          className="border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0"
-        >
-          {isEnrolling ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-        </Button>
+        {isEnrolled ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="border-slate-200 text-slate-500 bg-slate-50 opacity-80 shrink-0 gap-1"
+          >
+            <CheckCircle size={16} />
+            <span className="text-xs hidden sm:inline">Diambil</span>
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleEnroll(cls.id)}
+            disabled={isEnrolling}
+            className="border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0 gap-1"
+          >
+            {isEnrolling ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+            <span className="text-xs hidden sm:inline">Ambil</span>
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -108,7 +135,10 @@ const AvailableClassCard = memo(({ cls, index, isEnrolling, handleEnroll, curren
 const AvailableClassesSection = ({
   user,
   availableClasses,
+  enrollments = [],
   error,
+  searchQuery,
+  setSearchQuery,
   selectedCourseSemester,
   setSelectedCourseSemester,
   currentPage,
@@ -127,6 +157,19 @@ const AvailableClassesSection = ({
       {/* Filter Bar */}
       <div className="p-4 border-b border-slate-200 bg-slate-50/50">
         <div className="flex flex-col sm:flex-row items-end gap-4">
+          <div className="w-full sm:w-72 flex-1">
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wider">Pencarian</label>
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari Mata Kuliah atau Kode..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 h-10 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+              />
+            </div>
+          </div>
           <div className="w-full sm:w-64 shrink-0">
             <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wider">Tingkat Semester</label>
             <Select
@@ -145,11 +188,6 @@ const AvailableClassesSection = ({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex-1 text-right">
-            <p className="text-[10px] text-slate-400 font-medium italic">
-              * Pencarian dapat dilakukan pada baris tab di atas
-            </p>
           </div>
         </div>
       </div>
@@ -181,6 +219,7 @@ const AvailableClassesSection = ({
                 handleEnroll={handleEnroll}
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}
+                enrollments={enrollments}
               />
             ))}
           </div>
@@ -210,6 +249,7 @@ const AvailableClassesSection = ({
                     handleEnroll={handleEnroll}
                     currentPage={currentPage}
                     itemsPerPage={itemsPerPage}
+                    enrollments={enrollments}
                   />
                 ))}
               </tbody>

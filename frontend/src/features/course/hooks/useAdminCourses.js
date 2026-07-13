@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getAllCourses, createCourse as createCourseApi, updateCourse as updateCourseApi, deleteCourse as deleteCourseApi } from '../api/course.api';
-import { getDosen } from '../../user/userService';
+import { getDosen } from '../../user/api/user.api';
 
 export const useAdminCourses = () => {
   const [courses, setCourses] = useState([]);

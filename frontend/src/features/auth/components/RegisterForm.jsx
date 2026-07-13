@@ -12,7 +12,7 @@ import PasswordStrengthIndicator from '@/shared/components/ui/PasswordStrengthIn
 
 import { useRegisterForm } from '../hooks/useRegisterForm';
 
-export default function RegisterForm() {
+export default function RegisterForm({ onSuccess }) {
   const {
     formData,
     agreedToTerms,
@@ -27,7 +27,7 @@ export default function RegisterForm() {
     handleSubmit,
     handleGoogleRegister,
     handleFacebookRegister,
-  } = useRegisterForm();
+  } = useRegisterForm({ onSuccess });
 
   return (
     <>

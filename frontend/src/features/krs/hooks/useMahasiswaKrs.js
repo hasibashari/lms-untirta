@@ -8,14 +8,15 @@ import {
   dropClass,
   reviseEnrollment,
 } from '../api/krs.api';
+import toast from 'react-hot-toast';
+import { useDebounce } from '@/shared/hooks/useDebounce';
+import { useSemesters } from '@/shared/hooks/useSemesters';
 
 export const useMahasiswaKrs = () => {
   const queryClient = useQueryClient();
 
-  // Semester selector state
-  const [semesters, setSemesters] = useState([]);
+  const { semesters, loading: semestersLoading } = useSemesters(getStudentSemesters);
   const [selectedSemesterId, setSelectedSemesterId] = useState(null);
-  const [semestersLoading, setSemestersLoading] = useState(true);
 
   // Data state
   const [availableClasses, setAvailableClasses] = useState([]);
@@ -29,9 +30,7 @@ export const useMahasiswaKrs = () => {
   const [enrolling, setEnrolling] = useState(null);
   const [dropping, setDropping] = useState(null);
   const [revising, setRevising] = useState(null);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [actionSuccess, setActionSuccess] = useState(null);
-  const [actionError, setActionError] = useState(null);
+  const [isPrinting] = useState(false);
 
   // Course-level filter states (tingkat MK)
   const [selectedCourseSemester, setSelectedCourseSemester] = useState('all');
@@ -52,38 +51,17 @@ export const useMahasiswaKrs = () => {
     [semesters, selectedSemesterId],
   );
 
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const isReadOnly = currentSemester ? currentSemester.status !== 'OPEN' : true;
 
-  // ==================== SEMESTER LOADING ====================
+  // Auto-select semester
   useEffect(() => {
-    const loadSemesters = async () => {
-      setSemestersLoading(true);
-      try {
-        const res = await getStudentSemesters();
-        const list = res?.data?.data || res?.data || [];
-        setSemesters(list);
-
-        if (list.length > 0) {
-          const openSem = list.find((s) => s.status === 'OPEN');
-          setSelectedSemesterId(openSem ? openSem.id : list[0].id);
-        }
-      } catch {
-        setSemesters([]);
-      } finally {
-        setSemestersLoading(false);
-      }
-    };
-    loadSemesters();
-  }, []);
+    if (semesters.length > 0 && !selectedSemesterId) {
+      const openSem = semesters.find((s) => s.status === 'OPEN');
+      setSelectedSemesterId(openSem ? openSem.id : semesters[0].id);
+    }
+  }, [semesters, selectedSemesterId]);
 
   // ==================== DATA LOADING ====================
   const fetchData = useCallback(async () => {
@@ -150,18 +128,15 @@ export const useMahasiswaKrs = () => {
   const totalPages = availableMeta?.pagination?.totalPages || 1;
 
   const showSuccess = (msg) => {
-    setActionSuccess(msg);
-    setTimeout(() => setActionSuccess(null), 4000);
+    toast.success(msg);
   };
   const showError = (msg) => {
-    setActionError(msg);
-    setTimeout(() => setActionError(null), 6000);
+    toast.error(msg);
   };
 
   const handlePrintKrs = () => {
-    setIsPrinting(true);
-    window.print();
-    setIsPrinting(false);
+    if (!selectedSemesterId) return;
+    window.open(`/mahasiswa/krs/print/${selectedSemesterId}`, '_blank');
   };
 
   // ===== ACTIONS =====
@@ -243,10 +218,6 @@ export const useMahasiswaKrs = () => {
     dropping,
     revising,
     isPrinting,
-    actionSuccess,
-    setActionSuccess,
-    actionError,
-    setActionError,
     
     // Pagination derived
     itemsPerPage,

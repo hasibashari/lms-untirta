@@ -1,11 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { register as registerAPI } from '../api/auth.api';
 import { getPasswordStrength } from '@/shared/utils/password.util';
-
-export const useRegisterForm = () => {
-  const navigate = useNavigate();
-
+export const useRegisterForm = ({ onSuccess } = {}) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -14,7 +10,6 @@ export const useRegisterForm = () => {
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -53,15 +48,13 @@ export const useRegisterForm = () => {
     try {
       await registerAPI({
         name: formData.fullName,
-        email: formData.email,
+        email: formData.email.toLowerCase(),
         password: formData.password,
       });
 
-      setIsSuccess(true);
-      // Auto redirect after 5 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 5000);
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Registrasi gagal.');
     } finally {
@@ -79,7 +72,6 @@ export const useRegisterForm = () => {
     formData,
     agreedToTerms,
     isLoading,
-    isSuccess,
     error,
     showPassword,
     showConfirmPassword,

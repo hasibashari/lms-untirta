@@ -2,23 +2,18 @@ import { memo } from 'react';
 import { Printer, Loader2, User, BookOpen, Calculator, Info } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import Breadcrumb from '@/shared/components/navigation/Breadcrumb';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
+import SemesterFilter from '@/shared/components/forms/SemesterFilter';
 
 const KrsHeader = memo(({
   currentSemester,
   semesters,
   selectedSemesterId,
   handleSemesterChange,
-  semesterLabel,
   user,
   totalSKS,
-  maxSKS
+  maxSKS,
+  handlePrintKrs,
+  isPrinting
 }) => (
   <div className="space-y-6">
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -35,34 +30,23 @@ const KrsHeader = memo(({
       </div>
 
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-        <Select value={selectedSemesterId || ''} onValueChange={handleSemesterChange}>
-          <SelectTrigger className="w-full sm:w-72 bg-white h-11 px-4 font-bold text-slate-700 rounded-xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all">
-            <div className="flex items-center gap-2">
-              <Info size={16} className="text-blue-500" />
-              <SelectValue placeholder="Pilih Periode" />
-            </div>
-          </SelectTrigger>
-          <SelectContent align="start" className="w-(--radix-select-trigger-width) max-h-[400px] overflow-y-auto rounded-xl shadow-xl border-slate-200">
-            <div className="px-2 py-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-slate-50/50">Periode Aktif</div>
-            {semesters.filter(s => s.status === 'OPEN').map((sem) => (
-              <SelectItem key={sem.id} value={sem.id} className="font-bold py-2.5">
-                {semesterLabel(sem)} (SEKARANG)
-              </SelectItem>
-            ))}
-
-            <div className="px-2 py-2 mt-1 text-[10px] font-bold text-slate-400 border-t border-slate-100 uppercase tracking-widest bg-slate-50/50">Riwayat Semester</div>
-            <div className="space-y-0.5">
-              {semesters.filter(s => s.status !== 'OPEN').map((sem) => (
-                <SelectItem key={sem.id} value={sem.id} className="py-2.5">
-                  {semesterLabel(sem)}
-                </SelectItem>
-              ))}
-            </div>
-          </SelectContent>
-        </Select>
+        <SemesterFilter
+          semesters={semesters}
+          selectedId={selectedSemesterId}
+          onSelect={handleSemesterChange}
+          hideAllOption={true}
+          variant="header"
+        />
+        <Button
+          onClick={handlePrintKrs}
+          disabled={isPrinting}
+          variant="outline"
+          className="h-11 px-4 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 hover:text-blue-600 rounded-xl shadow-sm transition-all flex items-center gap-2"
+        >
+          {isPrinting ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+          <span className="hidden sm:inline">Cetak KRS</span>
+        </Button>
       </div>
-
-      {/* Print button moved to Tabs Bar for better UX context */}
     </div>
 
     {/* Compact Summary Bar */}
