@@ -9,8 +9,19 @@ import { getAllSemesters, updateSemester } from '@/features/academic/api/academi
 import { useSemesters } from '@/shared/hooks/useSemesters';
 
 export const useDosenKrs = () => {
-  // Filter state
-  const [academicSemesterId, setAcademicSemesterId] = useState(null);
+  const [academicSemesterId, setAcademicSemesterIdState] = useState(() => {
+    return localStorage.getItem('selectedDosenAcademicSemesterId') || null;
+  });
+
+  const setAcademicSemesterId = useCallback((id) => {
+    if (id) {
+      localStorage.setItem('selectedDosenAcademicSemesterId', id);
+    } else {
+      localStorage.removeItem('selectedDosenAcademicSemesterId');
+    }
+    setAcademicSemesterIdState(id);
+  }, []);
+
   const [page, setPage] = useState(1);
   const limit = 10;
 

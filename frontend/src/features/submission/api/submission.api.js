@@ -10,8 +10,15 @@ export const gradeSubmission = (submissionId, payload) => {
   return api.patch(`/submissions/${submissionId}`, payload);
 };
 
-export const getRecentSubmissions = (limit = 10) => {
-  return api.get(`/submissions/recent-submissions?limit=${limit}`);
+export const getRecentSubmissions = (params = {}) => {
+  const query = new URLSearchParams();
+  const limit = params.limit || 10;
+  query.append('limit', limit);
+  if (params.academicSemesterId) {
+    query.append('academicSemesterId', params.academicSemesterId);
+  }
+  const qs = query.toString();
+  return api.get(`/submissions/recent-submissions?${qs}`);
 };
 
 // ========== Submissions (Mahasiswa) ==========

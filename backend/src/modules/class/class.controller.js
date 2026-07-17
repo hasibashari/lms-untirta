@@ -296,6 +296,7 @@ export const getTeacherDashboardStats = async (req, res) => {
 
     const result = await grpcGetTeacherDashboardStats({
       teacherId,
+      academicSemesterId: req.query.academicSemesterId || '',
     }, meta);
 
     sendSuccess(res, {

@@ -203,6 +203,7 @@ message StudentStats {
 
 message GetTeacherDashboardStatsRequest {
   string teacherId = 1;
+  string academicSemesterId = 2;
 }
 
 message TeacherDashboardStatsResponse {

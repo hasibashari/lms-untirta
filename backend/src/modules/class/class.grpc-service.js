@@ -541,10 +541,15 @@ export const GetMyDashboardStats = async (call, callback) => {
 
 export const GetTeacherDashboardStats = async (call, callback) => {
   try {
-    const { teacherId } = call.request;
+    const { teacherId, academicSemesterId } = call.request;
+
+    const whereClause = { lecturerId: teacherId };
+    if (academicSemesterId) {
+      whereClause.academicSemesterId = academicSemesterId;
+    }
 
     const classes = await prisma.class.findMany({
-      where: { lecturerId: teacherId },
+      where: whereClause,
       select: { id: true, courseId: true },
     });
 

@@ -19,7 +19,9 @@ const DosenCourseGradesPage = () => {
     const resolve = async () => {
       try {
         // Fetch dosen's classes, then find the one for this course
-        const res = await getMyClasses();
+        const academicSemesterId = localStorage.getItem('selectedDosenAcademicSemesterId');
+        const params = academicSemesterId ? { academicSemesterId } : {};
+        const res = await getMyClasses(params);
         const classes = res.data?.data || res.data || [];
         const match = classes.find(
           (c) => c.courseId === courseId || c.courseId === parseInt(courseId)

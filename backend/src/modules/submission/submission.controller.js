@@ -163,6 +163,7 @@ export const getRecentSubmissions = async (req, res) => {
     const result = await grpcGetRecentSubmissionsForTeacher({
       teacherId,
       limit,
+      academicSemesterId: req.query.academicSemesterId || '',
     }, meta);
 
     sendSuccess(res, {

@@ -15,7 +15,9 @@ const DosenGradeListPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getMyClasses();
+      const academicSemesterId = localStorage.getItem('selectedDosenAcademicSemesterId');
+      const params = academicSemesterId ? { academicSemesterId } : {};
+      const res = await getMyClasses(params);
       if (isMounted.current) {
         setClasses(res.data?.data || res.data || []);
       }

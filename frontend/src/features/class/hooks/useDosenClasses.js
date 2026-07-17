@@ -8,13 +8,15 @@ export const useDosenClasses = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const isMounted = useRef(true);
+  const academicSemesterId = localStorage.getItem('selectedDosenAcademicSemesterId');
 
   const fetchClasses = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await getMyClasses();
+      const params = academicSemesterId ? { academicSemesterId } : {};
+      const res = await getMyClasses(params);
       if (isMounted.current) {
         setClasses(res.data || []);
       }
@@ -27,7 +29,7 @@ export const useDosenClasses = () => {
         setLoading(false);
       }
     }
-  }, []);
+  }, [academicSemesterId]);
 
   useEffect(() => {
     isMounted.current = true;

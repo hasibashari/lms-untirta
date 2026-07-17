@@ -312,12 +312,17 @@ export const GradeSubmission = async (call, callback) => {
 
 export const GetRecentSubmissionsForTeacher = async (call, callback) => {
   try {
-    const { teacherId, limit } = call.request;
+    const { teacherId, limit, academicSemesterId } = call.request;
+
+    const classWhere = { lecturerId: teacherId };
+    if (academicSemesterId) {
+      classWhere.academicSemesterId = academicSemesterId;
+    }
 
     const submissions = await prisma.submission.findMany({
       where: {
         assignment: {
-          class: { lecturerId: teacherId },
+          class: classWhere,
         },
       },
       include: {

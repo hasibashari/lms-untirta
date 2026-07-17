@@ -6,8 +6,11 @@ import api from '@/shared/api/apiService';
 /**
  * [DOSEN] Get my class offerings
  */
-export const getMyClasses = async () => {
-  return api.get('/classes/me');
+export const getMyClasses = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/classes/me${qs ? `?${qs}` : ''}`);
 };
 
 /**
@@ -92,8 +95,11 @@ export const getAvailableStudentsForClass = async (classId) => {
 
 // ========== Dashboard Stats ==========
 
-export const getTeacherDashboardStats = () => {
-  return api.get('/classes/teacher-stats');
+export const getTeacherDashboardStats = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  const qs = query.toString();
+  return api.get(`/classes/teacher-stats${qs ? `?${qs}` : ''}`);
 };
 
 export const getMyDashboardStats = (params = {}) => {

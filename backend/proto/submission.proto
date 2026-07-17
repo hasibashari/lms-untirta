@@ -131,6 +131,7 @@ message GradeDataResult {
 message GetRecentSubmissionsForTeacherRequest {
   string teacherId = 1;
   int32 limit = 2;
+  string academicSemesterId = 3;
 }
 
 message ListRecentSubmissionsResponse {

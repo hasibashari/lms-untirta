@@ -10,10 +10,13 @@ export const useDosenDashboardData = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const academicSemesterId = localStorage.getItem('selectedDosenAcademicSemesterId');
+    const params = academicSemesterId ? { academicSemesterId } : {};
+
     Promise.all([
-      getMyClasses(),
-      getTeacherDashboardStats(),
-      getRecentSubmissions(5),
+      getMyClasses(params),
+      getTeacherDashboardStats(params),
+      getRecentSubmissions({ limit: 5, ...params }),
     ])
       .then(([classesRes, statsRes, submissionsRes]) => {
         setClasses(classesRes.data);
