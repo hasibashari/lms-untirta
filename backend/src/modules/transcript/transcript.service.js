@@ -1,5 +1,5 @@
 import prisma from '../../config/prisma.js';
-import { convertToLetterGrade, calculateAverageGrade, calculateGPA } from '../../utils/grading.util.js';
+import { convertToLetterGrade, calculateAverageGrade, calculateGPA, calculatePredicate } from '../../utils/grading.util.js';
 import { AppError } from '../../config/errors.js';
 import { paginate } from '../../utils/pagination.js';
 
@@ -111,6 +111,7 @@ export const getStudyResults = async (studentId, filters = {}) => {
       completedCourses: gpaResult.completedCourses,
       totalSKS: gpaResult.totalSKS,
       ipk: gpaResult.ipk,
+      predicate: calculatePredicate(gpaResult.ipk),
     },
   };
 };
@@ -264,37 +265,67 @@ export const getTranscriptByClass = async (studentId, filters = {}, options = {}
     };
   });
 
-  // GPA/IPK: only count courses from CLOSED semesters
-  const closedCourses = coursesWithGrades.filter(c => c.semesterStatus === 'CLOSED');
-  const gpaResult = calculateGPA(closedCourses);
+  // Sort courses chronologically for transcriptSemesters
+  coursesWithGrades.sort((a, b) => {
+    if (a.academicYear !== b.academicYear) {
+      return (a.academicYear || '').localeCompare(b.academicYear || ''); // Ascending year
+    }
+    return (a.semesterType || '').localeCompare(b.semesterType || ''); // GANJIL < GENAP
+  });
 
-  // Per-semester IPS breakdown (only CLOSED semesters)
-  const semesterMap = new Map();
-  for (const c of closedCourses) {
-    const key = c.academicSemesterId;
-    if (!key) continue;
-    if (!semesterMap.has(key)) {
-      semesterMap.set(key, {
-        academicSemesterId: key,
+  const periodMap = new Map();
+  for (const c of coursesWithGrades) {
+    const key = c.academicSemesterId || 'legacy';
+    if (!periodMap.has(key)) {
+      periodMap.set(key, {
+        semester: key,
+        semesterTitle: c.academicYear 
+            ? `${c.academicYear} - ${c.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
+            : 'Data Akademik Terlampau',
         academicYear: c.academicYear,
         semesterType: c.semesterType,
-        courses: [],
+        courses: []
       });
     }
-    semesterMap.get(key).courses.push(c);
+    periodMap.get(key).courses.push(c);
   }
 
-  const semesterBreakdown = Array.from(semesterMap.values()).map(sem => {
-    const ips = calculateGPA(sem.courses);
+  let cumulativeTotalSks = 0;
+  let cumulativeGradedSks = 0;
+  let cumulativeMutu = 0;
+  
+  const transcriptSemesters = Array.from(periodMap.values()).map(sem => {
+    // All SKS taken this semester
+    const semTotalSks = sem.courses.reduce((sum, c) => sum + (c.sks || 0), 0);
+    cumulativeTotalSks += semTotalSks;
+
+    const gradedCoursesInSem = sem.courses.filter(c => c.letterGrade && c.letterGrade !== '-');
+    
+    let semGradedSks = 0;
+    let semMutu = 0;
+    for (const c of gradedCoursesInSem) {
+        semGradedSks += (c.sks || 0);
+        semMutu += (c.sks || 0) * (c.gradePoint || 0);
+    }
+
+    cumulativeGradedSks += semGradedSks;
+    cumulativeMutu += semMutu;
+    
+    const ip = semGradedSks > 0 ? semMutu / semGradedSks : 0;
+    const ipk = cumulativeGradedSks > 0 ? cumulativeMutu / cumulativeGradedSks : 0;
+
     return {
-      academicSemesterId: sem.academicSemesterId,
-      academicYear: sem.academicYear,
-      semesterType: sem.semesterType,
-      totalSKS: ips.totalSKS,
-      ips: ips.ipk,
-      completedCourses: ips.completedCourses,
+      ...sem,
+      ip,
+      ipk,
+      totalSks: semTotalSks,
+      cumulativeTotalSks
     };
   });
+
+  // Calculate overall GPA based on closed courses ONLY for the summary stats
+  const closedCourses = coursesWithGrades.filter(c => c.semesterStatus === 'CLOSED');
+  const gpaResult = calculateGPA(closedCourses);
 
   return {
     student: {
@@ -304,12 +335,13 @@ export const getTranscriptByClass = async (studentId, filters = {}, options = {}
       nim: student.nim,
     },
     courses: coursesWithGrades,
-    semesterBreakdown,
+    transcriptSemesters,
     summary: {
       totalCourses: closedCourses.length,
       completedCourses: gpaResult.completedCourses,
       totalSKS: gpaResult.totalSKS,
       ipk: gpaResult.ipk,
+      predicate: calculatePredicate(gpaResult.ipk),
     },
   };
 };
@@ -405,9 +437,8 @@ export const getFullStudentTranscript = async (studentId, options = {}) => {
   return {
     student: krsResult.student,
     courses: krsResult.courses,
-    semesterBreakdown: krsResult.semesterBreakdown,
+    transcriptSemesters: krsResult.transcriptSemesters,
     summary: krsResult.summary,
-    semesterBreakdown: krsResult.semesterBreakdown,
     gradeDistribution,
   };
 };

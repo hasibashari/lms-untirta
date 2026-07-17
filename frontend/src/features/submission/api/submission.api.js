@@ -34,6 +34,15 @@ export const submitAssignment = (assignmentId, payload) => {
 // ========== Grades (Mahasiswa) ==========
 
 export const getAllMyGrades = () => {
-  return api.get('/submissions/my-grades');
+  return api.get('/submissions/grades/me');
+};
+
+export const getMyGradesStats = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.academicSemesterId) {
+    query.append('academicSemesterId', params.academicSemesterId);
+  }
+  const qs = query.toString();
+  return api.get(`/submissions/grades/stats/me${qs ? `?${qs}` : ''}`);
 };
 

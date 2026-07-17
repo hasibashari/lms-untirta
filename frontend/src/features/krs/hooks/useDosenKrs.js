@@ -76,7 +76,7 @@ export const useDosenKrs = () => {
         setIsAutoKrs(active.isAutoKrs ?? true);
       }
     }
-  }, [semesters, academicSemesterId]);
+  }, [semesters, academicSemesterId, setAcademicSemesterId]);
 
   const prevSemesterRef = useRef(academicSemesterId);
 

@@ -66,6 +66,7 @@ export const getAssignmentsByClass = async (id, userId, userRole) => {
           ? 'overdue'
           : 'pending',
       grade: mySubmission ? mySubmission.grade : null,
+      isSubmitted: !!mySubmission,
     };
   });
 };

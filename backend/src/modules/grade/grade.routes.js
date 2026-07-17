@@ -19,34 +19,39 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/grades/my-grades:
+ * /api/grades/me:
  *   get:
- *     summary: Get my finalized grades
- *     description: Retrieves all finalized grades for the authenticated student across all enrolled classes.
+ *     summary: Mendapatkan nilai akhir mahasiswa (Mahasiswa Only)
+ *     description: Hanya menampilkan nilai dari semester yang sudah ditutup (status CLOSED) atau nilai yang sudah difinalisasi (FINALIZED)
  *     tags: [Grades]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: semesterId
+ *         schema:
+ *           type: string
+ *         description: Filter berdasarkan ID semester akademik
  *     responses:
  *       200:
- *         description: Student's finalized grades
+ *         description: Nilai akhir berhasil diambil
  *         content:
  *           application/json:
  *             schema:
  *               allOf:
  *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
+ *                 - properties:
  *                     data:
  *                       type: array
  *                       items:
- *                         $ref: '#/components/schemas/FinalGrade'
+ *                         $ref: '#/components/schemas/Grade'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
 router.get(
-  '/my-grades',
+  '/me',
   authenticateToken,
   authorizeRole('MAHASISWA'),
   getMyGrades

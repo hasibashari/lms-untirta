@@ -8,7 +8,7 @@ export const MahasiswaAssignmentCard = ({
   getTimeRemaining,
 }) => {
   const isGraded = assignment.status === 'graded';
-  const isSubmitted = assignment.status === 'submitted' || assignment.status === 'graded';
+  const isSubmitted = assignment.isSubmitted;
   const isLate = new Date(assignment.dueDate) < new Date() && !isSubmitted;
   const timeRemaining = getTimeRemaining(assignment.dueDate);
 

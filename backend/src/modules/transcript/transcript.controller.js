@@ -50,6 +50,27 @@ export const getAcademicSummary = async (req, res) => {
 };
 
 
+export const getMyTranscript = async (req, res) => {
+  try {
+    const result = await transcriptService.getFullStudentTranscript(req.user.id, { isStudentView: true });
+
+    logger.info({
+      event: 'TRANSCRIPT_ACCESS',
+      accessorRole: req.user.role,
+      accessorId: req.user.id,
+      studentId: req.user.id,
+    }, 'Student accessed their own transcript');
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: 'Transkrip berhasil diambil',
+      data: result,
+    });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 export const getStudentTranscript = async (req, res) => {
   try {
     const { studentId } = req.params;

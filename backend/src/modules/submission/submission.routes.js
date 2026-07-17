@@ -13,6 +13,7 @@ import {
   grade,
   getMyAssignment,
   getAllMyGrades,
+  getMyGradesStats,
   getRecentSubmissions,
 } from './submission.controller.js';
 
@@ -20,7 +21,46 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/submissions/my-grades:
+ * /api/submissions/grades/stats/me:
+ *   get:
+ *     summary: Mendapatkan statistik nilai mahasiswa (Mahasiswa Only)
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik nilai berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                         graded:
+ *                           type: integer
+ *                         pending:
+ *                           type: integer
+ *                         submitted:
+ *                           type: integer
+ *                         overdue:
+ *                           type: integer
+ *                         averageGrade:
+ *                           type: string
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get('/grades/stats/me', authenticateToken, authorizeRole('MAHASISWA'), getMyGradesStats);
+
+/**
+ * @swagger
+ * /api/submissions/grades/me:
  *   get:
  *     summary: Mendapatkan semua daftar nilai mahasiswa (Mahasiswa Only)
  *     tags: [Submissions]
@@ -44,7 +84,7 @@ const router = express.Router();
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/my-grades', authenticateToken, authorizeRole('MAHASISWA'), getAllMyGrades);
+router.get('/grades/me', authenticateToken, authorizeRole('MAHASISWA'), getAllMyGrades);
 
 
 

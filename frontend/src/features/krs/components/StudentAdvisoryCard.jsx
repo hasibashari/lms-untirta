@@ -40,16 +40,20 @@ const StudentAdvisoryCard = ({
         <div className="flex-1 max-w-xs">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] uppercase font-bold text-slate-400">Beban SKS</span>
-            <span className={`text-xs font-bold ${student.stats.totalSks > 20 ? 'text-orange-600' : 'text-blue-600'}`}>
-              {student.stats.totalSks} / 24
+            <span className={`text-xs font-bold ${
+              student.stats.sksStatusLevel === 'danger' ? 'text-red-600' :
+              student.stats.sksStatusLevel === 'warning' ? 'text-orange-600' : 'text-blue-600'
+            }`}>
+              {student.stats.totalSks} / {student.stats.maxSks || 24}
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ${student.stats.totalSks > 22 ? 'bg-red-500' :
-                student.stats.totalSks > 18 ? 'bg-orange-500' : 'bg-blue-500'
-                }`}
-              style={{ width: `${Math.min((student.stats.totalSks / 24) * 100, 100)}%` }}
+              className={`h-full transition-all duration-500 ${
+                student.stats.sksStatusLevel === 'danger' ? 'bg-red-500' :
+                student.stats.sksStatusLevel === 'warning' ? 'bg-orange-500' : 'bg-blue-500'
+              }`}
+              style={{ width: `${Math.min((student.stats.totalSks / (student.stats.maxSks || 24)) * 100, 100)}%` }}
             />
           </div>
         </div>
@@ -115,8 +119,7 @@ const StudentAdvisoryCard = ({
               </TableHeader>
               <TableBody>
                 {student.enrollments.map(enrollment => {
-                  const semesterStatus = enrollment.class?.academicSemester?.status;
-                  const canRevoke = enrollment.status === 'APPROVED' && semesterStatus === 'OPEN';
+                  const canRevoke = enrollment.canRevoke;
 
                   return (
                     <TableRow key={enrollment.id}>

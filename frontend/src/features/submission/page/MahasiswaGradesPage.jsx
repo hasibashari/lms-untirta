@@ -11,7 +11,7 @@ import {
   MessageSquare,
   ChevronDown,
 } from 'lucide-react';
-import { getAllMyGrades } from '../api/submission.api';
+import { getAllMyGrades, getMyGradesStats } from '../api/submission.api';
 import { getStudentSemesters } from '@/features/academic/api/academic.api';
 import { useSemesters } from '@/shared/hooks/useSemesters';
 import { Button } from '@/shared/components/ui/button';
@@ -22,6 +22,14 @@ import { Button } from '@/shared/components/ui/button';
  */
 const MyGrades = () => {
   const [grades, setGrades] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    graded: 0,
+    pending: 0,
+    submitted: 0,
+    overdue: 0,
+    averageGrade: '-',
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,17 +38,19 @@ const MyGrades = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const fetchGrades = async () => {
-    await Promise.resolve(); // Make state updates async
     setLoading(true);
     setError(null);
-    getAllMyGrades()
-      .then(res => setGrades(res.data))
-      .catch(err => setError(err.message || 'Gagal memuat data'))
-      .finally(() => setLoading(false));
+    try {
+      const res = await getAllMyGrades();
+      setGrades(res.data);
+    } catch (err) {
+      setError(err.message || 'Gagal memuat data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGrades();
   }, []);
 
@@ -50,6 +60,14 @@ const MyGrades = () => {
   });
 
   const activeSemesterId = selectedSemesterId || (semesters.find(s => s.status === 'OPEN') || semesters[0])?.id;
+
+  useEffect(() => {
+    if (activeSemesterId !== undefined) {
+      getMyGradesStats({ academicSemesterId: activeSemesterId })
+        .then(res => setStats(res.data))
+        .catch(err => console.error('Failed to fetch grade stats:', err));
+    }
+  }, [activeSemesterId]);
 
   // Get active grades based on selected semester
   const activeGrades = grades.filter(g => !activeSemesterId || g.academicSemesterId === activeSemesterId);
@@ -66,21 +84,6 @@ const MyGrades = () => {
 
     return matchSearch && matchStatus && matchClass;
   });
-
-  // Calculate summary stats
-  const stats = {
-    total: activeGrades.length,
-    graded: activeGrades.filter(g => g.status === 'graded').length,
-    pending: activeGrades.filter(g => g.status === 'pending').length,
-    submitted: activeGrades.filter(g => g.status === 'submitted').length,
-    overdue: activeGrades.filter(g => g.status === 'overdue').length,
-  };
-
-  // Calculate average grade (only from graded submissions)
-  const gradedItems = activeGrades.filter(g => g.grade !== null && g.grade !== -1 && g.grade !== undefined);
-  const averageGrade = gradedItems.length > 0
-    ? (gradedItems.reduce((sum, g) => sum + g.grade, 0) / gradedItems.length).toFixed(1)
-    : '-';
 
   // Status badge component
   const StatusBadge = ({ status }) => {
@@ -167,7 +170,7 @@ const MyGrades = () => {
               <Award size={20} className="text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{averageGrade}</p>
+              <p className="text-2xl font-bold text-slate-900">{stats.averageGrade}</p>
               <p className="text-xs text-slate-500">Rata-rata Nilai</p>
             </div>
           </div>

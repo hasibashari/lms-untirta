@@ -457,6 +457,12 @@ export const dropClass = async (studentId, classId) => {
   });
 };
 
+const getSksStatusLevel = (currentSKS, maxSKS) => {
+  if (currentSKS > maxSKS - 2) return 'danger';
+  if (currentSKS > maxSKS - 6) return 'warning';
+  return 'safe';
+};
+
 // ======================== MY KRS ========================
 
 export const getMyKRS = async (studentId, filters = {}) => {
@@ -562,6 +568,10 @@ export const getMyKRS = async (studentId, filters = {}) => {
       totalCourses: enrollments.length,
       totalSKS,
       maxSKS: maxSKSValue,
+      sksStatusLevel: getSksStatusLevel(totalSKS, maxSKSValue),
+      approved: enrollments.filter(e => e.status === 'APPROVED').length,
+      pending: enrollments.filter(e => e.status === 'PENDING').length,
+      rejected: enrollments.filter(e => e.status === 'REJECTED').length,
     },
   };
 };
@@ -1149,18 +1159,40 @@ export const getAdvisoryStudents = async (dosenId, filters = {}) => {
   let totalApproved = statsQuery.find(s => s.status === 'APPROVED')?._count || 0;
   let totalRejected = statsQuery.find(s => s.status === 'REJECTED')?._count || 0;
 
+  let globalMaxSks = 24;
+  if (filters.academicSemesterId) {
+    const sem = await prisma.academicSemester.findUnique({
+      where: { id: filters.academicSemesterId },
+      select: { maxSks: true }
+    });
+    if (sem?.maxSks) globalMaxSks = sem.maxSks;
+  }
+
   const result = students.map(s => {
     const pending = s.krsEnrollments.filter(e => e.status === 'PENDING').length;
     const approved = s.krsEnrollments.filter(e => e.status === 'APPROVED').length;
     const rejected = s.krsEnrollments.filter(e => e.status === 'REJECTED').length;
     const totalSks = s.krsEnrollments.reduce((sum, e) => sum + (e.class.course.sks || 3), 0);
 
+    const enrollments = s.krsEnrollments.map(e => ({
+      ...e,
+      canRevoke: e.status === 'APPROVED' && e.class?.academicSemester?.status === 'OPEN'
+    }));
+
     return {
       id: s.id,
       name: s.name,
       email: s.email,
-      enrollments: s.krsEnrollments,
-      stats: { pending, approved, rejected, total: s.krsEnrollments.length, totalSks },
+      enrollments: enrollments,
+      stats: { 
+        pending, 
+        approved, 
+        rejected, 
+        total: s.krsEnrollments.length, 
+        totalSks,
+        maxSks: globalMaxSks,
+        sksStatusLevel: getSksStatusLevel(totalSks, globalMaxSks)
+      },
     };
   });
 
@@ -1186,97 +1218,131 @@ export const getAdvisoryStudents = async (dosenId, filters = {}) => {
 // ======================== KRS MONITORING (ADMIN) ========================
 
 export const getKrsMonitoring = async (filters = {}) => {
-  const classWhere = {};
-  if (filters.academicSemesterId) classWhere.academicSemesterId = filters.academicSemesterId;
+  const enrollmentWhere = {};
+  if (filters.academicSemesterId) enrollmentWhere.class = { academicSemesterId: filters.academicSemesterId };
+  if (filters.status) enrollmentWhere.status = filters.status;
 
   const page = parseInt(filters.page) || 1;
   const limit = parseInt(filters.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const whereClause = {
-    ...(Object.keys(classWhere).length > 0 ? { class: classWhere } : {}),
+  const userWhere = {
+    role: 'MAHASISWA',
+    krsEnrollments: { some: enrollmentWhere },
   };
 
-  const [totalItems, enrollments, stats] = await Promise.all([
-    prisma.krsEnrollment.count({ where: whereClause }),
-    prisma.krsEnrollment.findMany({
-      where: whereClause,
+  if (filters.search) {
+    userWhere.OR = [
+      { name: { contains: filters.search, mode: 'insensitive' } },
+      { email: { contains: filters.search, mode: 'insensitive' } },
+    ];
+  }
+
+  // Get overall summary stats (based on all enrollments matching the class filter)
+  const classWhereClause = filters.academicSemesterId ? { class: { academicSemesterId: filters.academicSemesterId } } : {};
+  const stats = await prisma.krsEnrollment.groupBy({
+    by: ['status'],
+    where: classWhereClause,
+    _count: true,
+  });
+
+  const totalEnrollments = stats.reduce((acc, curr) => acc + curr._count, 0);
+
+  const [totalUsers, users] = await Promise.all([
+    prisma.user.count({ where: userWhere }),
+    prisma.user.findMany({
+      where: userWhere,
       skip,
       take: limit,
       select: {
         id: true,
-        status: true,
-        submittedAt: true,
-        approvedAt: true,
-        student: {
+        name: true,
+        email: true,
+        advisor: {
           select: {
             id: true,
             name: true,
             email: true,
-            advisorId: true,
-            advisor: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
+          }
         },
-        class: {
+        krsEnrollments: {
+          where: enrollmentWhere,
           select: {
             id: true,
-            section: true,
-            academicSemesterId: true,
-            academicSemester: {
-              select: {
-                academicYear: true,
-                semesterType: true,
-              },
-            },
-            course: {
+            status: true,
+            submittedAt: true,
+            approvedAt: true,
+            class: {
               select: {
                 id: true,
-                title: true,
-                code: true,
-                sks: true,
-                teacher: {
+                section: true,
+                academicSemesterId: true,
+                academicSemester: {
+                  select: {
+                    academicYear: true,
+                    semesterType: true,
+                  },
+                },
+                course: {
                   select: {
                     id: true,
-                    name: true,
+                    title: true,
+                    code: true,
+                    sks: true,
+                    teacher: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
                   },
                 },
               },
             },
           },
-        },
+          orderBy: { createdAt: 'asc' },
+        }
       },
-      orderBy: [
-        { student: { name: 'asc' } },
-        { createdAt: 'asc' }
-      ],
-    }),
-    prisma.krsEnrollment.groupBy({
-      by: ['status'],
-      where: whereClause,
-      _count: true,
+      orderBy: { name: 'asc' },
     })
   ]);
 
+  const students = users.map(user => {
+    let totalSKS = 0;
+    const statuses = new Set();
+    
+    user.krsEnrollments.forEach(e => {
+      totalSKS += e.class?.course?.sks || 3;
+      statuses.add(e.status);
+    });
+
+    return {
+      student: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        advisor: user.advisor,
+      },
+      enrollments: user.krsEnrollments,
+      totalSKS,
+      statuses: Array.from(statuses),
+    };
+  });
+
   const summary = {
-    total: totalItems,
+    total: totalEnrollments,
     pending: stats.find(s => s.status === 'PENDING')?._count || 0,
     approved: stats.find(s => s.status === 'APPROVED')?._count || 0,
     rejected: stats.find(s => s.status === 'REJECTED')?._count || 0,
   };
 
   return {
-    enrollments,
+    students,
     summary,
     _meta: {
       pagination: {
-        totalItems,
-        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalUsers,
+        totalPages: Math.ceil(totalUsers / limit),
         currentPage: page,
         limit,
       },

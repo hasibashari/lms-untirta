@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { getStudentTranscript } from '../api/transcript.api';
+import { getMyTranscript } from '../api/transcript.api';
 
-export const useStudentTranscript = (studentId) => {
+
+
+export const useMyTranscript = () => {
   return useQuery({
-    queryKey: ['student-transcript', studentId],
-    queryFn: () => getStudentTranscript(studentId),
-    enabled: !!studentId,
-    staleTime: 30 * 1000, // 30 seconds
+    queryKey: ['my-transcript'],
+    queryFn: () => getMyTranscript(),
+    staleTime: 30 * 1000,
   });
 };

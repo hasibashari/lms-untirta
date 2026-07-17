@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/AuthContext';
 import { getMyKRS } from '../api/krs.api';
@@ -11,6 +11,7 @@ const PrintKrsPage = () => {
   
   const [loading, setLoading] = useState(true);
   const [enrollments, setEnrollments] = useState([]);
+  const [krsSummary, setKrsSummary] = useState(null);
   const [semester, setSemester] = useState(null);
   
   useEffect(() => {
@@ -23,6 +24,9 @@ const PrintKrsPage = () => {
         
         const data = krsRes?.data?.enrollments || [];
         setEnrollments(data);
+        
+        const summary = krsRes?.data?.summary || {};
+        setKrsSummary(summary);
         
         const semList = semRes?.data?.data || semRes?.data || [];
         const currentSem = semList.find(s => s.id === semesterId);
@@ -46,10 +50,8 @@ const PrintKrsPage = () => {
     }
   }, [loading]);
 
-  const totalSKS = useMemo(() => {
-    return enrollments.reduce((sum, curr) => sum + (curr.class?.course?.sks || 0), 0);
-  }, [enrollments]);
-  
+  const totalSKS = krsSummary?.totalSKS || 0;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 print:hidden">

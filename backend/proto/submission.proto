@@ -7,6 +7,7 @@ service SubmissionService {
   rpc GetAssignmentWithMySubmission (GetAssignmentWithMySubmissionRequest) returns (AssignmentWithSubmissionResponse);
   rpc GetSubmissionsByAssignment (GetSubmissionsByAssignmentRequest) returns (ListSubmissionsResponse);
   rpc GetAllMyGrades (GetAllMyGradesRequest) returns (ListGradesResponse);
+  rpc GetMyGradesStats (GetMyGradesStatsRequest) returns (GradesStatsResponse);
   rpc GradeSubmission (GradeSubmissionRequest) returns (GradeResponse);
   rpc GetRecentSubmissionsForTeacher (GetRecentSubmissionsForTeacherRequest) returns (ListRecentSubmissionsResponse);
 }
@@ -105,6 +106,25 @@ message GradeData {
   string feedback = 10;
   string submittedAt = 11;
   string academicSemesterId = 12;
+}
+
+message GetMyGradesStatsRequest {
+  string studentId = 1;
+  string academicSemesterId = 2;
+}
+
+message GradesStatsResponse {
+  string message = 1;
+  GradesStatsData data = 2;
+}
+
+message GradesStatsData {
+  int32 total = 1;
+  int32 graded = 2;
+  int32 pending = 3;
+  int32 submitted = 4;
+  int32 overdue = 5;
+  string averageGrade = 6;
 }
 
 

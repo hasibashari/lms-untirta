@@ -80,7 +80,7 @@ router.get(
 
 /**
  * @swagger
- * /api/krs/my-krs:
+ * /api/krs/me:
  *   get:
  *     summary: Get my KRS
  *     description: Retrieves the authenticated student's current KRS enrollments for the active semester.
@@ -113,7 +113,7 @@ router.get(
  *         $ref: '#/components/responses/Forbidden'
  */
 router.get(
-  '/my-krs',
+  '/me',
   authenticateToken,
   authorizeRole('MAHASISWA'),
   getMyKRS

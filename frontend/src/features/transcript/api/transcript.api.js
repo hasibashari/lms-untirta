@@ -2,25 +2,14 @@ import api from '@/shared/api/apiService';
 
 // ========== Transcript Module Endpoints (/api/transcript) ==========
 
-/**
- * [MAHASISWA] Get study results (course-based, legacy Enrollment model)
- * @param {number} semester - Optional semester filter
- */
-export const getStudyResults = (semester) => {
-  const params = semester ? `?semester=${semester}` : '';
-  return api.get(`/transcript/study-results${params}`);
-};
+
 
 /**
- * [MAHASISWA] Get transcript by class enrollment (KRS system, includes semester info)
- * @param {string} academicSemesterId - Optional academic semester ID filter
+ * [MAHASISWA] Get my transcript
  */
-export const getTranscriptByClass = (academicSemesterId) => {
-  const params = academicSemesterId ? `?academicSemesterId=${academicSemesterId}` : '';
-  return api.get(`/transcript/by-class${params}`);
+export const getMyTranscript = () => {
+  return api.get(`/transcript/me`);
 };
-
-
 
 /**
  * [DOSEN, ADMIN] Get a specific student's full transcript

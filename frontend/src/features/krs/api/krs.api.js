@@ -27,7 +27,7 @@ export const getMyKRS = (params = {}) => {
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
   if (params._t) query.append('_t', params._t);
   const qs = query.toString();
-  return api.get(`/krs/my-krs${qs ? `?${qs}` : ''}`);
+  return api.get(`/krs/me${qs ? `?${qs}` : ''}`);
 };
 
 
@@ -106,6 +106,10 @@ export const bulkUpdateEnrollmentStatus = (payload) => {
 export const getKrsMonitoring = (params = {}) => {
   const query = new URLSearchParams();
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
+  if (params.search) query.append('search', params.search);
+  if (params.status) query.append('status', params.status);
+  if (params.page) query.append('page', params.page);
+  if (params.limit) query.append('limit', params.limit);
   const qs = query.toString();
   return api.get(`/krs/monitoring${qs ? `?${qs}` : ''}`);
 };

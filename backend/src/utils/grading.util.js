@@ -89,3 +89,16 @@ export const calculateGPA = (courseResults) => {
 
   return { totalSKS, totalPoints, ipk, completedCourses };
 };
+
+/**
+ * Tentukan predikat kelulusan berdasarkan IPK.
+ *
+ * @param {number} ipk
+ * @returns {string}
+ */
+export const calculatePredicate = (ipk) => {
+  if (ipk >= 3.5) return 'Cum Laude';
+  if (ipk >= 3.0) return 'Sangat Baik';
+  if (ipk >= 2.5) return 'Baik';
+  return 'Cukup';
+};

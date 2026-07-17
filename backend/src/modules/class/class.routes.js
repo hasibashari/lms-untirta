@@ -129,21 +129,21 @@ router.get(
 
 /**
  * @swagger
- * /api/classes/my-stats:
+ * /api/classes/stats/me:
  *   get:
- *     summary: Get dashboard statistics for the logged-in student
+ *     summary: Get my dashboard stats
  *     tags: [Classes]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Student dashboard statistics
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
+ *         description: Dashboard stats successfully retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
  */
-router.get('/my-stats', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
+router.get('/stats/me', authenticateToken, authorizeRole('MAHASISWA'), getMyDashboardStats);
 
 /**
  * @swagger

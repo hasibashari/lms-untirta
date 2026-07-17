@@ -135,18 +135,16 @@ export const useMahasiswaKrs = () => {
     fetchData();
   }, [fetchData]);
 
-  // Derived Summary
-  const totalSKS = useMemo(() => {
-    return enrollments.reduce((acc, curr) => acc + (curr.class?.course?.sks || 0), 0);
-  }, [enrollments]);
+  // Derived Summary from backend
+  const totalSKS = summary?.totalSKS || 0;
+  const maxSKS = summary?.maxSKS || 24;
+  const sksStatusLevel = summary?.sksStatusLevel || 'safe';
 
-  const enrollmentStats = useMemo(() => {
-    return {
-      approved: enrollments.filter((e) => e.status === 'APPROVED').length,
-      pending: enrollments.filter((e) => e.status === 'PENDING').length,
-      rejected: enrollments.filter((e) => e.status === 'REJECTED').length,
-    };
-  }, [enrollments]);
+  const enrollmentStats = {
+    approved: summary?.approved || 0,
+    pending: summary?.pending || 0,
+    rejected: summary?.rejected || 0,
+  };
 
   const totalItems = availableMeta?.pagination?.totalItems || 0;
   const totalPages = availableMeta?.pagination?.totalPages || 1;
@@ -250,6 +248,8 @@ export const useMahasiswaKrs = () => {
     
     // Stats derived
     totalSKS,
+    maxSKS,
+    sksStatusLevel,
     enrollmentStats,
     
     // Actions

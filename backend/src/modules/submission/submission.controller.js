@@ -11,6 +11,7 @@ const grpcSubmitAssignment = util.promisify(submissionClient.SubmitAssignment).b
 const grpcGetAssignmentWithMySubmission = util.promisify(submissionClient.GetAssignmentWithMySubmission).bind(submissionClient);
 const grpcGetSubmissionsByAssignment = util.promisify(submissionClient.GetSubmissionsByAssignment).bind(submissionClient);
 const grpcGetAllMyGrades = util.promisify(submissionClient.GetAllMyGrades).bind(submissionClient);
+const grpcGetMyGradesStats = util.promisify(submissionClient.GetMyGradesStats).bind(submissionClient);
 const grpcGradeSubmission = util.promisify(submissionClient.GradeSubmission).bind(submissionClient);
 const grpcGetRecentSubmissionsForTeacher = util.promisify(submissionClient.GetRecentSubmissionsForTeacher).bind(submissionClient);
 
@@ -110,6 +111,31 @@ export const getAllMyGrades = async (req, res) => {
 
     const result = await grpcGetAllMyGrades({
       studentId,
+    }, meta);
+
+    sendSuccess(res, {
+      statusCode: 200,
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error) {
+    if (error.code) {
+      return sendError(res, { statusCode: mapGrpcErrorToHttp(error.code), message: error.details });
+    }
+    return handleError(res, error);
+  }
+};
+
+// ======= GET ALL STUDENT GRADES STATS =======
+export const getMyGradesStats = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { academicSemesterId } = req.query;
+    const meta = createGrpcMetadata(req);
+
+    const result = await grpcGetMyGradesStats({
+      studentId,
+      academicSemesterId: academicSemesterId || '',
     }, meta);
 
     sendSuccess(res, {

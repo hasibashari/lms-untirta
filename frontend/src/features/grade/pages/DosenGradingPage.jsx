@@ -178,9 +178,9 @@ const DosenGradingPage = () => {
 
   if (!data) return null;
 
-  const { class: classInfo, students, summary, semesterStatus } = data;
+  const { class: classInfo, students, summary, permissions, semesterStatus } = data;
   const allFinalized = summary.draft === 0 && summary.finalized > 0;
-  const canEdit = !allFinalized && (!semesterStatus || semesterStatus === 'OPEN');
+  const canEdit = permissions?.canEdit;
 
   return (
     <>

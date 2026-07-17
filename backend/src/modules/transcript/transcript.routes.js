@@ -10,6 +10,7 @@ import {
   getStudyResults,
   getTranscriptByClass,
   getAcademicSummary,
+  getMyTranscript,
   getStudentTranscript,
   getStudentList,
 } from './transcript.controller.js';
@@ -18,6 +19,46 @@ const router = express.Router();
 
 
 // ========== MAHASISWA ROUTES (specific routes first) ==========
+
+/**
+ * @swagger
+ * /api/transcript/me:
+ *   get:
+ *     summary: Get my transcript
+ *     description: Retrieves the full transcript of the authenticated student.
+ *     tags: [Transcript]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Student transcript data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         student:
+ *                           $ref: '#/components/schemas/User'
+ *                         grades:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/FinalGrade'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get(
+  '/me',
+  authenticateToken,
+  authorizeRole('MAHASISWA'),
+  getMyTranscript
+);
 
 /**
  * @swagger

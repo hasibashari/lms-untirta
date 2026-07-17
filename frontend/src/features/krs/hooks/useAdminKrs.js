@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getKrsMonitoring } from '../api/krs.api';
 import { getAllSemesters } from '@/features/academic/api/academic.api';
 import { useDebounce } from '@/shared/hooks/useDebounce';
@@ -31,6 +31,9 @@ export const useAdminKrs = () => {
     try {
       const params = { page, limit };
       if (academicSemesterId) params.academicSemesterId = academicSemesterId;
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
+      
       const res = await getKrsMonitoring(params);
       setMonitoringData(res.data || null);
     } catch (err) {
@@ -38,7 +41,7 @@ export const useAdminKrs = () => {
     } finally {
       setLoading(false);
     }
-  }, [academicSemesterId, page]);
+  }, [academicSemesterId, page, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchData();
@@ -54,49 +57,18 @@ export const useAdminKrs = () => {
     prevSemesterRef.current = academicSemesterId;
   }, [academicSemesterId]);
 
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, debouncedSearch]);
 
 
-  const enrollments = useMemo(() => monitoringData?.enrollments || [], [monitoringData]);
+
   const summary = monitoringData?.summary || {};
   const meta = monitoringData?._meta?.pagination;
 
-  // Group enrollments by student
-  const groupedByStudent = useMemo(() => {
-    let filtered = enrollments;
-    if (statusFilter !== 'all') {
-      filtered = enrollments.filter(e => e.status === statusFilter);
-    }
-
-    const map = new Map();
-    for (const e of filtered) {
-      const sid = e.student?.id;
-      if (!sid) continue;
-      if (!map.has(sid)) {
-        map.set(sid, {
-          student: e.student,
-          enrollments: [],
-          totalSKS: 0,
-          statuses: new Set(),
-        });
-      }
-      const group = map.get(sid);
-      group.enrollments.push(e);
-      group.totalSKS += e.class?.course?.sks || 3;
-      group.statuses.add(e.status);
-    }
-    return Array.from(map.values());
-  }, [enrollments, statusFilter]);
-
-  // Filtered by search
-  const filteredGroups = useMemo(() => {
-    if (!debouncedSearch.trim()) return groupedByStudent;
-    const q = debouncedSearch.toLowerCase();
-    return groupedByStudent.filter(
-      g =>
-        g.student.name?.toLowerCase().includes(q) ||
-        g.student.email?.toLowerCase().includes(q)
-    );
-  }, [groupedByStudent, debouncedSearch]);
+  // The backend now returns paginated students directly
+  const filteredGroups = monitoringData?.students || [];
 
   // Toggle expand a student row
   const toggleExpand = (studentId) => {

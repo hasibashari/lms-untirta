@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Loader2, AlertCircle, ArrowLeft, GraduationCap, BookOpen,
@@ -55,32 +55,8 @@ const AdminStudentTranscriptPage = () => {
     fetchTranscript();
   }, [studentId]);
 
-  // Group courses by semester
-  const semesterGroups = useMemo(() => {
-    if (!data?.courses) return [];
-    const map = new Map();
-    for (const course of data.courses) {
-      const key = course.semester || 0;
-      if (!map.has(key)) {
-        map.set(key, { semester: key, courses: [], totalSKS: 0, totalPoints: 0, completed: 0 });
-      }
-      const group = map.get(key);
-      group.courses.push(course);
-      if (course.averageScore !== null) {
-        group.totalSKS += course.sks;
-        group.totalPoints += course.gradePoint * course.sks;
-        group.completed++;
-      }
-    }
-    return Array.from(map.values())
-      .sort((a, b) => a.semester - b.semester)
-      .map(g => ({
-        ...g,
-        ips: g.totalSKS > 0
-          ? Math.round((g.totalPoints / g.totalSKS) * 100) / 100
-          : 0,
-      }));
-  }, [data]);
+  // Group courses by semester (provided by backend)
+  const semesterGroups = data?.transcriptSemesters || [];
 
   // Grade distribution for chart
   const gradeDistribution = data?.gradeDistribution || {};
@@ -205,7 +181,7 @@ const AdminStudentTranscriptPage = () => {
             </div>
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-slate-900">
-            {summary.ipk >= 3.5 ? 'Cum Laude' : summary.ipk >= 3.0 ? 'Sangat Baik' : summary.ipk >= 2.5 ? 'Baik' : 'Cukup'}
+            {summary.predicate || '-'}
           </p>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">Predikat</p>
         </div>
@@ -246,20 +222,20 @@ const AdminStudentTranscriptPage = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <span className="text-blue-700 font-bold text-sm">{group.semester}</span>
+                    <BookOpen size={20} className="text-blue-700" />
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900">Semester {group.semester}</p>
+                    <p className="font-semibold text-slate-900">{group.semesterTitle}</p>
                     <p className="text-sm text-slate-500">{group.courses.length} mata kuliah</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="hidden sm:flex items-center gap-3">
                     <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                      {group.totalSKS} SKS
+                      {group.totalSks} SKS
                     </span>
                     <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
-                      IPS: {group.ips.toFixed(2)}
+                      IPS: {group.ip.toFixed(2)}
                     </span>
                   </div>
                   {isExpanded ? (
@@ -274,10 +250,10 @@ const AdminStudentTranscriptPage = () => {
               {!isExpanded && (
                 <div className="flex sm:hidden items-center gap-2 px-4 pb-3">
                   <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                    {group.totalSKS} SKS
+                    {group.totalSks} SKS
                   </span>
                   <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
-                    IPS: {group.ips.toFixed(2)}
+                    IPS: {group.ip.toFixed(2)}
                   </span>
                 </div>
               )}
@@ -341,10 +317,10 @@ const AdminStudentTranscriptPage = () => {
                   </div>
                   <div className="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-sm">
                     <span className="text-slate-600">
-                      Total: <strong>{group.courses.length}</strong> MK | <strong>{group.totalSKS}</strong> SKS
+                      Total: <strong>{group.courses.length}</strong> MK | <strong>{group.totalSks}</strong> SKS
                     </span>
                     <span className="font-semibold text-emerald-700">
-                      IPS: {group.ips.toFixed(2)}
+                      IPS: {group.ip.toFixed(2)}
                     </span>
                   </div>
                 </div>

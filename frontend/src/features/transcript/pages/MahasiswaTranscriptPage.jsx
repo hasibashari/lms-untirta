@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useAuth } from '@/app/providers/AuthContext';
-import { Loader2, AlertCircle, Printer, RefreshCw } from 'lucide-react';
+import { AlertCircle, Printer, Loader2, RefreshCw } from 'lucide-react';
 import CourseBadge from '@/features/course/components/CourseBadge';
 
 /**
@@ -10,7 +9,7 @@ import CourseBadge from '@/features/course/components/CourseBadge';
  * mengikuti spesifikasi UI terbaru: kartu per semester, badge SKS, 
  * dan tampilan IP/IPK di dalam tabel.
  */
-import { useStudentTranscript } from '../hooks/useStudentTranscript';
+import { useMyTranscript } from '../hooks/useStudentTranscript';
 import { getStudentSemesters } from '@/features/academic/api/academic.api';
 import { useSemesters } from '@/shared/hooks/useSemesters';
 
@@ -18,106 +17,20 @@ import { useSemesters } from '@/shared/hooks/useSemesters';
  * MahasiswaTranscriptPage
  */
 const MahasiswaTranscriptPage = () => {
-  const { user } = useAuth();
-  const { data: transcriptData, isLoading: loading, error: fetchError } = useStudentTranscript(user?.id);
+  const { data: transcriptData, isLoading: loading, error: fetchError } = useMyTranscript();
   const data = transcriptData?.data || null;
   const error = fetchError?.message || null;
+  
+  const { student, summary } = data || {};
+  const transcriptSemesters = data?.transcriptSemesters;
 
-  const { student, summary, courses } = data || {};
-
-  // Memoized processed data
-  const { semesterDataList, calculatedTotalSks } = useMemo(() => {
-    // Sorting courses chronologically by academic year and type
-    const sortedCourses = [...(courses || [])].sort((a, b) => {
-      // Sort by Year first (descending to show newest first)
-      if (a.academicYear !== b.academicYear) {
-        return (b.academicYear || '').localeCompare(a.academicYear || '');
-      }
-      // Then by Semester Type (GANJIL should come after GENAP if we want newest first)
-      return (b.semesterType || '').localeCompare(a.semesterType || '');
-    });
-
-    const validCourses = sortedCourses;
-
-    // Calculate generic total for header
-    let totalSks = 0;
-    validCourses.forEach(c => {
-      if (c.letterGrade && c.letterGrade !== '-') {
-        totalSks += c.sks;
-      }
-    });
-
-    // Group courses by Academic Semester ID (Period)
-    const grouped = {};
-    const periodMeta = {}; // Store title info for each period
-
-    validCourses.forEach((course) => {
-      const periodId = course.academicSemesterId || 'legacy';
-      if (!grouped[periodId]) {
-        grouped[periodId] = [];
-        periodMeta[periodId] = {
-          year: course.academicYear || 'Legacy',
-          type: course.semesterType || 'Data Lama',
-          title: course.academicYear 
-            ? `${course.academicYear} - ${course.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
-            : 'Data Akademik Terlampau'
-        };
-      }
-      grouped[periodId].push(course);
-    });
-
-    const periodIds = Object.keys(grouped).sort((a, b) => {
-      // Sort periods (newest first)
-      const metaA = periodMeta[a];
-      const metaB = periodMeta[b];
-      if (metaA.year !== metaB.year) return metaB.year.localeCompare(metaA.year);
-      return metaB.type.localeCompare(metaA.type);
-    });
-
-    const aggregated = periodIds.reduce(
-      (acc, pId) => {
-        const coursesInSem = grouped[pId];
-        const meta = periodMeta[pId];
-
-        // Only calculate IP/IPK from graded courses
-        const gradedCoursesInSem = coursesInSem.filter(c => c.letterGrade && c.letterGrade !== '-');
-        
-        const { semSks, semMutu } = gradedCoursesInSem.reduce(
-          (totals, c) => ({
-            semSks: totals.semSks + c.sks,
-            semMutu: totals.semMutu + c.sks * (c.gradePoint || 0),
-          }),
-          { semSks: 0, semMutu: 0 }
-        );
-
-        const cumulativeSks = acc.cumulativeSks + semSks;
-        const cumulativeMutu = acc.cumulativeMutu + semMutu;
-        const ip = semSks > 0 ? semMutu / semSks : 0;
-        const ipk = cumulativeSks > 0 ? cumulativeMutu / cumulativeSks : 0;
-
-        return {
-          cumulativeSks,
-          cumulativeMutu,
-          list: [
-            ...acc.list,
-            {
-              semester: pId,
-              semesterTitle: meta.title,
-              courses: coursesInSem,
-              ip,
-              ipk,
-            },
-          ],
-        };
-      },
-      { cumulativeSks: 0, cumulativeMutu: 0, list: [] }
-    );
-
-    return {
-      semesterDataList: aggregated.list,
-      calculatedTotalSks: totalSks,
-    };
-  }, [courses]);
+  const semesterDataList = useMemo(() => {
+    if (!transcriptSemesters) return [];
+    // Backend returns ascending order. UI expects descending (newest first)
+    return [...transcriptSemesters].reverse();
+  }, [transcriptSemesters]);
+  
+  const calculatedTotalSks = data?.summary?.totalSKS || 0;
 
   const { semesters } = useSemesters(getStudentSemesters);
   const [selectedSemesterId] = useState(() => {

@@ -106,5 +106,5 @@ export const getMyDashboardStats = (params = {}) => {
   const query = new URLSearchParams();
   if (params.academicSemesterId) query.append('academicSemesterId', params.academicSemesterId);
   const qs = query.toString();
-  return api.get(`/classes/my-stats${qs ? `?${qs}` : ''}`);
+  return api.get(`/classes/stats/me${qs ? `?${qs}` : ''}`);
 };

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/AuthContext';
-import { useStudentTranscript } from '../hooks/useStudentTranscript';
+import { useMyTranscript } from '../hooks/useStudentTranscript';
 import { Printer, Loader2, AlertCircle } from 'lucide-react';
 
 const PrintKhsPage = () => {
@@ -9,118 +9,42 @@ const PrintKhsPage = () => {
   const semesterId = searchParams.get('semesterId');
 
   const { user } = useAuth();
-  const { data: transcriptData, isLoading: loading, error: fetchError } = useStudentTranscript(user?.id);
+  const { data: transcriptData, isLoading: loading, error: fetchError } = useMyTranscript();
   
   const data = transcriptData?.data || null;
   const error = fetchError?.message || null;
-  const { student, summary, courses } = data || {};
+  const { student, summary } = data || {};
 
-  // Memoized processed data (Same logic as MahasiswaTranscriptPage)
+  // Use precalculated data from backend
   const { semesterDataList, calculatedTotalSks, finalIpk } = useMemo(() => {
-    const sortedCourses = [...(courses || [])].sort((a, b) => {
-      if (a.academicYear !== b.academicYear) {
-        return (a.academicYear || '').localeCompare(b.academicYear || ''); // Sort Ascending for printing
-      }
-      return (a.semesterType || '').localeCompare(b.semesterType || '');
-    });
+    const transcriptSemesters = data?.transcriptSemesters;
+    if (!transcriptSemesters) {
+      return { semesterDataList: [], calculatedTotalSks: 0, finalIpk: 0 };
+    }
 
-    let totalSks = 0;
-    sortedCourses.forEach(c => {
-      totalSks += (c.sks || 0);
-    });
-
-    const grouped = {};
-    const periodMeta = {};
-
-    sortedCourses.forEach((course) => {
-      const periodId = course.academicSemesterId || 'legacy';
-      if (!grouped[periodId]) {
-        grouped[periodId] = [];
-        periodMeta[periodId] = {
-          year: course.academicYear || 'Legacy',
-          type: course.semesterType || 'Data Lama',
-          title: course.academicYear 
-            ? `${course.academicYear} - ${course.semesterType === 'GANJIL' ? 'Ganjil' : 'Genap'}`
-            : 'Data Akademik Terlampau'
-        };
-      }
-      grouped[periodId].push(course);
-    });
-
-    const periodIds = Object.keys(grouped).sort((a, b) => {
-      const metaA = periodMeta[a];
-      const metaB = periodMeta[b];
-      if (metaA.year !== metaB.year) return metaA.year.localeCompare(metaB.year);
-      return metaA.type.localeCompare(metaB.type);
-    });
-
-    const aggregated = periodIds.reduce(
-      (acc, pId) => {
-        const coursesInSem = grouped[pId];
-        const meta = periodMeta[pId];
-
-        // All SKS taken this semester
-        const semTotalSks = coursesInSem.reduce((sum, c) => sum + (c.sks || 0), 0);
-        const cumulativeTotalSks = acc.cumulativeTotalSks + semTotalSks;
-
-        const gradedCoursesInSem = coursesInSem.filter(c => c.letterGrade && c.letterGrade !== '-');
-        
-        const { semGradedSks, semMutu } = gradedCoursesInSem.reduce(
-          (totals, c) => ({
-            semGradedSks: totals.semGradedSks + (c.sks || 0),
-            semMutu: totals.semMutu + (c.sks || 0) * (c.gradePoint || 0),
-          }),
-          { semGradedSks: 0, semMutu: 0 }
-        );
-
-        const cumulativeGradedSks = acc.cumulativeGradedSks + semGradedSks;
-        const cumulativeMutu = acc.cumulativeMutu + semMutu;
-        const ip = semGradedSks > 0 ? semMutu / semGradedSks : 0;
-        const ipk = cumulativeGradedSks > 0 ? cumulativeMutu / cumulativeGradedSks : 0;
-
-        return {
-          cumulativeTotalSks,
-          cumulativeGradedSks,
-          cumulativeMutu,
-          list: [
-            ...acc.list,
-            {
-              semester: pId,
-              semesterTitle: meta.title,
-              courses: coursesInSem,
-              ip,
-              ipk,
-              cumulativeTotalSks
-            },
-          ],
-        };
-      },
-      { cumulativeTotalSks: 0, cumulativeGradedSks: 0, cumulativeMutu: 0, list: [] }
-    );
-
+    let filteredList = transcriptSemesters;
     let computedFinalIpk = 0;
     let finalTotalSks = 0;
 
-    let filteredList = aggregated.list;
     if (semesterId) {
       filteredList = filteredList.filter(item => item.semester === semesterId);
-      const semItem = aggregated.list.find(item => item.semester === semesterId);
+      const semItem = transcriptSemesters.find(item => item.semester === semesterId);
       if (semItem) {
         computedFinalIpk = semItem.ipk;
         finalTotalSks = semItem.cumulativeTotalSks;
       }
     } else {
-      const finalCumulativeItem = aggregated.list[aggregated.list.length - 1];
+      const finalCumulativeItem = transcriptSemesters[transcriptSemesters.length - 1];
       computedFinalIpk = finalCumulativeItem ? finalCumulativeItem.ipk : 0;
       finalTotalSks = finalCumulativeItem ? finalCumulativeItem.cumulativeTotalSks : 0;
     }
 
     return {
       semesterDataList: filteredList,
-      calculatedTotalSks: finalTotalSks || totalSks,
+      calculatedTotalSks: finalTotalSks,
       finalIpk: computedFinalIpk
     };
-  }, [courses, semesterId]);
+  }, [data?.transcriptSemesters, semesterId]);
 
   // Trigger print dialog once loaded
   useEffect(() => {

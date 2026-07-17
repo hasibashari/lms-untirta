@@ -184,6 +184,83 @@ export const GetAllMyGrades = async (call, callback) => {
   }
 };
 
+export const GetMyGradesStats = async (call, callback) => {
+  try {
+    const { studentId, academicSemesterId } = call.request;
+
+    const enrollments = await prisma.krsEnrollment.findMany({
+      where: {
+        studentId,
+        status: 'APPROVED',
+        ...(academicSemesterId ? { class: { academicSemesterId } } : {}),
+      },
+      include: {
+        class: {
+          include: { course: true },
+        },
+      },
+    });
+
+    let total = 0;
+    let graded = 0;
+    let pending = 0;
+    let submitted = 0;
+    let overdue = 0;
+    let totalGrade = 0;
+    let gradedCount = 0;
+
+    for (const enrollment of enrollments) {
+      const { classId, class: classData } = enrollment;
+      const { course } = classData;
+
+      const assignments = await prisma.assignment.findMany({
+        where: {
+          OR: [
+            { classId: classId },
+            { AND: [{ courseId: course.id }, { classId: null }] }
+          ]
+        },
+        include: {
+          submissions: { where: { studentId } },
+        },
+      });
+
+      for (const assignment of assignments) {
+        const submission = assignment.submissions[0] || null;
+        const status = calculateSubmissionStatus(assignment.dueDate, submission);
+        total++;
+        if (status === 'graded') {
+          graded++;
+          totalGrade += submission.grade;
+          gradedCount++;
+        } else if (status === 'pending') {
+          pending++;
+        } else if (status === 'submitted') {
+          submitted++;
+        } else if (status === 'overdue') {
+          overdue++;
+        }
+      }
+    }
+
+    const averageGrade = gradedCount > 0 ? (totalGrade / gradedCount).toFixed(1) : '-';
+
+    callback(null, {
+      message: 'Statistik nilai berhasil diambil',
+      data: {
+        total,
+        graded,
+        pending,
+        submitted,
+        overdue,
+        averageGrade,
+      }
+    });
+  } catch (error) {
+    callback({ code: grpc.status.INTERNAL, details: error.message });
+  }
+};
+
 // =============================================================================
 // HANDLERS — TEACHER SIDE
 // =============================================================================

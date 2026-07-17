@@ -141,6 +141,8 @@ export const getKrsMonitoring = async (req, res) => {
       academicSemesterId: req.query.academicSemesterId,
       page: req.query.page,
       limit: req.query.limit,
+      search: req.query.search,
+      status: req.query.status,
     };
     const result = await krsService.getKrsMonitoring(filters);
     sendSuccess(res, {

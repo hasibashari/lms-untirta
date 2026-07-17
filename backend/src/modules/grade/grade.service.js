@@ -73,15 +73,26 @@ export const getClassStudentsForGrading = async (classId, lecturerId) => {
     grade: gradeMap.get(e.studentId) || null,
   }));
 
+  const totalStudents = students.length;
+  const draft = existingGrades.filter((g) => g.status === 'DRAFT').length;
+  const finalized = existingGrades.filter((g) => g.status === 'FINALIZED').length;
+  
+  const allFinalized = totalStudents > 0 && finalized === totalStudents;
+  const semesterStatus = classData.academicSemester?.status || null;
+  const canEdit = !allFinalized && (!semesterStatus || semesterStatus === 'OPEN');
+
   return {
     class: classData,
-    semesterStatus: classData.academicSemester?.status || null,
+    semesterStatus,
     students,
     summary: {
-      totalStudents: students.length,
+      totalStudents,
       graded: existingGrades.length,
-      draft: existingGrades.filter((g) => g.status === 'DRAFT').length,
-      finalized: existingGrades.filter((g) => g.status === 'FINALIZED').length,
+      draft,
+      finalized,
+    },
+    permissions: {
+      canEdit,
     },
   };
 };
