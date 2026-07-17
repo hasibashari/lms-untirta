@@ -5,17 +5,21 @@ import logger from "../../config/logger.js";
 
 // Validasi input untuk pesan chat
 const chatSchema = z.object({
-  message: z.string().min(1, "Pesan tidak boleh kosong").max(1000, "Pesan terlalu panjang")
+  message: z.string().min(1, "Pesan tidak boleh kosong").max(1000, "Pesan terlalu panjang"),
+  history: z.array(z.object({
+    role: z.enum(["user", "model"]),
+    text: z.string()
+  })).optional().default([])
 });
 
 export const handleChat = async (req, res) => {
   try {
-    const { message } = chatSchema.parse(req.body);
+    const { message, history } = chatSchema.parse(req.body);
 
     // userId diambil dari JWT middleware (req.user)
     const userId = req.user.id;
 
-    const data = await processChat(userId, message);
+    const data = await processChat(userId, message, history);
 
     return sendSuccess(res, {
       statusCode: 200,

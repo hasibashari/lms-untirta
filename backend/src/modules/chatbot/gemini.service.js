@@ -1,14 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import logger from "../../config/logger.js";
 import { AppError } from "../../config/errors.js";
+import { getToolsForRole, executeToolCall } from "./chatbot.tools.js";
 
 let genAI = null;
 
-/**
- * Lazily initialize and return the GoogleGenerativeAI instance.
- * This guarantees process.env.GEMINI_API is read *after* dotenv.config() has run,
- * avoiding ES module static import hoisting issues.
- */
 const getGenAI = () => {
   if (genAI) return genAI;
 
@@ -23,20 +19,71 @@ const getGenAI = () => {
 };
 
 /**
- * Send a prompt to Gemini
- * @param {string} prompt
- * @returns {Promise<string>}
+ * Handle a multi-turn chat conversation using Gemini Tools
  */
-export const generateChatResponse = async (prompt) => {
+export const handleAgenticChat = async (user, message, history = []) => {
   try {
     const aiInstance = getGenAI();
 
-    // Menggunakan Gemini Flash Lite Latest (500 RPD) sebagai model utama
-    const model = aiInstance.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+    const tools = getToolsForRole(user.role);
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    // Setup persona via systemInstruction
+    const systemInstruction = `Kamu adalah "UntirtaBot", asisten AI resmi untuk LMS (Learning Management System) Universitas Sultan Ageng Tirtayasa.
+Jawab pertanyaan pengguna dengan ramah, profesional, ringkas, dan gunakan Bahasa Indonesia.
+PENTING:
+- Gunakan Tool yang tersedia untuk mengecek jadwal, nilai, tugas, atau data lainnya HANYA jika diminta oleh pengguna. 
+- Jika pengguna berbasa-basi atau bertanya ilmu umum, jawab langsung tanpa memanggil tool.
+- Informasi pengguna yang sedang bicara denganmu saat ini: Nama: ${user.name}, NIM: ${user.nim || '-'}, Peran: ${user.role}.
+- Jangan pernah membocorkan data orang lain yang tidak ada hubungannya.`;
+
+    // Kita menggunakan gemini-1.5-flash karena lebih baik dalam function calling dibanding flash-lite (opsional, sesuaikan dgn limit)
+    const model = aiInstance.getGenerativeModel({
+      model: "gemini-flash-lite-latest",
+      tools,
+      systemInstruction
+    });
+
+    // Mulai atau lanjutkan chat session
+    const chat = model.startChat({
+      history: history.map(h => ({
+        role: h.role,
+        parts: [{ text: h.text }]
+      }))
+    });
+
+    // Kirim pesan dari pengguna
+    const result = await chat.sendMessage(message);
+    let finalResponse = result.response;
+
+    // Looping untuk menangani Tool Call
+    // Gemini mungkin akan memanggil beberapa tool secara beruntun jika diperlukan
+    let calls = finalResponse.functionCalls();
+
+    while (calls && calls.length > 0) {
+      const toolResponses = [];
+
+      for (const call of calls) {
+        logger.info({ tool: call.name, args: call.args }, "Gemini invoked a tool");
+        const apiResponse = await executeToolCall(call, user);
+
+        toolResponses.push({
+          functionResponse: {
+            name: call.name,
+            response: { result: apiResponse }
+          }
+        });
+      }
+
+      // Kirim balik hasil tool ke Gemini
+      const followUpResult = await chat.sendMessage(toolResponses);
+      finalResponse = followUpResult.response;
+      calls = finalResponse.functionCalls();
+    }
+
+    return {
+      reply: finalResponse.text(),
+      history: chat.history || [] // Bisa dikembalikan ke frontend jika butuh di-save di client
+    };
   } catch (error) {
     logger.error({ err: error }, "Error calling Gemini API");
     if (error instanceof AppError) {
@@ -45,4 +92,3 @@ export const generateChatResponse = async (prompt) => {
     throw new AppError(500, `Gagal memproses permintaan dari layanan AI: ${error.message}`);
   }
 };
-

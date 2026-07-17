@@ -77,7 +77,13 @@ export const ChatWindow = ({ isOpen, onClose }) => {
 
     setMessages(prev => [...prev, { role: 'user', content: text }]);
 
-    chatMutation.mutate(text, {
+    chatMutation.mutate({ 
+      message: text,
+      history: messages.map(m => ({
+        role: m.role === 'bot' ? 'model' : 'user',
+        text: m.content
+      }))
+    }, {
       onSuccess: (res) => {
         setMessages(prev => [...prev, { role: 'bot', content: res.data.reply }]);
       },
