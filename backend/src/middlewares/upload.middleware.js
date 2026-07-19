@@ -47,10 +47,6 @@ const localStorageEngine = multer.diskStorage({
   },
 
   filename(_req, file, cb) {
-    const ext =
-      ALLOWED_TYPES[file.mimetype] ||
-      path.extname(file.originalname).toLowerCase();
-    
     const sanitizedOriginalName = file.originalname
       .toLowerCase()
       .replace(/\s+/g, "-")
@@ -67,9 +63,6 @@ const s3StorageEngine = multerS3({
   contentType: multerS3.AUTO_CONTENT_TYPE,
   key: function (req, file, cb) {
     const subfolder = req.uploadSubfolder || "";
-    const ext =
-      ALLOWED_TYPES[file.mimetype] ||
-      path.extname(file.originalname).toLowerCase();
     
     const sanitizedOriginalName = file.originalname
       .toLowerCase()

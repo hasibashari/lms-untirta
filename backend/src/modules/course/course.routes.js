@@ -2,7 +2,6 @@ import express from 'express';
 import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 import { authorizeRole } from '../../middlewares/authorize.middleware.js';
-import { upload } from '../../middlewares/upload.middleware.js';
 import { createCourseSchema, updateCourseSchema, assignTeacherSchema, enrollStudentSchema } from './course.validation.js';
 import {
   getMyCourses,

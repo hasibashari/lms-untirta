@@ -2,15 +2,11 @@ import { useAuth } from '@/app/providers/AuthContext';
 import {
   AlertCircle,
   CheckCircle,
-  X,
   Lock,
   Info,
   BookOpen,
-  Printer,
-  Search,
 } from 'lucide-react';
 import { useMahasiswaKrs } from '../hooks/useMahasiswaKrs';
-import { Button } from '@/shared/components/ui/button';
 import {
   Pagination,
   PaginationContent,

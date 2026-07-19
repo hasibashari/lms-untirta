@@ -9,14 +9,8 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from '@/shared/components/ui/table';
-import CourseBadge from '@/features/course/components/CourseBadge';
 import SectionHeader from '@/shared/components/layout/ContentHeader';
 
 const AvailableClassRow = memo(({ cls, index, isEnrolling, handleEnroll, currentPage, itemsPerPage, enrollments }) => {

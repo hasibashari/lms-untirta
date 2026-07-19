@@ -1,7 +1,6 @@
 import { useDosenKrs } from '../hooks/useDosenKrs';
 import {
-  Loader2, AlertCircle, XCircle, Users,
-  ChevronDown, ChevronUp, UserCheck, ShieldOff,
+  Loader2, AlertCircle, Users, UserCheck, ShieldOff,
 } from 'lucide-react';
 import SemesterFilter from '@/shared/components/forms/SemesterFilter';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';

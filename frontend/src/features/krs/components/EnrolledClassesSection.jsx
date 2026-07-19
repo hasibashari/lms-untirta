@@ -2,14 +2,8 @@ import { memo } from 'react';
 import { Trash2, RefreshCw, Loader2, Info, BookOpen, CheckCircle } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from '@/shared/components/ui/table';
-import CourseBadge from '@/features/course/components/CourseBadge';
 import KrsStatusBadge from './KrsStatusBadge';
 
 const EnrolledClassRow = memo(({ enrollment, index, isDropping, isRevising, handleDrop, handleRevise, canDrop, canRevise, isReadOnly }) => {

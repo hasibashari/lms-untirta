@@ -172,14 +172,6 @@ export const getMaterialById = async (materialId, userId, userRole) => {
   return result;
 };
 
-// Wrapper for getMaterialById with cache
-const getMaterialByIdWithCache = async (materialId, userId, userRole) => {
-  // We only cache the core material data, not the user-specific authorization
-  // because auth depends on userId and role.
-  // Actually, let's just use getOrSet inside the function but carefully.
-  return await getMaterialById(materialId, userId, userRole);
-};
-
 export const updateMaterial = async (materialId, userId, userRole, data) => {
   // Ambil material untuk validasi eksistensi dan otorisasi
   const material = await prisma.material.findUnique({

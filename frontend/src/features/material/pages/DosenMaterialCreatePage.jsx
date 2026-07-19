@@ -7,8 +7,6 @@ import {
   ArrowLeft,
   Eye,
   Edit3,
-  Calendar,
-  Hash,
   Paperclip,
   UploadCloud,
   Trash2,

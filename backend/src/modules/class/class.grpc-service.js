@@ -90,7 +90,7 @@ export const CreateClass = async (call, callback) => {
     if (lectErr) return callback({ code: grpc.status.INVALID_ARGUMENT, details: lectErr });
 
     // 3. Validasi Semester
-    const { semester, error: semErr } = await validateSemesterOpen(data.academicSemesterId);
+    const { error: semErr } = await validateSemesterOpen(data.academicSemesterId);
     if (semErr) return callback({ code: grpc.status.INVALID_ARGUMENT, details: semErr });
 
     // 4. Cek Duplikasi Section

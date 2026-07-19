@@ -130,6 +130,7 @@ app.use('/api/forum', forumRouter); // Forum thread-level (detail, reply, pin)
 
 // -- GLOBAL ERROR HANDLER --
 // Handler error global: menangani error upload, error aplikasi, dan error tak terduga
+// eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   // Error dari multer (upload file)
   if (err instanceof multer.MulterError) {

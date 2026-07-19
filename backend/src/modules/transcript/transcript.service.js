@@ -14,9 +14,6 @@ export const getStudyResults = async (studentId, filters = {}) => {
     throw new AppError(404, 'Mahasiswa tidak ditemukan');
   }
 
-  // Build where clause for enrollment
-  const whereClause = { userId: studentId };
-
   // Get all enrollments with assignments and grades
   // Get all approved KRS enrollments
   const enrollments = await prisma.krsEnrollment.findMany({

@@ -72,7 +72,7 @@ export const startGrpcServer = () => {
   // bindAsync melakukan binding socket; menggunakan insecure credentials karena
   // auth sudah dilakukan di REST layer sebelum gRPC dipanggil (monolith pattern).
   // Jika migrasi ke microservices, pertimbangkan mTLS atau shared-secret.
-  server.bindAsync(BIND_ADDRESS, grpc.ServerCredentials.createInsecure(), (error, port) => {
+  server.bindAsync(BIND_ADDRESS, grpc.ServerCredentials.createInsecure(), (error) => {
     if (error) {
       logger.error('Failed to bind gRPC server:', error);
       return;

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, X, Loader2, BotMessageSquare, AlertTriangle, Info, RotateCcw } from 'lucide-react';
+import { Send, X, Loader2, BotMessageSquare, Info, RotateCcw } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from '../hooks/useChat';
 import { useAuth } from '@/app/providers/AuthContext';

@@ -957,12 +957,6 @@ export const getPendingKRS = async (filters = {}, currentUser = null) => {
               sks: true,
             },
           },
-          lecturer: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
         },
       },
     },

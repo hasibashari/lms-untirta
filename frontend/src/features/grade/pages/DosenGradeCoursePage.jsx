@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { getMyClasses } from '@/features/class/api/class.api';
-import DosenGradingPage from './DosenGradingPage';
 
 /**
  * Wrapper that resolves courseId → classId for the current dosen,

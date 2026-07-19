@@ -1,6 +1,5 @@
 import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { signToken } from '../../config/jwt.js';
 import { ROLES } from '../../config/roles.js';
 import { AppError } from '../../config/errors.js';

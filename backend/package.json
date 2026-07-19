@@ -6,13 +6,15 @@
   "scripts": {
     "predev": "fuser -k 50051/tcp 2>/dev/null; sleep 0.5; exit 0",
     "dev": "nodemon src/server.js",
-    "start": "npx prisma migrate deploy && node src/server.js"
+    "start": "npx prisma migrate deploy && node src/server.js",
+    "lint": "eslint src/"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1059.0",
     "@google/generative-ai": "^0.24.1",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
@@ -27,11 +29,10 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.0",
+    "multer-s3": "^3.0.1",
     "pg": "^8.16.3",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
-    "@aws-sdk/client-s3": "^3.1059.0",
-    "multer-s3": "^3.0.1",
     "rate-limit-redis": "^4.3.1",
     "redis": "^5.11.0",
     "swagger-jsdoc": "^6.2.8",
@@ -40,10 +41,12 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.2",
     "@types/pg": "^8.16.0",
+    "eslint": "^10.7.0",
     "nodemon": "^3.1.11",
     "prisma": "6.19.3",
     "tsx": "^4.21.0",

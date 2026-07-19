@@ -9,7 +9,7 @@
  * @param {string} subtitle - Subtitle text (bold, larger)
  * @param {string} className - Additional CSS classes untuk positioning
  */
-// eslint-disable-next-line no-unused-vars
+ 
 const FloatingCard = ({ icon: Icon, title, subtitle, className = '' }) => (
   <div className={`absolute bg-white p-4 rounded-xl shadow-xl border border-blue-50 flex items-center gap-3 animate-fade-in-up ${className}`}>
     <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">

@@ -187,6 +187,64 @@ const fetchAdminStats = async () => {
   };
 };
 
+const searchLearningMaterials = async (userId, userRole, query) => {
+  if (!query) return "Query pencarian tidak boleh kosong.";
+  
+  const terms = query.split(' ').filter(t => t.trim().length > 0);
+
+  const searchCondition = {
+    AND: [
+      ...terms.map(term => ({
+        OR: [
+          { title: { contains: term, mode: 'insensitive' } },
+          { content: { contains: term, mode: 'insensitive' } },
+          { course: { title: { contains: term, mode: 'insensitive' } } }
+        ]
+      })),
+      { isPublished: true }
+    ]
+  };
+
+  let materials = [];
+
+  if (userRole === "MAHASISWA") {
+    materials = await prisma.material.findMany({
+      where: {
+        ...searchCondition,
+        OR: [
+          { classId: null, course: { classes: { some: { krsEnrollments: { some: { studentId: userId, status: "APPROVED" } } } } } },
+          { class: { krsEnrollments: { some: { studentId: userId, status: "APPROVED" } } } }
+        ]
+      },
+      select: { title: true, content: true, course: { select: { title: true } } },
+      take: 5
+    });
+  } else if (userRole === "DOSEN") {
+    materials = await prisma.material.findMany({
+      where: {
+        ...searchCondition,
+        OR: [
+          { course: { teacherId: userId } },
+          { course: { classes: { some: { lecturerId: userId } } } },
+          { class: { lecturerId: userId } }
+        ]
+      },
+      select: { title: true, content: true, course: { select: { title: true } } },
+      take: 5
+    });
+  }
+
+  if (materials.length === 0) {
+    return "Tidak ada materi yang relevan ditemukan.";
+  }
+
+  return materials.map(m => ({
+    MataKuliah: m.course?.title || "Tidak diketahui",
+    JudulMateri: m.title,
+    IsiMateri: m.content ? (m.content.length > 4000 ? m.content.substring(0, 4000) + "... (terpotong)" : m.content) : "Tidak ada konten teks"
+  }));
+};
+
 // ==========================================
 // 2. Gemini Function Declarations (Tools)
 // ==========================================
@@ -205,6 +263,17 @@ export const getToolsForRole = (role) => {
   });
 
   if (role === "MAHASISWA") {
+    tools.push({
+      name: "search_learning_materials",
+      description: "Cari materi pembelajaran (berdasarkan judul atau isi teks) yang relevan dengan kata kunci (query). Gunakan tool ini jika pengguna meminta ringkasan materi tertentu atau mencari informasi dari dalam materi kuliah.",
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          query: { type: SchemaType.STRING, description: "Kata kunci untuk pencarian (misal: 'Pertemuan 1', 'Machine Learning', 'UML')." }
+        },
+        required: ["query"]
+      }
+    });
     tools.push({
       name: "get_student_advisor",
       description: "Ambil nama dan email Dosen Pembimbing Akademik mahasiswa yang bersangkutan.",
@@ -230,6 +299,17 @@ export const getToolsForRole = (role) => {
       }
     });
   } else if (role === "DOSEN") {
+    tools.push({
+      name: "search_learning_materials",
+      description: "Cari materi pembelajaran (berdasarkan judul atau isi teks) yang relevan dengan kata kunci (query). Gunakan tool ini jika pengguna meminta ringkasan materi tertentu atau mencari informasi dari dalam materi kuliah.",
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          query: { type: SchemaType.STRING, description: "Kata kunci untuk pencarian (misal: 'Pertemuan 1', 'Machine Learning', 'UML')." }
+        },
+        required: ["query"]
+      }
+    });
     tools.push({
       name: "get_lecturer_advisees",
       description: "Ambil daftar nama mahasiswa bimbingan akademik yang dibimbing oleh dosen ini.",
@@ -269,6 +349,9 @@ export const executeToolCall = async (toolCall, user) => {
         return await getCatalogContext();
       
       // MAHASISWA Tools
+      case "search_learning_materials":
+        if (user.role !== "MAHASISWA" && user.role !== "DOSEN") throw new Error("Unauthorized");
+        return await searchLearningMaterials(user.id, user.role, args?.query);
       case "get_student_advisor":
         if (user.role !== "MAHASISWA") throw new Error("Unauthorized");
         return await getStudentAdvisorContext(user.id);

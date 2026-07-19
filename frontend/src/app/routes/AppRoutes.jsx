@@ -75,7 +75,7 @@ const AdminAcademic = lazy(() => import('../../features/academic/pages/AdminAcad
 // Grade module
 const DosenGradeList = lazy(() => import('../../features/grade/pages/DosenGradeListPage'));
 const DosenGrading = lazy(() => import('../../features/grade/pages/DosenGradingPage'));
-const DosenCourseGrades = lazy(() => import('../../features/grade/pages/DosenGradeCoursePage'));
+
 
 // Assignment module
 const DosenAssignments = lazy(() => import('../../features/assignment/pages/DosenAssignPage'));

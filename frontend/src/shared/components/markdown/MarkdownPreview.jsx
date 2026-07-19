@@ -251,17 +251,18 @@ const MarkdownPreview = ({ content, className = '', variant = 'default' }) => {
       className={`
         max-w-none prose prose-slate 
         [&_ul]:list-none [&_ul]:pl-0 [&_ul]:my-6
-        [&_li]:relative [&_li]:pl-7 [&_li]:mb-3 [&_li]:text-slate-700
-        [&_li]:before:content-[''] [&_li]:before:absolute [&_li]:before:left-0 [&_li]:before:top-[0.6em] 
-        [&_li]:before:w-2 [&_li]:before:h-2 [&_li]:before:bg-primary/40 [&_li]:before:rounded-full
-        [&_ol]:list-decimal [&_ol]:pl-8 [&_ol]:my-6 [&_ol]:text-slate-700
+        [&_ul>li]:relative [&_ul>li]:pl-7 [&_ul>li]:mb-3 [&_ul>li]:text-slate-700
+        [&_ul>li]:before:content-[''] [&_ul>li]:before:absolute [&_ul>li]:before:left-0 [&_ul>li]:before:top-[0.6em] 
+        [&_ul>li]:before:w-2 [&_ul>li]:before:h-2 [&_ul>li]:before:bg-primary/40 [&_ul>li]:before:rounded-full
+        [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-6 [&_ol]:text-slate-700
+        [&_ol>li]:mb-3 [&_ol>li]:text-slate-700 [&_ol>li]:pl-2
         [&_table]:w-full [&_table]:my-8 [&_table]:overflow-hidden [&_table]:rounded-2xl [&_table]:border-collapse [&_table]:shadow-sm
         [&_th]:bg-slate-50 [&_th]:text-slate-900 [&_th]:font-bold [&_th]:p-3 [&_th]:text-left [&_th]:border-b [&_th]:border-slate-200
         [&_td]:p-3 [&_td]:border-b [&_td]:border-slate-100 [&_td]:text-slate-600
         [&_tr:last-child_td]:border-b-0
         [&_img]:rounded-2xl [&_img]:shadow-xl [&_img]:my-8 [&_img]:mx-auto [&_img]:block [&_img]:border-4 [&_img]:border-white
         [&_hr]:border-slate-100 [&_hr]:my-12 [&_hr]:border-t-2
-        ${isForum ? '[&_li]:text-sm [&_ol]:text-sm' : '[&_li]:text-lg [&_ol]:text-lg'}
+        ${isForum ? '[&_ul>li]:text-sm [&_ol>li]:text-sm [&_ol]:text-sm' : '[&_ul>li]:text-lg [&_ol>li]:text-lg [&_ol]:text-lg'}
         ${className}
       `}
     >
