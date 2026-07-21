@@ -80,8 +80,13 @@ app.use(cors({
   credentials: true
 }));
 
-// Parsing body JSON
-app.use(express.json());
+// Parsing body JSON (Dioptimalkan agar tidak memblokir route GET)
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    return express.json()(req, res, next);
+  }
+  next();
+});
 
 // Akses file statis di /uploads dilindungi oleh JWT
 // Support token via query param (?token=xxx) karena browser tidak bisa kirim header saat buka tab baru

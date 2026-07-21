@@ -31,7 +31,8 @@ services:
       - ./backend/.env
     environment:
       # Override koneksi agar menggunakan hostname container (bukan localhost)
-      - DATABASE_URL=postgresql://dev_user:admin@db:5432/lms_db?schema=public
+      # Menambahkan connection_limit=30 dan pool_timeout=15 untuk optimasi pool
+      - DATABASE_URL=postgresql://dev_user:admin@db:5432/lms_db?schema=public&connection_limit=30&pool_timeout=15
       - REDIS_URL=redis://redis:6379
       - USER_GRPC_URL=backend:50051
     ports:
