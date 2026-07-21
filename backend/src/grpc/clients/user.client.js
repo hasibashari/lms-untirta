@@ -24,7 +24,13 @@ const GRPC_URL = process.env.USER_GRPC_URL || '127.0.0.1:50051';
 
 const userClient = new protoDescriptor.user.UserService(
   GRPC_URL,
-  grpc.credentials.createInsecure()
+  grpc.credentials.createInsecure(),
+  {
+    'grpc.use_local_subchannel_pool': 1,
+    'grpc.keepalive_time_ms': 120000,
+    'grpc.http2.min_time_between_pings_ms': 120000,
+    'grpc.keepalive_timeout_ms': 20000,
+  }
 );
 
 export default userClient;

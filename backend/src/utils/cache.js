@@ -16,8 +16,8 @@ const DEFAULT_TTL = 3600; // 1 hour
  * @returns {Promise<any>}
  */
 export const getOrSet = async (key, fetchFn, ttl = DEFAULT_TTL) => {
-  if (!redisClient.isOpen) {
-    logger.warn('Redis client not open, bypassing cache');
+  if (process.env.DISABLE_CACHE === 'true' || !redisClient.isOpen) {
+    logger.warn('Cache bypassed');
     return await fetchFn();
   }
 

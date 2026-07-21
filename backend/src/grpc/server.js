@@ -54,6 +54,7 @@ export const startGrpcServer = () => {
   // dan di gRPC layer (untuk akses langsung ke port 50051, misal via Postman/tools).
   const server = new grpc.Server({
     interceptors: [grpcAuthInterceptor],
+    'grpc.max_concurrent_streams': 1000,
   });
 
   // Registrasi service: nama service sesuai definisi di .proto

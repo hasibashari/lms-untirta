@@ -200,16 +200,7 @@ export const getAdvisorSummary = async (req, res) => {
 export const getAdminStats = async (req, res) => {
   try {
     const meta = createGrpcMetadata(req);
-    
-    // Cache admin stats for 60 seconds
-    const stats = await cache.getOrSet(
-      'admin:dashboard:stats',
-      async () => {
-        return await grpcGetAdminStats({}, meta);
-      },
-      60
-    );
-
+    const stats = await grpcGetAdminStats({}, meta);
     sendSuccess(res, { statusCode: 200, message: 'Statistik dashboard berhasil diambil', data: stats });
   } catch (error) {
     return mapGrpcErrorToHttp(res, error);

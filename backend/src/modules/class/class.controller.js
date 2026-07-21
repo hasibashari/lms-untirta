@@ -4,7 +4,6 @@ import { handleError } from '../../utils/errorHandler.js';
 import { mapGrpcErrorToHttp } from '../../utils/mapGrpcErrorToHttp.js';
 import { createGrpcMetadata } from '../../grpc/helpers/metadata.helper.js';
 import util from 'util';
-import cache from '../../utils/cache.js';
 
 const grpcCreateClass = util.promisify(classClient.CreateClass).bind(classClient);
 const grpcGetAllClasses = util.promisify(classClient.GetAllClasses).bind(classClient);
@@ -272,17 +271,10 @@ export const getMyDashboardStats = async (req, res) => {
     const studentId = req.user.id;
     const meta = createGrpcMetadata(req);
 
-    const cacheKey = `mahasiswa:dashboard:stats:${studentId}:${req.query.academicSemesterId || 'all'}`;
-    const result = await cache.getOrSet(
-      cacheKey,
-      async () => {
-        return await grpcGetMyDashboardStats({
-          studentId,
-          academicSemesterId: req.query.academicSemesterId || '',
-        }, meta);
-      },
-      60
-    );
+    const result = await grpcGetMyDashboardStats({
+      studentId,
+      academicSemesterId: req.query.academicSemesterId || '',
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,
@@ -302,17 +294,10 @@ export const getTeacherDashboardStats = async (req, res) => {
     const teacherId = req.user.id;
     const meta = createGrpcMetadata(req);
 
-    const cacheKey = `dosen:dashboard:stats:${teacherId}:${req.query.academicSemesterId || 'all'}`;
-    const result = await cache.getOrSet(
-      cacheKey,
-      async () => {
-        return await grpcGetTeacherDashboardStats({
-          teacherId,
-          academicSemesterId: req.query.academicSemesterId || '',
-        }, meta);
-      },
-      60
-    );
+    const result = await grpcGetTeacherDashboardStats({
+      teacherId,
+      academicSemesterId: req.query.academicSemesterId || '',
+    }, meta);
 
     sendSuccess(res, {
       statusCode: 200,

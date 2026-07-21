@@ -2,6 +2,7 @@ import grpc from '@grpc/grpc-js';
 import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
 import { paginate } from '../../utils/pagination.js';
+import cache from '../../utils/cache.js';
 
 // =============================================================================
 // HELPERS
@@ -300,13 +301,20 @@ export const GetAdvisorStudents = async (call, callback) => {
 
 export const GetAdminStats = async (call, callback) => {
   try {
-    const [totalUsers, totalCourses, totalDosen, totalMahasiswa] = await Promise.all([
-      prisma.user.count(),
-      prisma.course.count(),
-      prisma.user.count({ where: { role: 'DOSEN' } }),
-      prisma.user.count({ where: { role: 'MAHASISWA' } }),
-    ]);
-    callback(null, { totalUsers, totalCourses, totalDosen, totalMahasiswa });
+    const data = await cache.getOrSet(
+      'admin:dashboard:stats',
+      async () => {
+        const [totalUsers, totalCourses, totalDosen, totalMahasiswa] = await Promise.all([
+          prisma.user.count(),
+          prisma.course.count(),
+          prisma.user.count({ where: { role: 'DOSEN' } }),
+          prisma.user.count({ where: { role: 'MAHASISWA' } }),
+        ]);
+        return { totalUsers, totalCourses, totalDosen, totalMahasiswa };
+      },
+      60
+    );
+    callback(null, data);
   } catch (error) {
     callback({ code: grpc.status.INTERNAL, details: error.message });
   }

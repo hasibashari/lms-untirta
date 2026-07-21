@@ -1,6 +1,7 @@
 import grpc from '@grpc/grpc-js';
 import prisma from '../../config/prisma.js';
 import { validateSemesterOpen, validateLecturer } from '../../utils/validation.util.js';
+import cache from '../../utils/cache.js';
 
 // =============================================================================
 // SELECTORS & MAPPERS
@@ -475,64 +476,73 @@ export const GetMyDashboardStats = async (call, callback) => {
   try {
     const { studentId, academicSemesterId } = call.request;
 
-    const whereClause = { studentId, status: 'APPROVED' };
-    if (academicSemesterId) {
-      whereClause.class = { academicSemesterId };
-    }
-
-    const enrollments = await prisma.krsEnrollment.findMany({
-      where: whereClause,
-      select: { classId: true, class: { select: { courseId: true } } },
-    });
-
-    const totalCourses = enrollments.length;
-    const classIds = enrollments.map((e) => e.classId);
-    const courseIds = [...new Set(enrollments.map((e) => e.class.courseId))];
-
-    const totalAssignments = await prisma.assignment.count({
-      where: {
-        OR: [
-          { classId: { in: classIds } },
-          { courseId: { in: courseIds }, classId: null },
-        ]
-      }
-    });
-
-    const gradedAssignments = await prisma.submission.count({
-      where: {
-        studentId,
-        grade: { not: null },
-        assignment: {
-          OR: [
-            { classId: { in: classIds } },
-            { courseId: { in: courseIds }, classId: null },
-          ]
+    const cacheKey = `mahasiswa:dashboard:stats:${studentId}:${academicSemesterId || 'all'}`;
+    const data = await cache.getOrSet(
+      cacheKey,
+      async () => {
+        const whereClause = { studentId, status: 'APPROVED' };
+        if (academicSemesterId) {
+          whereClause.class = { academicSemesterId };
         }
-      }
-    });
 
-    const submittedAssignments = await prisma.submission.count({
-      where: { 
-        studentId,
-        assignment: {
-          OR: [
-            { classId: { in: classIds } },
-            { courseId: { in: courseIds }, classId: null },
-          ]
-        }
-      }
-    });
-    
-    const pendingAssignments = totalAssignments - submittedAssignments > 0 ? totalAssignments - submittedAssignments : 0;
+        const enrollments = await prisma.krsEnrollment.findMany({
+          where: whereClause,
+          select: { classId: true, class: { select: { courseId: true } } },
+        });
+
+        const totalCourses = enrollments.length;
+        const classIds = enrollments.map((e) => e.classId);
+        const courseIds = [...new Set(enrollments.map((e) => e.class.courseId))];
+
+        const [totalAssignments, gradedAssignments, submittedAssignments] = await Promise.all([
+          prisma.assignment.count({
+            where: {
+              OR: [
+                { classId: { in: classIds } },
+                { courseId: { in: courseIds }, classId: null },
+              ]
+            }
+          }),
+          prisma.submission.count({
+            where: {
+              studentId,
+              grade: { not: null },
+              assignment: {
+                OR: [
+                  { classId: { in: classIds } },
+                  { courseId: { in: courseIds }, classId: null },
+                ]
+              }
+            }
+          }),
+          prisma.submission.count({
+            where: { 
+              studentId,
+              assignment: {
+                OR: [
+                  { classId: { in: classIds } },
+                  { courseId: { in: courseIds }, classId: null },
+                ]
+              }
+            }
+          })
+        ]);
+        
+        const pendingAssignments = totalAssignments - submittedAssignments > 0 ? totalAssignments - submittedAssignments : 0;
+        
+        return {
+          totalCourses,
+          totalAssignments,
+          pendingAssignments,
+          gradedAssignments,
+        };
+      },
+      60
+    );
 
     callback(null, {
       message: 'Dashboard stats berhasil diambil',
-      data: {
-        totalCourses,
-        totalAssignments,
-        pendingAssignments,
-        gradedAssignments,
-      }
+      data
     });
   } catch (error) {
     callback({ code: grpc.status.INTERNAL, details: error.message });
@@ -543,76 +553,86 @@ export const GetTeacherDashboardStats = async (call, callback) => {
   try {
     const { teacherId, academicSemesterId } = call.request;
 
-    const whereClause = { lecturerId: teacherId };
-    if (academicSemesterId) {
-      whereClause.academicSemesterId = academicSemesterId;
-    }
+    const cacheKey = `dosen:dashboard:stats:${teacherId}:${academicSemesterId || 'all'}`;
+    const data = await cache.getOrSet(
+      cacheKey,
+      async () => {
+        const whereClause = { lecturerId: teacherId };
+        if (academicSemesterId) {
+          whereClause.academicSemesterId = academicSemesterId;
+        }
 
-    const classes = await prisma.class.findMany({
-      where: whereClause,
-      select: { id: true, courseId: true },
-    });
+        const classes = await prisma.class.findMany({
+          where: whereClause,
+          select: { id: true, courseId: true },
+        });
 
-    const totalClasses = classes.length;
-    const classIds = classes.map(c => c.id);
-    const courseIds = [...new Set(classes.map(c => c.courseId))];
+        const totalClasses = classes.length;
+        const classIds = classes.map(c => c.id);
+        const courseIds = [...new Set(classes.map(c => c.courseId))];
 
-    const totalStudents = await prisma.krsEnrollment.count({
-      where: { classId: { in: classIds }, status: 'APPROVED' }
-    });
+        const [totalStudents, totalMaterials, totalAssignments, assignments] = await Promise.all([
+          prisma.krsEnrollment.count({
+            where: { classId: { in: classIds }, status: 'APPROVED' }
+          }),
+          prisma.material.count({
+            where: {
+              OR: [
+                { classId: { in: classIds } },
+                { courseId: { in: courseIds }, classId: null },
+              ]
+            }
+          }),
+          prisma.assignment.count({
+            where: {
+              OR: [
+                { classId: { in: classIds } },
+                { courseId: { in: courseIds }, classId: null },
+              ]
+            }
+          }),
+          prisma.assignment.findMany({
+            where: {
+              OR: [
+                { classId: { in: classIds } },
+                { courseId: { in: courseIds }, classId: null },
+              ]
+            },
+            select: { id: true }
+          })
+        ]);
 
-    const totalMaterials = await prisma.material.count({
-      where: {
-        OR: [
-          { classId: { in: classIds } },
-          { courseId: { in: courseIds }, classId: null },
-        ]
-      }
-    });
+        const assignmentIds = assignments.map(a => a.id);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const totalAssignments = await prisma.assignment.count({
-      where: {
-        OR: [
-          { classId: { in: classIds } },
-          { courseId: { in: courseIds }, classId: null },
-        ]
-      }
-    });
+        const [pendingGrading, recentSubmissions] = await Promise.all([
+          prisma.submission.count({
+            where: { assignmentId: { in: assignmentIds }, grade: null }
+          }),
+          prisma.submission.count({
+            where: { 
+              assignmentId: { in: assignmentIds },
+              submittedAt: { gte: sevenDaysAgo }
+            }
+          })
+        ]);
 
-    const assignments = await prisma.assignment.findMany({
-      where: {
-        OR: [
-          { classId: { in: classIds } },
-          { courseId: { in: courseIds }, classId: null },
-        ]
+        return {
+          totalClasses,
+          totalStudents,
+          totalMaterials,
+          totalAssignments,
+          pendingGrading,
+          recentSubmissions,
+        };
       },
-      select: { id: true }
-    });
-    const assignmentIds = assignments.map(a => a.id);
-
-    const pendingGrading = await prisma.submission.count({
-      where: { assignmentId: { in: assignmentIds }, grade: null }
-    });
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentSubmissions = await prisma.submission.count({
-      where: { 
-        assignmentId: { in: assignmentIds },
-        submittedAt: { gte: sevenDaysAgo }
-      }
-    });
+      60
+    );
 
     callback(null, {
       message: 'Dashboard stats berhasil diambil',
-      data: {
-        totalClasses,
-        totalStudents,
-        totalMaterials,
-        totalAssignments,
-        pendingGrading,
-        recentSubmissions,
-      }
+      data
     });
   } catch (error) {
     callback({ code: grpc.status.INTERNAL, details: error.message });
