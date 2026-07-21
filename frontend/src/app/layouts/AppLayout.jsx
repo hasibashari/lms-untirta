@@ -17,6 +17,8 @@ import {
 import Logo from '@/shared/components/branding/Logo';
 import ProfileDropdown from '@/shared/components/navigation/ProfileDropdown';
 import { ChatWidget } from '../../features/chatbot';
+import { usePrefetch } from '@/shared/hooks/usePrefetch';
+import { handleNavHover } from '@/shared/utils/navPrefetch';
 
 const SidebarLogoHeader = () => {
   const { isMobile, setOpenMobile } = useSidebar();
@@ -39,6 +41,7 @@ const SidebarLogoHeader = () => {
 
 const AppLayout = ({ navItems = [], roleLabel = 'Menu' }) => {
   const location = useLocation();
+  const { prefetchData, prefetchRoute } = usePrefetch();
 
   const isActive = (path) => {
     const item = navItems.find((i) => i.to === path);
@@ -71,7 +74,11 @@ const AppLayout = ({ navItems = [], roleLabel = 'Menu' }) => {
                       tooltip={item.description || item.label}
                       size="lg"
                     >
-                      <Link to={item.to}>
+                      <Link
+                        to={item.to}
+                        onMouseEnter={() => handleNavHover(item.to, prefetchData, prefetchRoute)}
+                        onFocus={() => handleNavHover(item.to, prefetchData, prefetchRoute)}
+                      >
                         {Icon && <Icon />}
                         <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                       </Link>

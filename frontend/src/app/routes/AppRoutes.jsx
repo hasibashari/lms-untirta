@@ -28,10 +28,10 @@ import ResetPassword from '../../features/auth/pages/ResetPasswordPage';
 
 // ----- Lazy-loaded pages (feature-based modules) -----
 
-// Dashboard module
-const AdminDashboard = lazy(() => import('../../features/dashboard/pages/AdminDashboardPage'));
-const DosenDashboard = lazy(() => import('../../features/dashboard/pages/DosenDashboardPage'));
-const MahasiswaDashboard = lazy(() => import('../../features/dashboard/pages/MahasiswaDashboardPage'));
+// Dashboard module (eagerly imported for instant initial paint post-login)
+import AdminDashboard from '../../features/dashboard/pages/AdminDashboardPage';
+import DosenDashboard from '../../features/dashboard/pages/DosenDashboardPage';
+import MahasiswaDashboard from '../../features/dashboard/pages/MahasiswaDashboardPage';
 
 // User module
 const AdminUsers = lazy(() => import('../../features/user/pages/AdminUserPage'));
@@ -135,7 +135,7 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleRoute roles={['ADMIN']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/admin/dashboard" element={<Lazy component={AdminDashboard} />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<Lazy component={AdminUsers} />} />
             <Route path="/admin/users/new" element={<Lazy component={AdminCreateUser} />} />
             <Route path="/admin/users/:id/edit" element={<Lazy component={AdminEditUser} />} />
@@ -154,7 +154,7 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleRoute roles={['DOSEN']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/dosen/dashboard" element={<Lazy component={DosenDashboard} />} />
+            <Route path="/dosen/dashboard" element={<DosenDashboard />} />
             <Route path="/dosen/advisory" element={<Lazy component={DosenAdvisory} />} />
             <Route path="/dosen/classes" element={<Lazy component={DosenMyClasses} />} />
             <Route path="/dosen/submissions" element={<Lazy component={DosenAllSubmissions} />} />
@@ -184,7 +184,7 @@ function AppRoutes() {
           <Route path="/mahasiswa/krs/print/:semesterId" element={<Lazy component={PrintKrsPage} />} />
           <Route path="/mahasiswa/study-result/print" element={<Lazy component={PrintKhsPage} />} />
           <Route element={<StudentLayout />}>
-            <Route path="/mahasiswa/dashboard" element={<Lazy component={MahasiswaDashboard} />} />
+            <Route path="/mahasiswa/dashboard" element={<MahasiswaDashboard />} />
             <Route path="/mahasiswa/classes" element={<Lazy component={MahasiswaMyClasses} />} />
             <Route path="/mahasiswa/grades" element={<Lazy component={MahasiswaGrades} />} />
             <Route path="/mahasiswa/krs" element={<Lazy component={KartuRencanaStudi} />} />

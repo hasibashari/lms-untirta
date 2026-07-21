@@ -23,6 +23,7 @@ export const useMahasiswaDashboardData = () => {
         stats: statsRes?.data || null
       };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
   });
 };
