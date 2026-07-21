@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search } from 'lucide-react';
 import CourseCard from '../../course/components/CourseCard';
@@ -20,6 +20,8 @@ const MyClasses = () => {
   const navigate = useNavigate();
   const { data: approvedEnrollments = [], isLoading: loading, error: fetchError, refetch } = useMyClasses();
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const [selectedSemesterId] = useState(() => {
     return localStorage.getItem('selectedAcademicSemesterId') || null;
   });
@@ -28,15 +30,27 @@ const MyClasses = () => {
   const { semesters } = useSemesters(getStudentSemesters);
   const activeSemesterId = selectedSemesterId || (semesters.find(s => s.status === 'OPEN') || semesters[0])?.id;
 
-  const activeEnrollments = approvedEnrollments.filter(e => !activeSemesterId || e.class.academicSemesterId === activeSemesterId);
+  const activeEnrollments = useMemo(() => {
+    return approvedEnrollments.filter(e => !activeSemesterId || e.class?.academicSemesterId === activeSemesterId);
+  }, [approvedEnrollments, activeSemesterId]);
 
-  // Filter class offerings based on search query
-  const filteredClasses = activeEnrollments.filter((enrollment) =>
-    enrollment.class.course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    enrollment.class.course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    enrollment.class.lecturer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    enrollment.class.section?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter class offerings based on search query (memoized + deferred value)
+  const filteredClasses = useMemo(() => {
+    const q = deferredSearchQuery.toLowerCase().trim();
+    if (!q) return activeEnrollments;
+
+    return activeEnrollments.filter((enrollment) => {
+      const cls = enrollment.class;
+      if (!cls) return false;
+      return (
+        cls.course?.title?.toLowerCase().includes(q) ||
+        cls.course?.code?.toLowerCase().includes(q) ||
+        cls.lecturer?.name?.toLowerCase().includes(q) ||
+        cls.section?.toLowerCase().includes(q)
+      );
+    });
+  }, [activeEnrollments, deferredSearchQuery]);
+
 
   return (
     <div className="space-y-6">

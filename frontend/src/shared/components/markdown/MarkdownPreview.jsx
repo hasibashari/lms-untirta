@@ -1,9 +1,13 @@
-import React, { useMemo, useState, useCallback, useId } from 'react';
+import React, { useMemo, useState, useCallback, useId, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import ReactPlayer from 'react-player';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+const LazyReactPlayer = lazy(() => import('react-player'));
+const LazySyntaxHighlighter = lazy(() =>
+  import('react-syntax-highlighter').then((mod) => ({ default: mod.Prism }))
+);
+
 
 /**
  * MarkdownPreview - Komponen Render Materi Pembelajaran Premium
@@ -45,21 +49,23 @@ const CodeBlock = ({ inline, className, children, handleCopy, copiedId, isForum,
             )}
           </button>
         </div>
-        <SyntaxHighlighter
-          style={oneDark}
-          language={language}
-          PreTag="div"
-          customStyle={{
-            margin: 0,
-            padding: isForum ? '1rem' : '1.5rem',
-            fontSize: isForum ? '0.8rem' : '0.9rem',
-            lineHeight: '1.7',
-            background: 'transparent',
-          }}
-          {...props}
-        >
-          {codeString}
-        </SyntaxHighlighter>
+        <Suspense fallback={<pre className="p-4 text-xs text-slate-300 font-mono overflow-x-auto">{codeString}</pre>}>
+          <LazySyntaxHighlighter
+            style={oneDark}
+            language={language}
+            PreTag="div"
+            customStyle={{
+              margin: 0,
+              padding: isForum ? '1rem' : '1.5rem',
+              fontSize: isForum ? '0.8rem' : '0.9rem',
+              lineHeight: '1.7',
+              background: 'transparent',
+            }}
+            {...props}
+          >
+            {codeString}
+          </LazySyntaxHighlighter>
+        </Suspense>
       </div>
     );
   }
@@ -99,7 +105,7 @@ const getYoutubeEmbed = (url) => {
 const isVideoUrl = (url) => {
   if (!url) return false;
   const v = url.trim().toLowerCase();
-  return v.includes('youtube.com') || v.includes('youtu.be') || v.includes('vimeo.com') || ReactPlayer.canPlay(url);
+  return v.includes('youtube.com') || v.includes('youtu.be') || v.includes('vimeo.com') || v.endsWith('.mp4') || v.endsWith('.webm');
 };
 
 const VideoRenderer = ({ url, isForum }) => {
@@ -118,19 +124,22 @@ const VideoRenderer = ({ url, isForum }) => {
             title="Video Player"
           />
         ) : (
-          <ReactPlayer
-            url={url}
-            width="100%"
-            height="100%"
-            controls
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          />
+          <Suspense fallback={<div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs">Memuat pemutar video...</div>}>
+            <LazyReactPlayer
+              url={url}
+              width="100%"
+              height="100%"
+              controls
+              style={{ position: 'absolute', top: 0, left: 0 }}
+            />
+          </Suspense>
         )}
       </div>
       <p className="text-center text-[10px] text-slate-400 mt-3 font-medium tracking-wide uppercase">Materi Video</p>
     </div>
   );
 };
+
 
 const MarkdownPreview = ({ content, className = '', variant = 'default' }) => {
   const isForum = variant === 'forum';

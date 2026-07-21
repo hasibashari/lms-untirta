@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { User, Users, BookOpen } from 'lucide-react';
 
 /**
@@ -7,10 +7,11 @@ import { User, Users, BookOpen } from 'lucide-react';
  *
  * Works across all roles: admin, dosen (lecturer), mahasiswa (student).
  * Supports both individual props and a `course` object prop for flexibility.
+ * Wrapped with React.memo for optimal render performance in lists.
  *
  * Cover logic: if coverImage exists → show image, else → random bg color.
  */
-export default function CourseCard({
+function CourseCard({
   // Support passing a course object directly (used by landing page)
   course,
   // Individual props (used by dashboard pages)
@@ -67,6 +68,8 @@ export default function CourseCard({
           <img
             src={coverImage}
             alt={title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {actions.length > 0 && <ActionButtons actions={actions} showOnHover={showActionsOnHover} />}
@@ -147,3 +150,5 @@ function ActionButtons({ actions, showOnHover }) {
     </div>
   );
 }
+
+export default memo(CourseCard);

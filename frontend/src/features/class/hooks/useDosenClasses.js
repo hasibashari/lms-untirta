@@ -1,49 +1,39 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getMyClasses } from '../api/class.api';
 
 export const useDosenClasses = () => {
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const isMounted = useRef(true);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const academicSemesterId = localStorage.getItem('selectedDosenAcademicSemesterId');
 
-  const fetchClasses = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
+  const {
+    data: classes = [],
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchClasses,
+  } = useQuery({
+    queryKey: ['dosen-classes', academicSemesterId],
+    queryFn: async () => {
       const params = academicSemesterId ? { academicSemesterId } : {};
       const res = await getMyClasses(params);
-      if (isMounted.current) {
-        setClasses(res.data || []);
-      }
-    } catch (err) {
-      if (isMounted.current) {
-        setError(err?.message || err || 'Gagal memuat data');
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
-    }
-  }, [academicSemesterId]);
+      return res?.data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
-  useEffect(() => {
-    isMounted.current = true;
-    fetchClasses();
-    return () => {
-      isMounted.current = false;
-    };
-  }, [fetchClasses]);
+  const error = queryError?.message || (typeof queryError === 'string' ? queryError : null);
 
-  const filteredClasses = classes.filter(classObj =>
-    classObj.course?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    classObj.course?.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    classObj.section?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClasses = useMemo(() => {
+    const q = deferredSearchQuery.toLowerCase().trim();
+    if (!q) return classes;
+
+    return classes.filter((classObj) =>
+      classObj.course?.title?.toLowerCase().includes(q) ||
+      classObj.course?.code?.toLowerCase().includes(q) ||
+      classObj.section?.toLowerCase().includes(q)
+    );
+  }, [classes, deferredSearchQuery]);
 
   return {
     classes,
@@ -55,3 +45,4 @@ export const useDosenClasses = () => {
     fetchClasses,
   };
 };
+
