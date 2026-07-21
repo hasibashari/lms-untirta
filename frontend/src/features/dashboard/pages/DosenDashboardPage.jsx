@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
-import PageLoader from '@/shared/components/feedback/PageLoader';
+import DashboardSkeleton from '@/shared/components/feedback/DashboardSkeleton';
 import StatCard from '@/shared/components/ui/StatCard';
 import ActionCard from '@/shared/components/ui/ActionCard';
 import RecentSubmissionsList from '../components/RecentSubmissionsList';
@@ -54,7 +54,7 @@ export default function Dashboard() {
   const hasPendingGrading = pendingGradingCount > 0;
 
   if (loading) {
-    return <PageLoader />;
+    return <DashboardSkeleton statCount={3} actionCount={3} />;
   }
 
   return (

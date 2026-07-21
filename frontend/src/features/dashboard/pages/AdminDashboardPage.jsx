@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/app/providers/AuthContext';
 import { Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard } from 'lucide-react';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
-import PageLoader from '@/shared/components/feedback/PageLoader';
+import DashboardSkeleton from '@/shared/components/feedback/DashboardSkeleton';
 import StatCard from '@/shared/components/ui/StatCard';
 import ActionCard from '@/shared/components/ui/ActionCard';
 import { useAdminStats } from '../../user/hooks/useAdminStats';
@@ -28,7 +28,7 @@ const AdminDashboard = () => {
   ];
 
   if (isLoading) {
-    return <PageLoader />;
+    return <DashboardSkeleton statCount={4} actionCount={3} />;
   }
 
   return (

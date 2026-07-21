@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BookOpen, ClipboardList, Award, Clock, LayoutDashboard } from 'lucide-react';
 import DashboardJumbotron from '@/shared/components/layout/Jumbotron';
-import PageLoader from '@/shared/components/feedback/PageLoader';
+import DashboardSkeleton from '@/shared/components/feedback/DashboardSkeleton';
 import StatCard from '@/shared/components/ui/StatCard';
 import ActionCard from '@/shared/components/ui/ActionCard';
 import { useMahasiswaDashboardData } from '../hooks/useMahasiswaDashboard';
@@ -40,7 +40,7 @@ const MahasiswaDashboard = () => {
   ];
 
   if (isLoading) {
-    return <PageLoader />;
+    return <DashboardSkeleton statCount={3} actionCount={2} />;
   }
 
   return (
