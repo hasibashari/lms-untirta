@@ -16,6 +16,8 @@ model User {
   createdAt       DateTime        @default(now())
   advisorId       String?
   isDospem        Boolean         @default(false)
+  isEmailVerified Boolean         @default(true)
+  emailVerifiedAt DateTime?
   nim             String?         @unique
   classesTeaching Class[]         @relation("LecturerClasses")
   coursesTeaching Course[]        @relation("TeacherCourses")
@@ -28,11 +30,25 @@ model User {
   advisor         User?           @relation("AdvisorStudents", fields: [advisorId], references: [id])
   advisedStudents User[]          @relation("AdvisorStudents")
 
-  passwordResetTokens PasswordResetToken[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@index([role])
   @@index([advisorId])
 }
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
 
 model PasswordResetToken {
   id        String   @id @default(uuid())

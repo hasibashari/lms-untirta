@@ -14,7 +14,11 @@ export const registerUser = async ({ email, name, password }) => {
   // 1. Cek duplikasi email
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    throw new AppError(409, 'Email sudah terdaftar'); // Error ini akan ditangkap Controller
+    if (existingUser.isEmailVerified) {
+      throw new AppError(409, 'Email sudah terdaftar');
+    }
+    // Jika email terdaftar tapi belum diverifikasi, hapus user lama agar bisa mendaftar ulang
+    await prisma.user.delete({ where: { id: existingUser.id } });
   }
 
   // 2. Hash password
@@ -37,23 +41,107 @@ export const registerUser = async ({ email, name, password }) => {
     assignedAdvisorId = dospems[0].id;
   }
 
-  // 4. Simpan ke DB
+  // 4. Simpan ke DB dengan status isEmailVerified: false
   const newUser = await prisma.user.create({
     data: {
       email,
       name,
       password: hashedPassword,
-      role: ROLES.MAHASISWA, // Default role
+      role: ROLES.MAHASISWA,
       advisorId: assignedAdvisorId,
+      isEmailVerified: false,
     },
   });
+
+  // 5. Generate token verifikasi 256-bit
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 jam
+
+  await prisma.emailVerificationToken.create({
+    data: {
+      userId: newUser.id,
+      tokenHash,
+      expiresAt,
+    },
+  });
+
+  // 6. Kirim email verifikasi via Resend API
+  await emailService.sendVerificationEmail(newUser.email, rawToken);
 
   return {
     id: newUser.id,
     name: newUser.name,
     email: newUser.email,
     role: newUser.role,
+    isEmailVerified: false,
+    message: 'Registrasi berhasil! Silakan periksa inbox atau spam email Anda untuk mengonfirmasi pendaftaran.',
   };
+};
+
+// ======= VERIFY EMAIL =======
+export const verifyEmail = async ({ token }) => {
+  if (!token) {
+    throw new AppError(400, 'Token verifikasi email wajib diisi');
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+  const tokenRecord = await prisma.emailVerificationToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+    throw new AppError(400, 'Tautan verifikasi email tidak valid atau telah kadaluwarsa.');
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: tokenRecord.userId },
+      data: { isEmailVerified: true, emailVerifiedAt: new Date() },
+    }),
+    prisma.emailVerificationToken.deleteMany({
+      where: { userId: tokenRecord.userId },
+    }),
+  ]);
+
+  return { message: 'Email berhasil diverifikasi! Silakan login ke akun Anda.' };
+};
+
+// ======= RESEND VERIFICATION EMAIL =======
+export const resendVerificationEmail = async ({ email }) => {
+  const genericResponse = {
+    message: 'Jika email terdaftar dan belum diverifikasi, email konfirmasi telah dikirimkan kembali.',
+  };
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user || user.isEmailVerified) {
+    return genericResponse;
+  }
+
+  await prisma.emailVerificationToken.deleteMany({
+    where: { userId: user.id },
+  });
+
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.emailVerificationToken.create({
+    data: {
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    },
+  });
+
+  await emailService.sendVerificationEmail(user.email, rawToken);
+
+  return genericResponse;
 };
 
 // ======= LOGIN USER =======
@@ -69,6 +157,7 @@ export const loginUser = async ({ email, password }) => {
       role: true,
       isDospem: true,
       nim: true,
+      isEmailVerified: true,
     },
   });
 
@@ -82,7 +171,12 @@ export const loginUser = async ({ email, password }) => {
     throw new AppError(401, 'Email atau password salah');
   }
 
-  // 3. Generate token
+  // 3. Cek verifikasi email
+  if (!user.isEmailVerified) {
+    throw new AppError(403, 'Email Anda belum diverifikasi. Silakan periksa inbox/spam email Anda atau minta kirim ulang email verifikasi.');
+  }
+
+  // 4. Generate token
   const token = signToken({
     userId: user.id,
     role: user.role,
@@ -93,6 +187,7 @@ export const loginUser = async ({ email, password }) => {
     user: {
       id: user.id,
       name: user.name,
+
       email: user.email,
       role: user.role,
       isDospem: user.isDospem,

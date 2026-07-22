@@ -19,3 +19,12 @@ export const forgotPassword = async (payload) => {
 export const resetPassword = async (payload) => {
   return api.post('/auth/reset-password', payload);
 };
+
+export const verifyEmail = async (payload) => {
+  return api.post('/auth/verify-email', payload);
+};
+
+export const resendVerification = async (payload) => {
+  return api.post('/auth/resend-verification', payload);
+};
+

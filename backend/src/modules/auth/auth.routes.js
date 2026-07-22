@@ -1,7 +1,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { login, register, getMe, forgotPassword, resetPassword } from './auth.controller.js';
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.validation.js';
+import { login, register, getMe, forgotPassword, resetPassword, verifyEmail, resendVerification } from './auth.controller.js';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema, resendVerificationSchema } from './auth.validation.js';
 import validate from '../../middlewares/validate.middleware.js';
 import { authenticateToken } from '../../middlewares/auth.middleware.js';
 
@@ -201,4 +201,54 @@ router.post('/forgot-password', resetLimiter, validate(forgotPasswordSchema), fo
  */
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify email address using token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Email successfully verified
+ *       400:
+ *         description: Invalid or expired token
+ */
+router.post('/verify-email', authLimiter, validate(verifyEmailSchema), verifyEmail);
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Verification email resent
+ */
+router.post('/resend-verification', resetLimiter, validate(resendVerificationSchema), resendVerification);
+
 export default router;
+

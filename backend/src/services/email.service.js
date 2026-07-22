@@ -51,3 +51,50 @@ export const sendResetPasswordEmail = async (toEmail, resetToken) => {
   logger.info({ toEmail, resetLink }, '[EMAIL SERVICE - DEV MODE] Instructions to reset password sent (No active email provider)');
   return true;
 };
+
+/**
+ * Service pengiriman email verifikasi pendaftaran akun.
+ */
+export const sendVerificationEmail = async (toEmail, verificationToken) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verifyLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <h2 style="color: #0056b3;">Konfirmasi Pendaftaran LMS Untirta</h2>
+      <p>Halo,</p>
+      <p>Terima kasih telah mendaftar di LMS Untirta. Untuk mengaktifkan akun Anda dan menggunakan layanan kami, silakan konfirmasi email Anda terlebih dahulu.</p>
+      <p>Silakan klik tombol di bawah ini untuk memverifikasi akun Anda. Tautan ini berlaku selama <strong>24 jam</strong>:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${verifyLink}" style="background-color: #0056b3; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Konfirmasi Email Saya</a>
+      </div>
+      <p style="font-size: 12px; color: #777;">Jika tombol di atas tidak berfungsi, salin dan tempel tautan berikut ke browser Anda:</p>
+      <p style="font-size: 12px; word-break: break-all; color: #0056b3;"><a href="${verifyLink}">${verifyLink}</a></p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="font-size: 12px; color: #888;">Jika Anda tidak merasa mendaftar di LMS Untirta, silakan abaikan email ini.</p>
+    </div>
+  `;
+
+  // 1. Kirim via Resend API
+  if (resendClient) {
+    try {
+      const fromEmail = process.env.RESEND_FROM || 'LMS Untirta <onboarding@resend.dev>';
+      const data = await resendClient.emails.send({
+        from: fromEmail,
+        to: [toEmail],
+        subject: 'Konfirmasi Email Pendaftaran - LMS Untirta',
+        html: htmlContent,
+      });
+
+      logger.info({ toEmail, resendId: data.data?.id || data.id }, '[EMAIL SERVICE] Email verifikasi berhasil dikirim via Resend API');
+      return true;
+    } catch (error) {
+      logger.error({ error, toEmail }, '[EMAIL SERVICE] Gagal mengirim email verifikasi via Resend API');
+    }
+  }
+
+  // 2. Fallback ke Logger
+  logger.info({ toEmail, verifyLink }, '[EMAIL SERVICE - DEV MODE] Verification email sent (No active email provider)');
+  return true;
+};
+

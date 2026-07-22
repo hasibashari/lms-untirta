@@ -54,3 +54,25 @@ export const resetPassword = async (req, res) => {
     return handleError(res, error);
   }
 };
+
+// ======= VERIFY EMAIL =======
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const result = await authService.verifyEmail({ token });
+    sendSuccess(res, { statusCode: 200, message: result.message });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+// ======= RESEND VERIFICATION EMAIL =======
+export const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.resendVerificationEmail({ email });
+    sendSuccess(res, { statusCode: 200, message: result.message });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
