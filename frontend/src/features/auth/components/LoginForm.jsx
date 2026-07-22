@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -18,10 +18,14 @@ export default function LoginForm() {
     isLoading,
     error,
     showPassword,
+    isUnverifiedEmail,
+    isResending,
+    resendSuccess,
     setRememberMe,
     setShowPassword,
     handleChange,
     handleSubmit,
+    handleResendVerification,
     handleGoogleLogin,
     handleFacebookLogin,
   } = useLoginForm();
@@ -29,11 +33,45 @@ export default function LoginForm() {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+        {error && !isUnverifiedEmail && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">
             {error}
           </p>
         )}
+
+        {isUnverifiedEmail && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left text-sm text-amber-900 space-y-3 animate-in fade-in duration-300">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <h5 className="font-semibold text-amber-900">Email Belum Diverifikasi</h5>
+                <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                  Email Anda (<strong>{formData.email}</strong>) belum diaktifkan. Silakan periksa folder Inbox atau Spam email Anda.
+                </p>
+              </div>
+            </div>
+
+            {resendSuccess ? (
+              <div className="bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs rounded-lg p-2.5 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>Link konfirmasi baru telah berhasil dikirimkan ke email Anda!</span>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResendVerification}
+                loading={isResending}
+                className="w-full bg-white hover:bg-amber-100 text-amber-900 border-amber-300 text-xs font-semibold py-2"
+              >
+                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isResending ? 'animate-spin' : ''}`} />
+                Kirim Ulang Email Konfirmasi
+              </Button>
+            )}
+          </div>
+        )}
+
 
         <div className="space-y-1.5">
           <Label htmlFor="email">Email Institusi / Pribadi</Label>
