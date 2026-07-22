@@ -8,7 +8,7 @@ import { useResetPassword } from '../hooks/useResetPassword';
 export default function ResetPasswordPage() {
   const { setAuthLayoutBranding } = useOutletContext();
   const navigate = useNavigate();
-  const { email, isSuccess, error } = useResetPassword();
+  const { token, isSuccess, error } = useResetPassword();
 
   useEffect(() => {
     setAuthLayoutBranding({
@@ -21,7 +21,7 @@ export default function ResetPasswordPage() {
     });
   }, [setAuthLayoutBranding]);
 
-  if (!email) {
+  if (!token) {
     return (
       <div className="text-center">
         <div className="mx-auto w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6">
@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Akses Ditolak</h2>
         <p className="text-gray-500 mb-8">
-          {error || 'Email tidak valid atau tidak ditemukan.'}
+          {error || 'Tautan reset password tidak valid atau tidak ditemukan.'}
         </p>
         <Button onClick={() => navigate('/forgot-password')} fullWidth variant="default" className="py-3">
           Kembali ke Lupa Password

@@ -6,7 +6,7 @@ import { getPasswordStrength } from '@/shared/utils/password.util';
 
 export const useResetPassword = () => {
   const [searchParams] = useSearchParams();
-  const email = searchParams.get('email');
+  const token = searchParams.get('token');
 
   const [formData, setFormData] = useState({
     newPassword: '',
@@ -19,10 +19,10 @@ export const useResetPassword = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!email) {
-      setError('Email tidak valid atau tidak ditemukan.');
+    if (!token) {
+      setError('Token reset password tidak ditemukan atau tautan tidak valid.');
     }
-  }, [email]);
+  }, [token]);
 
   const handleChange = (e, field) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -32,6 +32,11 @@ export const useResetPassword = () => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
+    if (!token) {
+      setError('Token reset password tidak ditemukan.');
+      return;
+    }
+
     if (getPasswordStrength(formData.newPassword) < 3) {
       setError('Password terlalu lemah. Harus minimal 8 karakter, mengandung huruf besar, dan angka.');
       return;
@@ -45,20 +50,21 @@ export const useResetPassword = () => {
     setIsLoading(true);
     try {
       const res = await resetPasswordAPI({
-        email,
+        token,
         newPassword: formData.newPassword,
       });
       setIsSuccess(true);
       toast.success(res.message || 'Password berhasil diubah.');
     } catch (err) {
-      setError(err.message || 'Gagal mereset password');
+      const message = err.response?.data?.message || err.message || 'Gagal mereset password';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return {
-    email,
+    token,
     formData,
     showPassword,
     showConfirmPassword,
@@ -71,3 +77,4 @@ export const useResetPassword = () => {
     handleSubmit,
   };
 };
+

@@ -47,8 +47,8 @@ export const forgotPassword = async (req, res) => {
 // ======= RESET PASSWORD =======
 export const resetPassword = async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
-    const result = await authService.resetPassword({ email, newPassword });
+    const { token, newPassword } = req.body;
+    const result = await authService.resetPassword({ token, newPassword });
     sendSuccess(res, { statusCode: 200, message: result.message });
   } catch (error) {
     return handleError(res, error);

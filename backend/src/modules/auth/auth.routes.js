@@ -186,11 +186,8 @@ router.post('/forgot-password', resetLimiter, validate(forgotPasswordSchema), fo
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, token, newPassword]
+ *             required: [token, newPassword]
  *             properties:
- *               email:
- *                 type: string
- *                 format: email
  *               token:
  *                 type: string
  *               newPassword:

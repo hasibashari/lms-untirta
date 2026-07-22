@@ -33,9 +33,10 @@ export const forgotPasswordSchema = z.object({
 // Schema untuk reset password
 export const resetPasswordSchema = z.object({
   body: z.object({
-    email: z.string().email({ message: 'Email tidak valid' }),
+    token: z.string().min(1, { message: 'Token reset password wajib diisi' }),
     newPassword: z.string()
       .min(8, { message: 'Password minimal 8 karakter' })
       .regex(/^(?=.*[A-Z])(?=.*\d)/, { message: 'Password harus mengandung huruf besar dan angka' }),
   }),
 });
+

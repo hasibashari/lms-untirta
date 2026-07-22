@@ -1,11 +1,34 @@
-import { Mail } from 'lucide-react';
+import { Mail, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Button } from '@/shared/components/ui/button';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 export default function ForgotPasswordForm() {
-  const { email, isLoading, errorMsg, handleChange, handleSubmit } = useForgotPassword();
+  const { email, isLoading, isSubmitted, successMsg, errorMsg, handleChange, handleSubmit } = useForgotPassword();
+
+  if (isSubmitted) {
+    return (
+      <div className="text-center py-4">
+        <div className="mx-auto w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6">
+          <CheckCircle2 className="h-8 w-8" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Instruksi Terkirim</h3>
+        <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+          {successMsg}
+        </p>
+        <p className="text-xs text-gray-400 mb-6">
+          Silakan periksa folder <strong>Inbox</strong> atau <strong>Spam</strong> pada email Anda untuk mengklik tautan reset password (berlaku 15 menit).
+        </p>
+        <Link to="/login">
+          <Button fullWidth variant="outline" className="py-3">
+            Kembali ke Login
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -31,8 +54,9 @@ export default function ForgotPasswordForm() {
       </div>
 
       <Button type="submit" loading={isLoading} fullWidth variant="default" className="py-3">
-        Lanjut ke Reset Password
+        Kirim Instruksi Reset Password
       </Button>
     </form>
   );
 }
+

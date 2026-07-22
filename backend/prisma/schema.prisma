@@ -28,9 +28,25 @@ model User {
   advisor         User?           @relation("AdvisorStudents", fields: [advisorId], references: [id])
   advisedStudents User[]          @relation("AdvisorStudents")
 
+  passwordResetTokens PasswordResetToken[]
+
   @@index([role])
   @@index([advisorId])
 }
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
 
 model Course {
   id           String        @id @default(uuid())

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { forgotPassword as forgotPasswordAPI } from '../api/auth.api';
 
 export const useForgotPassword = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleChange = (e) => {
@@ -20,8 +20,9 @@ export const useForgotPassword = () => {
     setIsLoading(true);
     setErrorMsg('');
     try {
-      await forgotPasswordAPI({ email });
-      navigate(`/reset-password?email=${encodeURIComponent(email)}`);
+      const res = await forgotPasswordAPI({ email });
+      setSuccessMsg(res.message || res.data?.message || 'Jika email terdaftar di sistem, instruksi untuk reset password telah dikirimkan ke email Anda.');
+      setIsSubmitted(true);
     } catch (error) {
       const message = error.response?.data?.message || 'Terjadi kesalahan. Silakan coba lagi.';
       setErrorMsg(message);
@@ -33,8 +34,11 @@ export const useForgotPassword = () => {
   return {
     email,
     isLoading,
+    isSubmitted,
+    successMsg,
     errorMsg,
     handleChange,
     handleSubmit,
   };
 };
+

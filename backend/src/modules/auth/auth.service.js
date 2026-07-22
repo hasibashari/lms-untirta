@@ -1,9 +1,13 @@
 import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { signToken } from '../../config/jwt.js';
 import { ROLES } from '../../config/roles.js';
 import { AppError } from '../../config/errors.js';
 import cache from '../../utils/cache.js';
+import redisClient from '../../config/redis.js';
+import * as emailService from '../../services/email.service.js';
+
 
 // ======= REGISTER USER =======
 export const registerUser = async ({ email, name, password }) => {
@@ -136,36 +140,83 @@ export const getUserById = async (userId) => {
 
 // ======= FORGOT PASSWORD =======
 export const forgotPassword = async ({ email }) => {
+  const genericResponse = {
+    message: 'Jika email terdaftar di sistem, instruksi untuk reset password telah dikirimkan ke email Anda.',
+  };
+
   const user = await prisma.user.findUnique({
     where: { email },
   });
 
+  // Anti-User Enumeration: Jika email tidak ditemukan, kembalikan pesan generik tanpa throw Error
   if (!user) {
-    throw new AppError(404, 'Email tidak ditemukan di sistem.');
+    return genericResponse;
   }
 
-  return { message: 'Email ditemukan, silakan masukkan password baru.' };
+  // Generate 256-bit cryptographically secure raw token
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 menit validity
+
+  // Simpan token hash ke database
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    },
+  });
+
+  // Kirim email (mengirim rawToken ke email pengguna)
+  await emailService.sendResetPasswordEmail(user.email, rawToken);
+
+  return genericResponse;
 };
 
 // ======= RESET PASSWORD =======
-export const resetPassword = async ({ email, newPassword }) => {
-  const user = await prisma.user.findUnique({
-    where: { email },
+export const resetPassword = async ({ token, newPassword }) => {
+  if (!token) {
+    throw new AppError(400, 'Token reset password wajib diisi');
+  }
+
+  // Hash incoming raw token dengan SHA-256 untuk dicocokkan di DB
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+  const resetTokenRecord = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
   });
 
-  if (!user) {
-    throw new AppError(404, 'User tidak ditemukan.');
+  if (!resetTokenRecord || resetTokenRecord.used || resetTokenRecord.expiresAt < new Date()) {
+    throw new AppError(400, 'Token reset password tidak valid atau telah kadaluwarsa.');
   }
 
   // Hash password baru
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // Update password
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { password: hashedPassword },
-  });
+  // Update password user & tandai token sudah digunakan
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: resetTokenRecord.userId },
+      data: { password: hashedPassword },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: resetTokenRecord.id },
+      data: { used: true },
+    }),
+  ]);
 
-  return { message: 'Password berhasil direset. Silakan login dengan password baru.' };
+  // Invalidate Redis user session cache
+  try {
+    if (redisClient.isOpen) {
+      await redisClient.del(`user:${resetTokenRecord.userId}`);
+      await redisClient.del(`user:profile:${resetTokenRecord.userId}`);
+    }
+  } catch {
+    // Non-blocking log
+  }
+
+  return { message: 'Password berhasil direset. Silakan login dengan password baru Anda.' };
 };
+
 
