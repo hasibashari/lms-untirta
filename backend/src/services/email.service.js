@@ -33,21 +33,25 @@ export const sendResetPasswordEmail = async (toEmail, resetToken) => {
   if (resendClient) {
     try {
       const fromEmail = process.env.RESEND_FROM || 'LMS Untirta <onboarding@resend.dev>';
-      const data = await resendClient.emails.send({
+      const { data, error } = await resendClient.emails.send({
         from: fromEmail,
         to: [toEmail],
         subject: 'Instruksi Reset Password - LMS Untirta',
         html: htmlContent,
       });
 
-      logger.info({ toEmail, resendId: data.data?.id || data.id }, '[EMAIL SERVICE] Email reset password berhasil dikirim via Resend API');
-      return true;
-    } catch (error) {
-      logger.error({ error, toEmail }, '[EMAIL SERVICE] Gagal mengirim email via Resend API');
+      if (error) {
+        logger.error({ error, toEmail }, '[EMAIL SERVICE] Resend API menolak pengiriman email');
+      } else {
+        logger.info({ toEmail, resendId: data?.id }, '[EMAIL SERVICE] Email reset password berhasil dikirim via Resend API');
+        return true;
+      }
+    } catch (err) {
+      logger.error({ error: err, toEmail }, '[EMAIL SERVICE] Gagal memanggil Resend API');
     }
   }
 
-  // 2. Fallback ke Logger jika Resend API key belum dikonfigurasi
+  // 2. Fallback ke Logger jika Resend API key belum dikonfigurasi / error
   logger.info({ toEmail, resetLink }, '[EMAIL SERVICE - DEV MODE] Instructions to reset password sent (No active email provider)');
   return true;
 };
@@ -79,17 +83,21 @@ export const sendVerificationEmail = async (toEmail, verificationToken) => {
   if (resendClient) {
     try {
       const fromEmail = process.env.RESEND_FROM || 'LMS Untirta <onboarding@resend.dev>';
-      const data = await resendClient.emails.send({
+      const { data, error } = await resendClient.emails.send({
         from: fromEmail,
         to: [toEmail],
         subject: 'Konfirmasi Email Pendaftaran - LMS Untirta',
         html: htmlContent,
       });
 
-      logger.info({ toEmail, resendId: data.data?.id || data.id }, '[EMAIL SERVICE] Email verifikasi berhasil dikirim via Resend API');
-      return true;
-    } catch (error) {
-      logger.error({ error, toEmail }, '[EMAIL SERVICE] Gagal mengirim email verifikasi via Resend API');
+      if (error) {
+        logger.error({ error, toEmail }, '[EMAIL SERVICE] Resend API menolak pengiriman email');
+      } else {
+        logger.info({ toEmail, resendId: data?.id }, '[EMAIL SERVICE] Email verifikasi berhasil dikirim via Resend API');
+        return true;
+      }
+    } catch (err) {
+      logger.error({ error: err, toEmail }, '[EMAIL SERVICE] Gagal memanggil Resend API');
     }
   }
 
