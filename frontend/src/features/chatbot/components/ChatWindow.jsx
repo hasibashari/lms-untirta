@@ -102,12 +102,12 @@ export const ChatWindow = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-20 right-6 w-80 md:w-96 h-[500px] bg-background border border-border rounded-2xl shadow-xl flex flex-col overflow-hidden z-50 animate-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-96 h-[520px] sm:h-[560px] max-h-[calc(100vh-90px)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 animate-in slide-in-from-bottom-5 duration-300">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 flex justify-between items-center shrink-0 shadow-md">
+      <div className="bg-primary text-primary-foreground p-3.5 flex justify-between items-center shrink-0 shadow-md">
         <div className="flex items-center gap-2">
           <div className="bg-primary-foreground/20 p-1.5 rounded-lg">
-            <BotMessageSquare size={20} />
+            <BotMessageSquare size={18} />
           </div>
           <div>
             <h3 className="font-semibold text-sm leading-tight">UntirtaBot</h3>
@@ -151,34 +151,34 @@ export const ChatWindow = ({ isOpen, onClose }) => {
 
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 bg-muted/10">
+      <div className="flex-1 overflow-y-auto p-3.5 bg-muted/10">
         {/* Hero Section for Empty State */}
         {messages.length === 0 && (
-          <div className="py-8 px-2 text-center animate-in fade-in zoom-in duration-500">
-            <div className="w-16 h-16 bg-primary/10 text-primary mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-primary/20">
-              <BotMessageSquare size={32} />
+          <div className="py-4 px-2 text-center animate-in fade-in zoom-in duration-500">
+            <div className="w-12 h-12 bg-primary/10 text-primary mx-auto rounded-xl flex items-center justify-center mb-3 shadow-sm border border-primary/20">
+              <BotMessageSquare size={24} />
             </div>
-            <h2 className="text-xl font-bold text-foreground">Ada yang bisa saya bantu?</h2>
-            <p className="text-muted-foreground text-sm mt-2 max-w-[240px] mx-auto">
+            <h2 className="text-lg font-bold text-foreground">Ada yang bisa saya bantu?</h2>
+            <p className="text-muted-foreground text-xs mt-1 max-w-[240px] mx-auto leading-relaxed">
               Tanyakan apapun seputar akademik, jadwal, atau bantuan sistem.
             </p>
 
             {/* Quick Action Grid (Empty State) */}
-            <div className="grid grid-cols-2 gap-3 mt-8">
+            <div className="grid grid-cols-2 gap-2.5 mt-4">
               {quickActions.map((action, idx) => (
                 <button
                   key={idx}
                   onClick={() => sendMessage(action.text)}
                   disabled={chatMutation.isPending}
-                  className="p-4 bg-background hover:bg-muted border border-border rounded-xl text-left transition-all duration-200 group hover:shadow-md hover:border-primary/30 active:scale-95 disabled:opacity-50"
+                  className="p-3 bg-background hover:bg-muted border border-border rounded-xl text-left transition-all duration-200 group hover:shadow-md hover:border-primary/30 active:scale-95 disabled:opacity-50"
                 >
-                  <span className="text-xl mb-2 block group-hover:scale-125 transition-transform origin-left">
+                  <span className="text-lg mb-1 block group-hover:scale-110 transition-transform origin-left">
                     {action.label.split(' ')[0]}
                   </span>
                   <span className="text-xs font-semibold text-foreground block leading-tight">
                     {action.label.split(' ').slice(1).join(' ')}
                   </span>
-                  <span className="text-[10px] text-muted-foreground mt-1 block leading-tight opacity-70">
+                  <span className="text-[10px] text-muted-foreground mt-0.5 block leading-tight opacity-70">
                     Klik untuk bertanya
                   </span>
                 </button>

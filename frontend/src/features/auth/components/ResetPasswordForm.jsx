@@ -5,7 +5,8 @@ import { Button } from '@/shared/components/ui/button';
 import PasswordStrengthIndicator from '@/shared/components/ui/PasswordStrengthIndicator';
 import { useResetPassword } from '../hooks/useResetPassword';
 
-export default function ResetPasswordForm() {
+export default function ResetPasswordForm({ resetPasswordProps }) {
+  const internalState = useResetPassword();
   const {
     formData,
     showPassword,
@@ -16,7 +17,7 @@ export default function ResetPasswordForm() {
     setShowConfirmPassword,
     handleChange,
     handleSubmit,
-  } = useResetPassword();
+  } = resetPasswordProps || internalState;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

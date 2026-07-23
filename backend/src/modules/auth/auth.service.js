@@ -286,6 +286,12 @@ export const resetPassword = async ({ token, newPassword }) => {
     throw new AppError(400, 'Token reset password tidak valid atau telah kadaluwarsa.');
   }
 
+  // Cek apakah password baru sama dengan password lama
+  const isSamePassword = await bcrypt.compare(newPassword, resetTokenRecord.user.password);
+  if (isSamePassword) {
+    throw new AppError(400, 'Password baru tidak boleh sama dengan password lama Anda. Silakan gunakan password lain.');
+  }
+
   // Hash password baru
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 

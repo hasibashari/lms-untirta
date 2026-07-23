@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { resetPassword as resetPasswordAPI } from '../api/auth.api';
 import { toast } from 'react-hot-toast';
 import { getPasswordStrength } from '@/shared/utils/password.util';
 
 export const useResetPassword = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
@@ -16,6 +17,7 @@ export const useResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -23,6 +25,22 @@ export const useResetPassword = () => {
       setError('Token reset password tidak ditemukan atau tautan tidak valid.');
     }
   }, [token]);
+
+  useEffect(() => {
+    let timer;
+    if (isSuccess && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (isSuccess && countdown === 0) {
+      navigate('/login', {
+        state: {
+          successMessage: 'Password Anda telah berhasil diperbarui. Silakan masuk menggunakan password baru Anda.',
+        },
+      });
+    }
+    return () => clearInterval(timer);
+  }, [isSuccess, countdown, navigate]);
 
   const handleChange = (e, field) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -63,6 +81,14 @@ export const useResetPassword = () => {
     }
   };
 
+  const handleGoToLogin = () => {
+    navigate('/login', {
+      state: {
+        successMessage: 'Password Anda telah berhasil diperbarui. Silakan masuk menggunakan password baru Anda.',
+      },
+    });
+  };
+
   return {
     token,
     formData,
@@ -70,11 +96,13 @@ export const useResetPassword = () => {
     showConfirmPassword,
     isLoading,
     isSuccess,
+    countdown,
     error,
     setShowPassword,
     setShowConfirmPassword,
     handleChange,
     handleSubmit,
+    handleGoToLogin,
   };
 };
 
