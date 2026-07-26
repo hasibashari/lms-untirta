@@ -258,7 +258,7 @@ export const GetAllClasses = async (call, callback) => {
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};
-    if (academicSemesterId) where.academicSemesterId = academicSemesterId;
+    if (academicSemesterId && academicSemesterId !== 'all') where.academicSemesterId = academicSemesterId;
     if (courseId) where.courseId = courseId;
     if (isEnrollmentOpen === 'true') where.isEnrollmentOpen = true;
     if (isEnrollmentOpen === 'false') where.isEnrollmentOpen = false;
@@ -345,8 +345,15 @@ export const GetClassStats = async (call, callback) => {
 export const GetClassesByLecturer = async (call, callback) => {
   try {
     const { lecturerId, academicSemesterId } = call.request;
-    const where = { lecturerId };
-    if (academicSemesterId) where.academicSemesterId = academicSemesterId;
+    const where = {
+      OR: [
+        { lecturerId },
+        { course: { teacherId: lecturerId } },
+      ],
+    };
+    if (academicSemesterId && academicSemesterId !== 'all') {
+      where.academicSemesterId = academicSemesterId;
+    }
 
     const classes = await prisma.class.findMany({
       where,
@@ -557,8 +564,13 @@ export const GetTeacherDashboardStats = async (call, callback) => {
     const data = await cache.getOrSet(
       cacheKey,
       async () => {
-        const whereClause = { lecturerId: teacherId };
-        if (academicSemesterId) {
+        const whereClause = {
+          OR: [
+            { lecturerId: teacherId },
+            { course: { teacherId } },
+          ],
+        };
+        if (academicSemesterId && academicSemesterId !== 'all') {
           whereClause.academicSemesterId = academicSemesterId;
         }
 

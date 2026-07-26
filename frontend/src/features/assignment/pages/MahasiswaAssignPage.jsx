@@ -89,7 +89,7 @@ export default function Assignments() {
         <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
           <div className="flex items-center gap-2 text-red-600 mb-1">
             <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm">Terlambat</span>
+            <span className="text-sm">Ditutup</span>
           </div>
           <p className="text-2xl font-bold text-red-600">{stats.late}</p>
         </div>

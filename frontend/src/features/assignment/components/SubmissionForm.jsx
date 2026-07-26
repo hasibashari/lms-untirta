@@ -1,4 +1,4 @@
-import { LinkIcon, Upload, Loader2, Send } from 'lucide-react';
+import { LinkIcon, Upload, Loader2, Send, Lock } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 
 export const SubmissionForm = ({
@@ -14,15 +14,47 @@ export const SubmissionForm = ({
   submitting,
   isLate,
 }) => {
+  if (isLate) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
+        <div className="p-6 border-b border-red-100 bg-red-50/50 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Pengumpulan Tugas</h2>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+            <Lock className="w-3.5 h-3.5" />
+            Pengumpulan Ditutup
+          </span>
+        </div>
+
+        <div className="p-6 text-center space-y-4">
+          <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+            <Lock className="w-7 h-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-gray-900">Pengumpulan Ditutup</h3>
+            <p className="text-sm text-gray-500 max-w-sm mx-auto">
+              Tenggat waktu pengerjaan tugas ini telah berakhir. Sistem telah mengunci akses pengunggahan jawaban.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              type="button"
+              disabled
+              className="w-full h-11 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed font-medium"
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Pengumpulan Ditutup
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-6 border-b border-gray-100">
         <h2 className="text-xl font-bold text-gray-900">Pengumpulan Tugas</h2>
-        {isLate && (
-          <p className="mt-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
-            Peringatan: Anda mengumpulkan tugas melewati batas waktu yang ditentukan.
-          </p>
-        )}
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">

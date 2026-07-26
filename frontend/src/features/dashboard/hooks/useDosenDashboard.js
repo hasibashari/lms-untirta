@@ -11,7 +11,7 @@ export const useDosenDashboardData = () => {
 
   useEffect(() => {
     const academicSemesterId = localStorage.getItem('selectedDosenAcademicSemesterId');
-    const params = academicSemesterId ? { academicSemesterId } : {};
+    const params = academicSemesterId && academicSemesterId !== 'all' ? { academicSemesterId } : {};
 
     Promise.all([
       getMyClasses(params),

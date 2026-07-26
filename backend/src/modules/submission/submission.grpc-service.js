@@ -40,6 +40,14 @@ export const SubmitAssignment = async (call, callback) => {
       return callback({ code: grpc.status.NOT_FOUND, details: 'Tugas tidak ditemukan' });
     }
 
+    // Cek Tenggat Waktu (Deadline)
+    if (new Date() > assignment.dueDate) {
+      return callback({
+        code: grpc.status.FAILED_PRECONDITION,
+        details: 'Pengumpulan tugas sudah ditutup (melewati tenggat waktu)',
+      });
+    }
+
     // 2. Validasi Enrollment
     const enrollment = await prisma.krsEnrollment.findFirst({
       where: { studentId, classId: assignment.classId, status: 'APPROVED' },

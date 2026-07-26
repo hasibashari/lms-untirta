@@ -65,7 +65,7 @@ export const useMahasiswaAssignDetail = () => {
     const diff = due - now;
 
     if (diff < 0) {
-      return { type: 'late', text: 'Deadline sudah lewat', color: 'red' };
+      return { type: 'late', text: 'Pengumpulan Ditutup', color: 'red' };
     }
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -145,6 +145,12 @@ export const useMahasiswaAssignDetail = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isLate) {
+      toast.error('Pengumpulan tugas telah ditutup karena melewati tenggat waktu');
+      return;
+    }
+
     setSubmitting(true);
 
     if (submitType === 'url' && !fileUrl.trim()) {

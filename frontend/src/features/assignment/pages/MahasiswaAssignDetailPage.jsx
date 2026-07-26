@@ -102,12 +102,11 @@ export default function AssignmentDetail() {
           {isLate && !isSubmitted && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-700">
               <h4 className="font-semibold flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-5 h-5" />
-                Batas Waktu Terlewati
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                Pengumpulan Ditutup
               </h4>
-              <p className="text-sm">
-                Tugas ini sudah melewati tenggat waktu yang ditentukan. Menghubungi dosen Anda mungkin
-                diperlukan, pengumpulan akan ditandai sebagai terlambat.
+              <p className="text-sm text-red-600">
+                Tenggat waktu pengumpulan tugas ini telah terlewati. Sistem mengunci pengunggahan dan Anda tidak dapat lagi mengirimkan jawaban tugas.
               </p>
             </div>
           )}
