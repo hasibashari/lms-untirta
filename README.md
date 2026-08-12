@@ -15,19 +15,24 @@
 
 ## 📸 Preview
 
-<p align="center">
-  <img src="./Home.png" alt="LMS Untirta Home Dashboard" width="800" />
+<details>
+  <summary><b>🔍 Click to expand / view application screenshots</b></summary>
   <br>
-  <em>Figure 1: Main Academic Dashboard</em>
-</p>
 
-<br>
+  <p align="center">
+    <img src="./Home.png" alt="LMS Untirta Home Dashboard" width="800" />
+    <br>
+    <em>Figure 1: Main Academic Dashboard</em>
+  </p>
 
-<p align="center">
-  <img src="./Login.png" alt="LMS Untirta Login Page" width="800" />
   <br>
-  <em>Figure 2: Multi-Role Authentication Portal</em>
-</p>
+
+  <p align="center">
+    <img src="./Login.png" alt="LMS Untirta Login Page" width="800" />
+    <br>
+    <em>Figure 2: Multi-Role Authentication Portal</em>
+  </p>
+</details>
 
 ---
 
